@@ -192,24 +192,75 @@ export class APIError extends Error {
 
 ## 5. 외부 API 연동
 
-### 캐싱 (전역변수)
+### 환율 API Provider 패턴
+
+API 교체가 용이하도록 Provider 인터페이스로 추상화:
 
 ```typescript
-// lib/cache/exchange.ts
-let cachedRate = { value: 0, timestamp: 0 };
-const TTL = 30 * 60 * 1000; // 30분
-
-export async function getExchangeRate(): Promise<number> {
-  const now = Date.now();
-  
-  if (cachedRate.value && now - cachedRate.timestamp < TTL) {
-    return cachedRate.value;
-  }
-  
-  const rate = await fetchFromAPI();
-  cachedRate = { value: rate, timestamp: now };
-  return rate;
+// lib/exchange/types.ts
+export interface ExchangeRateResult {
+  rate: number;
+  nextUpdateTime: number; // Unix timestamp (ms)
 }
+
+export interface ExchangeRateProvider {
+  fetchRate(from: string, to: string): Promise<ExchangeRateResult>;
+}
+```
+
+```typescript
+// lib/exchange/providers/exchangerate-api.ts
+export class ExchangeRateAPIProvider implements ExchangeRateProvider {
+  async fetchRate(from: string, to: string): Promise<ExchangeRateResult> {
+    const res = await fetch(
+      `https://v6.exchangerate-api.com/v6/${process.env.EXCHANGE_API_KEY}/pair/${from}/${to}`
+    );
+    const data = await res.json();
+
+    return {
+      rate: data.conversion_rate,
+      nextUpdateTime: data.time_next_update_unix * 1000,
+    };
+  }
+}
+```
+
+### 캐싱 (API 응답 기반)
+
+API가 알려주는 `time_next_update_utc` 기반으로 캐싱 (프리티어는 일 1회 갱신):
+
+```typescript
+// lib/exchange/cache.ts
+import { ExchangeRateProvider, ExchangeRateResult } from './types';
+
+let cachedRate: { value: number; nextUpdateTime: number } | null = null;
+
+export function createExchangeRateService(provider: ExchangeRateProvider) {
+  return async function getExchangeRate(from: string, to: string): Promise<number> {
+    const now = Date.now();
+
+    // 다음 업데이트 시간 전이면 캐시 반환
+    if (cachedRate && now < cachedRate.nextUpdateTime) {
+      return cachedRate.value;
+    }
+
+    const result = await provider.fetchRate(from, to);
+    cachedRate = {
+      value: result.rate,
+      nextUpdateTime: result.nextUpdateTime,
+    };
+    return cachedRate.value;
+  };
+}
+```
+
+```typescript
+// lib/exchange/index.ts
+import { ExchangeRateAPIProvider } from './providers/exchangerate-api';
+import { createExchangeRateService } from './cache';
+
+const provider = new ExchangeRateAPIProvider();
+export const getExchangeRate = createExchangeRateService(provider);
 ```
 
 ### 재시도 (Exponential Backoff)

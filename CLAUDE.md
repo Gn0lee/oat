@@ -105,7 +105,7 @@ oat/
 | 보유 현황 | ⬜ TODO | holdings View 기반 조회 |
 | 종목 설정 | ⬜ TODO | 자산유형, 위험도 관리 |
 | 주가 조회 | ⬜ TODO | Yahoo Finance API 연동 |
-| 환율 조회 | ⬜ TODO | USD/KRW 30분 캐싱 |
+| 환율 조회 | ⬜ TODO | USD/KRW API 응답 기반 캐싱 |
 | 대시보드 | ⬜ TODO | 총자산, 수익률, 비중 차트 |
 | PWA 지원 | ⬜ TODO | 설치 가능한 웹앱 |
 
@@ -200,9 +200,9 @@ const totalReturn = ((totalCurrentValue - totalInvestedAmount) / totalInvestedAm
 
 #### 환율 처리
 - USD 자산은 원화 환산 시 캐시된 환율 적용
-- 전역변수 캐싱 + 30분 만료 체크 방식
-- Cold start 시 API 재호출 (월 1,500회 무료 플랜 내 충분)
-- ExchangeRate-API 사용
+- API 응답의 `time_next_update_utc` 기반 캐싱 (프리티어는 일 1회 갱신)
+- Provider 패턴으로 추상화하여 API 교체 용이하게 설계
+- 현재 Provider: ExchangeRate-API (https://www.exchangerate-api.com)
 
 #### 부부 연결 플로우
 1. 사용자 A가 "파트너 초대" 버튼 클릭

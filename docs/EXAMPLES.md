@@ -340,23 +340,98 @@ export async function POST(request: NextRequest) {
 }
 ```
 
-## 13. 캐싱 (환율)
+## 13. 환율 API (Provider 패턴 + 캐싱)
+
+Provider 인터페이스로 추상화하여 API 교체 용이:
 
 ```typescript
-// lib/cache/exchange.ts
-let cachedRate = { value: 0, timestamp: 0 };
-const TTL = 30 * 60 * 1000; // 30분
+// lib/exchange/types.ts
+export interface ExchangeRateResult {
+  rate: number;
+  nextUpdateTime: number; // Unix timestamp (ms)
+}
 
-export async function getExchangeRate(): Promise<number> {
-  const now = Date.now();
-  
-  if (cachedRate.value && now - cachedRate.timestamp < TTL) {
-    return cachedRate.value;
+export interface ExchangeRateProvider {
+  fetchRate(from: string, to: string): Promise<ExchangeRateResult>;
+}
+```
+
+```typescript
+// lib/exchange/providers/exchangerate-api.ts
+import { ExchangeRateProvider, ExchangeRateResult } from '../types';
+
+export class ExchangeRateAPIProvider implements ExchangeRateProvider {
+  private apiKey: string;
+
+  constructor(apiKey: string) {
+    this.apiKey = apiKey;
   }
-  
-  const rate = await fetchFromExchangeRateAPI();
-  cachedRate = { value: rate, timestamp: now };
-  return rate;
+
+  async fetchRate(from: string, to: string): Promise<ExchangeRateResult> {
+    const res = await fetch(
+      `https://v6.exchangerate-api.com/v6/${this.apiKey}/pair/${from}/${to}`
+    );
+
+    if (!res.ok) {
+      throw new Error(`Exchange rate API error: ${res.status}`);
+    }
+
+    const data = await res.json();
+
+    return {
+      rate: data.conversion_rate,
+      nextUpdateTime: data.time_next_update_unix * 1000,
+    };
+  }
+}
+```
+
+```typescript
+// lib/exchange/cache.ts
+import { ExchangeRateProvider } from './types';
+
+let cachedRate: { value: number; nextUpdateTime: number } | null = null;
+
+export function createExchangeRateService(provider: ExchangeRateProvider) {
+  return async function getExchangeRate(from: string, to: string): Promise<number> {
+    const now = Date.now();
+
+    // 다음 업데이트 시간 전이면 캐시 반환
+    if (cachedRate && now < cachedRate.nextUpdateTime) {
+      return cachedRate.value;
+    }
+
+    const result = await provider.fetchRate(from, to);
+    cachedRate = {
+      value: result.rate,
+      nextUpdateTime: result.nextUpdateTime,
+    };
+    return cachedRate.value;
+  };
+}
+```
+
+```typescript
+// lib/exchange/index.ts
+import { ExchangeRateAPIProvider } from './providers/exchangerate-api';
+import { createExchangeRateService } from './cache';
+
+const provider = new ExchangeRateAPIProvider(process.env.EXCHANGE_API_KEY!);
+export const getExchangeRate = createExchangeRateService(provider);
+
+// 사용 예시
+// const rate = await getExchangeRate('USD', 'KRW');
+```
+
+다른 API로 교체 시 새 Provider만 구현:
+
+```typescript
+// lib/exchange/providers/another-api.ts
+export class AnotherAPIProvider implements ExchangeRateProvider {
+  async fetchRate(from: string, to: string): Promise<ExchangeRateResult> {
+    // 다른 API 호출 로직
+    return { rate: 1300, nextUpdateTime: Date.now() + 86400000 };
+  }
 }
 ```
 
