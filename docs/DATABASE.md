@@ -7,6 +7,8 @@
 - **transactions 테이블** - 모든 매수/매도 기록 저장
 - **holdings View** - transactions 기반 현재 보유량 자동 집계
 - **household_stock_settings** - 가구별 종목 설정 (자산유형, 위험도)
+- **stock_master** - 종목 마스터 (KIS 마스터파일 기반, 일 1회 동기화)
+- **exchange_rates** - 환율 정보 (일 1회 동기화)
 - **RLS 필수** - 모든 테이블에 Row Level Security, 가구 단위 데이터 격리
 - **profiles.role** - user/admin 구분 (Admin UI는 MVP 이후)
 
@@ -36,6 +38,13 @@
                                                 │ target_       │
                                                 │ allocations   │
                                                 └───────────────┘
+
+=== 시스템 테이블 (GitHub Actions 동기화) ===
+
+┌─────────────────┐       ┌─────────────────┐
+│  stock_master   │       │ exchange_rates  │
+│  (종목 마스터)   │       │ (환율)          │
+└─────────────────┘       └─────────────────┘
 ```
 
 ---
@@ -382,16 +391,123 @@ create table public.target_allocations (
   id uuid primary key default gen_random_uuid(),
   household_id uuid not null references public.households(id) on delete cascade,
   category allocation_category not null,
-  target_percentage numeric(5, 2) not null 
+  target_percentage numeric(5, 2) not null
     check (target_percentage >= 0 and target_percentage <= 100),
   created_at timestamptz default now() not null,
   updated_at timestamptz default now() not null,
-  
+
   unique(household_id, category)
 );
 
 -- 인덱스
 create index target_allocations_household_id_idx on public.target_allocations(household_id);
+```
+
+---
+
+## 시스템 테이블 (GitHub Actions 동기화)
+
+> RLS 미적용. GitHub Actions에서 service_role_key로 접근.
+
+### 11. stock_master (종목 마스터)
+
+KIS 마스터파일 기반 종목 정보. 매일 08:00 KST에 GitHub Actions로 동기화.
+
+```sql
+-- pg_trgm 확장 (유사도 검색용)
+create extension if not exists pg_trgm;
+
+create table public.stock_master (
+  id uuid primary key default gen_random_uuid(),
+
+  -- 기본 정보
+  code text not null,                      -- 종목코드 (005930, AAPL)
+  name text not null,                      -- 종목명 (한글)
+  name_en text,                            -- 종목명 (영문, US용)
+  choseong text,                           -- 초성 (ㅅㅅㅈㅈ, KR만)
+
+  -- 시장 정보
+  market market_type not null,             -- KR, US
+  exchange text,                           -- KOSPI, KOSDAQ, NYSE, NASDAQ, AMEX
+
+  -- 분류 정보 (KR)
+  sector text,                             -- 업종 대분류
+  market_cap_size text,                    -- 대형/중형/소형
+
+  -- 시세 정보 (일 1회 동기화)
+  base_price numeric(18, 4),               -- 기준가 (전일 종가)
+
+  -- 거래 상태
+  is_active boolean default true,          -- 상장 여부
+  is_suspended boolean default false,      -- 거래정지 (KR)
+
+  -- 메타
+  synced_at timestamptz default now(),     -- 마지막 동기화
+
+  unique(market, code)
+);
+
+-- 검색용 인덱스
+create index stock_master_market_code_idx on public.stock_master(market, code);
+create index stock_master_market_active_idx on public.stock_master(market, is_active)
+  where is_active = true;
+create index stock_master_choseong_idx on public.stock_master
+  using gin(choseong gin_trgm_ops);
+create index stock_master_name_idx on public.stock_master
+  using gin(name gin_trgm_ops);
+create index stock_master_name_en_idx on public.stock_master
+  using gin(name_en gin_trgm_ops);
+```
+
+| 컬럼 | 타입 | 설명 |
+|------|------|------|
+| id | uuid (PK) | 고유 ID |
+| code | text | 종목코드 (005930, AAPL) |
+| name | text | 종목명 (한글) |
+| name_en | text (nullable) | 종목명 (영문, US용) |
+| choseong | text (nullable) | 초성 (KR만, ㅅㅅㅈㅈ) |
+| market | enum | 시장 구분 (KR, US) |
+| exchange | text | 거래소 (KOSPI, NASDAQ 등) |
+| sector | text (nullable) | 업종 대분류 |
+| market_cap_size | text (nullable) | 시가총액 규모 |
+| base_price | numeric | 기준가 (전일 종가) |
+| is_active | boolean | 상장 여부 |
+| is_suspended | boolean | 거래정지 여부 |
+| synced_at | timestamptz | 마지막 동기화 시각 |
+
+**데이터 소스**
+- 국내 (KR): `kospi_code.mst`, `kosdaq_code.mst`
+- 해외 (US): `nasmst.cod`, `nysmst.cod`, `amsmst.cod`
+
+---
+
+### 12. exchange_rates (환율)
+
+일 1회 ExchangeRate-API에서 동기화.
+
+```sql
+create table public.exchange_rates (
+  from_currency currency_type not null,
+  to_currency currency_type not null,
+  rate numeric(18, 6) not null,
+  updated_at timestamptz default now(),
+
+  primary key (from_currency, to_currency)
+);
+```
+
+| 컬럼 | 타입 | 설명 |
+|------|------|------|
+| from_currency | enum (PK) | 원본 통화 (USD) |
+| to_currency | enum (PK) | 대상 통화 (KRW) |
+| rate | numeric | 환율 (예: 1430.50) |
+| updated_at | timestamptz | 마지막 업데이트 |
+
+**사용 예시**
+```sql
+-- USD → KRW 환율 조회
+select rate from exchange_rates
+where from_currency = 'USD' and to_currency = 'KRW';
 ```
 
 ---
@@ -622,7 +738,7 @@ create policy "Users can manage household targets"
 ### 거래 등록 플로우
 
 ```
-1. 종목 검색 (API)
+1. 종목 검색 (stock_master에서 로컬 검색)
       ↓
 2. household_stock_settings에 종목 없으면 자동 생성
       ↓
@@ -634,10 +750,24 @@ create policy "Users can manage household targets"
 ### 조회 플로우
 
 ```
+종목 검색     → stock_master 테이블 (pg_trgm 유사도 검색)
 현재 보유 현황 → holdings View 조회
 거래 내역     → transactions 테이블 조회
 종목 설정     → household_stock_settings 조회
 자산 추이     → transactions를 날짜별 집계
+환율 조회     → exchange_rates 테이블
+시세 조회     → stock_master.base_price (전일 종가)
+```
+
+### 시스템 데이터 동기화 (GitHub Actions)
+
+```
+매일 08:00 KST
+├── KIS 마스터파일 다운로드
+│   ├── kospi_code.mst, kosdaq_code.mst (국내)
+│   └── nasmst.cod, nysmst.cod, amsmst.cod (해외)
+├── stock_master UPSERT
+└── ExchangeRate-API 호출 → exchange_rates UPSERT
 ```
 
 ---
@@ -667,5 +797,7 @@ supabase/
     ├── 20240101000009_create_holding_tags.sql
     ├── 20240101000010_create_target_allocations.sql
     ├── 20240101000011_create_rls_helpers.sql
-    └── 20240101000012_create_rls_policies.sql
+    ├── 20240101000012_create_rls_policies.sql
+    ├── 20240101000013_create_stock_master.sql
+    └── 20240101000014_create_exchange_rates.sql
 ```

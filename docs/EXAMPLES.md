@@ -30,9 +30,15 @@ export const queries = createQueryKeyStore({
     }),
   },
   exchange: {
-    rate: (from: string, to: string) => ({
+    rate: (from: 'USD' | 'KRW', to: 'USD' | 'KRW') => ({
       queryKey: [from, to],
       queryFn: () => fetchExchangeRate(from, to),
+    }),
+  },
+  stocks: {
+    search: (query: string, market?: 'KR' | 'US') => ({
+      queryKey: [query, market],
+      queryFn: () => searchStocks(query, market),
     }),
   },
 });
@@ -340,102 +346,124 @@ export async function POST(request: NextRequest) {
 }
 ```
 
-## 13. 환율 API (Provider 패턴 + 캐싱)
+## 13. 환율 조회 (DB 기반)
 
-Provider 인터페이스로 추상화하여 API 교체 용이:
-
-```typescript
-// lib/exchange/types.ts
-export interface ExchangeRateResult {
-  rate: number;
-  nextUpdateTime: number; // Unix timestamp (ms)
-}
-
-export interface ExchangeRateProvider {
-  fetchRate(from: string, to: string): Promise<ExchangeRateResult>;
-}
-```
+환율 데이터는 GitHub Actions로 일 1회 동기화되어 DB에 저장됨.
 
 ```typescript
-// lib/exchange/providers/exchangerate-api.ts
-import { ExchangeRateProvider, ExchangeRateResult } from '../types';
+// lib/api/exchange.ts
+import { SupabaseClient } from '@supabase/supabase-js';
 
-export class ExchangeRateAPIProvider implements ExchangeRateProvider {
-  private apiKey: string;
+type Currency = 'USD' | 'KRW';
 
-  constructor(apiKey: string) {
-    this.apiKey = apiKey;
+export async function fetchExchangeRate(
+  supabase: SupabaseClient,
+  from: Currency,
+  to: Currency
+): Promise<number> {
+  const { data, error } = await supabase
+    .from('exchange_rates')
+    .select('rate, updated_at')
+    .eq('from_currency', from)
+    .eq('to_currency', to)
+    .single();
+
+  if (error || !data) {
+    throw new Error('Exchange rate not found');
   }
 
-  async fetchRate(from: string, to: string): Promise<ExchangeRateResult> {
-    const res = await fetch(
-      `https://v6.exchangerate-api.com/v6/${this.apiKey}/pair/${from}/${to}`
-    );
-
-    if (!res.ok) {
-      throw new Error(`Exchange rate API error: ${res.status}`);
-    }
-
-    const data = await res.json();
-
-    return {
-      rate: data.conversion_rate,
-      nextUpdateTime: data.time_next_update_unix * 1000,
-    };
-  }
+  return data.rate;
 }
-```
-
-```typescript
-// lib/exchange/cache.ts
-import { ExchangeRateProvider } from './types';
-
-let cachedRate: { value: number; nextUpdateTime: number } | null = null;
-
-export function createExchangeRateService(provider: ExchangeRateProvider) {
-  return async function getExchangeRate(from: string, to: string): Promise<number> {
-    const now = Date.now();
-
-    // 다음 업데이트 시간 전이면 캐시 반환
-    if (cachedRate && now < cachedRate.nextUpdateTime) {
-      return cachedRate.value;
-    }
-
-    const result = await provider.fetchRate(from, to);
-    cachedRate = {
-      value: result.rate,
-      nextUpdateTime: result.nextUpdateTime,
-    };
-    return cachedRate.value;
-  };
-}
-```
-
-```typescript
-// lib/exchange/index.ts
-import { ExchangeRateAPIProvider } from './providers/exchangerate-api';
-import { createExchangeRateService } from './cache';
-
-const provider = new ExchangeRateAPIProvider(process.env.EXCHANGE_API_KEY!);
-export const getExchangeRate = createExchangeRateService(provider);
 
 // 사용 예시
-// const rate = await getExchangeRate('USD', 'KRW');
+// const rate = await fetchExchangeRate(supabase, 'USD', 'KRW');
+// const krwAmount = usdAmount * rate;
 ```
 
-다른 API로 교체 시 새 Provider만 구현:
-
 ```typescript
-// lib/exchange/providers/another-api.ts
-export class AnotherAPIProvider implements ExchangeRateProvider {
-  async fetchRate(from: string, to: string): Promise<ExchangeRateResult> {
-    // 다른 API 호출 로직
-    return { rate: 1300, nextUpdateTime: Date.now() + 86400000 };
-  }
+// hooks/use-exchange-rate.ts
+import { useQuery } from '@tanstack/react-query';
+import { queries } from '@/lib/queries';
+
+export function useExchangeRate(from: 'USD' | 'KRW', to: 'USD' | 'KRW') {
+  return useQuery({
+    ...queries.exchange.rate(from, to),
+    staleTime: 1000 * 60 * 30, // 30분 (어차피 일 1회 갱신)
+  });
 }
 ```
 
-## 14. 재시도 패턴
+## 14. 종목 검색 (pg_trgm 유사도 검색)
+
+stock_master 테이블에서 초성/한글/영문/티커 검색.
+
+```typescript
+// lib/api/stocks.ts
+import { SupabaseClient } from '@supabase/supabase-js';
+
+interface StockSearchResult {
+  code: string;
+  name: string;
+  name_en: string | null;
+  market: 'KR' | 'US';
+  exchange: string | null;
+  base_price: number | null;
+}
+
+export async function searchStocks(
+  supabase: SupabaseClient,
+  query: string,
+  market?: 'KR' | 'US'
+): Promise<StockSearchResult[]> {
+  let builder = supabase
+    .from('stock_master')
+    .select('code, name, name_en, market, exchange, base_price')
+    .eq('is_active', true)
+    .limit(20);
+
+  if (market) {
+    builder = builder.eq('market', market);
+  }
+
+  // 초성 검색 (ㅅㅅ → 삼성)
+  if (/^[ㄱ-ㅎ]+$/.test(query)) {
+    builder = builder.ilike('choseong', `%${query}%`);
+  }
+  // 일반 검색 (한글명, 영문명, 티커)
+  else {
+    builder = builder.or(
+      `name.ilike.%${query}%,name_en.ilike.%${query}%,code.ilike.%${query}%`
+    );
+  }
+
+  const { data, error } = await builder;
+
+  if (error) throw error;
+  return data ?? [];
+}
+
+// 사용 예시
+// const results = await searchStocks(supabase, 'ㅅㅅ', 'KR');
+// → [{ code: '005930', name: '삼성전자', ... }]
+```
+
+```typescript
+// hooks/use-stock-search.ts
+import { useQuery } from '@tanstack/react-query';
+import { queries } from '@/lib/queries';
+import { useDebouncedValue } from '@/hooks/use-debounced-value';
+
+export function useStockSearch(query: string, market?: 'KR' | 'US') {
+  const debouncedQuery = useDebouncedValue(query, 300);
+
+  return useQuery({
+    ...queries.stocks.search(debouncedQuery, market),
+    enabled: debouncedQuery.length >= 1,
+  });
+}
+```
+
+## 15. 재시도 패턴
 
 ```typescript
 // lib/utils/retry.ts
@@ -459,7 +487,7 @@ export async function fetchWithRetry<T>(
 
 # Config
 
-## 15. Biome 설정
+## 16. Biome 설정
 
 ```jsonc
 // biome.json

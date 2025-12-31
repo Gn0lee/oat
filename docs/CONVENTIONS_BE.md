@@ -5,7 +5,8 @@
 ## TL;DR
 
 - **Supabase 직접 호출** - 단순 CRUD (RLS가 권한 처리)
-- **API Route 경유** - 외부 API, 복잡한 로직, 캐싱 필요 시
+- **API Route 경유** - 복잡한 집계/계산, 대시보드 요약
+- **GitHub Actions** - 종목 마스터/환율 일 1회 동기화
 - **에러 표준화** - `{ error: { code, message } }` 형식
 - **인증 체크** - 모든 API Route에서 세션 확인
 - **환경 변수** - 민감 정보는 서버 전용 변수로
@@ -19,9 +20,10 @@
 | 상황 | 선택 |
 |------|------|
 | 단순 CRUD | Supabase Client 직접 호출 |
-| 외부 API 연동 | API Route |
+| 종목 검색 | Supabase (stock_master 테이블) |
+| 환율 조회 | Supabase (exchange_rates 테이블) |
 | 복잡한 집계/계산 | API Route |
-| 캐싱/rate limiting | API Route |
+| 대시보드 요약 | API Route |
 | 민감한 로직 | API Route |
 
 ### Supabase 직접 호출
@@ -50,17 +52,12 @@ app/api/
 │       ├── route.ts          # GET: 조회
 │       └── accept/
 │           └── route.ts      # POST: 수락
-├── stocks/
-│   ├── search/
-│   │   └── route.ts          # GET: 검색
-│   └── prices/
-│       └── route.ts          # GET/POST: 현재가
-├── exchange/
-│   └── route.ts              # GET: 환율
 └── dashboard/
     └── summary/
         └── route.ts          # GET: 요약
 ```
+
+> **Note**: 종목 검색/환율 조회는 API Route 없이 Supabase 직접 호출
 
 ### 기본 패턴
 
@@ -190,105 +187,121 @@ export class APIError extends Error {
 
 ---
 
-## 5. 외부 API 연동
+## 5. GitHub Actions 데이터 동기화
 
-### 환율 API Provider 패턴
+### 개요
 
-API 교체가 용이하도록 Provider 인터페이스로 추상화:
+Vercel 서버리스 함수의 cold start 특성상 전역 변수 캐싱이 불안정하므로, 외부 API 데이터는 GitHub Actions로 주기적으로 DB에 동기화.
 
-```typescript
-// lib/exchange/types.ts
-export interface ExchangeRateResult {
-  rate: number;
-  nextUpdateTime: number; // Unix timestamp (ms)
-}
+| 데이터 | 소스 | 동기화 주기 | 테이블 |
+|--------|------|-------------|--------|
+| 종목 마스터 | KIS 마스터파일 | 매일 08:00 KST | stock_master |
+| 환율 | ExchangeRate-API | 매일 08:00 KST | exchange_rates |
 
-export interface ExchangeRateProvider {
-  fetchRate(from: string, to: string): Promise<ExchangeRateResult>;
-}
+### 워크플로우 구조
+
+```yaml
+# .github/workflows/sync-data.yml
+name: Sync Stock & Exchange Data
+
+on:
+  schedule:
+    - cron: '0 23 * * *'  # UTC 23:00 = KST 08:00
+  workflow_dispatch:       # 수동 실행 가능
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Sync stock master
+        run: pnpm run sync:stocks
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+
+      - name: Sync exchange rates
+        run: pnpm run sync:exchange
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          EXCHANGE_API_KEY: ${{ secrets.EXCHANGE_API_KEY }}
 ```
 
-```typescript
-// lib/exchange/providers/exchangerate-api.ts
-export class ExchangeRateAPIProvider implements ExchangeRateProvider {
-  async fetchRate(from: string, to: string): Promise<ExchangeRateResult> {
-    const res = await fetch(
-      `https://v6.exchangerate-api.com/v6/${process.env.EXCHANGE_API_KEY}/pair/${from}/${to}`
-    );
-    const data = await res.json();
+### 동기화 스크립트 패턴
 
-    return {
+```typescript
+// scripts/sync-exchange.ts
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_PUBLISHABLE_KEY!
+);
+
+async function syncExchangeRates() {
+  const res = await fetch(
+    `https://v6.exchangerate-api.com/v6/${process.env.EXCHANGE_API_KEY}/pair/USD/KRW`
+  );
+  const data = await res.json();
+
+  await supabase
+    .from('exchange_rates')
+    .upsert({
+      from_currency: 'USD',
+      to_currency: 'KRW',
       rate: data.conversion_rate,
-      nextUpdateTime: data.time_next_update_unix * 1000,
-    };
+      updated_at: new Date().toISOString(),
+    });
+
+  console.log(`Exchange rate synced: 1 USD = ${data.conversion_rate} KRW`);
+}
+
+syncExchangeRates();
+```
+
+### 앱에서 조회
+
+```typescript
+// lib/api/exchange.ts
+export async function getExchangeRate(
+  supabase: SupabaseClient,
+  from: 'USD' | 'KRW',
+  to: 'USD' | 'KRW'
+): Promise<number> {
+  const { data, error } = await supabase
+    .from('exchange_rates')
+    .select('rate')
+    .eq('from_currency', from)
+    .eq('to_currency', to)
+    .single();
+
+  if (error || !data) {
+    throw new Error('Exchange rate not found');
   }
+
+  return data.rate;
 }
 ```
 
-### 캐싱 (API 응답 기반)
+### 재시도 (GitHub Actions 레벨)
 
-API가 알려주는 `time_next_update_utc` 기반으로 캐싱 (프리티어는 일 1회 갱신):
-
-```typescript
-// lib/exchange/cache.ts
-import { ExchangeRateProvider, ExchangeRateResult } from './types';
-
-let cachedRate: { value: number; nextUpdateTime: number } | null = null;
-
-export function createExchangeRateService(provider: ExchangeRateProvider) {
-  return async function getExchangeRate(from: string, to: string): Promise<number> {
-    const now = Date.now();
-
-    // 다음 업데이트 시간 전이면 캐시 반환
-    if (cachedRate && now < cachedRate.nextUpdateTime) {
-      return cachedRate.value;
-    }
-
-    const result = await provider.fetchRate(from, to);
-    cachedRate = {
-      value: result.rate,
-      nextUpdateTime: result.nextUpdateTime,
-    };
-    return cachedRate.value;
-  };
-}
-```
-
-```typescript
-// lib/exchange/index.ts
-import { ExchangeRateAPIProvider } from './providers/exchangerate-api';
-import { createExchangeRateService } from './cache';
-
-const provider = new ExchangeRateAPIProvider();
-export const getExchangeRate = createExchangeRateService(provider);
-```
-
-### 재시도 (Exponential Backoff)
-
-```typescript
-async function fetchWithRetry<T>(
-  fn: () => Promise<T>,
-  maxRetries = 3
-): Promise<T> {
-  for (let i = 0; i < maxRetries; i++) {
-    try {
-      return await fn();
-    } catch (error) {
-      if (i === maxRetries - 1) throw error;
-      await sleep(Math.pow(2, i) * 1000);
-    }
-  }
-  throw new Error('Max retries exceeded');
-}
-```
-
-### Rate Limiting 대응
-
-```typescript
-// 요청 전 체크
-if (isRateLimited()) {
-  throw new APIError('RATE_LIMIT_EXCEEDED', '잠시 후 다시 시도해주세요.', 429);
-}
+```yaml
+- name: Sync with retry
+  uses: nick-fields/retry@v2
+  with:
+    timeout_minutes: 5
+    max_attempts: 3
+    command: pnpm run sync:stocks
 ```
 
 ---

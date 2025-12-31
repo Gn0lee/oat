@@ -54,7 +54,9 @@
 | Styling | Tailwind CSS + shadcn/ui | 빠른 UI 개발, 접근성 좋은 컴포넌트 |
 | Linter/Formatter | Biome | ESLint + Prettier 대체, 빠른 속도 |
 | Infra | Vercel | Next.js 최적화 배포 |
-| Data API | Yahoo Finance API | 주가/환율 데이터 |
+| Stock Data | KIS 마스터파일 + Supabase | 로컬 DB 기반 종목 검색/종가 |
+| Exchange Rate | ExchangeRate-API + Supabase | 일 1회 동기화, DB 저장 |
+| Data Sync | GitHub Actions | 매일 08:00 KST 자동 동기화 |
 | PWA | next-pwa | 모바일 앱 경험 제공 |
 
 ## Project Structure
@@ -70,8 +72,6 @@ oat/
 │   │   ├── settings/      # 설정 (종목 설정 포함)
 │   │   └── layout.tsx
 │   ├── api/               # API Routes
-│   │   ├── stocks/        # 주가 조회
-│   │   ├── exchange/      # 환율 조회
 │   │   └── dashboard/     # 대시보드 집계
 │   ├── layout.tsx
 │   └── page.tsx
@@ -104,8 +104,8 @@ oat/
 | 거래 등록 | ⬜ TODO | 매수/매도 기록, 종목 검색 |
 | 보유 현황 | ⬜ TODO | holdings View 기반 조회 |
 | 종목 설정 | ⬜ TODO | 자산유형, 위험도 관리 |
-| 주가 조회 | ⬜ TODO | Yahoo Finance API 연동 |
-| 환율 조회 | ⬜ TODO | USD/KRW API 응답 기반 캐싱 |
+| 종목 데이터 | ⬜ TODO | KIS 마스터파일 기반 로컬 DB |
+| 환율 조회 | ⬜ TODO | ExchangeRate-API, DB 저장 |
 | 대시보드 | ⬜ TODO | 총자산, 수익률, 비중 차트 |
 | PWA 지원 | ⬜ TODO | 설치 가능한 웹앱 |
 
@@ -182,11 +182,13 @@ pnpm supabase:types
 - **transactions**: 매수/매도 거래 기록 저장
 - **holdings (View)**: transactions 기반으로 현재 보유 현황 자동 집계
 - **household_stock_settings**: 가구별 종목 설정 (자산유형, 위험도)
+- **stock_master**: 종목 마스터 (KIS 마스터파일 기반, 일 1회 동기화)
+- **exchange_rates**: 환율 정보 (일 1회 동기화)
 
 #### 거래 등록 플로우
-1. 종목 검색 (API)
+1. 종목 검색 (stock_master 테이블, 로컬 DB)
 2. household_stock_settings에 종목 없으면 자동 생성
-3. transactions에 거래 기록 INSERT
+3. transactions에 거래 기록 INSERT (유저가 입력한 매수가 사용)
 4. holdings View에서 자동으로 최신 보유 현황 반영
 
 #### 수익률 계산 (단순 수익률)
@@ -199,10 +201,9 @@ const totalReturn = ((totalCurrentValue - totalInvestedAmount) / totalInvestedAm
 ```
 
 #### 환율 처리
-- USD 자산은 원화 환산 시 캐시된 환율 적용
-- API 응답의 `time_next_update_utc` 기반 캐싱 (프리티어는 일 1회 갱신)
-- Provider 패턴으로 추상화하여 API 교체 용이하게 설계
-- 현재 Provider: ExchangeRate-API (https://www.exchangerate-api.com)
+- USD 자산은 원화 환산 시 `exchange_rates` 테이블의 환율 적용
+- GitHub Actions에서 일 1회 ExchangeRate-API 호출 → DB 저장
+- Vercel 서버리스 환경에서 메모리 캐싱 불안정하므로 DB 저장 방식 채택
 
 #### 부부 연결 플로우
 1. 사용자 A가 "파트너 초대" 버튼 클릭
@@ -221,9 +222,13 @@ const totalReturn = ((totalCurrentValue - totalInvestedAmount) / totalInvestedAm
 └── 대체투자 (Alternative)
 ```
 
-### 데이터 갱신 정책
-- **주가**: 일 1회 (장 마감 후)
-- **환율**: 일 1회 (오전 9시)
+### 데이터 갱신 정책 (GitHub Actions)
+- **종목 마스터 (stock_master)**: 일 1회 (매일 08:00 KST)
+  - KIS 마스터파일 다운로드 → 파싱 → Supabase UPSERT
+  - 국내: KOSPI, KOSDAQ (kospi_code.mst, kosdaq_code.mst)
+  - 해외: NYSE, NASDAQ, AMEX (nasmst.cod, nysmst.cod, amsmst.cod)
+- **환율 (exchange_rates)**: 일 1회 (매일 08:00 KST)
+  - ExchangeRate-API 호출 → Supabase UPSERT
 - **사용자 입력**: 실시간 반영
 
 ### 보안 고려사항
