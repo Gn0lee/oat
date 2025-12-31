@@ -4,7 +4,7 @@
 
 ## TL;DR
 
-- **Supabase** - URL, anon key, service role key 필수
+- **Supabase** - URL, publishable key, secret key 필수
 - **환율 API** - ExchangeRate-API 키 (월 1,500회 무료)
 - **주가 API** - RapidAPI Yahoo Finance 키
 - **`.env.local`** - 로컬 개발용 (`.gitignore`에 포함)
@@ -18,10 +18,15 @@
 | 변수명 | 설명 | 예시 |
 |--------|------|------|
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase 프로젝트 URL | `https://xxx.supabase.co` |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase 공개 키 (클라이언트용) | `eyJhbG...` |
-| `SUPABASE_SERVICE_ROLE_KEY` | Supabase 서비스 키 (서버 전용) | `eyJhbG...` |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Supabase 공개 키 (클라이언트용) | `sb_publishable_...` |
+| `SUPABASE_SECRET_KEY` | Supabase 비밀 키 (서버 전용) | `sb_secret_...` |
 | `EXCHANGERATE_API_KEY` | 환율 API 키 | `abc123...` |
 | `RAPIDAPI_KEY` | RapidAPI 키 (Yahoo Finance) | `xyz789...` |
+
+> **Note**: Supabase는 2025년부터 새로운 API 키 시스템으로 전환했습니다.
+> 기존 `anon`/`service_role` 키는 legacy이며, 신규 프로젝트는 `publishable`/`secret` 키를 사용합니다.
+> 자세한 내용은 [Supabase API Keys 문서](https://supabase.com/docs/guides/api/api-keys) 및
+> [마이그레이션 가이드](https://github.com/orgs/supabase/discussions/29260)를 참고하세요.
 
 ### 선택 (Optional)
 
@@ -46,8 +51,8 @@ cp .env.example .env.local
 ```env
 # Supabase
 NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_xxx
+SUPABASE_SECRET_KEY=sb_secret_xxx
 
 # APIs
 EXCHANGERATE_API_KEY=your-exchangerate-api-key
@@ -62,8 +67,8 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 Vercel 대시보드 > Settings > Environment Variables에서 설정:
 
 1. `NEXT_PUBLIC_SUPABASE_URL`
-2. `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-3. `SUPABASE_SERVICE_ROLE_KEY`
+2. `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+3. `SUPABASE_SECRET_KEY`
 4. `EXCHANGERATE_API_KEY`
 5. `RAPIDAPI_KEY`
 6. `NEXT_PUBLIC_APP_URL` (배포 도메인)
@@ -78,8 +83,10 @@ Vercel 대시보드 > Settings > Environment Variables에서 설정:
 2. 새 프로젝트 생성
 3. Settings > API에서 확인:
    - Project URL → `NEXT_PUBLIC_SUPABASE_URL`
-   - anon public → `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-   - service_role → `SUPABASE_SERVICE_ROLE_KEY`
+   - Publishable key (`sb_publishable_...`) → `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+   - Secret key (`sb_secret_...`) → `SUPABASE_SECRET_KEY`
+
+> **참고**: 기존 프로젝트는 Settings > API Keys에서 새 키 시스템으로 opt-in 가능합니다.
 
 ### ExchangeRate-API
 
@@ -101,7 +108,7 @@ Vercel 대시보드 > Settings > Environment Variables에서 설정:
 | 변수 | 공개 가능 | 설명 |
 |------|----------|------|
 | `NEXT_PUBLIC_*` | O | 클라이언트에 노출됨 |
-| `SUPABASE_SERVICE_ROLE_KEY` | **X** | RLS 우회 가능, 서버에서만 사용 |
+| `SUPABASE_SECRET_KEY` | **X** | RLS 우회 가능, 서버에서만 사용 |
 | `EXCHANGERATE_API_KEY` | **X** | API 호출 제한 관리 |
 | `RAPIDAPI_KEY` | **X** | 과금 연동됨 |
 
@@ -119,8 +126,8 @@ declare namespace NodeJS {
   interface ProcessEnv {
     // Supabase
     NEXT_PUBLIC_SUPABASE_URL: string;
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: string;
-    SUPABASE_SERVICE_ROLE_KEY: string;
+    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: string;
+    SUPABASE_SECRET_KEY: string;
 
     // APIs
     EXCHANGERATE_API_KEY: string;
@@ -143,8 +150,8 @@ declare namespace NodeJS {
 // lib/env.ts
 const requiredEnvVars = [
   'NEXT_PUBLIC_SUPABASE_URL',
-  'NEXT_PUBLIC_SUPABASE_ANON_KEY',
-  'SUPABASE_SERVICE_ROLE_KEY',
+  'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY',
+  'SUPABASE_SECRET_KEY',
   'EXCHANGERATE_API_KEY',
   'RAPIDAPI_KEY',
 ] as const;
