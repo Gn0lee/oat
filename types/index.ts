@@ -1,46 +1,56 @@
-export type { Database, Json } from "./database";
+// Supabase 자동 생성 타입
+import type {
+  Enums,
+  Database as SupabaseDatabase,
+  Json as SupabaseJson,
+  Tables,
+  TablesInsert,
+  TablesUpdate,
+} from "./supabase";
 
-// 자산 유형
-export type AssetClass = "equity" | "bond" | "cash" | "alternative";
+// 기본 타입 re-export
+export type Database = SupabaseDatabase;
+export type Json = SupabaseJson;
 
-// 거래 유형
-export type TransactionType = "buy" | "sell";
+// Supabase Enum 타입 (편의를 위해)
+export type AssetType = Enums<"asset_type">;
+export type CurrencyType = Enums<"currency_type">;
+export type MarketType = Enums<"market_type">;
+export type RiskLevel = Enums<"risk_level">;
+export type TransactionType = Enums<"transaction_type">;
+export type HouseholdRole = Enums<"household_role">;
+export type UserRole = Enums<"user_role">;
+export type AllocationCategory = Enums<"allocation_category">;
 
-// 위험도
-export type RiskLevel = "low" | "medium" | "high";
+// 테이블 Row 타입 (편의를 위해)
+export type Profile = Tables<"profiles">;
+export type Household = Tables<"households">;
+export type HouseholdMember = Tables<"household_members">;
+export type Invitation = Tables<"invitations">;
+export type Transaction = Tables<"transactions">;
+export type HouseholdStockSetting = Tables<"household_stock_settings">;
+export type StockMaster = Tables<"stock_master">;
+export type ExchangeRate = Tables<"exchange_rates">;
+export type Tag = Tables<"tags">;
+export type HoldingTag = Tables<"holding_tags">;
+export type TargetAllocation = Tables<"target_allocations">;
 
-// 통화
-export type Currency = "KRW" | "USD";
+// View 타입
+export type Holding = Tables<"holdings">;
 
-// 보유 자산 (View에서 조회)
-export interface Holding {
-  id: string;
-  memberId: string;
-  memberName: string;
-  stockSymbol: string;
-  stockName: string;
-  quantity: number;
-  avgPrice: number;
-  currency: Currency;
-  assetClass: AssetClass;
-  riskLevel: RiskLevel;
-}
+// Insert 타입 (편의를 위해)
+export type TransactionInsert = TablesInsert<"transactions">;
+export type HouseholdStockSettingInsert =
+  TablesInsert<"household_stock_settings">;
+export type TagInsert = TablesInsert<"tags">;
+export type HoldingTagInsert = TablesInsert<"holding_tags">;
 
-// 거래 내역
-export interface Transaction {
-  id: string;
-  memberId: string;
-  stockSymbol: string;
-  stockName: string;
-  type: TransactionType;
-  quantity: number;
-  price: number;
-  currency: Currency;
-  transactionDate: string;
-  createdAt: string;
-}
+// Update 타입 (편의를 위해)
+export type TransactionUpdate = TablesUpdate<"transactions">;
+export type HouseholdStockSettingUpdate =
+  TablesUpdate<"household_stock_settings">;
 
-// 대시보드 요약
+// 대시보드 요약 (프론트엔드용)
 export interface DashboardSummary {
   totalValue: number;
   totalInvested: number;
@@ -58,7 +68,7 @@ export interface MemberSummary {
 }
 
 export interface AssetClassSummary {
-  assetClass: AssetClass;
+  assetClass: AssetType;
   totalValue: number;
   percentage: number;
 }

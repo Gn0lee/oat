@@ -12,7 +12,7 @@
     "type-check": "tsc --noEmit",
     "supabase:start": "supabase start",
     "supabase:stop": "supabase stop",
-    "supabase:types": "supabase gen types typescript --local > types/database.ts",
+    "supabase:types": "supabase gen types typescript --local > types/supabase.ts",
     "prepare": "husky"
   },
   "dependencies": {
