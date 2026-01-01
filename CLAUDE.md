@@ -11,18 +11,35 @@
 
 ## 문서 구조
 
-| 문서 | 용도 | 언제 참조? |
-|------|------|-----------|
-| **CLAUDE.md** | 프로젝트 개요, 핵심 컨텍스트 | 항상 (진입점) |
-| **PRD.md** | 기능 요구사항, 사용자 플로우 | 기능 구현 시 |
-| **DATABASE.md** | Supabase 스키마, RLS 정책 | DB 작업 시 |
-| **ENV.md** | 환경변수 설정 가이드 | 환경 설정 시 |
-| **CONVENTIONS.md** | 공통 컨벤션 (코드 스타일, 네이밍) | 항상 |
-| **CONVENTIONS_FE.md** | 프론트엔드 패턴 | FE 작업 시 |
-| **CONVENTIONS_BE.md** | 백엔드/API 패턴 | BE 작업 시 |
-| **API.md** | API 설계 원칙 | API 작업 시 |
-| **DESIGN.md** | UI/UX 원칙 | 화면 구현 시 |
-| **EXAMPLES.md** | 코드 예시 모음 | 구체적 구현 참고 시 |
+모든 Claude 관련 문서는 `.claude/` 디렉토리에 위치합니다.
+
+| 문서 | 경로 | 용도 |
+|------|------|------|
+| **CLAUDE.md** | `./CLAUDE.md` | 프로젝트 개요 (진입점) |
+| **PRD.md** | `.claude/docs/` | 기능 요구사항, 사용자 플로우 |
+| **DATABASE.md** | `.claude/docs/` | Supabase 스키마, RLS 정책 |
+| **CONVENTIONS.md** | `.claude/docs/` | 공통 컨벤션 |
+| **CONVENTIONS_FE.md** | `.claude/docs/` | 프론트엔드 패턴 |
+| **CONVENTIONS_BE.md** | `.claude/docs/` | 백엔드/API 패턴 |
+| **API.md** | `.claude/docs/` | API 설계 원칙 |
+| **DESIGN.md** | `.claude/docs/` | UI/UX 원칙 |
+| **EXAMPLES.md** | `.claude/docs/` | 코드 예시 모음 |
+| **ENV.md** | `.claude/docs/` | 환경변수 설정 가이드 |
+
+### Skills (작업별 자동 활성화)
+
+| Skill | 활성화 조건 | 참조 문서 |
+|-------|------------|----------|
+| **db-work** | DB, 마이그레이션, Supabase 작업 | DATABASE.md |
+| **ui-work** | UI, 컴포넌트, 스타일링 작업 | DESIGN.md, CONVENTIONS_FE.md |
+| **api-work** | API, 백엔드 작업 | API.md, CONVENTIONS_BE.md |
+| **feature-work** | 기능 구현 작업 | PRD.md, CONVENTIONS.md |
+
+### Commands
+
+| Command | 설명 |
+|---------|------|
+| `/next-task` | GitHub 이슈 조회 → 추천 → 브랜치 생성 → 작업 시작 |
 
 ## Project Overview
 
@@ -90,7 +107,10 @@ oat/
 ├── hooks/                 # 커스텀 훅 (React Query 포함)
 ├── types/                 # TypeScript 타입 정의
 ├── constants/             # 상수 정의
-└── docs/                  # 프로젝트 문서
+└── .claude/               # Claude Code 설정
+    ├── docs/              # 참고 문서
+    ├── skills/            # 작업별 자동 활성화 가이드
+    └── commands/          # 명시적 호출 커맨드
 ```
 
 ## Key Features & Status
@@ -238,12 +258,12 @@ const totalReturn = ((totalCurrentValue - totalInvestedAmount) / totalInvestedAm
 
 ## Related Documents
 
-- `docs/PRD.md` - 기능 요구사항, 사용자 플로우
-- `docs/DATABASE.md` - Supabase 스키마, RLS 정책
-- `docs/ENV.md` - 환경변수 설정 가이드
-- `docs/CONVENTIONS.md` - 공통 컨벤션
-- `docs/CONVENTIONS_FE.md` - 프론트엔드 패턴
-- `docs/CONVENTIONS_BE.md` - 백엔드/API 패턴
-- `docs/API.md` - API 설계 원칙
-- `docs/DESIGN.md` - UI/UX 원칙
-- `docs/EXAMPLES.md` - 코드 예시 모음
+- `.claude/docs/PRD.md` - 기능 요구사항, 사용자 플로우
+- `.claude/docs/DATABASE.md` - Supabase 스키마, RLS 정책
+- `.claude/docs/ENV.md` - 환경변수 설정 가이드
+- `.claude/docs/CONVENTIONS.md` - 공통 컨벤션
+- `.claude/docs/CONVENTIONS_FE.md` - 프론트엔드 패턴
+- `.claude/docs/CONVENTIONS_BE.md` - 백엔드/API 패턴
+- `.claude/docs/API.md` - API 설계 원칙
+- `.claude/docs/DESIGN.md` - UI/UX 원칙
+- `.claude/docs/EXAMPLES.md` - 코드 예시 모음
