@@ -476,6 +476,10 @@ export type Database = {
       };
     };
     Functions: {
+      get_user_household_ids: { Args: never; Returns: string[] };
+      is_admin: { Args: never; Returns: boolean };
+      is_household_member: { Args: { hh_id: string }; Returns: boolean };
+      is_household_owner: { Args: { hh_id: string }; Returns: boolean };
       show_limit: { Args: never; Returns: number };
       show_trgm: { Args: { "": string }; Returns: string[] };
     };
