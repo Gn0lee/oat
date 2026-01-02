@@ -14,6 +14,7 @@
     "supabase:stop": "supabase stop",
     "supabase:types": "supabase gen types typescript --local > types/supabase.ts",
     "sync:stocks": "tsx scripts/sync-stock-master.ts",
+    "sync:exchange-rates": "tsx scripts/sync-exchange-rates.ts",
     "prepare": "husky"
   },
   "dependencies": {
