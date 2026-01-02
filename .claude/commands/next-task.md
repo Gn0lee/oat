@@ -7,7 +7,7 @@ allowed-tools: Bash(gh:*), Bash(git:*)
 
 ## 1단계: 현재 열린 이슈 목록 조회
 
-!`gh issue list --state open --limit 10`
+!`gh issue list --state open`
 
 ## 2단계: 이슈 분석 및 추천
 
