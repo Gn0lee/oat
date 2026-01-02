@@ -272,7 +272,6 @@ export type Database = {
       };
       stock_master: {
         Row: {
-          base_price: number | null;
           choseong: string | null;
           code: string;
           exchange: string | null;
@@ -287,7 +286,6 @@ export type Database = {
           synced_at: string | null;
         };
         Insert: {
-          base_price?: number | null;
           choseong?: string | null;
           code: string;
           exchange?: string | null;
@@ -302,7 +300,6 @@ export type Database = {
           synced_at?: string | null;
         };
         Update: {
-          base_price?: number | null;
           choseong?: string | null;
           code?: string;
           exchange?: string | null;
@@ -315,6 +312,30 @@ export type Database = {
           name_en?: string | null;
           sector?: string | null;
           synced_at?: string | null;
+        };
+        Relationships: [];
+      };
+      stock_prices: {
+        Row: {
+          change_rate: number | null;
+          code: string;
+          fetched_at: string;
+          market: Database["public"]["Enums"]["market_type"];
+          price: number;
+        };
+        Insert: {
+          change_rate?: number | null;
+          code: string;
+          fetched_at: string;
+          market: Database["public"]["Enums"]["market_type"];
+          price: number;
+        };
+        Update: {
+          change_rate?: number | null;
+          code?: string;
+          fetched_at?: string;
+          market?: Database["public"]["Enums"]["market_type"];
+          price?: number;
         };
         Relationships: [];
       };
