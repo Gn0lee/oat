@@ -7,7 +7,8 @@
 - **transactions 테이블** - 모든 매수/매도 기록 저장
 - **holdings View** - transactions 기반 현재 보유량 자동 집계
 - **household_stock_settings** - 가구별 종목 설정 (자산유형, 위험도)
-- **stock_master** - 종목 마스터 (KIS 마스터파일 기반, 일 1회 동기화)
+- **stock_master** - 종목 기본 정보 (KIS 마스터파일 기반, 일 1회 동기화)
+- **stock_prices** - 주식 가격 캐시 (KIS API 조회, 1시간 버킷 캐싱)
 - **exchange_rates** - 환율 정보 (일 1회 동기화)
 - **RLS 필수** - 모든 테이블에 Row Level Security, 가구 단위 데이터 격리
 - **profiles.role** - user/admin 구분 (Admin UI는 MVP 이후)
@@ -411,7 +412,9 @@ create index target_allocations_household_id_idx on public.target_allocations(ho
 
 ### 11. stock_master (종목 마스터)
 
-KIS 마스터파일 기반 종목 정보. 매일 08:00 KST에 GitHub Actions로 동기화.
+KIS 마스터파일 기반 종목 기본 정보. 매일 08:00 KST에 GitHub Actions로 동기화.
+
+> ⚠️ 가격 정보는 마스터파일에 포함되지 않음. 가격은 `stock_prices` 테이블에서 관리.
 
 ```sql
 -- pg_trgm 확장 (유사도 검색용)
@@ -424,7 +427,7 @@ create table public.stock_master (
   code text not null,                      -- 종목코드 (005930, AAPL)
   name text not null,                      -- 종목명 (한글)
   name_en text,                            -- 종목명 (영문, US용)
-  choseong text,                           -- 초성 (ㅅㅅㅈㅈ, KR만)
+  choseong text,                           -- 초성 (한글명이 있는 경우)
 
   -- 시장 정보
   market market_type not null,             -- KR, US
@@ -433,9 +436,6 @@ create table public.stock_master (
   -- 분류 정보 (KR)
   sector text,                             -- 업종 대분류
   market_cap_size text,                    -- 대형/중형/소형
-
-  -- 시세 정보 (일 1회 동기화)
-  base_price numeric(18, 4),               -- 기준가 (전일 종가)
 
   -- 거래 상태
   is_active boolean default true,          -- 상장 여부
@@ -465,12 +465,11 @@ create index stock_master_name_en_idx on public.stock_master
 | code | text | 종목코드 (005930, AAPL) |
 | name | text | 종목명 (한글) |
 | name_en | text (nullable) | 종목명 (영문, US용) |
-| choseong | text (nullable) | 초성 (KR만, ㅅㅅㅈㅈ) |
+| choseong | text (nullable) | 초성 (한글명이 있는 경우) |
 | market | enum | 시장 구분 (KR, US) |
 | exchange | text | 거래소 (KOSPI, NASDAQ 등) |
 | sector | text (nullable) | 업종 대분류 |
 | market_cap_size | text (nullable) | 시가총액 규모 |
-| base_price | numeric | 기준가 (전일 종가) |
 | is_active | boolean | 상장 여부 |
 | is_suspended | boolean | 거래정지 여부 |
 | synced_at | timestamptz | 마지막 동기화 시각 |
@@ -508,6 +507,55 @@ create table public.exchange_rates (
 -- USD → KRW 환율 조회
 select rate from exchange_rates
 where from_currency = 'USD' and to_currency = 'KRW';
+```
+
+---
+
+### 13. stock_prices (주식 가격 캐시)
+
+KIS API 조회 결과를 캐싱. 1시간 버킷 단위로 캐시 유효성 판단.
+
+> ⚠️ RLS 미적용. 서버 컴포넌트/Server Action에서만 접근.
+
+```sql
+create table public.stock_prices (
+  market market_type not null,           -- KR, US
+  code text not null,                    -- 종목코드
+  price numeric(18, 4) not null,         -- 현재가
+  change_rate numeric(8, 4),             -- 등락률 (%)
+  fetched_at timestamptz not null,       -- 조회 시각
+
+  primary key (market, code)
+);
+
+-- 인덱스
+create index stock_prices_fetched_at_idx on public.stock_prices(fetched_at);
+```
+
+| 컬럼 | 타입 | 설명 |
+|------|------|------|
+| market | enum (PK) | 시장 구분 (KR, US) |
+| code | text (PK) | 종목코드 |
+| price | numeric | 현재가 |
+| change_rate | numeric (nullable) | 등락률 (%) |
+| fetched_at | timestamptz | KIS API 조회 시각 |
+
+**캐싱 정책**
+- 1시간 버킷 단위 (정각 기준)
+- 같은 시간대 요청은 캐시 반환
+- 캐시 만료 시 KIS API 호출 후 upsert
+
+**사용 예시**
+```typescript
+// lib/services/stock-price.ts
+const currentBucket = Math.floor(Date.now() / (60 * 60 * 1000));
+const cacheBucket = Math.floor(fetchedAt.getTime() / (60 * 60 * 1000));
+
+if (currentBucket === cacheBucket) {
+  // 캐시 유효 → 바로 반환
+} else {
+  // 캐시 만료 → KIS API 호출
+}
 ```
 
 ---
