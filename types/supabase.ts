@@ -279,10 +279,13 @@ export type Database = {
           is_active: boolean | null;
           is_suspended: boolean | null;
           market: Database["public"]["Enums"]["market_type"];
-          market_cap_size: string | null;
           name: string;
           name_en: string | null;
-          sector: string | null;
+          stock_type_category:
+            | Database["public"]["Enums"]["stock_type_category"]
+            | null;
+          stock_type_code: string | null;
+          stock_type_name: string | null;
           synced_at: string | null;
         };
         Insert: {
@@ -293,10 +296,13 @@ export type Database = {
           is_active?: boolean | null;
           is_suspended?: boolean | null;
           market: Database["public"]["Enums"]["market_type"];
-          market_cap_size?: string | null;
           name: string;
           name_en?: string | null;
-          sector?: string | null;
+          stock_type_category?:
+            | Database["public"]["Enums"]["stock_type_category"]
+            | null;
+          stock_type_code?: string | null;
+          stock_type_name?: string | null;
           synced_at?: string | null;
         };
         Update: {
@@ -307,10 +313,13 @@ export type Database = {
           is_active?: boolean | null;
           is_suspended?: boolean | null;
           market?: Database["public"]["Enums"]["market_type"];
-          market_cap_size?: string | null;
           name?: string;
           name_en?: string | null;
-          sector?: string | null;
+          stock_type_category?:
+            | Database["public"]["Enums"]["stock_type_category"]
+            | null;
+          stock_type_code?: string | null;
+          stock_type_name?: string | null;
           synced_at?: string | null;
         };
         Relationships: [];
@@ -525,6 +534,14 @@ export type Database = {
       household_role: "owner" | "member";
       market_type: "KR" | "US" | "OTHER";
       risk_level: "safe" | "moderate" | "aggressive";
+      stock_type_category:
+        | "stock"
+        | "etf"
+        | "etn"
+        | "fund"
+        | "reit"
+        | "warrant"
+        | "index";
       transaction_type: "buy" | "sell";
       user_role: "user" | "admin";
     };
@@ -682,6 +699,15 @@ export const Constants = {
       household_role: ["owner", "member"],
       market_type: ["KR", "US", "OTHER"],
       risk_level: ["safe", "moderate", "aggressive"],
+      stock_type_category: [
+        "stock",
+        "etf",
+        "etn",
+        "fund",
+        "reit",
+        "warrant",
+        "index",
+      ],
       transaction_type: ["buy", "sell"],
       user_role: ["user", "admin"],
     },

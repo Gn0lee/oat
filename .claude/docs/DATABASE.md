@@ -78,6 +78,17 @@ create type currency_type as enum ('KRW', 'USD');
 -- 위험도
 create type risk_level as enum ('safe', 'moderate', 'aggressive');
 
+-- 종목유형 카테고리
+create type stock_type_category as enum (
+  'stock',    -- 주식
+  'etf',      -- ETF
+  'etn',      -- ETN
+  'fund',     -- 펀드/수익증권
+  'reit',     -- 리츠
+  'warrant',  -- 워런트
+  'index'     -- 지수
+);
+
 -- 거래 유형
 create type transaction_type as enum ('buy', 'sell');
 
@@ -433,9 +444,10 @@ create table public.stock_master (
   market market_type not null,             -- KR, US
   exchange text,                           -- KOSPI, KOSDAQ, NYSE, NASDAQ, AMEX
 
-  -- 분류 정보 (KR)
-  sector text,                             -- 업종 대분류
-  market_cap_size text,                    -- 대형/중형/소형
+  -- 종목유형 분류
+  stock_type_code text,                    -- 원본 코드 (KR: ST,EF / US: 2,3)
+  stock_type_name text,                    -- 한글명 (주권, ETF)
+  stock_type_category stock_type_category, -- 통합 카테고리 (enum)
 
   -- 거래 상태
   is_active boolean default true,          -- 상장 여부
@@ -457,6 +469,7 @@ create index stock_master_name_idx on public.stock_master
   using gin(name gin_trgm_ops);
 create index stock_master_name_en_idx on public.stock_master
   using gin(name_en gin_trgm_ops);
+create index stock_master_stock_type_category_idx on public.stock_master(stock_type_category);
 ```
 
 | 컬럼 | 타입 | 설명 |
@@ -468,11 +481,31 @@ create index stock_master_name_en_idx on public.stock_master
 | choseong | text (nullable) | 초성 (한글명이 있는 경우) |
 | market | enum | 시장 구분 (KR, US) |
 | exchange | text | 거래소 (KOSPI, NASDAQ 등) |
-| sector | text (nullable) | 업종 대분류 |
-| market_cap_size | text (nullable) | 시가총액 규모 |
+| stock_type_code | text (nullable) | 종목유형 원본 코드 |
+| stock_type_name | text (nullable) | 종목유형 한글명 |
+| stock_type_category | enum (nullable) | 통합 카테고리 |
 | is_active | boolean | 상장 여부 |
 | is_suspended | boolean | 거래정지 여부 |
 | synced_at | timestamptz | 마지막 동기화 시각 |
+
+**종목유형 카테고리**
+
+`stock_type_category`로 국내/해외 종목 통합 필터링:
+
+| category | 설명 | KR 코드 | US 코드 |
+|----------|------|---------|---------|
+| stock | 주식 | ST, DR, FS | 2 |
+| etf | ETF | EF, FE | 3 |
+| etn | ETN | EN | - |
+| fund | 펀드 | MF, SC, IF, PF, BC | - |
+| reit | 리츠 | RT | - |
+| warrant | 워런트 | SW, SR, EW | 4 |
+| index | 지수 | - | 1 |
+
+```sql
+-- 국내/해외 ETF 통합 조회
+select * from stock_master where stock_type_category = 'etf';
+```
 
 **데이터 소스**
 - 국내 (KR): `kospi_code.mst`, `kosdaq_code.mst`
