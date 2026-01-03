@@ -1,4 +1,5 @@
 import { LogoutButton } from "@/components/auth/LogoutButton";
+import { InvitationCode } from "@/components/household/InvitationCode";
 import { getUser } from "@/lib/supabase/auth";
 
 export default async function DashboardPage() {
@@ -16,6 +17,8 @@ export default async function DashboardPage() {
           <p className="text-gray-500 text-sm">로그인된 사용자</p>
           <p className="text-lg font-medium text-gray-900">{user?.email}</p>
         </div>
+
+        <InvitationCode />
 
         <p className="text-center text-gray-400 text-sm">
           대시보드는 추후 구현 예정입니다
