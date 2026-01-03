@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 import type { Database } from "@/types";
 
-const AUTH_ROUTES = ["/login", "/signup", "/reset-password"];
+const AUTH_ROUTES = ["/login", "/signup", "/reset-password", "/auth/callback"];
 const PUBLIC_ROUTES = ["/"];
 
 // TODO: 인증 후 첫 진입 라우트 - 추후 결정 필요 (대시보드 또는 다른 페이지)

@@ -28,13 +28,19 @@ export async function requireUser(): Promise<User> {
 /**
  * 회원가입 (서버 액션용)
  */
-export async function signUp(email: string, password: string, name: string) {
+export async function signUp(
+  email: string,
+  password: string,
+  name: string,
+  redirectTo?: string,
+) {
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
       data: { name },
+      emailRedirectTo: redirectTo,
     },
   });
 
