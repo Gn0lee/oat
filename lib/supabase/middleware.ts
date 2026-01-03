@@ -2,6 +2,13 @@ import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 import type { Database } from "@/types";
 
+const AUTH_ROUTES = ["/login", "/signup", "/reset-password"];
+const PUBLIC_ROUTES = ["/"];
+
+// TODO: 인증 후 첫 진입 라우트 - 추후 결정 필요 (대시보드 또는 다른 페이지)
+const DEFAULT_AUTH_REDIRECT = "/dashboard";
+const DEFAULT_UNAUTH_REDIRECT = "/login";
+
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
@@ -30,7 +37,35 @@ export async function updateSession(request: NextRequest) {
     },
   );
 
-  await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { pathname } = request.nextUrl;
+
+  const isAuthRoute = AUTH_ROUTES.some((route) => pathname.startsWith(route));
+  const isPublicRoute = PUBLIC_ROUTES.includes(pathname);
+  const isApiRoute = pathname.startsWith("/api");
+
+  // API 라우트는 미들웨어에서 리다이렉트하지 않음 (각 API에서 처리)
+  if (isApiRoute) {
+    return supabaseResponse;
+  }
+
+  // 인증된 사용자가 auth 라우트 접근 시 첫 진입 라우트로 리다이렉트
+  if (user && isAuthRoute) {
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = DEFAULT_AUTH_REDIRECT;
+    return NextResponse.redirect(redirectUrl);
+  }
+
+  // 비인증 사용자가 보호된 라우트 접근 시 로그인 페이지로 리다이렉트
+  if (!user && !isAuthRoute && !isPublicRoute) {
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = DEFAULT_UNAUTH_REDIRECT;
+    redirectUrl.searchParams.set("redirect", pathname);
+    return NextResponse.redirect(redirectUrl);
+  }
 
   return supabaseResponse;
 }
