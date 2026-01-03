@@ -26,9 +26,19 @@ async function fetchInvitation(): Promise<Invitation | null> {
   return (json as InvitationResponse).data;
 }
 
-async function createInvitation(): Promise<Invitation> {
+interface CreateInvitationOptions {
+  regenerate?: boolean;
+}
+
+async function createInvitation(
+  options?: CreateInvitationOptions,
+): Promise<Invitation> {
   const response = await fetch("/api/invitations", {
     method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ regenerate: options?.regenerate ?? false }),
   });
   const json = await response.json();
 
@@ -52,9 +62,43 @@ export function useCreateInvitation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: createInvitation,
+    mutationFn: (options?: CreateInvitationOptions) =>
+      createInvitation(options),
     onSuccess: (data) => {
       queryClient.setQueryData(["invitation"], data);
+    },
+  });
+}
+
+interface AcceptInvitationResponse {
+  data: { householdId: string };
+}
+
+async function acceptInvitation(
+  code: string,
+): Promise<{ householdId: string }> {
+  const normalizedCode = code.toUpperCase().replace(/-/g, "");
+  const response = await fetch(`/api/invitations/${normalizedCode}/accept`, {
+    method: "POST",
+  });
+  const json = await response.json();
+
+  if (!response.ok) {
+    const error = json as InvitationError;
+    throw new Error(error.error.message);
+  }
+
+  return (json as AcceptInvitationResponse).data;
+}
+
+export function useAcceptInvitation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: acceptInvitation,
+    onSuccess: () => {
+      // 초대 관련 캐시 무효화
+      queryClient.invalidateQueries({ queryKey: ["invitation"] });
     },
   });
 }

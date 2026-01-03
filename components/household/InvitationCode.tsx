@@ -18,8 +18,8 @@ export function InvitationCode() {
   const { data: invitation, isLoading, error } = useInvitation();
   const createMutation = useCreateInvitation();
 
-  const handleCreateCode = () => {
-    createMutation.mutate();
+  const handleCreateCode = (regenerate = false) => {
+    createMutation.mutate({ regenerate });
   };
 
   const handleCopyCode = async () => {
@@ -103,7 +103,7 @@ export function InvitationCode() {
             <Button
               variant="outline"
               className="w-full"
-              onClick={handleCreateCode}
+              onClick={() => handleCreateCode(true)}
               disabled={createMutation.isPending}
             >
               {createMutation.isPending ? (
@@ -121,7 +121,7 @@ export function InvitationCode() {
             </p>
             <Button
               className="w-full"
-              onClick={handleCreateCode}
+              onClick={() => handleCreateCode(false)}
               disabled={createMutation.isPending}
             >
               {createMutation.isPending ? (
