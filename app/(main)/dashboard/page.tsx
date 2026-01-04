@@ -1,4 +1,5 @@
 import { LogoutButton } from "@/components/auth/LogoutButton";
+import { AcceptInvitation } from "@/components/household/AcceptInvitation";
 import { InvitationCode } from "@/components/household/InvitationCode";
 import { getUser } from "@/lib/supabase/auth";
 
@@ -18,7 +19,10 @@ export default async function DashboardPage() {
           <p className="text-lg font-medium text-gray-900">{user?.email}</p>
         </div>
 
-        <InvitationCode />
+        <div className="grid gap-6 md:grid-cols-2">
+          <InvitationCode />
+          <AcceptInvitation />
+        </div>
 
         <p className="text-center text-gray-400 text-sm">
           대시보드는 추후 구현 예정입니다

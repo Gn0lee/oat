@@ -840,6 +840,42 @@ create policy "Users can manage household targets"
 시세 조회     → stock_master.base_price (전일 종가)
 ```
 
+### 초대 수락 플로우
+
+**정책**: 1인 1가구 원칙. 단독 가구일 때만 초대 수락 가능.
+
+```
+1. 초대 코드 유효성 검증
+   ├── 코드 존재 여부
+   ├── 만료 여부 (24시간)
+   └── 사용 여부 (used_by 확인)
+      ↓
+2. 사용자 가구 상태 확인
+   ├── 다른 구성원이 있는 가구 → 에러 반환 (이미 가구에 소속됨)
+   └── 단독 가구 (본인만 있음) → 3단계로 진행
+      ↓
+3. 데이터 마이그레이션 (단독 가구인 경우)
+   ├── transactions.household_id → 새 가구 ID로 업데이트
+   └── household_stock_settings → 새 가구로 이동 (UPSERT)
+      ↓
+4. 가구 이동 처리
+   ├── 기존 household_members에서 삭제
+   ├── 기존 households 삭제 (단독 가구였으므로)
+   └── 새 household_members에 member 역할로 추가
+      ↓
+5. 초대 코드 사용 처리
+   └── invitations.used_by, used_at 업데이트
+```
+
+**에러 케이스**
+| 상황 | 에러 코드 | 메시지 |
+|------|----------|--------|
+| 코드 없음 | INVITATION_NOT_FOUND | 유효하지 않은 초대 코드입니다 |
+| 만료됨 | INVITATION_EXPIRED | 만료된 초대 코드입니다 |
+| 이미 사용됨 | INVITATION_ALREADY_USED | 이미 사용된 초대 코드입니다 |
+| 같은 가구 | INVITATION_SAME_HOUSEHOLD | 이미 해당 가구의 구성원입니다 |
+| 가구 소속 | HOUSEHOLD_HAS_MEMBERS | 이미 다른 가구에 소속되어 있습니다 |
+
 ### 시스템 데이터 동기화 (GitHub Actions)
 
 ```

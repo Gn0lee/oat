@@ -10,10 +10,20 @@ import { createClient } from "@/lib/supabase/server";
 /**
  * POST /api/invitations
  * 초대 코드 생성
+ * body.regenerate가 true이면 기존 코드 삭제 후 새로 생성
  */
-export async function POST() {
+export async function POST(request: Request) {
   try {
     const supabase = await createClient();
+
+    // body 파싱 (optional)
+    let regenerate = false;
+    try {
+      const body = await request.json();
+      regenerate = body?.regenerate === true;
+    } catch {
+      // body가 없는 경우 무시
+    }
 
     // 인증 확인
     const {
@@ -40,8 +50,16 @@ export async function POST() {
     const existingInvitation = await getActiveInvitation(supabase, householdId);
 
     if (existingInvitation) {
-      // 기존 활성 코드가 있으면 반환
-      return NextResponse.json({ data: existingInvitation });
+      if (regenerate) {
+        // 기존 코드 삭제
+        await supabase
+          .from("invitations")
+          .delete()
+          .eq("id", existingInvitation.id);
+      } else {
+        // 기존 활성 코드가 있으면 반환
+        return NextResponse.json({ data: existingInvitation });
+      }
     }
 
     // 새 초대 코드 생성
