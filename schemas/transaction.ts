@@ -1,0 +1,36 @@
+import { z } from "zod";
+
+/**
+ * 거래 생성 요청 스키마
+ */
+export const createTransactionSchema = z.object({
+  ticker: z.string().min(1, "종목 코드는 필수입니다."),
+  type: z.enum(["buy", "sell"], {
+    message: "거래 유형은 buy 또는 sell이어야 합니다.",
+  }),
+  quantity: z
+    .number()
+    .positive("수량은 0보다 커야 합니다.")
+    .max(999999999, "수량이 너무 큽니다."),
+  price: z
+    .number()
+    .min(0, "가격은 0 이상이어야 합니다.")
+    .max(999999999999, "가격이 너무 큽니다."),
+  transactedAt: z
+    .string()
+    .datetime({ message: "유효한 날짜 형식이 아닙니다." }),
+  memo: z.string().max(500, "메모는 500자 이내여야 합니다.").optional(),
+
+  // 종목 정보 (첫 거래 시 household_stock_settings 생성용)
+  stock: z.object({
+    name: z.string().min(1, "종목명은 필수입니다."),
+    market: z.enum(["KR", "US", "OTHER"]),
+    currency: z.enum(["KRW", "USD"]),
+    assetType: z
+      .enum(["equity", "bond", "cash", "commodity", "crypto", "alternative"])
+      .optional()
+      .default("equity"),
+  }),
+});
+
+export type CreateTransactionInput = z.infer<typeof createTransactionSchema>;
