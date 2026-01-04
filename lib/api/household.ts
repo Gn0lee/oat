@@ -85,3 +85,43 @@ export async function getHouseholdWithMembers(
     })),
   };
 }
+
+/**
+ * 가구 이름 수정 (owner만 가능)
+ */
+export async function updateHouseholdName(
+  supabase: SupabaseClient<Database>,
+  householdId: string,
+  userId: string,
+  newName: string,
+): Promise<{ id: string; name: string }> {
+  // 1. 사용자가 해당 가구의 owner인지 확인
+  const { data: membership, error: membershipError } = await supabase
+    .from("household_members")
+    .select("role")
+    .eq("household_id", householdId)
+    .eq("user_id", userId)
+    .single();
+
+  if (membershipError || !membership) {
+    throw new Error("가구 구성원이 아닙니다.");
+  }
+
+  if (membership.role !== "owner") {
+    throw new Error("가구 이름 변경 권한이 없습니다.");
+  }
+
+  // 2. 가구 이름 업데이트
+  const { data: updated, error: updateError } = await supabase
+    .from("households")
+    .update({ name: newName })
+    .eq("id", householdId)
+    .select("id, name")
+    .single();
+
+  if (updateError || !updated) {
+    throw new Error("가구 이름 변경에 실패했습니다.");
+  }
+
+  return updated;
+}
