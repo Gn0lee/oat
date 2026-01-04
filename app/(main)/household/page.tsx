@@ -1,6 +1,7 @@
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { AcceptInvitation } from "@/components/household/AcceptInvitation";
+import { HouseholdSettings } from "@/components/household/HouseholdSettings";
 import { InvitationCode } from "@/components/household/InvitationCode";
 import { MemberList } from "@/components/household/MemberList";
 import { Button } from "@/components/ui/button";
@@ -31,19 +32,34 @@ export default async function HouseholdPage() {
         </div>
 
         {household ? (
-          household.members.length === 1 ? (
-            <>
-              {/* 단독 가구: 초대 수락을 먼저 보여줌 */}
-              <AcceptInvitation />
-              <InvitationCode />
-            </>
-          ) : (
-            <>
-              {/* 다중 가구: 구성원 목록 + 초대 코드 생성 */}
-              <MemberList members={household.members} currentUserId={user.id} />
-              <InvitationCode />
-            </>
-          )
+          <>
+            {/* 가구 설정 */}
+            <HouseholdSettings
+              householdId={household.id}
+              householdName={household.name}
+              isOwner={
+                household.members.find((m) => m.userId === user.id)?.role ===
+                "owner"
+              }
+            />
+
+            {household.members.length === 1 ? (
+              <>
+                {/* 단독 가구: 초대 수락을 먼저 보여줌 */}
+                <AcceptInvitation />
+                <InvitationCode />
+              </>
+            ) : (
+              <>
+                {/* 다중 가구: 구성원 목록 + 초대 코드 생성 */}
+                <MemberList
+                  members={household.members}
+                  currentUserId={user.id}
+                />
+                <InvitationCode />
+              </>
+            )}
+          </>
         ) : (
           <div className="text-center py-12">
             <p className="text-gray-500">가구 정보를 찾을 수 없습니다.</p>
