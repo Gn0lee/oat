@@ -1,6 +1,7 @@
+import { Users } from "lucide-react";
+import Link from "next/link";
 import { LogoutButton } from "@/components/auth/LogoutButton";
-import { AcceptInvitation } from "@/components/household/AcceptInvitation";
-import { InvitationCode } from "@/components/household/InvitationCode";
+import { Button } from "@/components/ui/button";
 import { getUser } from "@/lib/supabase/auth";
 
 export default async function DashboardPage() {
@@ -19,9 +20,21 @@ export default async function DashboardPage() {
           <p className="text-lg font-medium text-gray-900">{user?.email}</p>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2">
-          <InvitationCode />
-          <AcceptInvitation />
+        <div className="bg-white rounded-2xl shadow-sm p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center size-10 bg-primary/10 rounded-full">
+                <Users className="size-5 text-primary" />
+              </div>
+              <div>
+                <p className="font-medium text-gray-900">가구 관리</p>
+                <p className="text-sm text-gray-500">구성원 관리 및 초대</p>
+              </div>
+            </div>
+            <Button asChild>
+              <Link href="/household">관리하기</Link>
+            </Button>
+          </div>
         </div>
 
         <p className="text-center text-gray-400 text-sm">
