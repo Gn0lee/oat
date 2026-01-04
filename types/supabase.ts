@@ -510,6 +510,36 @@ export type Database = {
       is_admin: { Args: never; Returns: boolean };
       is_household_member: { Args: { hh_id: string }; Returns: boolean };
       is_household_owner: { Args: { hh_id: string }; Returns: boolean };
+      search_stocks: {
+        Args: {
+          market_filter?: Database["public"]["Enums"]["market_type"];
+          result_limit?: number;
+          search_query: string;
+        };
+        Returns: {
+          choseong: string | null;
+          code: string;
+          exchange: string | null;
+          id: string;
+          is_active: boolean | null;
+          is_suspended: boolean | null;
+          market: Database["public"]["Enums"]["market_type"];
+          name: string;
+          name_en: string | null;
+          stock_type_category:
+            | Database["public"]["Enums"]["stock_type_category"]
+            | null;
+          stock_type_code: string | null;
+          stock_type_name: string | null;
+          synced_at: string | null;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "stock_master";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
       show_limit: { Args: never; Returns: number };
       show_trgm: { Args: { "": string }; Returns: string[] };
     };
