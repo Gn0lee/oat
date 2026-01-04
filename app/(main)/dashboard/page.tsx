@@ -1,4 +1,4 @@
-import { Users } from "lucide-react";
+import { PlusCircle, Users } from "lucide-react";
 import Link from "next/link";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,23 @@ export default async function DashboardPage() {
         <div className="bg-white rounded-2xl shadow-sm p-6">
           <p className="text-gray-500 text-sm">로그인된 사용자</p>
           <p className="text-lg font-medium text-gray-900">{user?.email}</p>
+        </div>
+
+        <div className="bg-white rounded-2xl shadow-sm p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center size-10 bg-primary/10 rounded-full">
+                <PlusCircle className="size-5 text-primary" />
+              </div>
+              <div>
+                <p className="font-medium text-gray-900">거래 등록</p>
+                <p className="text-sm text-gray-500">매수/매도 기록 추가</p>
+              </div>
+            </div>
+            <Button asChild>
+              <Link href="/transactions">등록하기</Link>
+            </Button>
+          </div>
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm p-6">
