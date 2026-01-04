@@ -274,7 +274,7 @@ export type Database = {
         Row: {
           choseong: string | null;
           code: string;
-          exchange: string | null;
+          exchange: Database["public"]["Enums"]["exchange_type"];
           id: string;
           is_active: boolean | null;
           is_suspended: boolean | null;
@@ -291,7 +291,7 @@ export type Database = {
         Insert: {
           choseong?: string | null;
           code: string;
-          exchange?: string | null;
+          exchange: Database["public"]["Enums"]["exchange_type"];
           id?: string;
           is_active?: boolean | null;
           is_suspended?: boolean | null;
@@ -308,7 +308,7 @@ export type Database = {
         Update: {
           choseong?: string | null;
           code?: string;
-          exchange?: string | null;
+          exchange?: Database["public"]["Enums"]["exchange_type"];
           id?: string;
           is_active?: boolean | null;
           is_suspended?: boolean | null;
@@ -519,7 +519,7 @@ export type Database = {
         Returns: {
           choseong: string | null;
           code: string;
-          exchange: string | null;
+          exchange: Database["public"]["Enums"]["exchange_type"];
           id: string;
           is_active: boolean | null;
           is_suspended: boolean | null;
@@ -561,6 +561,7 @@ export type Database = {
         | "crypto"
         | "alternative";
       currency_type: "KRW" | "USD";
+      exchange_type: "KOSPI" | "KOSDAQ" | "NYSE" | "NASDAQ" | "AMEX";
       household_role: "owner" | "member";
       market_type: "KR" | "US" | "OTHER";
       risk_level: "safe" | "moderate" | "aggressive";
@@ -726,6 +727,7 @@ export const Constants = {
         "alternative",
       ],
       currency_type: ["KRW", "USD"],
+      exchange_type: ["KOSPI", "KOSDAQ", "NYSE", "NASDAQ", "AMEX"],
       household_role: ["owner", "member"],
       market_type: ["KR", "US", "OTHER"],
       risk_level: ["safe", "moderate", "aggressive"],

@@ -1,7 +1,7 @@
 import { getChoseong } from "es-hangul";
 import iconv from "iconv-lite";
 import { US_STOCK_TYPE_MAPPINGS } from "./mappings";
-import type { ParsedStock } from "./types";
+import type { ExchangeType, ParsedStock } from "./types";
 
 /**
  * 해외 주식 마스터파일 파싱
@@ -12,7 +12,7 @@ import type { ParsedStock } from "./types";
  */
 export function parseOverseasFile(
   buffer: Buffer,
-  exchange: string,
+  exchange: ExchangeType,
 ): ParsedStock[] {
   const content = iconv.decode(buffer, "cp949");
   const lines = content.split("\n").filter((line) => line.trim());
