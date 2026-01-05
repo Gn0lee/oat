@@ -1,4 +1,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import {
+  calculateRange,
+  createPaginatedResult,
+  type PaginatedResult,
+  type PaginationOptions,
+  type SortOptions,
+} from "@/lib/utils/query";
 import type {
   AssetType,
   CurrencyType,
@@ -113,6 +120,170 @@ export async function createTransaction(
   }
 
   return data;
+}
+
+/**
+ * 거래 내역 조회 필터
+ */
+export interface TransactionFilters {
+  type?: TransactionType;
+  ownerId?: string;
+  ticker?: string;
+}
+
+/**
+ * 거래 내역 정렬 필드
+ */
+export type TransactionSortField =
+  | "transacted_at"
+  | "ticker"
+  | "quantity"
+  | "price";
+
+/**
+ * 거래 내역 with 관련 정보
+ */
+export interface TransactionWithDetails {
+  id: string;
+  ticker: string;
+  stockName: string;
+  type: TransactionType;
+  quantity: number;
+  price: number;
+  totalAmount: number;
+  currency: CurrencyType;
+  transactedAt: string;
+  memo: string | null;
+  owner: {
+    id: string;
+    name: string;
+  };
+}
+
+/**
+ * 거래 내역 조회 옵션
+ */
+export interface GetTransactionsOptions {
+  filters?: TransactionFilters;
+  sort?: SortOptions<TransactionSortField>;
+  pagination?: PaginationOptions;
+}
+
+// 정렬 필드 → DB 컬럼 매핑
+const TRANSACTION_SORT_COLUMNS: Record<TransactionSortField, string> = {
+  transacted_at: "transacted_at",
+  ticker: "ticker",
+  quantity: "quantity",
+  price: "price",
+};
+
+/**
+ * 거래 내역 목록 조회
+ */
+export async function getTransactions(
+  supabase: SupabaseClient<Database>,
+  householdId: string,
+  options?: GetTransactionsOptions,
+): Promise<PaginatedResult<TransactionWithDetails>> {
+  const { filters, sort, pagination } = options ?? {};
+
+  // 기본 쿼리 빌드
+  let query = supabase
+    .from("transactions")
+    .select(
+      `
+      id,
+      ticker,
+      type,
+      quantity,
+      price,
+      transacted_at,
+      memo,
+      owner_id,
+      profiles!transactions_owner_id_fkey (
+        id,
+        name
+      )
+    `,
+      { count: "exact" },
+    )
+    .eq("household_id", householdId);
+
+  // 필터 적용
+  if (filters?.type) {
+    query = query.eq("type", filters.type);
+  }
+  if (filters?.ownerId) {
+    query = query.eq("owner_id", filters.ownerId);
+  }
+  if (filters?.ticker) {
+    query = query.eq("ticker", filters.ticker);
+  }
+
+  // 정렬 적용
+  const sortField = sort?.field ?? "transacted_at";
+  const sortDirection = sort?.direction ?? "desc";
+  const sortColumn = TRANSACTION_SORT_COLUMNS[sortField];
+  query = query.order(sortColumn, { ascending: sortDirection === "asc" });
+
+  // 페이지네이션 적용
+  const { from, to } = calculateRange(pagination);
+  query = query.range(from, to);
+
+  const { data, error, count } = await query;
+
+  if (error) {
+    console.error("Transactions query error:", error);
+    throw new APIError(
+      "TRANSACTIONS_ERROR",
+      "거래 내역 조회에 실패했습니다.",
+      500,
+    );
+  }
+
+  // 종목 정보 조회 (별도 쿼리)
+  const tickers = [...new Set((data ?? []).map((t) => t.ticker))];
+  const stockSettingsMap = new Map<
+    string,
+    { name: string; currency: CurrencyType }
+  >();
+
+  if (tickers.length > 0) {
+    const { data: stockSettings } = await supabase
+      .from("household_stock_settings")
+      .select("ticker, name, currency")
+      .eq("household_id", householdId)
+      .in("ticker", tickers);
+
+    for (const s of stockSettings ?? []) {
+      stockSettingsMap.set(s.ticker, { name: s.name, currency: s.currency });
+    }
+  }
+
+  // 데이터 변환
+  const transactions: TransactionWithDetails[] = (data ?? []).map((t) => {
+    const profile = t.profiles as { id: string; name: string } | null;
+    const stockSettings = stockSettingsMap.get(t.ticker);
+
+    return {
+      id: t.id,
+      ticker: t.ticker,
+      stockName: stockSettings?.name ?? t.ticker,
+      type: t.type,
+      quantity: Number(t.quantity),
+      price: Number(t.price),
+      totalAmount: Number(t.quantity) * Number(t.price),
+      currency: stockSettings?.currency ?? "KRW",
+      transactedAt: t.transacted_at,
+      memo: t.memo,
+      owner: {
+        id: profile?.id ?? t.owner_id,
+        name: profile?.name ?? "알 수 없음",
+      },
+    };
+  });
+
+  return createPaginatedResult(transactions, count ?? 0, pagination);
 }
 
 /**
