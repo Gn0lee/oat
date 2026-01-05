@@ -32,7 +32,7 @@ export default async function DashboardPage() {
               </div>
             </div>
             <Button asChild>
-              <Link href="/transactions">등록하기</Link>
+              <Link href="/transactions/new">등록하기</Link>
             </Button>
           </div>
         </div>
