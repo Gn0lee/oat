@@ -8,7 +8,8 @@ import {
   type SortingState,
   useReactTable,
 } from "@tanstack/react-table";
-import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, Pencil } from "lucide-react";
+import Link from "next/link";
 import type React from "react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -21,16 +22,19 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ASSET_TYPE_LABELS, MARKET_LABELS } from "@/constants/enums";
-import type { HoldingWithDetails } from "@/lib/api/holdings";
+import {
+  ASSET_TYPE_LABELS,
+  MARKET_LABELS,
+  RISK_LEVEL_COLORS,
+  RISK_LEVEL_LABELS,
+} from "@/constants/enums";
+import type { StockSettingWithDetails } from "@/lib/api/stock-settings";
 import { cn } from "@/lib/utils/cn";
-import { formatCurrency } from "@/lib/utils/format";
 
-interface HoldingsTableProps {
-  data: HoldingWithDetails[];
+interface StockSettingsTableProps {
+  data: StockSettingWithDetails[];
 }
 
-// 정렬 버튼 헤더 컴포넌트
 function SortableHeader({
   column,
   children,
@@ -60,7 +64,7 @@ function SortableHeader({
   );
 }
 
-const columns: ColumnDef<HoldingWithDetails>[] = [
+const columns: ColumnDef<StockSettingWithDetails>[] = [
   {
     accessorKey: "name",
     header: ({ column }) => (
@@ -74,52 +78,10 @@ const columns: ColumnDef<HoldingWithDetails>[] = [
     ),
   },
   {
-    id: "owner",
-    accessorKey: "owner",
-    header: "소유자",
-    meta: { className: "hidden lg:table-cell" },
-    cell: ({ row }) => row.original.owner.name,
-  },
-  {
-    accessorKey: "quantity",
-    header: ({ column }) => (
-      <SortableHeader column={column}>수량</SortableHeader>
-    ),
-    meta: { className: "hidden md:table-cell" },
-    cell: ({ row }) => (
-      <span className="tabular-nums">
-        {row.original.quantity.toLocaleString()}
-      </span>
-    ),
-  },
-  {
-    accessorKey: "avgPrice",
-    header: ({ column }) => (
-      <SortableHeader column={column}>평균 매수가</SortableHeader>
-    ),
-    meta: { className: "hidden md:table-cell" },
-    cell: ({ row }) => (
-      <span className="tabular-nums">
-        {formatCurrency(row.original.avgPrice, row.original.currency)}
-      </span>
-    ),
-  },
-  {
-    accessorKey: "totalInvested",
-    header: ({ column }) => (
-      <SortableHeader column={column}>투자 금액</SortableHeader>
-    ),
-    cell: ({ row }) => (
-      <span className="tabular-nums font-medium">
-        {formatCurrency(row.original.totalInvested, row.original.currency)}
-      </span>
-    ),
-  },
-  {
     id: "market",
     accessorKey: "market",
     header: "시장",
-    meta: { className: "hidden lg:table-cell" },
+    meta: { className: "hidden md:table-cell" },
     cell: ({ row }) => (
       <Badge variant="outline">
         {MARKET_LABELS[row.original.market] ?? row.original.market}
@@ -129,19 +91,54 @@ const columns: ColumnDef<HoldingWithDetails>[] = [
   {
     id: "assetType",
     accessorKey: "assetType",
-    header: "유형",
-    meta: { className: "hidden lg:table-cell" },
+    header: ({ column }) => (
+      <SortableHeader column={column}>자산유형</SortableHeader>
+    ),
     cell: ({ row }) => (
       <span className="text-gray-600">
         {ASSET_TYPE_LABELS[row.original.assetType] ?? row.original.assetType}
       </span>
     ),
   },
+  {
+    id: "riskLevel",
+    accessorKey: "riskLevel",
+    header: ({ column }) => (
+      <SortableHeader column={column}>위험도</SortableHeader>
+    ),
+    cell: ({ row }) => {
+      const riskLevel = row.original.riskLevel;
+      if (!riskLevel) {
+        return <span className="text-gray-400">미설정</span>;
+      }
+      return (
+        <Badge
+          variant="secondary"
+          className={RISK_LEVEL_COLORS[riskLevel] ?? ""}
+        >
+          {RISK_LEVEL_LABELS[riskLevel] ?? riskLevel}
+        </Badge>
+      );
+    },
+  },
+  {
+    id: "actions",
+    header: "",
+    meta: { className: "w-[60px]" },
+    cell: ({ row }) => (
+      <Button variant="ghost" size="icon" asChild>
+        <Link href={`/settings/stocks/${row.original.id}`}>
+          <Pencil className="size-4" />
+          <span className="sr-only">수정</span>
+        </Link>
+      </Button>
+    ),
+  },
 ];
 
-export function HoldingsTable({ data }: HoldingsTableProps) {
+export function StockSettingsTable({ data }: StockSettingsTableProps) {
   const [sorting, setSorting] = useState<SortingState>([
-    { id: "totalInvested", desc: true },
+    { id: "name", desc: false },
   ]);
 
   const table = useReactTable({
@@ -207,7 +204,7 @@ export function HoldingsTable({ data }: HoldingsTableProps) {
           ) : (
             <TableRow>
               <TableCell colSpan={columns.length} className="h-24 text-center">
-                보유 종목이 없습니다.
+                등록된 종목이 없습니다.
               </TableCell>
             </TableRow>
           )}

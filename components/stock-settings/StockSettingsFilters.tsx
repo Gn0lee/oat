@@ -7,37 +7,34 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ASSET_TYPE_OPTIONS, MARKET_OPTIONS } from "@/constants/enums";
-import type { HoldingsFilters as Filters } from "@/lib/api/holdings";
-import type { AssetType, MarketType } from "@/types";
+import {
+  ASSET_TYPE_OPTIONS,
+  MARKET_OPTIONS,
+  RISK_LEVEL_OPTIONS,
+} from "@/constants/enums";
+import type { StockSettingsFilters as Filters } from "@/lib/api/stock-settings";
+import type { AssetType, MarketType, RiskLevel } from "@/types";
 
-interface Member {
-  id: string;
-  name: string;
-}
-
-interface HoldingsFiltersProps {
+interface StockSettingsFiltersProps {
   filters: Filters;
   onFiltersChange: (filters: Filters) => void;
-  members: Member[];
 }
 
-export function HoldingsFilters({
+export function StockSettingsFilters({
   filters,
   onFiltersChange,
-  members,
-}: HoldingsFiltersProps) {
-  const handleOwnerChange = (value: string) => {
-    onFiltersChange({
-      ...filters,
-      ownerId: value === "all" ? undefined : value,
-    });
-  };
-
+}: StockSettingsFiltersProps) {
   const handleAssetTypeChange = (value: string) => {
     onFiltersChange({
       ...filters,
       assetType: value === "all" ? undefined : (value as AssetType),
+    });
+  };
+
+  const handleRiskLevelChange = (value: string) => {
+    onFiltersChange({
+      ...filters,
+      riskLevel: value === "all" ? undefined : (value as RiskLevel | "null"),
     });
   };
 
@@ -50,28 +47,6 @@ export function HoldingsFilters({
 
   return (
     <div className="flex flex-wrap gap-4">
-      {members.length > 1 && (
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-500">소유자</span>
-          <Select
-            value={filters.ownerId ?? "all"}
-            onValueChange={handleOwnerChange}
-          >
-            <SelectTrigger className="w-[100px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">전체</SelectItem>
-              {members.map((member) => (
-                <SelectItem key={member.id} value={member.id}>
-                  {member.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
-
       <div className="flex items-center gap-2">
         <span className="text-sm text-gray-500">자산유형</span>
         <Select
@@ -84,6 +59,27 @@ export function HoldingsFilters({
           <SelectContent>
             <SelectItem value="all">전체</SelectItem>
             {ASSET_TYPE_OPTIONS.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <span className="text-sm text-gray-500">위험도</span>
+        <Select
+          value={filters.riskLevel ?? "all"}
+          onValueChange={handleRiskLevelChange}
+        >
+          <SelectTrigger className="w-[100px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">전체</SelectItem>
+            <SelectItem value="null">미설정</SelectItem>
+            {RISK_LEVEL_OPTIONS.map((option) => (
               <SelectItem key={option.value} value={option.value}>
                 {option.label}
               </SelectItem>
