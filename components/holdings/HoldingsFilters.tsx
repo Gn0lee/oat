@@ -49,59 +49,68 @@ export function HoldingsFilters({
   };
 
   return (
-    <div className="flex flex-wrap gap-3">
+    <div className="flex flex-wrap gap-4">
       {members.length > 1 && (
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-gray-500">소유자</span>
+          <Select
+            value={filters.ownerId ?? "all"}
+            onValueChange={handleOwnerChange}
+          >
+            <SelectTrigger className="w-[100px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">전체</SelectItem>
+              {members.map((member) => (
+                <SelectItem key={member.id} value={member.id}>
+                  {member.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      <div className="flex items-center gap-2">
+        <span className="text-sm text-gray-500">자산유형</span>
         <Select
-          value={filters.ownerId ?? "all"}
-          onValueChange={handleOwnerChange}
+          value={filters.assetType ?? "all"}
+          onValueChange={handleAssetTypeChange}
         >
-          <SelectTrigger className="w-[120px]">
-            <SelectValue placeholder="소유자" />
+          <SelectTrigger className="w-[100px]">
+            <SelectValue />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">전체</SelectItem>
-            {members.map((member) => (
-              <SelectItem key={member.id} value={member.id}>
-                {member.name}
+            {ASSET_TYPE_OPTIONS.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
-      )}
+      </div>
 
-      <Select
-        value={filters.assetType ?? "all"}
-        onValueChange={handleAssetTypeChange}
-      >
-        <SelectTrigger className="w-[120px]">
-          <SelectValue placeholder="자산유형" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">전체</SelectItem>
-          {ASSET_TYPE_OPTIONS.map((option) => (
-            <SelectItem key={option.value} value={option.value}>
-              {option.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-
-      <Select
-        value={filters.market ?? "all"}
-        onValueChange={handleMarketChange}
-      >
-        <SelectTrigger className="w-[120px]">
-          <SelectValue placeholder="시장" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">전체</SelectItem>
-          {MARKET_OPTIONS.map((option) => (
-            <SelectItem key={option.value} value={option.value}>
-              {option.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <div className="flex items-center gap-2">
+        <span className="text-sm text-gray-500">시장</span>
+        <Select
+          value={filters.market ?? "all"}
+          onValueChange={handleMarketChange}
+        >
+          <SelectTrigger className="w-[100px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">전체</SelectItem>
+            {MARKET_OPTIONS.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
     </div>
   );
 }

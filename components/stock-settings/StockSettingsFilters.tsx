@@ -46,57 +46,66 @@ export function StockSettingsFilters({
   };
 
   return (
-    <div className="flex flex-wrap gap-3">
-      <Select
-        value={filters.assetType ?? "all"}
-        onValueChange={handleAssetTypeChange}
-      >
-        <SelectTrigger className="w-[120px]">
-          <SelectValue placeholder="자산유형" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">전체</SelectItem>
-          {ASSET_TYPE_OPTIONS.map((option) => (
-            <SelectItem key={option.value} value={option.value}>
-              {option.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+    <div className="flex flex-wrap gap-4">
+      <div className="flex items-center gap-2">
+        <span className="text-sm text-gray-500">자산유형</span>
+        <Select
+          value={filters.assetType ?? "all"}
+          onValueChange={handleAssetTypeChange}
+        >
+          <SelectTrigger className="w-[100px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">전체</SelectItem>
+            {ASSET_TYPE_OPTIONS.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
-      <Select
-        value={filters.riskLevel ?? "all"}
-        onValueChange={handleRiskLevelChange}
-      >
-        <SelectTrigger className="w-[120px]">
-          <SelectValue placeholder="위험도" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">전체</SelectItem>
-          {RISK_LEVEL_OPTIONS.map((option) => (
-            <SelectItem key={option.value} value={option.value}>
-              {option.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <div className="flex items-center gap-2">
+        <span className="text-sm text-gray-500">위험도</span>
+        <Select
+          value={filters.riskLevel ?? "all"}
+          onValueChange={handleRiskLevelChange}
+        >
+          <SelectTrigger className="w-[100px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">전체</SelectItem>
+            {RISK_LEVEL_OPTIONS.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
-      <Select
-        value={filters.market ?? "all"}
-        onValueChange={handleMarketChange}
-      >
-        <SelectTrigger className="w-[120px]">
-          <SelectValue placeholder="시장" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">전체</SelectItem>
-          {MARKET_OPTIONS.map((option) => (
-            <SelectItem key={option.value} value={option.value}>
-              {option.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <div className="flex items-center gap-2">
+        <span className="text-sm text-gray-500">시장</span>
+        <Select
+          value={filters.market ?? "all"}
+          onValueChange={handleMarketChange}
+        >
+          <SelectTrigger className="w-[100px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">전체</SelectItem>
+            {MARKET_OPTIONS.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
     </div>
   );
 }
