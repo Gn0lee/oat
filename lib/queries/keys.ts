@@ -42,4 +42,16 @@ export const queries = createQueryKeyStore({
     settings: null,
     stockSettings: (symbol?: string) => ({ queryKey: [symbol] }),
   },
+
+  stockSettings: {
+    all: null,
+    list: (filters?: {
+      assetType?: string;
+      riskLevel?: string;
+      market?: string;
+    }) => ({
+      queryKey: [filters],
+    }),
+    detail: (id: string) => ({ queryKey: [id] }),
+  },
 });
