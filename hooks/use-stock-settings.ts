@@ -8,7 +8,7 @@ import type { AssetType, MarketType, RiskLevel } from "@/types";
 
 export interface StockSettingsFilters {
   assetType?: AssetType;
-  riskLevel?: RiskLevel;
+  riskLevel?: RiskLevel | "null";
   market?: MarketType;
 }
 

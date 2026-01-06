@@ -34,7 +34,7 @@ export function StockSettingsFilters({
   const handleRiskLevelChange = (value: string) => {
     onFiltersChange({
       ...filters,
-      riskLevel: value === "all" ? undefined : (value as RiskLevel),
+      riskLevel: value === "all" ? undefined : (value as RiskLevel | "null"),
     });
   };
 
@@ -78,6 +78,7 @@ export function StockSettingsFilters({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">전체</SelectItem>
+            <SelectItem value="null">미설정</SelectItem>
             {RISK_LEVEL_OPTIONS.map((option) => (
               <SelectItem key={option.value} value={option.value}>
                 {option.label}

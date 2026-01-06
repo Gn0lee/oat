@@ -41,7 +41,10 @@ export async function GET(request: NextRequest) {
     // Query params 파싱
     const searchParams = request.nextUrl.searchParams;
     const assetType = searchParams.get("assetType") as AssetType | null;
-    const riskLevel = searchParams.get("riskLevel") as RiskLevel | null;
+    const riskLevel = searchParams.get("riskLevel") as
+      | RiskLevel
+      | "null"
+      | null;
     const market = searchParams.get("market") as MarketType | null;
     const page = Number(searchParams.get("page")) || 1;
     const pageSize = Number(searchParams.get("pageSize")) || 20;

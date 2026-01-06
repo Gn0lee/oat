@@ -14,7 +14,7 @@ import { APIError } from "./error";
  */
 export interface StockSettingsFilters {
   assetType?: AssetType;
-  riskLevel?: RiskLevel;
+  riskLevel?: RiskLevel | "null";
   market?: MarketType;
 }
 
@@ -74,7 +74,11 @@ export async function getStockSettings(
     query = query.eq("asset_type", filters.assetType);
   }
   if (filters?.riskLevel) {
-    query = query.eq("risk_level", filters.riskLevel);
+    if (filters.riskLevel === "null") {
+      query = query.is("risk_level", null);
+    } else {
+      query = query.eq("risk_level", filters.riskLevel);
+    }
   }
   if (filters?.market) {
     query = query.eq("market", filters.market);
