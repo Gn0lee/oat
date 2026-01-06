@@ -22,6 +22,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  ASSET_TYPE_LABELS,
+  MARKET_LABELS,
+  RISK_LEVEL_COLORS,
+  RISK_LEVEL_LABELS,
+} from "@/constants/enums";
 import type { StockSettingWithDetails } from "@/lib/api/stock-settings";
 import { cn } from "@/lib/utils/cn";
 
@@ -57,33 +63,6 @@ function SortableHeader({
     </Button>
   );
 }
-
-const ASSET_TYPE_LABELS: Record<string, string> = {
-  equity: "주식",
-  bond: "채권",
-  cash: "현금",
-  commodity: "원자재",
-  crypto: "암호화폐",
-  alternative: "대체투자",
-};
-
-const MARKET_LABELS: Record<string, string> = {
-  KR: "국내",
-  US: "미국",
-  OTHER: "기타",
-};
-
-const RISK_LEVEL_LABELS: Record<string, string> = {
-  low: "저위험",
-  medium: "중위험",
-  high: "고위험",
-};
-
-const RISK_LEVEL_COLORS: Record<string, string> = {
-  low: "bg-green-100 text-green-800",
-  medium: "bg-yellow-100 text-yellow-800",
-  high: "bg-red-100 text-red-800",
-};
 
 const columns: ColumnDef<StockSettingWithDetails>[] = [
   {

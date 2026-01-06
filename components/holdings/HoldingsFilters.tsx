@@ -7,6 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ASSET_TYPE_OPTIONS, MARKET_OPTIONS } from "@/constants/enums";
 import type { HoldingsFilters as Filters } from "@/lib/api/holdings";
 import type { AssetType, MarketType } from "@/types";
 
@@ -77,12 +78,11 @@ export function HoldingsFilters({
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">전체</SelectItem>
-          <SelectItem value="equity">주식</SelectItem>
-          <SelectItem value="bond">채권</SelectItem>
-          <SelectItem value="cash">현금</SelectItem>
-          <SelectItem value="commodity">원자재</SelectItem>
-          <SelectItem value="crypto">암호화폐</SelectItem>
-          <SelectItem value="alternative">대체투자</SelectItem>
+          {ASSET_TYPE_OPTIONS.map((option) => (
+            <SelectItem key={option.value} value={option.value}>
+              {option.label}
+            </SelectItem>
+          ))}
         </SelectContent>
       </Select>
 
@@ -95,9 +95,11 @@ export function HoldingsFilters({
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">전체</SelectItem>
-          <SelectItem value="KR">국내</SelectItem>
-          <SelectItem value="US">미국</SelectItem>
-          <SelectItem value="OTHER">기타</SelectItem>
+          {MARKET_OPTIONS.map((option) => (
+            <SelectItem key={option.value} value={option.value}>
+              {option.label}
+            </SelectItem>
+          ))}
         </SelectContent>
       </Select>
     </div>

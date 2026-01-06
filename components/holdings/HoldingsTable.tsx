@@ -21,6 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { ASSET_TYPE_LABELS, MARKET_LABELS } from "@/constants/enums";
 import type { HoldingWithDetails } from "@/lib/api/holdings";
 import { cn } from "@/lib/utils/cn";
 import { formatCurrency } from "@/lib/utils/format";
@@ -58,23 +59,6 @@ function SortableHeader({
     </Button>
   );
 }
-
-// 자산유형 한글 매핑
-const ASSET_TYPE_LABELS: Record<string, string> = {
-  equity: "주식",
-  bond: "채권",
-  cash: "현금",
-  commodity: "원자재",
-  crypto: "암호화폐",
-  alternative: "대체투자",
-};
-
-// 시장 한글 매핑
-const MARKET_LABELS: Record<string, string> = {
-  KR: "국내",
-  US: "미국",
-  OTHER: "기타",
-};
 
 const columns: ColumnDef<HoldingWithDetails>[] = [
   {
