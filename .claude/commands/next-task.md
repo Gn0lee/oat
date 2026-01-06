@@ -23,20 +23,58 @@ allowed-tools: Bash(gh:*), Bash(git:*)
 - 2-3개의 이슈를 추천하고 각각의 이유를 설명
 - 사용자가 선택하도록 질문
 
-## 3단계: 선택된 이슈로 작업 시작
+## 3단계: 작업 방식 선택
 
-사용자가 이슈를 선택하면:
+사용자가 이슈를 선택하면, 작업 방식을 질문합니다:
 
-1. **이슈 상세 조회**: `gh issue view [번호]`
-2. **브랜치 생성**: `git checkout -b feature/[이슈번호]-[slug]`
-3. **관련 문서 확인**: 이슈 라벨에 따라 적절한 skill 활성화
-   - `backend`, `database` → db-work skill
-   - `frontend`, `ui` → ui-work skill
-   - `api` → api-work skill
-   - 그 외 → feature-work skill
+| 옵션 | 설명 | 적합한 경우 |
+|------|------|------------|
+| **Worktree** | 별도 디렉토리에서 작업 | 동시에 여러 작업 진행, DB 변경 없는 작업 |
+| **브랜치 전환** | 현재 디렉토리에서 작업 (기본) | 단일 작업 집중, DB 마이그레이션 포함 |
 
-## 4단계: 작업 완료 후
+### 옵션 A: Worktree 생성
+
+```bash
+# 1. worktree 생성
+git worktree add ../oat-[이슈번호] -b feature/[이슈번호]-[slug]
+
+# 2. .env.local 복사
+cp .env.local ../oat-[이슈번호]/.env.local
+```
+
+생성 완료 후 사용자에게 안내:
+
+```
+Worktree가 생성되었습니다!
+
+다음 단계를 진행해주세요:
+1. 새 터미널에서 실행: cd [worktree 절대 경로] && pnpm install && claude
+2. Claude 실행 후: /resume-task
+
+참고: Supabase는 기존 인스턴스를 공유합니다.
+```
+
+**안내 후 현재 세션 종료** (새 세션에서 `/resume-task`로 이어감)
+
+### 옵션 B: 브랜치 전환 (기본)
+
+```bash
+git checkout -b feature/[이슈번호]-[slug]
+```
+
+브랜치 전환 후 **4단계**로 진행합니다.
+
+## 4단계: 작업 시작
+
+`.claude/shared/_start-work.md` 프로세스를 따릅니다:
+
+1. 이슈 상세 조회 (실패 시 종료)
+2. 이슈 라벨에 따라 skill 활성화
+3. Plan 모드로 작업 계획 수립
+4. 사용자 승인 후 작업 시작
+
+## 5단계: 작업 완료 후
 
 1. 변경사항 커밋
 2. PR 생성: `gh pr create`
-3. 이슈 자동 종료: 커밋 메시지에 `Closes #[번호]` 포함
+3. 이슈 자동 종료: PR 본문에 `Closes #[번호]` 포함
