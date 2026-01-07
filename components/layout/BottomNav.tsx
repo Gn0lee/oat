@@ -8,8 +8,8 @@ import { cn } from "@/lib/utils/cn";
 const navItems = [
   { href: "/home", label: "홈", icon: Home },
   { href: "/dashboard", label: "분석", icon: BarChart3 },
-  { href: "/holdings", label: "보유", icon: TrendingUp },
-  { href: "/transactions", label: "거래", icon: FileText },
+  { href: "/assets/stock/holdings", label: "보유", icon: TrendingUp },
+  { href: "/assets/stock/transactions", label: "거래", icon: FileText },
   { href: "/settings/stocks", label: "설정", icon: Settings },
 ];
 

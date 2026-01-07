@@ -33,7 +33,7 @@ export default async function TransactionsPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">거래 내역</h1>
         <Button asChild>
-          <Link href="/transactions/new">
+          <Link href="/assets/stock/transactions/new">
             <Plus className="size-4 mr-2" />
             거래 등록
           </Link>
