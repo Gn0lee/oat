@@ -256,17 +256,15 @@ export function TransactionForm() {
       </div>
 
       {/* 제출 버튼 */}
-      <div className="sticky bottom-4">
-        <Button
-          type="submit"
-          className="w-full h-14 rounded-xl text-base font-semibold"
-          disabled={isSubmitting || !selectedStock}
-        >
-          {isSubmitting
-            ? "등록 중..."
-            : `${watchType === "buy" ? "매수" : "매도"} 등록`}
-        </Button>
-      </div>
+      <Button
+        type="submit"
+        className="w-full h-14 rounded-xl text-base font-semibold"
+        disabled={isSubmitting || !selectedStock}
+      >
+        {isSubmitting
+          ? "등록 중..."
+          : `${watchType === "buy" ? "매수" : "매도"} 등록`}
+      </Button>
     </form>
   );
 }
