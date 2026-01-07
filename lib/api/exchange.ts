@@ -43,3 +43,29 @@ export async function getExchangeRate(
     updatedAt: data.updated_at,
   };
 }
+
+/**
+ * 환율 조회 (안전한 버전 - 에러 시 null 반환)
+ */
+export async function getExchangeRateSafe(
+  supabase: SupabaseClient<Database>,
+  fromCurrency: CurrencyType = "USD",
+  toCurrency: CurrencyType = "KRW",
+): Promise<ExchangeRateResult | null> {
+  const { data, error } = await supabase
+    .from("exchange_rates")
+    .select("rate, updated_at")
+    .eq("from_currency", fromCurrency)
+    .eq("to_currency", toCurrency)
+    .single();
+
+  if (error || !data) {
+    console.error("Exchange rate query error:", error);
+    return null;
+  }
+
+  return {
+    rate: Number(data.rate),
+    updatedAt: data.updated_at,
+  };
+}

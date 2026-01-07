@@ -3,21 +3,14 @@ import Link from "next/link";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { ExchangeRateInfo } from "@/components/dashboard/ExchangeRateInfo";
 import { Button } from "@/components/ui/button";
-import { getExchangeRate } from "@/lib/api/exchange";
+import { getExchangeRateSafe } from "@/lib/api/exchange";
 import { getUser } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function DashboardPage() {
   const user = await getUser();
   const supabase = await createClient();
-
-  let exchangeRate: { rate: number; updatedAt: string | null } | null = null;
-  let exchangeRateError = false;
-  try {
-    exchangeRate = await getExchangeRate(supabase, "USD", "KRW");
-  } catch {
-    exchangeRateError = true;
-  }
+  const exchangeRate = await getExchangeRateSafe(supabase, "USD", "KRW");
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
@@ -69,7 +62,6 @@ export default async function DashboardPage() {
         <ExchangeRateInfo
           rate={exchangeRate?.rate ?? null}
           updatedAt={exchangeRate?.updatedAt ?? null}
-          error={exchangeRateError}
         />
 
         <p className="text-center text-gray-400 text-sm">
