@@ -64,7 +64,11 @@ export default async function TransactionsPage() {
         </div>
 
         {/* 거래 내역 목록 */}
-        <TransactionList initialData={initialData} members={members} />
+        <TransactionList
+          initialData={initialData}
+          members={members}
+          currentUserId={user.id}
+        />
       </div>
     </div>
   );

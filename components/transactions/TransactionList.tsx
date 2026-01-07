@@ -24,11 +24,13 @@ interface Member {
 interface TransactionListProps {
   initialData: PaginatedResult<TransactionWithDetails>;
   members: Member[];
+  currentUserId: string;
 }
 
 export function TransactionList({
   initialData,
   members,
+  currentUserId,
 }: TransactionListProps) {
   const [data, setData] = useState(initialData);
   const [filters, setFilters] = useState<Filters>({});
@@ -75,7 +77,7 @@ export function TransactionList({
       />
 
       <div className={isLoading ? "opacity-50 pointer-events-none" : ""}>
-        <TransactionTable data={data.data} />
+        <TransactionTable data={data.data} currentUserId={currentUserId} />
       </div>
 
       {data.totalPages > 1 && (
