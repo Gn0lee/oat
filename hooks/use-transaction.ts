@@ -1,7 +1,12 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type {
+  TransactionFilters,
+  TransactionWithDetails,
+} from "@/lib/api/transaction";
 import { queries } from "@/lib/queries/keys";
+import type { PaginatedResult } from "@/lib/utils/query";
 import type {
   CreateTransactionInput,
   UpdateTransactionInput,
@@ -22,6 +27,48 @@ interface TransactionError {
 interface DeleteTransactionResponse {
   success: boolean;
 }
+
+// ============================================================================
+// 거래 목록 조회
+// ============================================================================
+
+interface UseTransactionsParams {
+  filters?: TransactionFilters;
+  page?: number;
+  pageSize?: number;
+}
+
+async function fetchTransactions(
+  params: UseTransactionsParams,
+): Promise<PaginatedResult<TransactionWithDetails>> {
+  const searchParams = new URLSearchParams();
+  if (params.filters?.type) searchParams.set("type", params.filters.type);
+  if (params.filters?.ownerId)
+    searchParams.set("ownerId", params.filters.ownerId);
+  if (params.filters?.ticker) searchParams.set("ticker", params.filters.ticker);
+  if (params.page) searchParams.set("page", String(params.page));
+  if (params.pageSize) searchParams.set("pageSize", String(params.pageSize));
+
+  const response = await fetch(`/api/transactions?${searchParams.toString()}`);
+  if (!response.ok) {
+    throw new Error("거래 내역 조회에 실패했습니다.");
+  }
+  return response.json();
+}
+
+export function useTransactions(params: UseTransactionsParams = {}) {
+  return useQuery({
+    queryKey: queries.transactions.list({
+      memberId: params.filters?.ownerId,
+      stockSymbol: params.filters?.ticker,
+    }).queryKey,
+    queryFn: () => fetchTransactions(params),
+  });
+}
+
+// ============================================================================
+// 거래 생성
+// ============================================================================
 
 async function createTransaction(
   input: CreateTransactionInput,
