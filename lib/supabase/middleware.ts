@@ -4,9 +4,9 @@ import type { Database } from "@/types";
 
 const AUTH_ROUTES = ["/login", "/signup", "/reset-password", "/auth/callback"];
 const PUBLIC_ROUTES = ["/"];
+const LANDING_ROUTE = "/";
 
-// TODO: 인증 후 첫 진입 라우트 - 추후 결정 필요 (대시보드 또는 다른 페이지)
-const DEFAULT_AUTH_REDIRECT = "/dashboard";
+const DEFAULT_AUTH_REDIRECT = "/home";
 const DEFAULT_UNAUTH_REDIRECT = "/login";
 
 export async function updateSession(request: NextRequest) {
@@ -52,8 +52,15 @@ export async function updateSession(request: NextRequest) {
     return supabaseResponse;
   }
 
-  // 인증된 사용자가 auth 라우트 접근 시 첫 진입 라우트로 리다이렉트
+  // 인증된 사용자가 auth 라우트 접근 시 홈으로 리다이렉트
   if (user && isAuthRoute) {
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = DEFAULT_AUTH_REDIRECT;
+    return NextResponse.redirect(redirectUrl);
+  }
+
+  // 인증된 사용자가 랜딩페이지 접근 시 홈으로 리다이렉트
+  if (user && pathname === LANDING_ROUTE) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = DEFAULT_AUTH_REDIRECT;
     return NextResponse.redirect(redirectUrl);
