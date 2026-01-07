@@ -122,3 +122,59 @@ export async function getStockSettings(
 
   return createPaginatedResult(settings, count ?? 0, pagination);
 }
+
+/**
+ * 종목 설정 수정 입력
+ * - 자산유형은 읽기 전용이므로 수정 대상 아님
+ */
+export interface UpdateStockSettingInput {
+  riskLevel: RiskLevel | null;
+}
+
+/**
+ * 종목 설정 수정
+ */
+export async function updateStockSetting(
+  supabase: SupabaseClient<Database>,
+  id: string,
+  householdId: string,
+  input: UpdateStockSettingInput,
+): Promise<StockSettingWithDetails> {
+  const { data, error } = await supabase
+    .from("household_stock_settings")
+    .update({
+      risk_level: input.riskLevel,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id)
+    .eq("household_id", householdId)
+    .select()
+    .single();
+
+  if (error) {
+    if (error.code === "PGRST116") {
+      throw new APIError(
+        "STOCK_SETTING_NOT_FOUND",
+        "종목 설정을 찾을 수 없습니다.",
+        404,
+      );
+    }
+    console.error("Stock setting update error:", error);
+    throw new APIError(
+      "STOCK_SETTING_UPDATE_ERROR",
+      "종목 설정 수정에 실패했습니다.",
+      500,
+    );
+  }
+
+  return {
+    id: data.id,
+    ticker: data.ticker,
+    name: data.name ?? data.ticker,
+    market: data.market,
+    assetType: data.asset_type,
+    riskLevel: data.risk_level,
+    createdAt: data.created_at,
+    updatedAt: data.updated_at,
+  };
+}
