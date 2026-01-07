@@ -1,22 +1,12 @@
 import { BarChart3, PlusCircle } from "lucide-react";
-import { QuickActionCard, SummaryCard } from "@/components/dashboard";
+import {
+  DashboardSummarySection,
+  QuickActionCard,
+} from "@/components/dashboard";
 import { ExchangeRateInfo } from "@/components/dashboard/ExchangeRateInfo";
 import { getExchangeRateSafe } from "@/lib/api/exchange";
 import { getUser } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
-
-// Mock 데이터 (추후 API 연동 시 제거)
-const mockDashboardData = {
-  byMember: [
-    { label: "홍길동", value: 75000000, percentage: 60, color: "#4F46E5" },
-    { label: "김영희", value: 50000000, percentage: 40, color: "#03B26C" },
-  ],
-  byAssetClass: [
-    { label: "주식", value: 80000000, percentage: 64, color: "#4F46E5" },
-    { label: "채권", value: 25000000, percentage: 20, color: "#03B26C" },
-    { label: "현금", value: 20430000, percentage: 16, color: "#8B95A1" },
-  ],
-};
 
 export default async function DashboardPage() {
   const user = await getUser();
@@ -31,14 +21,8 @@ export default async function DashboardPage() {
         <p className="text-sm text-gray-500">안녕하세요, {user?.email}님</p>
       </div>
 
-      {/* 요약 카드 그리드 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <SummaryCard title="구성원별 자산" items={mockDashboardData.byMember} />
-        <SummaryCard
-          title="자산군별 비중"
-          items={mockDashboardData.byAssetClass}
-        />
-      </div>
+      {/* 총 자산 / 수익률 / 요약 카드 */}
+      <DashboardSummarySection />
 
       {/* 빠른 액션 */}
       <div className="space-y-3">
