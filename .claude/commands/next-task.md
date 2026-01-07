@@ -11,11 +11,24 @@ allowed-tools: Bash(gh:*), Bash(git:*)
 
 ## 2단계: 이미 작업 중인 이슈 확인
 
-!`git worktree list`
-!`git branch -a | grep -E "^(\*| )*(feature|fix)/" | head -20`
+### 2-1. 원격 브랜치 확인
 
-위 결과에서 브랜치명 패턴 `feature/[번호]-*` 또는 `fix/[번호]-*`로 이미 작업 중인 이슈 번호를 추출합니다.
-이미 브랜치가 존재하는 이슈는 **작업 중**으로 간주하여 추천에서 제외합니다.
+```bash
+git fetch origin --prune
+git branch -r --list 'origin/feature/*' 'origin/fix/*'
+```
+
+### 2-2. 열린 PR 확인
+
+```bash
+gh pr list --state open --json number,headRefName
+```
+
+위 결과에서:
+1. 원격 브랜치명 패턴 `origin/feature/[번호]-*` 또는 `origin/fix/[번호]-*`에서 이슈 번호 추출
+2. 열린 PR의 `headRefName`에서 이슈 번호 추출
+
+**두 결과를 합쳐서** 이미 작업 중인 이슈 번호 목록을 만들고, 추천에서 제외합니다.
 
 ## 3단계: 이슈 분석 및 추천
 
