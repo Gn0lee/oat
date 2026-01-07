@@ -12,10 +12,11 @@ export default async function DashboardPage() {
   const supabase = await createClient();
 
   let exchangeRate: { rate: number; updatedAt: string | null } | null = null;
+  let exchangeRateError = false;
   try {
     exchangeRate = await getExchangeRate(supabase, "USD", "KRW");
   } catch {
-    // 환율 조회 실패 시 무시 (UI에서 표시하지 않음)
+    exchangeRateError = true;
   }
 
   return (
@@ -65,12 +66,11 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        {exchangeRate && (
-          <ExchangeRateInfo
-            rate={exchangeRate.rate}
-            updatedAt={exchangeRate.updatedAt}
-          />
-        )}
+        <ExchangeRateInfo
+          rate={exchangeRate?.rate ?? null}
+          updatedAt={exchangeRate?.updatedAt ?? null}
+          error={exchangeRateError}
+        />
 
         <p className="text-center text-gray-400 text-sm">
           대시보드는 추후 구현 예정입니다
