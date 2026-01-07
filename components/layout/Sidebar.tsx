@@ -1,12 +1,13 @@
 "use client";
 
-import { FileText, Home, Settings, TrendingUp } from "lucide-react";
+import { BarChart3, FileText, Home, Settings, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils/cn";
 
 const navItems = [
-  { href: "/dashboard", label: "홈", icon: Home },
+  { href: "/home", label: "홈", icon: Home },
+  { href: "/dashboard", label: "분석", icon: BarChart3 },
   { href: "/holdings", label: "보유 현황", icon: TrendingUp },
   { href: "/transactions", label: "거래 내역", icon: FileText },
   { href: "/settings/stocks", label: "설정", icon: Settings },
@@ -16,6 +17,9 @@ export function Sidebar() {
   const pathname = usePathname();
 
   const isActive = (href: string) => {
+    if (href === "/home") {
+      return pathname === "/home";
+    }
     if (href === "/dashboard") {
       return pathname === "/dashboard";
     }
