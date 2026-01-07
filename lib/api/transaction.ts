@@ -286,6 +286,154 @@ export async function getTransactions(
   return createPaginatedResult(transactions, count ?? 0, pagination);
 }
 
+// ============================================================================
+// 거래 수정/삭제 관련 함수
+// ============================================================================
+
+export interface UpdateTransactionParams {
+  quantity?: number;
+  price?: number;
+  transactedAt?: string;
+  memo?: string | null;
+}
+
+/**
+ * 단일 거래 조회
+ */
+export async function getTransactionById(
+  supabase: SupabaseClient<Database>,
+  transactionId: string,
+  householdId: string,
+): Promise<Transaction> {
+  const { data, error } = await supabase
+    .from("transactions")
+    .select("*")
+    .eq("id", transactionId)
+    .eq("household_id", householdId)
+    .single();
+
+  if (error) {
+    if (error.code === "PGRST116") {
+      throw new APIError("NOT_FOUND", "거래를 찾을 수 없습니다.", 404);
+    }
+    console.error("Transaction query error:", error);
+    throw new APIError("TRANSACTION_ERROR", "거래 조회에 실패했습니다.", 500);
+  }
+
+  return data;
+}
+
+/**
+ * 거래 수정
+ * - 수정 가능: quantity, price, transactedAt, memo
+ * - 매도 거래 수정 시 보유 수량 재검증
+ */
+export async function updateTransaction(
+  supabase: SupabaseClient<Database>,
+  transactionId: string,
+  householdId: string,
+  userId: string,
+  params: UpdateTransactionParams,
+): Promise<Transaction> {
+  // 1. 기존 거래 조회
+  const existingTransaction = await getTransactionById(
+    supabase,
+    transactionId,
+    householdId,
+  );
+
+  // 2. 소유권 확인
+  if (existingTransaction.owner_id !== userId) {
+    throw new APIError("FORBIDDEN", "본인의 거래만 수정할 수 있습니다.", 403);
+  }
+
+  // 3. 매도 거래 수정 시 보유 수량 재검증
+  if (existingTransaction.type === "sell" && params.quantity !== undefined) {
+    const currentQuantity = await getHoldingQuantity(
+      supabase,
+      householdId,
+      userId,
+      existingTransaction.ticker,
+    );
+
+    // 현재 보유량 + 기존 매도 수량 - 새 매도 수량 >= 0
+    const originalQuantity = Number(existingTransaction.quantity);
+    const newQuantity = params.quantity;
+    const availableQuantity = currentQuantity + originalQuantity;
+
+    if (availableQuantity < newQuantity) {
+      throw new APIError(
+        "INSUFFICIENT_QUANTITY",
+        `매도 가능 수량(${availableQuantity})이 수정하려는 수량(${newQuantity})보다 적습니다.`,
+        400,
+      );
+    }
+  }
+
+  // 4. 거래 업데이트
+  const updateData: Record<string, unknown> = {};
+  if (params.quantity !== undefined) updateData.quantity = params.quantity;
+  if (params.price !== undefined) updateData.price = params.price;
+  if (params.transactedAt !== undefined)
+    updateData.transacted_at = params.transactedAt;
+  if (params.memo !== undefined) updateData.memo = params.memo;
+
+  const { data, error } = await supabase
+    .from("transactions")
+    .update(updateData)
+    .eq("id", transactionId)
+    .eq("household_id", householdId)
+    .eq("owner_id", userId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Transaction update error:", error);
+    throw new APIError("TRANSACTION_ERROR", "거래 수정에 실패했습니다.", 500);
+  }
+
+  return data;
+}
+
+/**
+ * 거래 삭제
+ */
+export async function deleteTransaction(
+  supabase: SupabaseClient<Database>,
+  transactionId: string,
+  householdId: string,
+  userId: string,
+): Promise<void> {
+  // 1. 기존 거래 조회 (존재 여부 확인)
+  const existingTransaction = await getTransactionById(
+    supabase,
+    transactionId,
+    householdId,
+  );
+
+  // 2. 소유권 확인
+  if (existingTransaction.owner_id !== userId) {
+    throw new APIError("FORBIDDEN", "본인의 거래만 삭제할 수 있습니다.", 403);
+  }
+
+  // 3. 거래 삭제
+  const { error } = await supabase
+    .from("transactions")
+    .delete()
+    .eq("id", transactionId)
+    .eq("household_id", householdId)
+    .eq("owner_id", userId);
+
+  if (error) {
+    console.error("Transaction delete error:", error);
+    throw new APIError("TRANSACTION_ERROR", "거래 삭제에 실패했습니다.", 500);
+  }
+}
+
+// ============================================================================
+// 헬퍼 함수
+// ============================================================================
+
 /**
  * 특정 종목의 현재 보유 수량 조회
  */

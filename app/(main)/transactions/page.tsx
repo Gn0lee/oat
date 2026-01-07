@@ -4,7 +4,6 @@ import { TransactionList } from "@/components/transactions/TransactionList";
 import { Button } from "@/components/ui/button";
 import { getHouseholdWithMembers } from "@/lib/api/household";
 import { getUserHouseholdId } from "@/lib/api/invitation";
-import { getTransactions } from "@/lib/api/transaction";
 import { requireUser } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
 
@@ -32,11 +31,6 @@ export default async function TransactionsPage() {
   const members =
     household?.members.map((m) => ({ id: m.userId, name: m.name })) ?? [];
 
-  // 초기 거래 내역 조회
-  const initialData = await getTransactions(supabase, householdId, {
-    pagination: { page: 1, pageSize: 20 },
-  });
-
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-4xl mx-auto space-y-6">
@@ -50,9 +44,6 @@ export default async function TransactionsPage() {
             </Button>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">거래 내역</h1>
-              <p className="text-sm text-gray-500">
-                총 {initialData.total}건의 거래
-              </p>
             </div>
           </div>
           <Button asChild>
@@ -64,7 +55,7 @@ export default async function TransactionsPage() {
         </div>
 
         {/* 거래 내역 목록 */}
-        <TransactionList initialData={initialData} members={members} />
+        <TransactionList members={members} currentUserId={user.id} />
       </div>
     </div>
   );
