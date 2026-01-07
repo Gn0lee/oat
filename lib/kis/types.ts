@@ -49,14 +49,6 @@ export interface KISTokenResponse {
   access_token_token_expired: string;
 }
 
-/**
- * 캐시된 토큰 정보
- */
-export interface CachedToken {
-  accessToken: string;
-  expiresAt: Date;
-}
-
 // ============================================================================
 // 국내 주식 시세 타입
 // ============================================================================

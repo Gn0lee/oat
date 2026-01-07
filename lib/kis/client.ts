@@ -1,14 +1,14 @@
 /**
  * KIS Open API 클라이언트
  *
- * - 토큰 발급 및 자동 갱신
+ * - 토큰 발급 및 자동 갱신 (DB 저장)
  * - 국내 주식 시세 조회 (단일/멀티)
  * - 해외 주식 시세 조회
  */
 
 import { APIError } from "@/lib/api/error";
+import { createClient } from "@/lib/supabase/server";
 import type {
-  CachedToken,
   KISAPIResponse,
   KISDomesticMultiPriceOutput,
   KISDomesticPriceOutput,
@@ -31,11 +31,8 @@ const TOKEN_REFRESH_BUFFER_MS = 60 * 60 * 1000;
 // 멀티종목 조회 최대 개수
 export const MAX_MULTI_STOCKS = 30;
 
-// ============================================================================
-// 토큰 캐시 (메모리)
-// ============================================================================
-
-let cachedToken: CachedToken | null = null;
+// system_config 키
+const KIS_TOKEN_KEY = "kis_token";
 
 // ============================================================================
 // KIS API 클라이언트
@@ -55,7 +52,63 @@ function validateKISConfig(): void {
 }
 
 /**
- * 액세스 토큰 발급
+ * DB에서 저장된 토큰 조회
+ */
+async function getTokenFromDB(): Promise<{
+  accessToken: string;
+  expiresAt: Date;
+} | null> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("system_config")
+    .select("value")
+    .eq("key", KIS_TOKEN_KEY)
+    .single();
+
+  if (error || !data) {
+    return null;
+  }
+
+  const { access_token, expires_at } = data.value as {
+    access_token: string;
+    expires_at: string;
+  };
+
+  return {
+    accessToken: access_token,
+    expiresAt: new Date(expires_at),
+  };
+}
+
+/**
+ * 토큰을 DB에 저장
+ */
+async function saveTokenToDB(
+  accessToken: string,
+  expiresAt: Date,
+): Promise<void> {
+  const supabase = await createClient();
+
+  const { error } = await supabase.from("system_config").upsert(
+    {
+      key: KIS_TOKEN_KEY,
+      value: {
+        access_token: accessToken,
+        expires_at: expiresAt.toISOString(),
+      },
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "key" },
+  );
+
+  if (error) {
+    console.error("토큰 DB 저장 실패:", error);
+  }
+}
+
+/**
+ * 액세스 토큰 발급 및 DB 저장
  */
 async function issueToken(): Promise<string> {
   validateKISConfig();
@@ -83,29 +136,28 @@ async function issueToken(): Promise<string> {
   }
 
   const data = (await response.json()) as KISTokenResponse;
-
-  // 토큰 캐시 저장
   const expiresAt = new Date(Date.now() + data.expires_in * 1000);
-  cachedToken = {
-    accessToken: data.access_token,
-    expiresAt,
-  };
+
+  // DB에 토큰 저장
+  await saveTokenToDB(data.access_token, expiresAt);
 
   return data.access_token;
 }
 
 /**
- * 유효한 액세스 토큰 가져오기 (자동 갱신)
+ * 유효한 액세스 토큰 가져오기 (DB 조회 → 만료 시 재발급)
  */
 async function getAccessToken(): Promise<string> {
-  // 캐시된 토큰이 유효한지 확인
-  if (cachedToken) {
+  // DB에서 토큰 조회
+  const cached = await getTokenFromDB();
+
+  if (cached) {
     const now = Date.now();
-    const expiresAt = cachedToken.expiresAt.getTime();
+    const expiresAt = cached.expiresAt.getTime();
 
     // 만료 1시간 전까지 유효
     if (now < expiresAt - TOKEN_REFRESH_BUFFER_MS) {
-      return cachedToken.accessToken;
+      return cached.accessToken;
     }
   }
 
@@ -307,6 +359,7 @@ export function getExchangeCode(exchange: string): OverseasExchangeCode {
 /**
  * 토큰 캐시 초기화 (테스트용)
  */
-export function clearTokenCache(): void {
-  cachedToken = null;
+export async function clearTokenCache(): Promise<void> {
+  const supabase = await createClient();
+  await supabase.from("system_config").delete().eq("key", KIS_TOKEN_KEY);
 }
