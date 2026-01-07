@@ -23,7 +23,7 @@ export function Sidebar() {
   };
 
   return (
-    <aside className="hidden lg:block w-56 bg-white border-r border-gray-200 min-h-[calc(100vh-56px)]">
+    <aside className="hidden lg:block w-56 shrink-0 bg-white border-r border-gray-200 overflow-y-auto">
       <nav className="p-4 space-y-1">
         {navItems.map((item) => {
           const Icon = item.icon;
