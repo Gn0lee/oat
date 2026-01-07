@@ -1,0 +1,51 @@
+"use client";
+
+import { FileText, Home, Settings, TrendingUp } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { cn } from "@/lib/utils/cn";
+
+const navItems = [
+  { href: "/dashboard", label: "홈", icon: Home },
+  { href: "/holdings", label: "보유 현황", icon: TrendingUp },
+  { href: "/transactions", label: "거래 내역", icon: FileText },
+  { href: "/settings/stocks", label: "설정", icon: Settings },
+];
+
+export function Sidebar() {
+  const pathname = usePathname();
+
+  const isActive = (href: string) => {
+    if (href === "/dashboard") {
+      return pathname === "/dashboard";
+    }
+    return pathname.startsWith(href);
+  };
+
+  return (
+    <aside className="hidden lg:block w-56 bg-white border-r border-gray-200 min-h-[calc(100vh-56px)]">
+      <nav className="p-4 space-y-1">
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          const active = isActive(item.href);
+
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                "flex items-center gap-3 h-10 px-3 rounded-lg text-sm font-medium transition-colors",
+                active
+                  ? "bg-primary/10 text-primary"
+                  : "text-gray-700 hover:bg-gray-100",
+              )}
+            >
+              <Icon className="size-5" />
+              <span>{item.label}</span>
+            </Link>
+          );
+        })}
+      </nav>
+    </aside>
+  );
+}
