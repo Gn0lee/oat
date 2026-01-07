@@ -29,7 +29,40 @@ git branch --show-current
 - `feature/42-add-login` → `42`
 - `fix/123-bug-fix` → `123`
 
-## 3단계: 작업 시작
+## 3단계: PR 확인 및 생성
+
+### 3-1. 해당 브랜치의 PR 존재 확인
+
+```bash
+gh pr list --head [현재브랜치명] --state open --json number,url
+```
+
+### 3-2. PR 상태에 따른 분기
+
+| 상태 | 동작 |
+|------|------|
+| PR 있음 | PR 정보 표시 후 4단계로 진행 |
+| PR 없음 + 로컬 커밋 있음 | 원격에 push 후 Draft PR 생성, 4단계로 진행 |
+| PR 없음 + 로컬 커밋 없음 | PR 없이 4단계로 진행 |
+
+### 로컬 커밋 확인 방법
+
+```bash
+# main 브랜치 대비 새 커밋이 있는지 확인
+git log origin/main..HEAD --oneline
+```
+
+### Draft PR 생성 (커밋이 있을 때)
+
+```bash
+# 원격에 push
+git push -u origin [현재브랜치명]
+
+# Draft PR 생성
+gh pr create --draft --title "[WIP] #[이슈번호] 이슈제목" --body "Closes #[이슈번호]"
+```
+
+## 4단계: 작업 시작
 
 `.claude/shared/_start-work.md` 프로세스를 따릅니다:
 
