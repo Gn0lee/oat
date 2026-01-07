@@ -22,14 +22,14 @@ import type {
 import type { Database, MarketType } from "@/types";
 import { APIError } from "./error";
 
-// 1시간 (밀리초)
-const HOUR_MS = 60 * 60 * 1000;
+// 캐시 버킷 단위: 1시간 (밀리초)
+const BUCKET_MS = 60 * 60 * 1000;
 
 /**
  * 현재 시간의 버킷 번호 계산
  */
 function getCurrentBucket(): number {
-  return Math.floor(Date.now() / HOUR_MS);
+  return Math.floor(Date.now() / BUCKET_MS);
 }
 
 /**
@@ -37,7 +37,7 @@ function getCurrentBucket(): number {
  */
 function isCacheValid(fetchedAt: Date): boolean {
   const currentBucket = getCurrentBucket();
-  const cacheBucket = Math.floor(fetchedAt.getTime() / HOUR_MS);
+  const cacheBucket = Math.floor(fetchedAt.getTime() / BUCKET_MS);
   return currentBucket === cacheBucket;
 }
 
