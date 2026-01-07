@@ -92,6 +92,9 @@ create type stock_type_category as enum (
 -- 거래 유형
 create type transaction_type as enum ('buy', 'sell');
 
+-- 초대 상태
+create type invitation_status as enum ('pending', 'accepted', 'expired', 'cancelled');
+
 -- 목표 비중 카테고리
 create type allocation_category as enum (
   'equity_kr',
@@ -180,24 +183,36 @@ create index household_members_household_id_idx on public.household_members(hous
 
 ---
 
-### 4. invitations (초대 코드)
+### 4. invitations (이메일 초대)
 
 ```sql
 create table public.invitations (
   id uuid primary key default gen_random_uuid(),
   household_id uuid not null references public.households(id) on delete cascade,
-  code text not null unique,
+  email text not null,
+  status invitation_status default 'pending',
   created_by uuid not null references public.profiles(id) on delete cascade,
   expires_at timestamptz not null,
-  used_by uuid references public.profiles(id) on delete set null,
-  used_at timestamptz,
-  created_at timestamptz default now() not null
+  created_at timestamptz default now() not null,
+
+  unique (household_id, email)
 );
 
 -- 인덱스
-create index invitations_code_idx on public.invitations(code);
+create index invitations_email_idx on public.invitations(email);
+create index invitations_status_idx on public.invitations(status);
 create index invitations_household_id_idx on public.invitations(household_id);
 ```
+
+| 컬럼 | 타입 | 설명 |
+|------|------|------|
+| id | uuid (PK) | 고유 ID |
+| household_id | uuid (FK) | 초대한 가구 ID |
+| email | text | 초대받는 이메일 주소 |
+| status | enum | pending / accepted / expired / cancelled |
+| created_by | uuid (FK) | 초대 생성자 ID |
+| expires_at | timestamptz | 만료 시간 |
+| created_at | timestamptz | 생성 시간 |
 
 ---
 
@@ -757,13 +772,13 @@ create policy "Users can delete own transactions"
 ```sql
 alter table public.invitations enable row level security;
 
-create policy "Users can view household invitations"
+-- 가구 멤버이거나 본인 이메일로 초대된 경우 조회 가능
+create policy "Users can view invitations by email or household"
   on public.invitations for select
-  using (is_household_member(household_id));
-
-create policy "Anyone can view invitation by code"
-  on public.invitations for select
-  using (true);
+  using (
+    is_household_member(household_id)
+    or email = (select email from auth.users where id = auth.uid())
+  );
 
 create policy "Users can create household invitations"
   on public.invitations for insert
@@ -854,10 +869,10 @@ create policy "Users can manage household targets"
 **정책**: 1인 1가구 원칙. 단독 가구일 때만 초대 수락 가능.
 
 ```
-1. 초대 코드 유효성 검증
-   ├── 코드 존재 여부
+1. 이메일 초대 유효성 검증
+   ├── 초대 존재 여부 (email 기준)
    ├── 만료 여부 (24시간)
-   └── 사용 여부 (used_by 확인)
+   └── 상태 확인 (status = 'pending')
       ↓
 2. 사용자 가구 상태 확인
    ├── 다른 구성원이 있는 가구 → 에러 반환 (이미 가구에 소속됨)
@@ -872,16 +887,16 @@ create policy "Users can manage household targets"
    ├── 기존 households 삭제 (단독 가구였으므로)
    └── 새 household_members에 member 역할로 추가
       ↓
-5. 초대 코드 사용 처리
-   └── invitations.used_by, used_at 업데이트
+5. 초대 상태 업데이트
+   └── invitations.status → 'accepted'로 변경
 ```
 
 **에러 케이스**
 | 상황 | 에러 코드 | 메시지 |
 |------|----------|--------|
-| 코드 없음 | INVITATION_NOT_FOUND | 유효하지 않은 초대 코드입니다 |
-| 만료됨 | INVITATION_EXPIRED | 만료된 초대 코드입니다 |
-| 이미 사용됨 | INVITATION_ALREADY_USED | 이미 사용된 초대 코드입니다 |
+| 초대 없음 | INVITATION_NOT_FOUND | 유효하지 않은 초대입니다 |
+| 만료됨 | INVITATION_EXPIRED | 만료된 초대입니다 |
+| 이미 수락됨 | INVITATION_ALREADY_ACCEPTED | 이미 수락된 초대입니다 |
 | 같은 가구 | INVITATION_SAME_HOUSEHOLD | 이미 해당 가구의 구성원입니다 |
 | 가구 소속 | HOUSEHOLD_HAS_MEMBERS | 이미 다른 가구에 소속되어 있습니다 |
 

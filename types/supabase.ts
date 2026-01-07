@@ -190,34 +190,31 @@ export type Database = {
       };
       invitations: {
         Row: {
-          code: string;
           created_at: string;
           created_by: string;
+          email: string;
           expires_at: string;
           household_id: string;
           id: string;
-          used_at: string | null;
-          used_by: string | null;
+          status: Database["public"]["Enums"]["invitation_status"] | null;
         };
         Insert: {
-          code: string;
           created_at?: string;
           created_by: string;
+          email: string;
           expires_at: string;
           household_id: string;
           id?: string;
-          used_at?: string | null;
-          used_by?: string | null;
+          status?: Database["public"]["Enums"]["invitation_status"] | null;
         };
         Update: {
-          code?: string;
           created_at?: string;
           created_by?: string;
+          email?: string;
           expires_at?: string;
           household_id?: string;
           id?: string;
-          used_at?: string | null;
-          used_by?: string | null;
+          status?: Database["public"]["Enums"]["invitation_status"] | null;
         };
         Relationships: [
           {
@@ -232,13 +229,6 @@ export type Database = {
             columns: ["household_id"];
             isOneToOne: false;
             referencedRelation: "households";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "invitations_used_by_fkey";
-            columns: ["used_by"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
             referencedColumns: ["id"];
           },
         ];
@@ -581,6 +571,7 @@ export type Database = {
       currency_type: "KRW" | "USD";
       exchange_type: "KOSPI" | "KOSDAQ" | "NYSE" | "NASDAQ" | "AMEX";
       household_role: "owner" | "member";
+      invitation_status: "pending" | "accepted" | "expired" | "cancelled";
       market_type: "KR" | "US" | "OTHER";
       risk_level: "safe" | "moderate" | "aggressive";
       stock_type_category:
@@ -747,6 +738,7 @@ export const Constants = {
       currency_type: ["KRW", "USD"],
       exchange_type: ["KOSPI", "KOSDAQ", "NYSE", "NASDAQ", "AMEX"],
       household_role: ["owner", "member"],
+      invitation_status: ["pending", "accepted", "expired", "cancelled"],
       market_type: ["KR", "US", "OTHER"],
       risk_level: ["safe", "moderate", "aggressive"],
       stock_type_category: [
