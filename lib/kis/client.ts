@@ -25,9 +25,6 @@ const KIS_BASE_URL = process.env.KIS_BASE_URL ?? "";
 const KIS_APP_KEY = process.env.KIS_APP_KEY ?? "";
 const KIS_APP_SECRET = process.env.KIS_APP_SECRET ?? "";
 
-// 토큰 만료 1시간 전에 갱신
-const TOKEN_REFRESH_BUFFER_MS = 60 * 60 * 1000;
-
 // 멀티종목 조회 최대 개수
 export const MAX_MULTI_STOCKS = 30;
 
@@ -136,7 +133,7 @@ async function issueToken(): Promise<string> {
   }
 
   const data = (await response.json()) as KISTokenResponse;
-  const expiresAt = new Date(Date.now() + data.expires_in * 1000);
+  const expiresAt = new Date(data.access_token_token_expired);
 
   // DB에 토큰 저장
   await saveTokenToDB(data.access_token, expiresAt);
@@ -155,8 +152,8 @@ async function getAccessToken(): Promise<string> {
     const now = Date.now();
     const expiresAt = cached.expiresAt.getTime();
 
-    // 만료 1시간 전까지 유효
-    if (now < expiresAt - TOKEN_REFRESH_BUFFER_MS) {
+    // 만료 전이면 유효
+    if (now < expiresAt) {
       return cached.accessToken;
     }
   }
