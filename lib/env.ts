@@ -7,6 +7,9 @@ const serverOnlyEnvVars = [
   "SUPABASE_SECRET_KEY",
   "EXCHANGERATE_API_KEY",
   "RAPIDAPI_KEY",
+  "KIS_APP_KEY",
+  "KIS_APP_SECRET",
+  "KIS_BASE_URL",
 ] as const;
 
 export function validateEnv() {

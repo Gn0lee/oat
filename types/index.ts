@@ -38,6 +38,9 @@ export type TargetAllocation = Tables<"target_allocations">;
 // View 타입
 export type Holding = Tables<"holdings">;
 
+// 시스템 테이블 타입
+export type StockPrice = Tables<"stock_prices">;
+
 // Insert 타입 (편의를 위해)
 export type TransactionInsert = TablesInsert<"transactions">;
 export type HouseholdStockSettingInsert =
