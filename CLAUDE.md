@@ -4,7 +4,8 @@
 
 ## TL;DR
 
-- **가족 자산 통합 관리 서비스** - 가족 구성원의 투자 자산을 한 대시보드에서 조회
+- **가족 자산 통합 관리 서비스** - 가족 구성원의 다양한 자산(주식, 현금, 부동산 등)을 한 대시보드에서 조회
+- **자산 유형별 계층 구조** - `/assets/[type]/...` 패턴으로 확장 가능한 구조 (MVP는 주식만 지원)
 - **transactions 기반 구조** - 매수/매도 기록 → holdings View로 현재 보유량 자동 집계
 - **Supabase + Next.js** - RLS로 가구 단위 데이터 격리, App Router 사용
 - **토스 스타일 UI/UX** - 큰 숫자 강조, 충분한 여백, 직관적 흐름
@@ -83,9 +84,15 @@ oat/
 ├── app/                    # Next.js App Router
 │   ├── (auth)/            # 인증 관련 페이지 (로그인, 회원가입)
 │   ├── (main)/            # 인증 후 메인 페이지들
-│   │   ├── dashboard/     # 대시보드
-│   │   ├── holdings/      # 보유 현황
-│   │   ├── transactions/  # 거래 내역
+│   │   ├── home/          # 홈 (총 자산 요약, 자산 유형별 카드)
+│   │   ├── dashboard/     # 대시보드 (분석, 비중 차트)
+│   │   ├── assets/        # 자산 (유형별 계층 구조)
+│   │   │   ├── page.tsx           # 자산 메인 (유형 선택)
+│   │   │   ├── total/holdings/    # 전체 보유 현황
+│   │   │   └── stock/             # 주식 자산
+│   │   │       ├── holdings/      # 주식 보유 현황
+│   │   │       └── transactions/  # 주식 거래 내역
+│   │   │           └── new/       # 주식 거래 등록
 │   │   ├── settings/      # 설정 (종목 설정 포함)
 │   │   └── layout.tsx
 │   ├── api/               # API Routes
@@ -94,9 +101,11 @@ oat/
 │   └── page.tsx
 ├── components/
 │   ├── ui/                # 공통 UI 컴포넌트
+│   ├── home/              # 홈 전용 컴포넌트
 │   ├── dashboard/         # 대시보드 전용 컴포넌트
-│   ├── holdings/          # 보유 현황 전용 컴포넌트
-│   ├── transactions/      # 거래 관련 컴포넌트
+│   ├── assets/            # 자산 관련 컴포넌트
+│   │   ├── common/        # 공통 (자산 유형 카드 등)
+│   │   └── stock/         # 주식 전용 (holdings, transactions)
 │   └── charts/            # 차트 컴포넌트
 ├── lib/
 │   ├── supabase/          # Supabase 클라이언트 설정
@@ -121,8 +130,9 @@ oat/
 |------|------|------|
 | 회원가입/로그인 | ⬜ TODO | Supabase Auth, 이메일 + OTP |
 | 부부 연결 | ⬜ TODO | 초대 코드 생성 및 수락 |
-| 거래 등록 | ⬜ TODO | 매수/매도 기록, 종목 검색 |
-| 보유 현황 | ⬜ TODO | holdings View 기반 조회 |
+| 자산 메인 | ⬜ TODO | 자산 유형별 요약 카드, 유형 선택 진입점 |
+| 주식 거래 등록 | ⬜ TODO | 매수/매도 기록, 종목 검색 |
+| 주식 보유 현황 | ⬜ TODO | holdings View 기반 조회 |
 | 종목 설정 | ⬜ TODO | 자산유형, 위험도 관리 |
 | 종목 데이터 | ⬜ TODO | KIS 마스터파일 기반 로컬 DB |
 | 환율 조회 | ⬜ TODO | ExchangeRate-API, DB 저장 |
@@ -130,8 +140,8 @@ oat/
 | PWA 지원 | ⬜ TODO | 설치 가능한 웹앱 |
 
 ### 확장 (2단계)
-- 가계부 통합 (수입/지출 관리)
-- 부동산/실물 자산 연동
+- 현금성 자산 (예적금) 기록
+- 부동산/실물 자산 기록
 - 목표 관리 및 달성률 추적
 
 ## Development Commands
@@ -205,11 +215,14 @@ pnpm supabase:types
 - **stock_master**: 종목 마스터 (KIS 마스터파일 기반, 일 1회 동기화)
 - **exchange_rates**: 환율 정보 (일 1회 동기화)
 
-#### 거래 등록 플로우
-1. 종목 검색 (stock_master 테이블, 로컬 DB)
-2. household_stock_settings에 종목 없으면 자동 생성
-3. transactions에 거래 기록 INSERT (유저가 입력한 매수가 사용)
-4. holdings View에서 자동으로 최신 보유 현황 반영
+#### 자산 기록 플로우
+1. 자산 메인 페이지(`/assets`)에서 자산 유형 선택
+2. **주식의 경우** (`/assets/stock/transactions/new`):
+   - 종목 검색 (stock_master 테이블, 로컬 DB)
+   - household_stock_settings에 종목 없으면 자동 생성
+   - transactions에 거래 기록 INSERT (유저가 입력한 매수가 사용)
+   - holdings View에서 자동으로 최신 보유 현황 반영
+3. **기타 자산의 경우** (2단계): 유형별 전용 폼으로 기록
 
 #### 수익률 계산 (단순 수익률)
 ```typescript

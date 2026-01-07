@@ -816,23 +816,32 @@ create policy "Users can manage household targets"
 
 ## 데이터 흐름
 
-### 거래 등록 플로우
+### 자산 기록 플로우
 
 ```
-1. 종목 검색 (stock_master에서 로컬 검색)
+1. 자산 유형 선택 (/assets에서 유형 카드 클릭)
       ↓
-2. household_stock_settings에 종목 없으면 자동 생성
+2. [주식의 경우] 종목 검색 (stock_master에서 로컬 검색)
       ↓
-3. transactions에 거래 기록 INSERT
+3. household_stock_settings에 종목 없으면 자동 생성
       ↓
-4. holdings View에서 자동으로 최신 보유 현황 반영
+4. transactions에 거래 기록 INSERT
+      ↓
+5. holdings View에서 자동으로 최신 보유 현황 반영
+```
+
+**URL 구조와 DB 매핑**
+```
+/assets/stock/transactions/new  → transactions 테이블 (주식)
+/assets/stock/holdings          → holdings View (asset_type = 'equity')
+/assets/total/holdings          → holdings View (전체)
 ```
 
 ### 조회 플로우
 
 ```
 종목 검색     → stock_master 테이블 (pg_trgm 유사도 검색)
-현재 보유 현황 → holdings View 조회
+현재 보유 현황 → holdings View 조회 (asset_type으로 필터링 가능)
 거래 내역     → transactions 테이블 조회
 종목 설정     → household_stock_settings 조회
 자산 추이     → transactions를 날짜별 집계
