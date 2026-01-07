@@ -57,7 +57,7 @@ export function useStockSettings({
   enabled = true,
 }: UseStockSettingsParams = {}) {
   return useQuery({
-    queryKey: queries.stockSettings.list(filters).queryKey,
+    queryKey: queries.stockSettings.list({ filters, page, pageSize }).queryKey,
     queryFn: () => fetchStockSettings(filters, page, pageSize),
     enabled,
     staleTime: 1000 * 60 * 5, // 5분

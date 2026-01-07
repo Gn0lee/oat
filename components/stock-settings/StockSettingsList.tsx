@@ -8,10 +8,11 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import type {
-  StockSettingsFilters as Filters,
-  StockSettingWithDetails,
-} from "@/lib/api/stock-settings";
+import {
+  type StockSettingsFilters as Filters,
+  useStockSettings,
+} from "@/hooks/use-stock-settings";
+import type { StockSettingWithDetails } from "@/lib/api/stock-settings";
 import type { PaginatedResult } from "@/lib/utils/query";
 import { StockSettingsFilters } from "./StockSettingsFilters";
 import { StockSettingsTable } from "./StockSettingsTable";
@@ -21,40 +22,25 @@ interface StockSettingsListProps {
 }
 
 export function StockSettingsList({ initialData }: StockSettingsListProps) {
-  const [data, setData] = useState(initialData);
   const [filters, setFilters] = useState<Filters>({});
   const [page, setPage] = useState(1);
-  const [isLoading, setIsLoading] = useState(false);
 
-  const fetchStockSettings = async (newFilters: Filters, newPage: number) => {
-    setIsLoading(true);
-    try {
-      const params = new URLSearchParams();
-      if (newFilters.assetType) params.set("assetType", newFilters.assetType);
-      if (newFilters.riskLevel) params.set("riskLevel", newFilters.riskLevel);
-      if (newFilters.market) params.set("market", newFilters.market);
-      params.set("page", String(newPage));
+  const { data, isLoading } = useStockSettings({
+    filters,
+    page,
+    pageSize: 20,
+  });
 
-      const response = await fetch(`/api/stock-settings?${params.toString()}`);
-      if (!response.ok) throw new Error("Failed to fetch");
-      const result = await response.json();
-      setData(result);
-    } catch (error) {
-      console.error("Failed to fetch stock settings:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // React Query 데이터가 없으면 초기 데이터 사용
+  const currentData = data ?? initialData;
 
   const handleFiltersChange = (newFilters: Filters) => {
     setFilters(newFilters);
     setPage(1);
-    fetchStockSettings(newFilters, 1);
   };
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
-    fetchStockSettings(filters, newPage);
   };
 
   return (
@@ -65,10 +51,10 @@ export function StockSettingsList({ initialData }: StockSettingsListProps) {
       />
 
       <div className={isLoading ? "opacity-50 pointer-events-none" : ""}>
-        <StockSettingsTable data={data.data} />
+        <StockSettingsTable data={currentData.data} />
       </div>
 
-      {data.totalPages > 1 && (
+      {currentData.totalPages > 1 && (
         <Pagination>
           <PaginationContent>
             <PaginationItem>
@@ -83,14 +69,14 @@ export function StockSettingsList({ initialData }: StockSettingsListProps) {
             </PaginationItem>
             <PaginationItem>
               <span className="px-4 text-sm text-gray-700">
-                {page} / {data.totalPages}
+                {page} / {currentData.totalPages}
               </span>
             </PaginationItem>
             <PaginationItem>
               <PaginationNext
                 onClick={() => handlePageChange(page + 1)}
                 className={
-                  page >= data.totalPages
+                  page >= currentData.totalPages
                     ? "pointer-events-none opacity-50"
                     : "cursor-pointer"
                 }
