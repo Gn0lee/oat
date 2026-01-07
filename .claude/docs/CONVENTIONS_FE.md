@@ -97,7 +97,51 @@ lib/queries/index.ts  # 모든 쿼리 정의
 
 ---
 
-## 5. 컴포넌트 구조
+## 5. 라우팅 패턴
+
+### 자산 유형별 계층 구조
+
+자산은 `/assets/[type]/...` 패턴으로 유형별 계층 구조를 따릅니다.
+
+```
+app/(main)/
+├── home/                          # /home - 홈 (총 자산 요약, 빠른 액션)
+├── dashboard/                     # /dashboard - 분석 (비중 차트, 수익률)
+├── assets/                        # /assets - 자산 메인 (유형 선택 허브)
+│   ├── page.tsx                   # 자산 유형별 카드
+│   ├── total/
+│   │   └── holdings/
+│   │       └── page.tsx           # /assets/total/holdings - 전체 보유 현황
+│   └── stock/                     # 주식 자산
+│       ├── holdings/
+│       │   └── page.tsx           # /assets/stock/holdings - 주식 보유 현황
+│       └── transactions/
+│           ├── page.tsx           # /assets/stock/transactions - 주식 거래 내역
+│           └── new/
+│               └── page.tsx       # /assets/stock/transactions/new - 주식 거래 등록
+└── settings/                      # /settings - 설정
+```
+
+### 확장 패턴
+
+새 자산 유형 추가 시 동일 패턴 적용:
+
+```
+assets/
+├── stock/        # 주식 (MVP)
+├── cash/         # 현금/예적금 (2단계)
+├── real-estate/  # 부동산 (2단계)
+└── other/        # 기타 (2단계)
+```
+
+각 유형별로 동일한 하위 구조:
+- `holdings/` - 보유 현황
+- `transactions/` - 거래/기록 내역
+- `transactions/new/` - 기록 추가
+
+---
+
+## 6. 컴포넌트 구조
 
 ### 파일 구조
 
@@ -114,6 +158,8 @@ lib/queries/index.ts  # 모든 쿼리 정의
 |------|------|
 | `components/ui/` | 공통 UI (shadcn/ui) |
 | `components/[feature]/` | 기능별 컴포넌트 |
+| `components/assets/common/` | 자산 공통 (유형 카드 등) |
+| `components/assets/stock/` | 주식 전용 컴포넌트 |
 
 ### Props 네이밍
 
@@ -126,7 +172,7 @@ interface HoldingCardProps {
 
 ---
 
-## 6. 스타일링
+## 7. 스타일링
 
 ### Tailwind CSS
 
@@ -144,7 +190,7 @@ interface HoldingCardProps {
 
 ---
 
-## 7. 테스트
+## 8. 테스트
 
 ### 우선순위 (점진적)
 
