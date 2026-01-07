@@ -1,7 +1,10 @@
 import { BarChart3, PlusCircle } from "lucide-react";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { QuickActionCard, SummaryCard } from "@/components/dashboard";
+import { ExchangeRateInfo } from "@/components/dashboard/ExchangeRateInfo";
+import { getExchangeRateSafe } from "@/lib/api/exchange";
 import { getUser } from "@/lib/supabase/auth";
+import { createClient } from "@/lib/supabase/server";
 
 // Mock 데이터 (추후 API 연동 시 제거)
 const mockDashboardData = {
@@ -18,6 +21,8 @@ const mockDashboardData = {
 
 export default async function DashboardPage() {
   const user = await getUser();
+  const supabase = await createClient();
+  const exchangeRate = await getExchangeRateSafe(supabase, "USD", "KRW");
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
@@ -60,6 +65,12 @@ export default async function DashboardPage() {
             actionLabel="확인하기"
           />
         </div>
+
+        {/* 환율 정보 */}
+        <ExchangeRateInfo
+          rate={exchangeRate?.rate ?? null}
+          updatedAt={exchangeRate?.updatedAt ?? null}
+        />
       </div>
     </div>
   );
