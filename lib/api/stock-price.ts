@@ -59,25 +59,47 @@ async function getCachedPrices(
     return new Map();
   }
 
-  // market, code 조합으로 조회
-  const conditions = stocks.map(
-    (s) => `(market.eq.${s.market},code.eq.${s.code})`,
-  );
+  // 시장별로 분리하여 조회 (PostgREST의 복합 OR 조건 한계 우회)
+  const krCodes = stocks.filter((s) => s.market === "KR").map((s) => s.code);
+  const usCodes = stocks.filter((s) => s.market === "US").map((s) => s.code);
 
-  const { data, error } = await supabase
-    .from("stock_prices")
-    .select("market, code, price, change_rate, fetched_at")
-    .or(conditions.join(","));
+  const fetchKrPrices = async (): Promise<StockPriceRow[]> => {
+    if (krCodes.length === 0) return [];
+    const { data, error } = await supabase
+      .from("stock_prices")
+      .select("market, code, price, change_rate, fetched_at")
+      .eq("market", "KR")
+      .in("code", krCodes);
+    if (error) {
+      console.error("KR cache query error:", error);
+      return [];
+    }
+    return (data ?? []) as StockPriceRow[];
+  };
 
-  if (error) {
-    console.error("Cache query error:", error);
-    // 캐시 조회 실패해도 계속 진행 (API로 조회)
-    return new Map();
-  }
+  const fetchUsPrices = async (): Promise<StockPriceRow[]> => {
+    if (usCodes.length === 0) return [];
+    const { data, error } = await supabase
+      .from("stock_prices")
+      .select("market, code, price, change_rate, fetched_at")
+      .eq("market", "US")
+      .in("code", usCodes);
+    if (error) {
+      console.error("US cache query error:", error);
+      return [];
+    }
+    return (data ?? []) as StockPriceRow[];
+  };
+
+  const [krData, usData] = await Promise.all([
+    fetchKrPrices(),
+    fetchUsPrices(),
+  ]);
+  const data = [...krData, ...usData];
 
   const result = new Map<string, StockPriceResult>();
 
-  for (const row of data ?? []) {
+  for (const row of data) {
     const fetchedAt = new Date(row.fetched_at);
 
     // 캐시 유효성 검사
