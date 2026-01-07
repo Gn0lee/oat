@@ -1,8 +1,20 @@
-import { PlusCircle, Users } from "lucide-react";
-import Link from "next/link";
+import { BarChart3, PlusCircle } from "lucide-react";
 import { LogoutButton } from "@/components/auth/LogoutButton";
-import { Button } from "@/components/ui/button";
+import { QuickActionCard, SummaryCard } from "@/components/dashboard";
 import { getUser } from "@/lib/supabase/auth";
+
+// Mock 데이터 (추후 API 연동 시 제거)
+const mockDashboardData = {
+  byMember: [
+    { label: "홍길동", value: 75000000, percentage: 60, color: "#4F46E5" },
+    { label: "김영희", value: 50000000, percentage: 40, color: "#03B26C" },
+  ],
+  byAssetClass: [
+    { label: "주식", value: 80000000, percentage: 64, color: "#4F46E5" },
+    { label: "채권", value: 25000000, percentage: 20, color: "#03B26C" },
+    { label: "현금", value: 20430000, percentage: 16, color: "#8B95A1" },
+  ],
+};
 
 export default async function DashboardPage() {
   const user = await getUser();
@@ -10,53 +22,44 @@ export default async function DashboardPage() {
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-4xl mx-auto space-y-6">
+        {/* 헤더 */}
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-900">대시보드</h1>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">대시보드</h1>
+            <p className="text-sm text-gray-500">안녕하세요, {user?.email}님</p>
+          </div>
           <LogoutButton />
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm p-6">
-          <p className="text-gray-500 text-sm">로그인된 사용자</p>
-          <p className="text-lg font-medium text-gray-900">{user?.email}</p>
+        {/* 요약 카드 그리드 */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <SummaryCard
+            title="구성원별 자산"
+            items={mockDashboardData.byMember}
+          />
+          <SummaryCard
+            title="자산군별 비중"
+            items={mockDashboardData.byAssetClass}
+          />
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm p-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center size-10 bg-primary/10 rounded-full">
-                <PlusCircle className="size-5 text-primary" />
-              </div>
-              <div>
-                <p className="font-medium text-gray-900">거래 등록</p>
-                <p className="text-sm text-gray-500">매수/매도 기록 추가</p>
-              </div>
-            </div>
-            <Button asChild>
-              <Link href="/transactions/new">등록하기</Link>
-            </Button>
-          </div>
+        {/* 빠른 액션 */}
+        <div className="space-y-3">
+          <QuickActionCard
+            icon={PlusCircle}
+            title="거래 등록"
+            description="매수/매도 기록 추가"
+            href="/transactions/new"
+            actionLabel="등록하기"
+          />
+          <QuickActionCard
+            icon={BarChart3}
+            title="보유 현황"
+            description="현재 보유 종목 확인"
+            href="/holdings"
+            actionLabel="확인하기"
+          />
         </div>
-
-        <div className="bg-white rounded-2xl shadow-sm p-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center size-10 bg-primary/10 rounded-full">
-                <Users className="size-5 text-primary" />
-              </div>
-              <div>
-                <p className="font-medium text-gray-900">가구 관리</p>
-                <p className="text-sm text-gray-500">구성원 관리 및 초대</p>
-              </div>
-            </div>
-            <Button asChild>
-              <Link href="/household">관리하기</Link>
-            </Button>
-          </div>
-        </div>
-
-        <p className="text-center text-gray-400 text-sm">
-          대시보드는 추후 구현 예정입니다
-        </p>
       </div>
     </div>
   );
