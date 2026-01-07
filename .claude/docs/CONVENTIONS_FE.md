@@ -139,6 +139,29 @@ assets/
 - `transactions/` - 거래/기록 내역
 - `transactions/new/` - 기록 추가
 
+### 대시보드 계층 구조
+
+대시보드는 `/dashboard/[type]` 패턴으로 분석 유형별 계층 구조를 따릅니다.
+
+```
+app/(main)/
+├── dashboard/                     # /dashboard - 대시보드 메인 (허브)
+│   ├── page.tsx                   # 총 자산/수익률 + 분석 유형 선택
+│   ├── stocks/
+│   │   └── page.tsx               # /dashboard/stocks - 주식 분석
+│   ├── cash/
+│   │   └── page.tsx               # /dashboard/cash - 현금 분석 (준비 중)
+│   ├── real-estate/
+│   │   └── page.tsx               # /dashboard/real-estate - 부동산 분석 (준비 중)
+│   ├── other/
+│   │   └── page.tsx               # /dashboard/other - 기타 분석 (준비 중)
+│   └── breakdown/
+│       └── page.tsx               # /dashboard/breakdown - 비중 분석 (탭 전환)
+```
+
+비중 분석 페이지는 탭으로 소유자별/위험도별/자산군별 전환:
+- URL 쿼리 파라미터로 탭 상태 유지 (예: `/dashboard/breakdown?tab=owner`)
+
 ---
 
 ## 6. 컴포넌트 구조
