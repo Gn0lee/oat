@@ -1,11 +1,22 @@
 import { PlusCircle, Users } from "lucide-react";
 import Link from "next/link";
 import { LogoutButton } from "@/components/auth/LogoutButton";
+import { ExchangeRateInfo } from "@/components/dashboard/ExchangeRateInfo";
 import { Button } from "@/components/ui/button";
+import { getExchangeRate } from "@/lib/api/exchange";
 import { getUser } from "@/lib/supabase/auth";
+import { createClient } from "@/lib/supabase/server";
 
 export default async function DashboardPage() {
   const user = await getUser();
+  const supabase = await createClient();
+
+  let exchangeRate: { rate: number; updatedAt: string | null } | null = null;
+  try {
+    exchangeRate = await getExchangeRate(supabase, "USD", "KRW");
+  } catch {
+    // 환율 조회 실패 시 무시 (UI에서 표시하지 않음)
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
@@ -53,6 +64,13 @@ export default async function DashboardPage() {
             </Button>
           </div>
         </div>
+
+        {exchangeRate && (
+          <ExchangeRateInfo
+            rate={exchangeRate.rate}
+            updatedAt={exchangeRate.updatedAt}
+          />
+        )}
 
         <p className="text-center text-gray-400 text-sm">
           대시보드는 추후 구현 예정입니다
