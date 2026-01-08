@@ -4,14 +4,14 @@ import { cn } from "@/lib/utils/cn";
 
 const actions = [
   {
-    href: "/transactions/new?type=buy",
+    href: "/assets/stock/transactions/new?type=buy",
     label: "매수",
     icon: PlusCircle,
     color: "text-green-600",
     bgColor: "bg-green-50",
   },
   {
-    href: "/transactions/new?type=sell",
+    href: "/assets/stock/transactions/new?type=sell",
     label: "매도",
     icon: MinusCircle,
     color: "text-red-600",
