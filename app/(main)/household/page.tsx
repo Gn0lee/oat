@@ -1,8 +1,7 @@
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { HouseholdMembersCard } from "@/components/household/HouseholdMembersCard";
 import { HouseholdSettings } from "@/components/household/HouseholdSettings";
-import { InvitationForm } from "@/components/household/InvitationForm";
-import { MemberList } from "@/components/household/MemberList";
 import { Button } from "@/components/ui/button";
 import { getHouseholdWithMembers } from "@/lib/api/household";
 import { requireUser } from "@/lib/supabase/auth";
@@ -15,7 +14,6 @@ export default async function HouseholdPage() {
 
   const isOwner =
     household?.members.find((m) => m.userId === user.id)?.role === "owner";
-  const isSingleMember = household?.members.length === 1;
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
@@ -43,13 +41,12 @@ export default async function HouseholdPage() {
               isOwner={isOwner}
             />
 
-            {/* 구성원 목록 (2명 이상일 때만) */}
-            {!isSingleMember && (
-              <MemberList members={household.members} currentUserId={user.id} />
-            )}
-
-            {/* 파트너 초대 (owner이고 1명일 때만) */}
-            {isOwner && isSingleMember && <InvitationForm />}
+            {/* 구성원 목록 및 초대 */}
+            <HouseholdMembersCard
+              members={household.members}
+              currentUserId={user.id}
+              isOwner={isOwner}
+            />
           </>
         ) : (
           <div className="text-center py-12">

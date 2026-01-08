@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { MAX_HOUSEHOLD_MEMBERS } from "@/constants/household";
 import { APIError, toErrorResponse } from "@/lib/api/error";
 import {
   checkExistingUserByEmail,
@@ -67,12 +68,12 @@ export async function POST(request: Request) {
       );
     }
 
-    // 가구 구성원 수 확인 (최대 2명)
+    // 가구 구성원 수 확인
     const memberCount = await getHouseholdMemberCount(supabase, householdId);
-    if (memberCount >= 2) {
+    if (memberCount >= MAX_HOUSEHOLD_MEMBERS) {
       throw new APIError(
         "HOUSEHOLD_FULL",
-        "가구 구성원이 최대 인원(2명)에 도달했습니다.",
+        `가구 구성원이 최대 인원(${MAX_HOUSEHOLD_MEMBERS}명)에 도달했습니다.`,
         400,
       );
     }
@@ -101,12 +102,20 @@ export async function POST(request: Request) {
       );
     }
 
+    // invitations 테이블에 먼저 기록 (트리거가 이 데이터를 참조함)
+    const invitation = await createEmailInvitation(
+      supabase,
+      householdId,
+      user.id,
+      email,
+    );
+
     // Supabase Admin API로 초대 이메일 발송
     const adminClient = createAdminClient();
     const origin = new URL(request.url).origin;
     const { error: inviteError } =
       await adminClient.auth.admin.inviteUserByEmail(email, {
-        redirectTo: `${origin}/auth/callback`,
+        redirectTo: `${origin}/auth/invite/callback`,
         data: {
           household_id: householdId,
           invited_by: user.id,
@@ -114,6 +123,8 @@ export async function POST(request: Request) {
       });
 
     if (inviteError) {
+      // 이메일 발송 실패 시 invitation 삭제
+      await supabase.from("invitations").delete().eq("id", invitation.id);
       console.error("Supabase invite error:", inviteError);
       throw new APIError(
         "INVITATION_SEND_FAILED",
@@ -121,14 +132,6 @@ export async function POST(request: Request) {
         500,
       );
     }
-
-    // invitations 테이블에 기록
-    const invitation = await createEmailInvitation(
-      supabase,
-      householdId,
-      user.id,
-      email,
-    );
 
     return NextResponse.json({ data: invitation }, { status: 201 });
   } catch (error) {

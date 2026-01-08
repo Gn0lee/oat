@@ -2,7 +2,13 @@ import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 import type { Database } from "@/types";
 
-const AUTH_ROUTES = ["/login", "/signup", "/reset-password", "/auth/callback"];
+const AUTH_ROUTES = [
+  "/login",
+  "/signup",
+  "/reset-password",
+  "/auth/callback",
+  "/auth/invite/callback",
+];
 const PUBLIC_ROUTES = ["/"];
 const LANDING_ROUTE = "/";
 
