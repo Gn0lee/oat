@@ -73,7 +73,7 @@
 | Linter/Formatter | Biome | ESLint + Prettier 대체, 빠른 속도 |
 | Infra | Vercel | Next.js 최적화 배포 |
 | Stock Data | KIS 마스터파일 + Supabase | 로컬 DB 기반 종목 검색/종가 |
-| Exchange Rate | ExchangeRate-API + Supabase | 일 1회 동기화, DB 저장 |
+| Exchange Rate | ExchangeRate-API + Supabase | 2시간 1회 동기화, DB 저장 |
 | Data Sync | GitHub Actions | 매일 08:00 KST 자동 동기화 |
 | PWA | next-pwa | 모바일 앱 경험 제공 |
 
@@ -219,7 +219,7 @@ pnpm supabase:types
 - **holdings (View)**: transactions 기반으로 현재 보유 현황 자동 집계
 - **household_stock_settings**: 가구별 종목 설정 (자산유형, 위험도)
 - **stock_master**: 종목 마스터 (KIS 마스터파일 기반, 일 1회 동기화)
-- **exchange_rates**: 환율 정보 (일 1회 동기화)
+- **exchange_rates**: 환율 정보 (2시간 1회 동기화)
 
 #### 자산 기록 플로우
 1. 자산 메인 페이지(`/assets`)에서 자산 유형 선택
@@ -241,7 +241,7 @@ const totalReturn = ((totalCurrentValue - totalInvestedAmount) / totalInvestedAm
 
 #### 환율 처리
 - USD 자산은 원화 환산 시 `exchange_rates` 테이블의 환율 적용
-- GitHub Actions에서 일 1회 ExchangeRate-API 호출 → DB 저장
+- GitHub Actions에서 2시간 1회 ExchangeRate-API 호출 → DB 저장
 - Vercel 서버리스 환경에서 메모리 캐싱 불안정하므로 DB 저장 방식 채택
 
 #### 부부 연결 플로우
@@ -266,8 +266,9 @@ const totalReturn = ((totalCurrentValue - totalInvestedAmount) / totalInvestedAm
   - KIS 마스터파일 다운로드 → 파싱 → Supabase UPSERT
   - 국내: KOSPI, KOSDAQ (kospi_code.mst, kosdaq_code.mst)
   - 해외: NYSE, NASDAQ, AMEX (nasmst.cod, nysmst.cod, amsmst.cod)
-- **환율 (exchange_rates)**: 일 1회 (매일 08:00 KST)
+- **환율 (exchange_rates)**: 2시간 1회
   - ExchangeRate-API 호출 → Supabase UPSERT
+  - 월 360회 호출 (1,500회 제한 대비 24% 사용)
 - **사용자 입력**: 실시간 반영
 
 ### 보안 고려사항
