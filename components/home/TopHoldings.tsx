@@ -31,7 +31,7 @@ export function TopHoldings() {
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-medium text-gray-500">보유 종목 TOP 5</h3>
         <Link
-          href="/holdings"
+          href="/assets/stock/holdings"
           className="flex items-center gap-1 text-sm text-primary hover:underline"
         >
           전체 보기

@@ -19,7 +19,7 @@ export function RecentTransactions() {
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-medium text-gray-500">최근 거래</h3>
         <Link
-          href="/transactions"
+          href="/assets/stock/transactions"
           className="flex items-center gap-1 text-sm text-primary hover:underline"
         >
           전체 보기

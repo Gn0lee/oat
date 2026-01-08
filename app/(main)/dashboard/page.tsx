@@ -30,14 +30,14 @@ export default async function DashboardPage() {
           icon={PlusCircle}
           title="거래 등록"
           description="매수/매도 기록 추가"
-          href="/transactions/new"
+          href="/assets/stock/transactions/new"
           actionLabel="등록하기"
         />
         <QuickActionCard
           icon={BarChart3}
           title="보유 현황"
           description="현재 보유 종목 확인"
-          href="/holdings"
+          href="/assets/stock/holdings"
           actionLabel="확인하기"
         />
       </div>
