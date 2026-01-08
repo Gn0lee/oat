@@ -202,6 +202,7 @@ create table public.invitations (
 create index invitations_email_idx on public.invitations(email);
 create index invitations_status_idx on public.invitations(status);
 create index invitations_household_id_idx on public.invitations(household_id);
+create index invitations_created_by_idx on public.invitations(created_by);
 ```
 
 | 컬럼 | 타입 | 설명 |
