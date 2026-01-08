@@ -34,6 +34,63 @@ export type Database = {
   };
   public: {
     Tables: {
+      accounts: {
+        Row: {
+          account_number: string | null;
+          account_type: string | null;
+          broker: string | null;
+          created_at: string;
+          household_id: string;
+          id: string;
+          is_default: boolean | null;
+          memo: string | null;
+          name: string;
+          owner_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          account_number?: string | null;
+          account_type?: string | null;
+          broker?: string | null;
+          created_at?: string;
+          household_id: string;
+          id?: string;
+          is_default?: boolean | null;
+          memo?: string | null;
+          name: string;
+          owner_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          account_number?: string | null;
+          account_type?: string | null;
+          broker?: string | null;
+          created_at?: string;
+          household_id?: string;
+          id?: string;
+          is_default?: boolean | null;
+          memo?: string | null;
+          name?: string;
+          owner_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "accounts_household_id_fkey";
+            columns: ["household_id"];
+            isOneToOne: false;
+            referencedRelation: "households";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "accounts_owner_id_fkey";
+            columns: ["owner_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       exchange_rates: {
         Row: {
           from_currency: Database["public"]["Enums"]["currency_type"];
