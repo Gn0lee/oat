@@ -1,8 +1,7 @@
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { AcceptInvitation } from "@/components/household/AcceptInvitation";
 import { HouseholdSettings } from "@/components/household/HouseholdSettings";
-import { InvitationCode } from "@/components/household/InvitationCode";
+import { InvitationForm } from "@/components/household/InvitationForm";
 import { MemberList } from "@/components/household/MemberList";
 import { Button } from "@/components/ui/button";
 import { getHouseholdWithMembers } from "@/lib/api/household";
@@ -13,6 +12,10 @@ export default async function HouseholdPage() {
   const user = await requireUser();
   const supabase = await createClient();
   const household = await getHouseholdWithMembers(supabase, user.id);
+
+  const isOwner =
+    household?.members.find((m) => m.userId === user.id)?.role === "owner";
+  const isSingleMember = household?.members.length === 1;
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
@@ -37,28 +40,16 @@ export default async function HouseholdPage() {
             <HouseholdSettings
               householdId={household.id}
               householdName={household.name}
-              isOwner={
-                household.members.find((m) => m.userId === user.id)?.role ===
-                "owner"
-              }
+              isOwner={isOwner}
             />
 
-            {household.members.length === 1 ? (
-              <>
-                {/* 단독 가구: 초대 수락을 먼저 보여줌 */}
-                <AcceptInvitation />
-                <InvitationCode />
-              </>
-            ) : (
-              <>
-                {/* 다중 가구: 구성원 목록 + 초대 코드 생성 */}
-                <MemberList
-                  members={household.members}
-                  currentUserId={user.id}
-                />
-                <InvitationCode />
-              </>
+            {/* 구성원 목록 (2명 이상일 때만) */}
+            {!isSingleMember && (
+              <MemberList members={household.members} currentUserId={user.id} />
             )}
+
+            {/* 파트너 초대 (owner이고 1명일 때만) */}
+            {isOwner && isSingleMember && <InvitationForm />}
           </>
         ) : (
           <div className="text-center py-12">

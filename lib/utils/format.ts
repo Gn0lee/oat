@@ -81,13 +81,3 @@ export function formatRemainingTime(targetDate: Date | string): string {
   }
   return `${diffMinutes}분 후 만료`;
 }
-
-/**
- * 초대 코드를 포맷 (예: ABC123 -> ABC-123)
- */
-export function formatInvitationCode(code: string): string {
-  if (code.length === 6) {
-    return `${code.slice(0, 3)}-${code.slice(3)}`;
-  }
-  return code;
-}
