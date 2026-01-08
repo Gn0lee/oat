@@ -1,17 +1,23 @@
 import { NextResponse } from "next/server";
 import { APIError, toErrorResponse } from "@/lib/api/error";
 import {
-  getPendingInvitations,
+  deleteInvitation,
+  getInvitationById,
   getUserHouseholdId,
 } from "@/lib/api/invitation";
 import { createClient } from "@/lib/supabase/server";
 
+interface RouteParams {
+  params: Promise<{ id: string }>;
+}
+
 /**
- * GET /api/invitations
- * 발송된 초대 목록 조회 (pending 상태)
+ * DELETE /api/invitations/[id]
+ * 초대 취소 (삭제)
  */
-export async function GET() {
+export async function DELETE(request: Request, { params }: RouteParams) {
   try {
+    const { id } = await params;
     const supabase = await createClient();
 
     // 인증 확인
@@ -35,10 +41,30 @@ export async function GET() {
       );
     }
 
-    // 활성 초대 목록 조회
-    const invitations = await getPendingInvitations(supabase, householdId);
+    // 초대 존재 확인
+    const invitation = await getInvitationById(supabase, id);
 
-    return NextResponse.json({ data: invitations });
+    if (!invitation) {
+      throw new APIError(
+        "INVITATION_NOT_FOUND",
+        "초대를 찾을 수 없습니다.",
+        404,
+      );
+    }
+
+    // 본인 가구의 초대인지 확인
+    if (invitation.household_id !== householdId) {
+      throw new APIError(
+        "INVITATION_FORBIDDEN",
+        "해당 초대를 취소할 권한이 없습니다.",
+        403,
+      );
+    }
+
+    // 초대 삭제
+    await deleteInvitation(supabase, id, householdId);
+
+    return NextResponse.json({ data: { success: true } });
   } catch (error) {
     if (error instanceof APIError) {
       return NextResponse.json(toErrorResponse(error), {
@@ -46,7 +72,7 @@ export async function GET() {
       });
     }
 
-    console.error("Invitation fetch error:", error);
+    console.error("Invitation delete error:", error);
     return NextResponse.json(
       {
         error: {

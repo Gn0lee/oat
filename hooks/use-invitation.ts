@@ -3,8 +3,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Invitation } from "@/types";
 
+interface InvitationsResponse {
+  data: Invitation[];
+}
+
 interface InvitationResponse {
-  data: Invitation | null;
+  data: Invitation;
 }
 
 interface InvitationError {
@@ -14,8 +18,32 @@ interface InvitationError {
   };
 }
 
-async function fetchInvitation(): Promise<Invitation | null> {
+/**
+ * 발송된 초대 목록 조회
+ */
+async function fetchInvitations(): Promise<Invitation[]> {
   const response = await fetch("/api/invitations");
+  const json = await response.json();
+
+  if (!response.ok) {
+    const error = json as InvitationError;
+    throw new Error(error.error.message);
+  }
+
+  return (json as InvitationsResponse).data;
+}
+
+/**
+ * 이메일로 초대 발송
+ */
+async function sendEmailInvitation(email: string): Promise<Invitation> {
+  const response = await fetch("/api/invitations/email", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ email }),
+  });
   const json = await response.json();
 
   if (!response.ok) {
@@ -26,79 +54,56 @@ async function fetchInvitation(): Promise<Invitation | null> {
   return (json as InvitationResponse).data;
 }
 
-interface CreateInvitationOptions {
-  regenerate?: boolean;
-}
-
-async function createInvitation(
-  options?: CreateInvitationOptions,
-): Promise<Invitation> {
-  const response = await fetch("/api/invitations", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ regenerate: options?.regenerate ?? false }),
+/**
+ * 초대 취소
+ */
+async function cancelInvitation(id: string): Promise<void> {
+  const response = await fetch(`/api/invitations/${id}`, {
+    method: "DELETE",
   });
-  const json = await response.json();
 
   if (!response.ok) {
+    const json = await response.json();
     const error = json as InvitationError;
     throw new Error(error.error.message);
   }
-
-  return (json as InvitationResponse).data as Invitation;
 }
 
-export function useInvitation() {
+/**
+ * 발송된 초대 목록 조회 hook
+ */
+export function useInvitations() {
   return useQuery({
-    queryKey: ["invitation"],
-    queryFn: fetchInvitation,
+    queryKey: ["invitations"],
+    queryFn: fetchInvitations,
     staleTime: 1000 * 60 * 5, // 5분
   });
 }
 
-export function useCreateInvitation() {
+/**
+ * 이메일 초대 발송 mutation
+ */
+export function useSendInvitation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (options?: CreateInvitationOptions) =>
-      createInvitation(options),
-    onSuccess: (data) => {
-      queryClient.setQueryData(["invitation"], data);
+    mutationFn: sendEmailInvitation,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["invitations"] });
     },
   });
 }
 
-interface AcceptInvitationResponse {
-  data: { householdId: string };
-}
-
-async function acceptInvitation(
-  code: string,
-): Promise<{ householdId: string }> {
-  const normalizedCode = code.toUpperCase().replace(/-/g, "");
-  const response = await fetch(`/api/invitations/${normalizedCode}/accept`, {
-    method: "POST",
-  });
-  const json = await response.json();
-
-  if (!response.ok) {
-    const error = json as InvitationError;
-    throw new Error(error.error.message);
-  }
-
-  return (json as AcceptInvitationResponse).data;
-}
-
-export function useAcceptInvitation() {
+/**
+ * 초대 취소 mutation
+ */
+export function useCancelInvitation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: acceptInvitation,
+    mutationFn: cancelInvitation,
     onSuccess: () => {
-      // 초대 관련 캐시 무효화
-      queryClient.invalidateQueries({ queryKey: ["invitation"] });
+      queryClient.invalidateQueries({ queryKey: ["invitations"] });
     },
   });
 }
