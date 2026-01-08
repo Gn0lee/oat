@@ -1,7 +1,5 @@
-import { Plus } from "lucide-react";
-import Link from "next/link";
+import { StockTabNav } from "@/components/assets/stock";
 import { TransactionList } from "@/components/transactions/TransactionList";
-import { Button } from "@/components/ui/button";
 import { getHouseholdWithMembers } from "@/lib/api/household";
 import { getUserHouseholdId } from "@/lib/api/invitation";
 import { requireUser } from "@/lib/supabase/auth";
@@ -29,16 +27,8 @@ export default async function TransactionsPage() {
 
   return (
     <>
-      {/* 페이지 헤더 */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">거래 내역</h1>
-        <Button asChild>
-          <Link href="/assets/stock/transactions/new">
-            <Plus className="size-4 mr-2" />
-            거래 등록
-          </Link>
-        </Button>
-      </div>
+      {/* 탭 네비게이션 */}
+      <StockTabNav activeTab="transactions" />
 
       {/* 거래 내역 목록 */}
       <TransactionList members={members} currentUserId={user.id} />
