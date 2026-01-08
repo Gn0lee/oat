@@ -1,6 +1,6 @@
 "use client";
 
-import { BarChart3, FileText, Home, Settings, TrendingUp } from "lucide-react";
+import { BarChart3, TrendingUp, Home, Settings, FileText } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils/cn";
@@ -20,10 +20,7 @@ export function Sidebar() {
     if (href === "/home") {
       return pathname === "/home";
     }
-    if (href === "/dashboard") {
-      return pathname === "/dashboard";
-    }
-    return pathname.startsWith(href);
+    return pathname === href || pathname.startsWith(`${href}/`);
   };
 
   return (
