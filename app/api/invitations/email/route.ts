@@ -103,9 +103,10 @@ export async function POST(request: Request) {
 
     // Supabase Admin API로 초대 이메일 발송
     const adminClient = createAdminClient();
+    const origin = new URL(request.url).origin;
     const { error: inviteError } =
       await adminClient.auth.admin.inviteUserByEmail(email, {
-        redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`,
+        redirectTo: `${origin}/auth/callback`,
         data: {
           household_id: householdId,
           invited_by: user.id,
