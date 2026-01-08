@@ -35,6 +35,17 @@
 | `NEXT_PUBLIC_APP_URL` | 앱 URL | `http://localhost:3000` |
 | `LOG_LEVEL` | 로그 레벨 | `info` |
 
+### system_config 전용 (선택)
+
+로컬 개발 시 운영 DB의 KIS 토큰에 접근해야 하는 경우 설정합니다.
+
+| 변수명 | 설명 | 예시 |
+|--------|------|------|
+| `SYSTEM_CONFIG_SUPABASE_URL` | 운영 Supabase URL | `https://xxx.supabase.co` |
+| `SYSTEM_CONFIG_SECRET_KEY` | 운영 Secret Key | `sb_secret_xxx` |
+
+> 미설정 시 `NEXT_PUBLIC_SUPABASE_URL`과 `SUPABASE_SECRET_KEY`를 사용합니다.
+
 ### GitHub Actions Secrets
 
 GitHub Actions에서 종목/환율 동기화에 사용. GitHub Repository > Settings > Secrets에 설정.
@@ -134,6 +145,10 @@ declare namespace NodeJS {
     NEXT_PUBLIC_SUPABASE_URL: string;
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: string;
     SUPABASE_SECRET_KEY: string;
+
+    // system_config 전용 (선택)
+    SYSTEM_CONFIG_SUPABASE_URL?: string;
+    SYSTEM_CONFIG_SECRET_KEY?: string;
 
     // App
     NEXT_PUBLIC_APP_URL?: string;
