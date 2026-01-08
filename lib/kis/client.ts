@@ -7,7 +7,7 @@
  */
 
 import { APIError } from "@/lib/api/error";
-import { createClient } from "@/lib/supabase/server";
+import { getSystemConfigClient } from "@/lib/supabase/system-config-client";
 import type {
   KISAPIResponse,
   KISDomesticMultiPriceOutput,
@@ -55,7 +55,7 @@ async function getTokenFromDB(): Promise<{
   accessToken: string;
   expiresAt: Date;
 } | null> {
-  const supabase = await createClient();
+  const supabase = getSystemConfigClient();
 
   const { data, error } = await supabase
     .from("system_config")
@@ -85,7 +85,7 @@ async function saveTokenToDB(
   accessToken: string,
   expiresAt: Date,
 ): Promise<void> {
-  const supabase = await createClient();
+  const supabase = getSystemConfigClient();
 
   const { error } = await supabase.from("system_config").upsert(
     {
@@ -357,6 +357,6 @@ export function getExchangeCode(exchange: string): OverseasExchangeCode {
  * 토큰 캐시 초기화 (테스트용)
  */
 export async function clearTokenCache(): Promise<void> {
-  const supabase = await createClient();
+  const supabase = getSystemConfigClient();
   await supabase.from("system_config").delete().eq("key", KIS_TOKEN_KEY);
 }
