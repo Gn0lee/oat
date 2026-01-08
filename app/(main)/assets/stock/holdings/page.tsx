@@ -1,3 +1,4 @@
+import { StockTabNav } from "@/components/assets/stock";
 import { HoldingsList } from "@/components/holdings/HoldingsList";
 import { getHoldings } from "@/lib/api/holdings";
 import { getHouseholdWithMembers } from "@/lib/api/household";
@@ -32,13 +33,13 @@ export default async function HoldingsPage() {
 
   return (
     <>
-      {/* 페이지 헤더 */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">보유 현황</h1>
-        <p className="text-sm text-gray-500">
-          총 {initialData.total}개 종목 보유 중
-        </p>
-      </div>
+      {/* 탭 네비게이션 */}
+      <StockTabNav activeTab="holdings" />
+
+      {/* 보유 현황 요약 */}
+      <p className="text-sm text-gray-500">
+        총 {initialData.total}개 종목 보유 중
+      </p>
 
       {/* 보유 현황 목록 */}
       <HoldingsList initialData={initialData} members={members} />
