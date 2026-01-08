@@ -1,12 +1,16 @@
+"use client";
+
 import {
   ChevronRight,
   Home,
   type LucideIcon,
   Package,
+  Settings,
   TrendingUp,
   Wallet,
 } from "lucide-react";
 import Link from "next/link";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils/cn";
 import { formatCurrency, formatPercent } from "@/lib/utils/format";
 
@@ -84,8 +88,18 @@ export function AssetTypeCard({
 
   // 비활성 상태 (준비 중)
   if (disabled) {
+    const handleDisabledClick = () => {
+      toast.info(`${config.label} 기능은 준비 중이에요`, {
+        description: "조금만 기다려주세요!",
+      });
+    };
+
     return (
-      <div className="bg-white rounded-2xl p-5 shadow-sm opacity-60">
+      <button
+        type="button"
+        onClick={handleDisabledClick}
+        className="w-full text-left bg-white rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow opacity-80 hover:opacity-100"
+      >
         <div className="flex items-center gap-2 mb-3">
           <div className={cn("p-2 rounded-xl", config.bgColor)}>
             <Icon className={cn("w-5 h-5", config.color)} />
@@ -93,7 +107,7 @@ export function AssetTypeCard({
           <span className="font-medium text-gray-900">{config.label}</span>
         </div>
         <p className="text-sm text-gray-500">준비 중</p>
-      </div>
+      </button>
     );
   }
 
@@ -101,7 +115,7 @@ export function AssetTypeCard({
   const isPositive = returnRate >= 0;
 
   return (
-    <div className="bg-white rounded-2xl p-5 shadow-sm">
+    <div className="bg-white rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow">
       {/* 헤더: 아이콘 + 라벨 */}
       <div className="flex items-center gap-2 mb-3">
         <div className={cn("p-2 rounded-xl", config.bgColor)}>
@@ -139,6 +153,13 @@ export function AssetTypeCard({
         >
           거래
           <ChevronRight className="w-4 h-4 shrink-0" />
+        </Link>
+        <Link
+          href="/assets/stock/settings"
+          className="flex items-center justify-center p-2 text-gray-500 bg-gray-100 rounded-xl hover:bg-gray-200 hover:text-gray-700 transition-colors"
+          title="종목 설정"
+        >
+          <Settings className="w-4 h-4" />
         </Link>
       </div>
     </div>

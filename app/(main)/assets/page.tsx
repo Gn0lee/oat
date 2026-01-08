@@ -1,4 +1,7 @@
+import { Plus } from "lucide-react";
+import Link from "next/link";
 import { AssetTypeCard } from "@/components/assets";
+import { Button } from "@/components/ui/button";
 import { getUserHouseholdId } from "@/lib/api/invitation";
 import { getPortfolioSummary } from "@/lib/api/portfolio";
 import { requireUser } from "@/lib/supabase/auth";
@@ -20,8 +23,14 @@ export default async function AssetsPage() {
   return (
     <>
       {/* 페이지 헤더 */}
-      <div>
+      <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">내 자산</h1>
+        <Link href="/assets/stock/transactions/new">
+          <Button size="sm">
+            <Plus className="w-4 h-4 mr-1" />
+            자산 기록
+          </Button>
+        </Link>
       </div>
 
       {/* 총 자산 요약 */}
