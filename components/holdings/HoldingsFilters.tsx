@@ -7,9 +7,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ASSET_TYPE_OPTIONS, MARKET_OPTIONS } from "@/constants/enums";
+import { MARKET_OPTIONS } from "@/constants/enums";
 import type { HoldingsFilters as Filters } from "@/lib/api/holdings";
-import type { AssetType, MarketType } from "@/types";
+import type { MarketType } from "@/types";
 
 interface Member {
   id: string;
@@ -31,13 +31,6 @@ export function HoldingsFilters({
     onFiltersChange({
       ...filters,
       ownerId: value === "all" ? undefined : value,
-    });
-  };
-
-  const handleAssetTypeChange = (value: string) => {
-    onFiltersChange({
-      ...filters,
-      assetType: value === "all" ? undefined : (value as AssetType),
     });
   };
 
@@ -71,26 +64,6 @@ export function HoldingsFilters({
           </Select>
         </div>
       )}
-
-      <div className="flex items-center gap-2">
-        <span className="text-sm text-gray-500">자산유형</span>
-        <Select
-          value={filters.assetType ?? "all"}
-          onValueChange={handleAssetTypeChange}
-        >
-          <SelectTrigger className="w-[100px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">전체</SelectItem>
-            {ASSET_TYPE_OPTIONS.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
 
       <div className="flex items-center gap-2">
         <span className="text-sm text-gray-500">시장</span>
