@@ -25,7 +25,7 @@ export async function signInAction(
       if (error.message.includes("Email not confirmed")) {
         return { error: "이메일 인증이 완료되지 않았습니다" };
       }
-      return { error: error.message };
+      console.error("Sign in error:", error.message);
     }
     return { error: "로그인에 실패했습니다. 다시 시도해주세요." };
   }
