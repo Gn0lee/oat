@@ -36,6 +36,7 @@ export const queries = createQueryKeyStore({
     all: null,
     summary: null,
     byOwner: null,
+    byRisk: null,
   },
 
   household: {

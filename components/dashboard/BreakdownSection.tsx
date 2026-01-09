@@ -22,7 +22,7 @@ const BREAKDOWN_TYPES = [
     href: "/dashboard/by-risk",
     color: "text-orange-600",
     bgColor: "bg-orange-50",
-    disabled: true,
+    disabled: false,
   },
   {
     type: "by-asset-type",
