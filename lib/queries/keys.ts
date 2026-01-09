@@ -35,6 +35,7 @@ export const queries = createQueryKeyStore({
   dashboard: {
     all: null,
     summary: null,
+    byOwner: null,
     byRisk: null,
   },
 

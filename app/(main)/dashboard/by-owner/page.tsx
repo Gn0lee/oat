@@ -1,51 +1,25 @@
 "use client";
 
-import { ArrowLeft } from "lucide-react";
-import Link from "next/link";
-import { SummaryCard } from "@/components/dashboard";
-import { useDashboardSummary } from "@/hooks/use-dashboard";
-
-const MEMBER_COLORS = ["#4F46E5", "#03B26C", "#FF9F00", "#F04452", "#8B95A1"];
+import {
+  OwnerAllocationChart,
+  OwnerAssetList,
+  OwnerSummaryCards,
+} from "@/components/dashboard/by-owner";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { useOwnerAnalysis } from "@/hooks/use-owner-analysis";
 
 export default function ByOwnerAnalysisPage() {
-  const { data, isLoading, error } = useDashboardSummary();
+  const { data, isLoading, error } = useOwnerAnalysis();
 
-  const byMemberItems =
-    data?.byMember.map((member, index) => ({
-      label: member.memberName,
-      value: member.totalValue,
-      percentage: member.percentage,
-      color: MEMBER_COLORS[index % MEMBER_COLORS.length],
-    })) ?? [];
-
-  const isEmpty = !isLoading && (!data || data.totalInvested === 0);
+  const isEmpty = !isLoading && (!data || data.summary.length === 0);
 
   return (
     <>
-      {/* 페이지 헤더 */}
-      <div className="flex items-center gap-3">
-        <Link
-          href="/dashboard"
-          className="p-2 -ml-2 rounded-lg hover:bg-gray-100 transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5 text-gray-600" />
-        </Link>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">소유자별 분석</h1>
-          <p className="text-sm text-gray-500">가족 구성원별 자산 비중</p>
-        </div>
-      </div>
-
-      {/* 로딩 상태 */}
-      {isLoading && (
-        <div className="bg-white rounded-2xl p-5 shadow-sm">
-          <div className="animate-pulse space-y-3">
-            <div className="h-4 w-24 bg-gray-200 rounded" />
-            <div className="h-6 w-full bg-gray-200 rounded" />
-            <div className="h-6 w-full bg-gray-200 rounded" />
-          </div>
-        </div>
-      )}
+      <PageHeader
+        title="소유자별 분석"
+        subtitle="가족 구성원별 자산 비중"
+        backHref="/dashboard"
+      />
 
       {/* 에러 상태 */}
       {error && (
@@ -67,8 +41,20 @@ export default function ByOwnerAnalysisPage() {
       )}
 
       {/* 데이터 표시 */}
-      {!isLoading && !error && byMemberItems.length > 0 && (
-        <SummaryCard title="구성원별 자산" items={byMemberItems} />
+      {!error && (
+        <>
+          {/* 소유자별 요약 카드 */}
+          <OwnerSummaryCards data={data?.summary ?? []} isLoading={isLoading} />
+
+          {/* 차트 섹션 */}
+          <OwnerAllocationChart
+            data={data?.summary ?? []}
+            isLoading={isLoading}
+          />
+
+          {/* 소유자별 상세 리스트 */}
+          <OwnerAssetList data={data?.holdings ?? []} isLoading={isLoading} />
+        </>
       )}
     </>
   );
