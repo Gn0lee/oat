@@ -62,7 +62,7 @@ export function SetPasswordForm() {
       }
     }
 
-    router.replace("/dashboard");
+    router.replace("/home");
   };
 
   return (
