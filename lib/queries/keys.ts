@@ -24,6 +24,7 @@ export const queries = createQueryKeyStore({
     search: (query: string) => ({ queryKey: [query] }),
     price: (symbol: string) => ({ queryKey: [symbol] }),
     prices: (symbols: string[]) => ({ queryKey: [symbols] }),
+    analysis: null,
   },
 
   exchange: {

@@ -100,6 +100,7 @@ export function useCreateTransaction() {
       queryClient.invalidateQueries({ queryKey: queries.transactions._def });
       queryClient.invalidateQueries({ queryKey: queries.holdings._def });
       queryClient.invalidateQueries({ queryKey: queries.dashboard._def });
+      queryClient.invalidateQueries({ queryKey: queries.stocks._def });
     },
   });
 }
@@ -144,6 +145,7 @@ export function useUpdateTransaction() {
       queryClient.invalidateQueries({ queryKey: queries.transactions._def });
       queryClient.invalidateQueries({ queryKey: queries.holdings._def });
       queryClient.invalidateQueries({ queryKey: queries.dashboard._def });
+      queryClient.invalidateQueries({ queryKey: queries.stocks._def });
     },
   });
 }
@@ -180,6 +182,7 @@ export function useDeleteTransaction() {
       queryClient.invalidateQueries({ queryKey: queries.transactions._def });
       queryClient.invalidateQueries({ queryKey: queries.holdings._def });
       queryClient.invalidateQueries({ queryKey: queries.dashboard._def });
+      queryClient.invalidateQueries({ queryKey: queries.stocks._def });
     },
   });
 }

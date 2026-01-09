@@ -75,3 +75,48 @@ export interface AssetClassSummary {
   totalValue: number;
   percentage: number;
 }
+
+// 주식 분석 페이지용 타입
+export interface StockAnalysisData {
+  summary: StockAnalysisSummary;
+  holdings: StockHoldingWithReturn[];
+  byMarket: MarketBreakdown[];
+  byCurrency: CurrencyBreakdown[];
+  exchangeRate: number;
+}
+
+export interface StockAnalysisSummary {
+  totalValue: number;
+  totalInvested: number;
+  totalReturn: number;
+  returnRate: number;
+  holdingCount: number;
+  missingPriceCount: number;
+}
+
+export interface StockHoldingWithReturn {
+  ticker: string;
+  name: string;
+  market: MarketType;
+  currency: CurrencyType;
+  quantity: number;
+  avgPrice: number;
+  currentPrice: number | null;
+  totalInvested: number;
+  currentValue: number;
+  returnAmount: number;
+  returnRate: number;
+  allocationPercent: number;
+}
+
+export interface MarketBreakdown {
+  market: MarketType;
+  totalValue: number;
+  percentage: number;
+}
+
+export interface CurrencyBreakdown {
+  currency: CurrencyType;
+  totalValue: number;
+  percentage: number;
+}
