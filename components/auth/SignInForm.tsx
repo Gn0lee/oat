@@ -40,7 +40,7 @@ export function SignInForm() {
       return;
     }
 
-    router.push("/dashboard");
+    router.push("/home");
     router.refresh();
   };
 
