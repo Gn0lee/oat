@@ -9,7 +9,7 @@
 -- 두 계정은 같은 가구 '테스트 가구'에 속합니다.
 -- ============================================================================
 
--- 1. 관리자 계정 생성 (handle_new_user 트리거가 가구 자동 생성)
+-- 1. 관리자 계정 생성 (트리거가 profiles만 생성)
 INSERT INTO auth.users (
   id,
   instance_id,
@@ -23,7 +23,13 @@ INSERT INTO auth.users (
   created_at,
   updated_at,
   confirmation_token,
-  recovery_token
+  recovery_token,
+  email_change,
+  email_change_token_new,
+  email_change_token_current,
+  phone_change,
+  phone_change_token,
+  reauthentication_token
 )
 VALUES (
   '00000000-0000-0000-0000-000000000001',
@@ -38,10 +44,16 @@ VALUES (
   now(),
   now(),
   '',
+  '',
+  '',
+  '',
+  '',
+  '',
+  '',
   ''
 );
 
--- 2. 가구원 계정 생성 (트리거가 별도 가구 생성하므로 나중에 수정 필요)
+-- 2. 가구원 계정 생성
 INSERT INTO auth.users (
   id,
   instance_id,
@@ -55,7 +67,13 @@ INSERT INTO auth.users (
   created_at,
   updated_at,
   confirmation_token,
-  recovery_token
+  recovery_token,
+  email_change,
+  email_change_token_new,
+  email_change_token_current,
+  phone_change,
+  phone_change_token,
+  reauthentication_token
 )
 VALUES (
   '00000000-0000-0000-0000-000000000002',
@@ -70,38 +88,54 @@ VALUES (
   now(),
   now(),
   '',
+  '',
+  '',
+  '',
+  '',
+  '',
+  '',
   ''
 );
 
--- 3. 가구 이름 변경 및 가구원을 관리자 가구로 이동
-DO $$
-DECLARE
-  admin_household_id uuid;
-  member_household_id uuid;
-BEGIN
-  -- 관리자의 가구 ID 조회
-  SELECT household_id INTO admin_household_id
-  FROM public.household_members
-  WHERE user_id = '00000000-0000-0000-0000-000000000001';
+-- 3. auth.identities 생성 (Supabase Auth 로그인에 필요)
+INSERT INTO auth.identities (
+  id,
+  provider_id,
+  user_id,
+  identity_data,
+  provider,
+  last_sign_in_at,
+  created_at,
+  updated_at
+)
+VALUES (
+  '00000000-0000-0000-0000-000000000001',
+  '00000000-0000-0000-0000-000000000001',
+  '00000000-0000-0000-0000-000000000001',
+  '{"sub": "00000000-0000-0000-0000-000000000001", "email": "admin@example.com", "email_verified": true}',
+  'email',
+  now(),
+  now(),
+  now()
+), (
+  '00000000-0000-0000-0000-000000000002',
+  '00000000-0000-0000-0000-000000000002',
+  '00000000-0000-0000-0000-000000000002',
+  '{"sub": "00000000-0000-0000-0000-000000000002", "email": "member@example.com", "email_verified": true}',
+  'email',
+  now(),
+  now(),
+  now()
+);
 
-  -- 가구원의 가구 ID 조회
-  SELECT household_id INTO member_household_id
-  FROM public.household_members
-  WHERE user_id = '00000000-0000-0000-0000-000000000002';
+-- 4. 가구 생성 및 멤버십 설정
+INSERT INTO public.households (id, name)
+VALUES ('00000000-0000-0000-0000-000000000010', '테스트 가구');
 
-  -- 관리자 가구 이름 변경
-  UPDATE public.households
-  SET name = '테스트 가구'
-  WHERE id = admin_household_id;
-
-  -- 가구원을 관리자 가구로 이동 (role: member)
-  UPDATE public.household_members
-  SET household_id = admin_household_id, role = 'member'
-  WHERE user_id = '00000000-0000-0000-0000-000000000002';
-
-  -- 가구원의 기존 빈 가구 삭제
-  DELETE FROM public.households WHERE id = member_household_id;
-END $$;
+INSERT INTO public.household_members (household_id, user_id, role)
+VALUES
+  ('00000000-0000-0000-0000-000000000010', '00000000-0000-0000-0000-000000000001', 'owner'),
+  ('00000000-0000-0000-0000-000000000010', '00000000-0000-0000-0000-000000000002', 'member');
 
 -- ============================================================================
 -- 환율 초기 데이터
