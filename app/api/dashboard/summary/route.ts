@@ -154,23 +154,39 @@ export async function GET() {
       totalInvested > 0 ? (totalReturn / totalInvested) * 100 : 0;
 
     // 멤버별 집계
-    const memberMap = new Map<string, { name: string; value: number }>();
+    const memberMap = new Map<
+      string,
+      { name: string; value: number; invested: number }
+    >();
     for (const h of holdingsWithValue) {
       const existing = memberMap.get(h.ownerId);
       if (existing) {
         existing.value += h.currentValue;
+        existing.invested += h.investedAmountKRW;
       } else {
-        memberMap.set(h.ownerId, { name: h.ownerName, value: h.currentValue });
+        memberMap.set(h.ownerId, {
+          name: h.ownerName,
+          value: h.currentValue,
+          invested: h.investedAmountKRW,
+        });
       }
     }
 
     const byMember: MemberSummary[] = Array.from(memberMap.entries()).map(
-      ([memberId, { name, value }]) => ({
-        memberId,
-        memberName: name,
-        totalValue: value,
-        percentage: totalValue > 0 ? (value / totalValue) * 100 : 0,
-      }),
+      ([memberId, { name, value, invested }]) => {
+        const memberReturn = value - invested;
+        const memberReturnRate =
+          invested > 0 ? (memberReturn / invested) * 100 : 0;
+        return {
+          memberId,
+          memberName: name,
+          totalValue: value,
+          totalInvested: invested,
+          totalReturn: memberReturn,
+          returnRate: memberReturnRate,
+          percentage: totalValue > 0 ? (value / totalValue) * 100 : 0,
+        };
+      },
     );
 
     // 자산군별 집계

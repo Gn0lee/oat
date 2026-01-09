@@ -67,6 +67,9 @@ export interface MemberSummary {
   memberId: string;
   memberName: string;
   totalValue: number;
+  totalInvested: number;
+  totalReturn: number;
+  returnRate: number;
   percentage: number;
 }
 
@@ -119,4 +122,17 @@ export interface CurrencyBreakdown {
   currency: CurrencyType;
   totalValue: number;
   percentage: number;
+}
+
+// 소유자별 분석 페이지용 타입
+export interface OwnerAnalysisData {
+  summary: MemberSummary[];
+  holdings: OwnerHoldings[];
+  exchangeRate: number;
+}
+
+export interface OwnerHoldings {
+  ownerId: string;
+  ownerName: string;
+  stocks: StockHoldingWithReturn[];
 }
