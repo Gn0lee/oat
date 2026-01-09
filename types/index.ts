@@ -120,3 +120,28 @@ export interface CurrencyBreakdown {
   totalValue: number;
   percentage: number;
 }
+
+// 위험도별 분석 페이지용 타입
+export interface RiskLevelSummary {
+  riskLevel: RiskLevel | null; // null = 미설정
+  totalValue: number;
+  percentage: number;
+  holdings: RiskHoldingItem[];
+}
+
+export interface RiskHoldingItem {
+  ticker: string;
+  name: string;
+  market: MarketType;
+  quantity: number;
+  currentValue: number;
+  totalInvested: number;
+  returnAmount: number;
+  returnRate: number;
+}
+
+export interface ByRiskAnalysisData {
+  totalValue: number;
+  byRiskLevel: RiskLevelSummary[];
+  exchangeRate: number;
+}

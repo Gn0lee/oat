@@ -112,6 +112,10 @@ export function useUpdateStockSetting() {
       queryClient.invalidateQueries({ queryKey: queries.stockSettings._def });
       // holdings View도 영향 받으므로 무효화
       queryClient.invalidateQueries({ queryKey: queries.holdings._def });
+      // 위험도별 분석 캐시 무효화
+      queryClient.invalidateQueries({
+        queryKey: queries.dashboard.byRisk.queryKey,
+      });
     },
   });
 }
