@@ -1,9 +1,12 @@
 import {
   AssetTypeSummary,
+  ExchangeRateCard,
   RecentTransactions,
   TopHoldings,
   TotalAssetCard,
 } from "@/components/home";
+import type { ExchangeRateData } from "@/components/home/ExchangeRateCard";
+import { getAllExchangeRates } from "@/lib/api/exchange";
 import { getUserHouseholdId } from "@/lib/api/invitation";
 import { getPortfolioSummary } from "@/lib/api/portfolio";
 import { requireUser } from "@/lib/supabase/auth";
@@ -20,6 +23,15 @@ export default async function HomePage() {
   const portfolio = householdId
     ? await getPortfolioSummary(supabase, householdId)
     : { holdingCount: 0, totalValue: 0, totalInvested: 0, returnRate: 0 };
+
+  // 환율 조회
+  const exchangeRatesData = await getAllExchangeRates(supabase);
+  const exchangeRates: ExchangeRateData[] = exchangeRatesData.map((r) => ({
+    from: r.fromCurrency,
+    to: r.toCurrency,
+    rate: r.rate,
+    updatedAt: r.updatedAt,
+  }));
 
   // 사용자 이름 조회
   const { data: profile } = await supabase
@@ -39,8 +51,11 @@ export default async function HomePage() {
         </h1>
       </div>
 
-      {/* 총 자산 카드 */}
-      <TotalAssetCard totalInvested={portfolio.totalInvested} />
+      {/* 총 자산 카드 & 환율 카드 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <TotalAssetCard totalInvested={portfolio.totalInvested} />
+        <ExchangeRateCard rates={exchangeRates} />
+      </div>
 
       {/* 자산 유형별 요약 */}
       <AssetTypeSummary />

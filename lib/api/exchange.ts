@@ -69,3 +69,37 @@ export async function getExchangeRateSafe(
     updatedAt: data.updated_at,
   };
 }
+
+/**
+ * 전체 환율 정보 반환 타입
+ */
+export interface ExchangeRateWithCurrency {
+  fromCurrency: string;
+  toCurrency: string;
+  rate: number;
+  updatedAt: string | null;
+}
+
+/**
+ * 모든 환율 조회
+ */
+export async function getAllExchangeRates(
+  supabase: SupabaseClient<Database>,
+): Promise<ExchangeRateWithCurrency[]> {
+  const { data, error } = await supabase
+    .from("exchange_rates")
+    .select("from_currency, to_currency, rate, updated_at")
+    .order("from_currency");
+
+  if (error || !data) {
+    console.error("Exchange rates query error:", error);
+    return [];
+  }
+
+  return data.map((row) => ({
+    fromCurrency: row.from_currency,
+    toCurrency: row.to_currency,
+    rate: Number(row.rate),
+    updatedAt: row.updated_at,
+  }));
+}

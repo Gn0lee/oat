@@ -3,15 +3,10 @@ import {
   DashboardSummarySection,
   QuickActionCard,
 } from "@/components/dashboard";
-import { ExchangeRateInfo } from "@/components/dashboard/ExchangeRateInfo";
-import { getExchangeRateSafe } from "@/lib/api/exchange";
 import { getUser } from "@/lib/supabase/auth";
-import { createClient } from "@/lib/supabase/server";
 
 export default async function DashboardPage() {
   const user = await getUser();
-  const supabase = await createClient();
-  const exchangeRate = await getExchangeRateSafe(supabase, "USD", "KRW");
 
   return (
     <>
@@ -41,12 +36,6 @@ export default async function DashboardPage() {
           actionLabel="확인하기"
         />
       </div>
-
-      {/* 환율 정보 */}
-      <ExchangeRateInfo
-        rate={exchangeRate?.rate ?? null}
-        updatedAt={exchangeRate?.updatedAt ?? null}
-      />
     </>
   );
 }
