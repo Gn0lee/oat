@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  ChevronRight,
   Home,
   type LucideIcon,
   Package,

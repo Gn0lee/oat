@@ -4,6 +4,7 @@ import {
   QuickActionCard,
 } from "@/components/dashboard";
 import { ExchangeRateInfo } from "@/components/dashboard/ExchangeRateInfo";
+import { PageHeader } from "@/components/layout";
 import { getExchangeRateSafe } from "@/lib/api/exchange";
 import { getUser } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
@@ -15,11 +16,7 @@ export default async function DashboardPage() {
 
   return (
     <>
-      {/* 페이지 헤더 */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">대시보드</h1>
-        <p className="text-sm text-gray-500">안녕하세요, {user?.email}님</p>
-      </div>
+      <PageHeader title="대시보드" subtitle={`안녕하세요, ${user?.email}님`} />
 
       {/* 총 자산 / 수익률 / 요약 카드 */}
       <DashboardSummarySection />

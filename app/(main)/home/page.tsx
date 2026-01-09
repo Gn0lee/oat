@@ -4,6 +4,7 @@ import {
   TopHoldings,
   TotalAssetCard,
 } from "@/components/home";
+import { PageHeader } from "@/components/layout";
 import { getUserHouseholdId } from "@/lib/api/invitation";
 import { getPortfolioSummary } from "@/lib/api/portfolio";
 import { requireUser } from "@/lib/supabase/auth";
@@ -32,12 +33,7 @@ export default async function HomePage() {
 
   return (
     <>
-      {/* 인사말 */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">
-          안녕하세요, {userName}님
-        </h1>
-      </div>
+      <PageHeader title={`안녕하세요, ${userName}님`} />
 
       {/* 총 자산 카드 */}
       <TotalAssetCard totalInvested={portfolio.totalInvested} />

@@ -1,5 +1,9 @@
+import { Plus } from "lucide-react";
+import Link from "next/link";
 import { StockTabNav } from "@/components/assets/stock";
 import { HoldingsList } from "@/components/holdings/HoldingsList";
+import { PageHeader } from "@/components/layout";
+import { Button } from "@/components/ui/button";
 import { getHoldings } from "@/lib/api/holdings";
 import { getHouseholdWithMembers } from "@/lib/api/household";
 import { getUserHouseholdId } from "@/lib/api/invitation";
@@ -33,6 +37,19 @@ export default async function HoldingsPage() {
 
   return (
     <>
+      <PageHeader
+        title="주식"
+        backHref="/assets"
+        action={
+          <Button asChild size="sm">
+            <Link href="/assets/stock/transactions/new">
+              <Plus className="w-4 h-4 mr-1" />
+              거래 추가
+            </Link>
+          </Button>
+        }
+      />
+
       {/* 탭 네비게이션 */}
       <StockTabNav activeTab="holdings" />
 

@@ -15,7 +15,7 @@ interface RouteParams {
  * DELETE /api/invitations/[id]
  * 초대 취소 (삭제)
  */
-export async function DELETE(request: Request, { params }: RouteParams) {
+export async function DELETE(_request: Request, { params }: RouteParams) {
   try {
     const { id } = await params;
     const supabase = await createClient();

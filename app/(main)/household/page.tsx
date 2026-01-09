@@ -1,8 +1,6 @@
-import { ArrowLeft } from "lucide-react";
-import Link from "next/link";
 import { HouseholdMembersCard } from "@/components/household/HouseholdMembersCard";
 import { HouseholdSettings } from "@/components/household/HouseholdSettings";
-import { Button } from "@/components/ui/button";
+import { PageContainer, PageHeader } from "@/components/layout";
 import { getHouseholdWithMembers } from "@/lib/api/household";
 import { requireUser } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
@@ -16,44 +14,30 @@ export default async function HouseholdPage() {
     household?.members.find((m) => m.userId === user.id)?.role === "owner";
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
-      <div className="max-w-2xl mx-auto space-y-6">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" asChild>
-            <Link href="/dashboard">
-              <ArrowLeft className="size-5" />
-            </Link>
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">가구 관리</h1>
-            {household && (
-              <p className="text-sm text-gray-500">{household.name}</p>
-            )}
-          </div>
+    <PageContainer maxWidth="medium">
+      <PageHeader title="가구 관리" />
+
+      {household ? (
+        <>
+          {/* 가구 설정 */}
+          <HouseholdSettings
+            householdId={household.id}
+            householdName={household.name}
+            isOwner={isOwner}
+          />
+
+          {/* 구성원 목록 및 초대 */}
+          <HouseholdMembersCard
+            members={household.members}
+            currentUserId={user.id}
+            isOwner={isOwner}
+          />
+        </>
+      ) : (
+        <div className="text-center py-12">
+          <p className="text-gray-500">가구 정보를 찾을 수 없습니다.</p>
         </div>
-
-        {household ? (
-          <>
-            {/* 가구 설정 */}
-            <HouseholdSettings
-              householdId={household.id}
-              householdName={household.name}
-              isOwner={isOwner}
-            />
-
-            {/* 구성원 목록 및 초대 */}
-            <HouseholdMembersCard
-              members={household.members}
-              currentUserId={user.id}
-              isOwner={isOwner}
-            />
-          </>
-        ) : (
-          <div className="text-center py-12">
-            <p className="text-gray-500">가구 정보를 찾을 수 없습니다.</p>
-          </div>
-        )}
-      </div>
-    </div>
+      )}
+    </PageContainer>
   );
 }
