@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/layout";
 import { StockSettingsList } from "@/components/stock-settings/StockSettingsList";
 import { getUserHouseholdId } from "@/lib/api/invitation";
 import { getStockSettings } from "@/lib/api/stock-settings";
@@ -26,13 +27,10 @@ export default async function StockSettingsPage() {
 
   return (
     <>
-      {/* 페이지 헤더 */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">종목 설정</h1>
-        <p className="text-sm text-gray-500">
-          총 {initialData.total}개 종목 등록됨
-        </p>
-      </div>
+      <PageHeader
+        title="종목 설정"
+        subtitle={`총 ${initialData.total}개 종목 등록됨`}
+      />
 
       {/* 종목 설정 목록 */}
       <StockSettingsList initialData={initialData} />

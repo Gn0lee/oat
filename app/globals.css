@@ -51,9 +51,9 @@
 
 :root {
   --radius: 0.625rem;
-  --positive: #F04452;
-  --negative: #3182F6;
-  --warning: #FF9F00;
+  --positive: #f04452;
+  --negative: #3182f6;
+  --warning: #ff9f00;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);

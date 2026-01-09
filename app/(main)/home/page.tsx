@@ -6,6 +6,7 @@ import {
   TotalAssetCard,
 } from "@/components/home";
 import type { ExchangeRateData } from "@/components/home/ExchangeRateCard";
+import { PageHeader } from "@/components/layout";
 import { getAllExchangeRates } from "@/lib/api/exchange";
 import { getUserHouseholdId } from "@/lib/api/invitation";
 import { getPortfolioSummary } from "@/lib/api/portfolio";
@@ -44,12 +45,7 @@ export default async function HomePage() {
 
   return (
     <>
-      {/* 인사말 */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">
-          안녕하세요, {userName}님
-        </h1>
-      </div>
+      <PageHeader title={`안녕하세요, ${userName}님`} />
 
       {/* 총 자산 카드 & 환율 카드 */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

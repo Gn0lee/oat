@@ -3,6 +3,7 @@ import {
   BreakdownSection,
   DashboardSummarySection,
 } from "@/components/dashboard";
+import { PageHeader } from "@/components/layout";
 import { getUser } from "@/lib/supabase/auth";
 
 export default async function DashboardPage() {
@@ -10,11 +11,7 @@ export default async function DashboardPage() {
 
   return (
     <>
-      {/* 페이지 헤더 */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">대시보드</h1>
-        <p className="text-sm text-gray-500">안녕하세요, {user?.email}님</p>
-      </div>
+      <PageHeader title="대시보드" subtitle={`안녕하세요, ${user?.email}님`} />
 
       {/* 총 자산 / 수익률 카드 */}
       <DashboardSummarySection />

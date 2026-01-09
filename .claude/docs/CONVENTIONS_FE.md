@@ -164,7 +164,89 @@ app/(main)/
 
 ---
 
-## 6. 컴포넌트 구조
+## 6. 페이지 레이아웃 컴포넌트
+
+### PageHeader
+
+페이지 상단 헤더를 표준화합니다. 모든 페이지에서 일관된 헤더 스타일을 사용하세요.
+
+```tsx
+import { PageHeader } from "@/components/layout";
+
+// 기본 사용
+<PageHeader title="설정" />
+
+// 서브타이틀 추가
+<PageHeader title="대시보드" subtitle="안녕하세요, user@email.com님" />
+
+// 뒤로가기 버튼 추가
+<PageHeader title="가구 관리" subtitle="우리집" backHref="/dashboard" />
+
+// 우측 액션 영역 추가
+<PageHeader
+  title="내 자산"
+  action={
+    <Link href="/assets/stock/transactions/new">
+      <Button size="sm">자산 기록</Button>
+    </Link>
+  }
+/>
+```
+
+| Props | 타입 | 필수 | 설명 |
+|-------|------|------|------|
+| title | string | O | 페이지 제목 |
+| subtitle | string | X | 부제목 (설명, 카운트 등) |
+| backHref | string | X | 뒤로가기 링크 URL |
+| action | ReactNode | X | 우측 액션 영역 (버튼 등) |
+
+### PageContainer
+
+페이지 컨테이너 너비를 표준화합니다. 좁은 폼이나 설정 페이지에 사용합니다.
+
+```tsx
+import { PageContainer, PageHeader } from "@/components/layout";
+
+// 좁은 너비 (설정, 폼 등) - max-w-lg
+<PageContainer maxWidth="narrow">
+  <PageHeader title="설정" />
+  <SettingsMenu />
+</PageContainer>
+
+// 중간 너비 (가구 관리 등) - max-w-2xl
+<PageContainer maxWidth="medium">
+  <PageHeader title="가구 관리" backHref="/dashboard" />
+  <HouseholdSettings />
+</PageContainer>
+
+// 기본 너비 - 레이아웃의 max-w-4xl 사용 (래핑 없음)
+// default는 생략 가능하며, Fragment만 반환
+<PageContainer maxWidth="default">
+  {children}
+</PageContainer>
+```
+
+| Props | 타입 | 기본값 | 설명 |
+|-------|------|--------|------|
+| maxWidth | "default" \| "narrow" \| "medium" | "default" | 컨테이너 너비 |
+
+### 페이지별 적용 가이드
+
+| 페이지 | PageHeader | PageContainer |
+|--------|------------|---------------|
+| `/home` | title | default |
+| `/dashboard` | title + subtitle | default |
+| `/assets` | title + action | default |
+| `/settings` | title | narrow |
+| `/household` | title | medium |
+| `/assets/stock/holdings` | title | default |
+| `/assets/stock/transactions` | title | default |
+| `/assets/stock/transactions/new` | title + backHref | narrow |
+| `/assets/stock/settings` | title + subtitle | default |
+
+---
+
+## 7. 컴포넌트 구조
 
 ### 파일 구조
 
@@ -180,6 +262,7 @@ app/(main)/
 | 위치 | 용도 |
 |------|------|
 | `components/ui/` | 공통 UI (shadcn/ui) |
+| `components/layout/` | 레이아웃 컴포넌트 (PageHeader, PageContainer 등) |
 | `components/[feature]/` | 기능별 컴포넌트 |
 | `components/assets/common/` | 자산 공통 (유형 카드 등) |
 | `components/assets/stock/` | 주식 전용 컴포넌트 |
@@ -195,7 +278,7 @@ interface HoldingCardProps {
 
 ---
 
-## 7. 스타일링
+## 8. 스타일링
 
 ### Tailwind CSS
 
@@ -213,7 +296,7 @@ interface HoldingCardProps {
 
 ---
 
-## 8. 테스트
+## 9. 테스트
 
 ### 우선순위 (점진적)
 

@@ -1,12 +1,16 @@
 "use client";
 
+import { PageContainer, PageHeader } from "@/components/layout";
 import { TransactionForm } from "@/components/transactions/TransactionForm";
 
 export default function NewTransactionPage() {
   return (
-    <div className="max-w-lg mx-auto">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">주식 거래 등록</h1>
+    <PageContainer maxWidth="narrow">
+      <PageHeader
+        title="주식 거래 등록"
+        backHref="/assets/stock/transactions"
+      />
       <TransactionForm />
-    </div>
+    </PageContainer>
   );
 }

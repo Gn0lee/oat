@@ -20,7 +20,6 @@ import type {
   StockQuery,
 } from "@/lib/kis/types";
 import type { Database, MarketType } from "@/types";
-import { APIError } from "./error";
 
 // 캐시 버킷 단위: 1시간 (밀리초)
 const BUCKET_MS = 60 * 60 * 1000;
@@ -224,7 +223,7 @@ async function fetchOverseasPrices(
       const exchangeCode = getExchangeCode(exchange);
       const priceData = await getOverseasPrice(exchangeCode, stock.code);
 
-      if (priceData && priceData.last) {
+      if (priceData?.last) {
         return {
           market: "US" as const,
           code: stock.code,
