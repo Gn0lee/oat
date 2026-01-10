@@ -22,12 +22,17 @@
 │   profiles  │──────<│ household_members│>──────│ households  │
 └─────────────┘       └──────────────────┘       └─────────────┘
        │                                                │
-       ▼                                                │
-┌─────────────┐                                         ▼
-│ invitations │       ┌──────────────────────┐   ┌─────────────┐
-└─────────────┘       │ household_stock_     │──<│transactions │
-                      │ settings             │   └─────────────┘
-                      └──────────────────────┘          │
+       ├──────────────────────────────────────────────┐ │
+       ▼                                              ▼ ▼
+┌─────────────┐       ┌─────────────┐         ┌─────────────┐
+│ invitations │       │  accounts   │────────>│transactions │
+└─────────────┘       └─────────────┘         └─────────────┘
+                                                      │
+                      ┌──────────────────────┐        │
+                      │ household_stock_     │────────┘
+                      │ settings             │
+                      └──────────────────────┘
+                                                        │
                                                         ▼
 ┌─────────────┐       ┌─────────────┐           ┌─────────────┐
 │    tags     │──────<│holding_tags │>─────────<│  holdings   │
@@ -105,6 +110,18 @@ create type allocation_category as enum (
   'commodity',
   'crypto',
   'alternative'
+);
+
+-- 계좌 유형
+create type account_type as enum (
+  'stock',     -- 주식/증권 계좌
+  'savings',   -- 예금 계좌 (보통예금)
+  'deposit',   -- 적금 계좌 (정기예금, 정기적금)
+  'checking',  -- 입출금 계좌 (월급통장 등)
+  'isa',       -- ISA 계좌 (절세 계좌)
+  'pension',   -- 연금 계좌 (IRP, 퇴직연금)
+  'cma',       -- CMA 계좌
+  'other'      -- 기타 계좌
 );
 ```
 
@@ -273,13 +290,53 @@ function getRiskLevel(setting: HouseholdStockSetting): RiskLevel {
 
 ---
 
-### 6. transactions (거래 기록)
+### 6. accounts (계좌)
+
+```sql
+create table public.accounts (
+  id uuid primary key default gen_random_uuid(),
+  household_id uuid not null references public.households(id) on delete cascade,
+  owner_id uuid not null references public.profiles(id) on delete cascade,
+  name text not null,
+  broker text,
+  account_number text,
+  account_type account_type,
+  is_default boolean default false,
+  memo text,
+  created_at timestamptz default now() not null,
+  updated_at timestamptz default now() not null,
+  unique (household_id, owner_id, name)
+);
+
+-- 인덱스
+create index accounts_household_id_idx on public.accounts(household_id);
+create index accounts_owner_id_idx on public.accounts(owner_id);
+```
+
+| 컬럼 | 타입 | 설명 |
+|------|------|------|
+| id | uuid (PK) | 계좌 고유 ID |
+| household_id | uuid (FK) | 소속 가구 |
+| owner_id | uuid (FK) | 계좌 소유자 |
+| name | text | 계좌명 |
+| broker | text (nullable) | 증권사/은행명 |
+| account_number | text (nullable) | 계좌번호 |
+| account_type | enum (nullable) | 계좌 유형 |
+| is_default | boolean | 기본 계좌 여부 |
+| memo | text (nullable) | 메모 |
+| created_at | timestamptz | 생성일 |
+| updated_at | timestamptz | 수정일 |
+
+---
+
+### 7. transactions (거래 기록)
 
 ```sql
 create table public.transactions (
   id uuid primary key default gen_random_uuid(),
   household_id uuid not null references public.households(id) on delete cascade,
   owner_id uuid not null references public.profiles(id) on delete cascade,
+  account_id uuid references public.accounts(id) on delete set null,
   ticker text not null,
   type transaction_type not null,
   quantity numeric(18, 8) not null check (quantity > 0),
@@ -292,6 +349,7 @@ create table public.transactions (
 -- 인덱스
 create index transactions_household_id_idx on public.transactions(household_id);
 create index transactions_owner_id_idx on public.transactions(owner_id);
+create index transactions_account_id_idx on public.transactions(account_id);
 create index transactions_ticker_idx on public.transactions(ticker);
 create index transactions_transacted_at_idx on public.transactions(transacted_at);
 ```
@@ -301,6 +359,7 @@ create index transactions_transacted_at_idx on public.transactions(transacted_at
 | id | uuid (PK) | 거래 고유 ID |
 | household_id | uuid (FK) | 소속 가구 |
 | owner_id | uuid (FK) | 거래 소유자 |
+| account_id | uuid (FK, nullable) | 계좌 ID |
 | ticker | text | 종목 코드 |
 | type | enum | buy / sell |
 | quantity | numeric(18,8) | 수량 |
@@ -311,7 +370,7 @@ create index transactions_transacted_at_idx on public.transactions(transacted_at
 
 ---
 
-### 7. holdings (현재 보유 현황 View)
+### 8. holdings (현재 보유 현황 View)
 
 ```sql
 create view public.holdings as
@@ -372,7 +431,7 @@ having sum(case when t.type = 'buy' then t.quantity else -t.quantity end) > 0;
 
 ---
 
-### 8. tags (사용자 정의 태그)
+### 9. tags (사용자 정의 태그)
 
 > MVP에서는 테이블만 생성, UI는 2단계에서 구현
 
@@ -393,7 +452,7 @@ create index tags_household_id_idx on public.tags(household_id);
 
 ---
 
-### 9. holding_tags (보유종목-태그 연결)
+### 10. holding_tags (보유종목-태그 연결)
 
 ```sql
 create table public.holding_tags (
@@ -412,7 +471,7 @@ create index holding_tags_tag_id_idx on public.holding_tags(tag_id);
 
 ---
 
-### 10. target_allocations (목표 비중)
+### 11. target_allocations (목표 비중)
 
 ```sql
 create table public.target_allocations (
@@ -437,7 +496,7 @@ create index target_allocations_household_id_idx on public.target_allocations(ho
 
 > RLS 미적용. GitHub Actions에서 service_role_key로 접근.
 
-### 11. stock_master (종목 마스터)
+### 12. stock_master (종목 마스터)
 
 KIS 마스터파일 기반 종목 기본 정보. 매일 08:00 KST에 GitHub Actions로 동기화.
 
@@ -529,7 +588,7 @@ select * from stock_master where stock_type_category = 'etf';
 
 ---
 
-### 12. exchange_rates (환율)
+### 13. exchange_rates (환율)
 
 일 1회 ExchangeRate-API에서 동기화.
 
@@ -560,7 +619,7 @@ where from_currency = 'USD' and to_currency = 'KRW';
 
 ---
 
-### 13. stock_prices (주식 가격 캐시)
+### 14. stock_prices (주식 가격 캐시)
 
 KIS API 조회 결과를 캐싱. 1시간 버킷 단위로 캐시 유효성 판단.
 
@@ -737,6 +796,28 @@ create policy "Users can view household stock settings"
 create policy "Users can manage household stock settings"
   on public.household_stock_settings for all
   using (is_household_member(household_id));
+```
+
+### accounts
+
+```sql
+alter table public.accounts enable row level security;
+
+create policy "Users can view household accounts"
+  on public.accounts for select
+  using (is_household_member(household_id));
+
+create policy "Users can insert household accounts"
+  on public.accounts for insert
+  with check (is_household_member(household_id));
+
+create policy "Users can update own accounts"
+  on public.accounts for update
+  using (is_household_member(household_id) and owner_id = auth.uid());
+
+create policy "Users can delete own accounts"
+  on public.accounts for delete
+  using (is_household_member(household_id) and owner_id = auth.uid());
 ```
 
 ### transactions
