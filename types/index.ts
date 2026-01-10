@@ -161,3 +161,22 @@ export interface ByRiskAnalysisData {
   byRiskLevel: RiskLevelSummary[];
   exchangeRate: number;
 }
+
+// 시장 동향 타입
+export interface MarketTrendItem {
+  rank: number;
+  ticker: string;
+  name: string;
+  price: number;
+  change: number;
+  changeRate: number;
+  changeSign: "up" | "down" | "flat";
+  volume?: number;
+}
+
+export interface DomesticMarketTrendData {
+  volumeRank: MarketTrendItem[];
+  gainers: MarketTrendItem[];
+  losers: MarketTrendItem[];
+  updatedAt: string;
+}
