@@ -13,6 +13,7 @@ export type Database = SupabaseDatabase;
 export type Json = SupabaseJson;
 
 // Supabase Enum 타입 (편의를 위해)
+export type AccountType = Enums<"account_type">;
 export type AssetType = Enums<"asset_type">;
 export type CurrencyType = Enums<"currency_type">;
 export type MarketType = Enums<"market_type">;
@@ -23,6 +24,7 @@ export type UserRole = Enums<"user_role">;
 export type AllocationCategory = Enums<"allocation_category">;
 
 // 테이블 Row 타입 (편의를 위해)
+export type Account = Tables<"accounts">;
 export type Profile = Tables<"profiles">;
 export type Household = Tables<"households">;
 export type HouseholdMember = Tables<"household_members">;
@@ -42,6 +44,7 @@ export type Holding = Tables<"holdings">;
 export type StockPrice = Tables<"stock_prices">;
 
 // Insert 타입 (편의를 위해)
+export type AccountInsert = TablesInsert<"accounts">;
 export type TransactionInsert = TablesInsert<"transactions">;
 export type HouseholdStockSettingInsert =
   TablesInsert<"household_stock_settings">;
@@ -49,6 +52,7 @@ export type TagInsert = TablesInsert<"tags">;
 export type HoldingTagInsert = TablesInsert<"holding_tags">;
 
 // Update 타입 (편의를 위해)
+export type AccountUpdate = TablesUpdate<"accounts">;
 export type TransactionUpdate = TablesUpdate<"transactions">;
 export type HouseholdStockSettingUpdate =
   TablesUpdate<"household_stock_settings">;
