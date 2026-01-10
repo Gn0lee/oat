@@ -159,3 +159,64 @@ export interface StockPriceRow {
   change_rate: number | null;
   fetched_at: string;
 }
+
+// ============================================================================
+// 국내 주식 순위 타입
+// ============================================================================
+
+/**
+ * 국내 주식 거래량 순위 응답
+ * API: /uapi/domestic-stock/v1/quotations/volume-rank
+ */
+export interface KISVolumeRankOutput {
+  hts_kor_isnm: string; // HTS 한글 종목명
+  mksc_shrn_iscd: string; // 유가증권 단축 종목코드
+  data_rank: string; // 데이터 순위
+  stck_prpr: string; // 주식 현재가
+  prdy_vrss_sign: string; // 전일 대비 부호
+  prdy_vrss: string; // 전일 대비
+  prdy_ctrt: string; // 전일 대비율
+  acml_vol: string; // 누적 거래량
+  prdy_vol: string; // 전일 거래량
+  lstn_stcn: string; // 상장 주수
+  avrg_vol: string; // 평균 거래량
+  n_befr_clpr_vrss_prpr_rate: string; // N일전종가대비현재가대비율
+  vol_inrt: string; // 거래량증가율
+  vol_tnrt: string; // 거래량 회전율
+  nday_vol_tnrt: string; // N일 거래량 회전율
+  avrg_tr_pbmn: string; // 평균 거래 대금
+  tr_pbmn_tnrt: string; // 거래대금회전율
+  nday_tr_pbmn_tnrt: string; // N일 거래대금 회전율
+  acml_tr_pbmn: string; // 누적 거래 대금
+}
+
+/**
+ * 국내 주식 등락률 순위 응답
+ * API: /uapi/domestic-stock/v1/ranking/fluctuation
+ */
+export interface KISFluctuationRankOutput {
+  stck_shrn_iscd: string; // 주식 단축 종목코드
+  data_rank: string; // 데이터 순위
+  hts_kor_isnm: string; // HTS 한글 종목명
+  stck_prpr: string; // 주식 현재가
+  prdy_vrss: string; // 전일 대비
+  prdy_vrss_sign: string; // 전일 대비 부호
+  prdy_ctrt: string; // 전일 대비율
+  acml_vol: string; // 누적 거래량
+  stck_hgpr: string; // 주식 최고가
+  hgpr_hour: string; // 최고가 시간
+  acml_hgpr_date: string; // 누적 최고가 일자
+  stck_lwpr: string; // 주식 최저가
+  lwpr_hour: string; // 최저가 시간
+  acml_lwpr_date: string; // 누적 최저가 일자
+  lwpr_vrss_prpr_rate: string; // 최저가 대비 현재가 비율
+  dsgt_date_clpr_vrss_prpr_rate: string; // 지정 일자 종가 대비 현재가 비율
+  cnnt_ascn_dynu: string; // 연속 상승 일수
+  hgpr_vrss_prpr_rate: string; // 최고가 대비 현재가 비율
+  cnnt_down_dynu: string; // 연속 하락 일수
+  oprc_vrss_prpr_sign: string; // 시가2 대비 현재가 부호
+  oprc_vrss_prpr: string; // 시가2 대비 현재가
+  oprc_vrss_prpr_rate: string; // 시가2 대비 현재가 비율
+  prd_rsfl: string; // 기간 등락
+  prd_rsfl_rate: string; // 기간 등락 비율
+}

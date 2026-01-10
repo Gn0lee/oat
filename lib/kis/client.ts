@@ -12,8 +12,10 @@ import type {
   KISAPIResponse,
   KISDomesticMultiPriceOutput,
   KISDomesticPriceOutput,
+  KISFluctuationRankOutput,
   KISOverseasPriceOutput,
   KISTokenResponse,
+  KISVolumeRankOutput,
   OverseasExchangeCode,
 } from "./types";
 
@@ -359,4 +361,133 @@ export function getExchangeCode(exchange: string): OverseasExchangeCode {
 export async function clearTokenCache(): Promise<void> {
   const supabase = getSystemConfigClient();
   await supabase.from("system_config").delete().eq("key", KIS_TOKEN_KEY);
+}
+
+// ============================================================================
+// 국내 주식 순위 조회
+// ============================================================================
+
+/**
+ * 국내 주식 거래량 순위 조회
+ * API: /uapi/domestic-stock/v1/quotations/volume-rank
+ */
+export async function getDomesticVolumeRank(
+  market: "KOSPI" | "KOSDAQ" = "KOSPI",
+  limit = 5,
+): Promise<KISVolumeRankOutput[]> {
+  validateKISConfig();
+
+  const url = new URL(
+    `${KIS_BASE_URL}/uapi/domestic-stock/v1/quotations/volume-rank`,
+  );
+
+  // 시장 구분 코드: J(코스피), Q(코스닥)
+  const marketCode = market === "KOSPI" ? "J" : "Q";
+
+  url.searchParams.set("FID_COND_MRKT_DIV_CODE", marketCode);
+  url.searchParams.set("FID_COND_SCR_DIV_CODE", "20101"); // 거래량 순위
+  url.searchParams.set("FID_INPUT_ISCD", market === "KOSPI" ? "0001" : "1001");
+  url.searchParams.set("FID_DIV_CLS_CODE", "0"); // 전체
+  url.searchParams.set("FID_BLNG_CLS_CODE", "0"); // 전체
+  url.searchParams.set("FID_TRGT_CLS_CODE", "111111111"); // 전체
+  url.searchParams.set("FID_TRGT_EXLS_CLS_CODE", "0000000000"); // 제외 없음
+  url.searchParams.set("FID_INPUT_PRICE_1", ""); // 가격 조건 없음
+  url.searchParams.set("FID_INPUT_PRICE_2", "");
+  url.searchParams.set("FID_VOL_CNT", ""); // 거래량 조건 없음
+  url.searchParams.set("FID_INPUT_DATE_1", ""); // 기간 조건 없음
+
+  const headers = await createHeaders("FHPST01710000");
+
+  const response = await fetch(url.toString(), {
+    method: "GET",
+    headers,
+  });
+
+  if (!response.ok) {
+    throw new APIError(
+      "KIS_VOLUME_RANK_ERROR",
+      `거래량 순위 조회 실패: ${response.status}`,
+      response.status,
+    );
+  }
+
+  const data = (await response.json()) as KISAPIResponse<KISVolumeRankOutput[]>;
+
+  if (data.rt_cd !== "0") {
+    throw new APIError(
+      "KIS_VOLUME_RANK_ERROR",
+      `거래량 순위 조회 실패: ${data.msg1}`,
+      400,
+    );
+  }
+
+  // output 또는 output1에서 데이터 추출
+  const items = data.output ?? data.output1 ?? [];
+  return items.slice(0, limit);
+}
+
+/**
+ * 국내 주식 등락률 순위 조회
+ * API: /uapi/domestic-stock/v1/ranking/fluctuation
+ */
+export async function getDomesticFluctuationRank(
+  market: "KOSPI" | "KOSDAQ" = "KOSPI",
+  direction: "up" | "down" = "up",
+  limit = 5,
+): Promise<KISFluctuationRankOutput[]> {
+  validateKISConfig();
+
+  const url = new URL(
+    `${KIS_BASE_URL}/uapi/domestic-stock/v1/ranking/fluctuation`,
+  );
+
+  // 시장 구분 코드: J(코스피), Q(코스닥)
+  const marketCode = market === "KOSPI" ? "J" : "Q";
+
+  url.searchParams.set("FID_COND_MRKT_DIV_CODE", marketCode);
+  url.searchParams.set("FID_COND_SCR_DIV_CODE", "20170"); // 등락률 순위
+  url.searchParams.set("FID_INPUT_ISCD", market === "KOSPI" ? "0001" : "1001");
+  url.searchParams.set(
+    "FID_RANK_SORT_CLS_CODE",
+    direction === "up" ? "0" : "1",
+  ); // 0:상승률, 1:하락률
+  url.searchParams.set("FID_INPUT_CNT_1", "0"); // 조회 건수 (0:전체)
+  url.searchParams.set("FID_PRC_CLS_CODE", "0"); // 가격 구분
+  url.searchParams.set("FID_INPUT_PRICE_1", ""); // 가격 조건 없음
+  url.searchParams.set("FID_INPUT_PRICE_2", "");
+  url.searchParams.set("FID_VOL_CNT", ""); // 거래량 조건 없음
+  url.searchParams.set("FID_TRGT_CLS_CODE", "0"); // 대상 구분
+  url.searchParams.set("FID_TRGT_EXLS_CLS_CODE", "0"); // 제외 구분
+  url.searchParams.set("FID_DIV_CLS_CODE", "0"); // 분류 구분
+  url.searchParams.set("FID_RSFL_RATE1", ""); // 등락률 조건 없음
+  url.searchParams.set("FID_RSFL_RATE2", "");
+
+  const headers = await createHeaders("FHPST01700000");
+
+  const response = await fetch(url.toString(), {
+    method: "GET",
+    headers,
+  });
+
+  if (!response.ok) {
+    throw new APIError(
+      "KIS_FLUCTUATION_RANK_ERROR",
+      `등락률 순위 조회 실패: ${response.status}`,
+      response.status,
+    );
+  }
+
+  const data = (await response.json()) as KISAPIResponse<
+    KISFluctuationRankOutput[]
+  >;
+
+  if (data.rt_cd !== "0") {
+    throw new APIError(
+      "KIS_FLUCTUATION_RANK_ERROR",
+      `등락률 순위 조회 실패: ${data.msg1}`,
+      400,
+    );
+  }
+
+  return (data.output ?? []).slice(0, limit);
 }
