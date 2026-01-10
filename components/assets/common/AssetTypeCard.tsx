@@ -29,7 +29,7 @@ const ASSET_TYPE_CONFIG: Record<AssetType, AssetTypeConfig> = {
     label: "주식/ETF",
     color: "text-indigo-600",
     bgColor: "bg-indigo-50",
-    href: "/assets/stock/holdings",
+    href: "/assets/stock",
   },
   cash: {
     icon: Wallet,
