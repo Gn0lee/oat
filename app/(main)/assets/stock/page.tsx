@@ -1,6 +1,7 @@
 import {
   MarketTrendSection,
   MyStockSection,
+  OverseasMarketTrendSection,
   PortfolioNavSection,
 } from "@/components/assets/stock";
 import { StockSummarySection } from "@/components/dashboard/stocks";
@@ -16,6 +17,9 @@ export default function StockMainPage() {
       </div>
       <div className="mt-6">
         <MarketTrendSection />
+      </div>
+      <div className="mt-6">
+        <OverseasMarketTrendSection />
       </div>
       <div className="mt-6">
         <PortfolioNavSection />
