@@ -5,6 +5,11 @@ export const queries = createQueryKeyStore({
     user: null,
   },
 
+  accounts: {
+    all: null,
+    list: null,
+  },
+
   holdings: {
     all: null,
     list: null,
