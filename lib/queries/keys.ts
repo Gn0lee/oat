@@ -42,6 +42,7 @@ export const queries = createQueryKeyStore({
   marketTrend: {
     all: null,
     domestic: null,
+    holiday: null,
   },
 
   household: {
