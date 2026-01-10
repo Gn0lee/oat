@@ -12,13 +12,13 @@ export default function StockMainPage() {
       <PageHeader title="주식" backHref="/assets" />
       <StockSummarySection />
       <div className="mt-6">
+        <MyStockSection />
+      </div>
+      <div className="mt-6">
         <MarketTrendSection />
       </div>
       <div className="mt-6">
         <PortfolioNavSection />
-      </div>
-      <div className="mt-6">
-        <MyStockSection />
       </div>
     </>
   );
