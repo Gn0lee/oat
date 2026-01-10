@@ -25,6 +25,7 @@ export interface CreateTransactionParams {
   price: number;
   transactedAt: string;
   memo?: string;
+  accountId?: string;
   stock: {
     name: string;
     market: MarketType;
@@ -52,6 +53,7 @@ export async function createTransaction(
     price,
     transactedAt,
     memo,
+    accountId,
     stock,
   } = params;
 
@@ -110,6 +112,7 @@ export async function createTransaction(
       price,
       transacted_at: transactedAt,
       memo: memo || null,
+      account_id: accountId || null,
     })
     .select()
     .single();
@@ -295,6 +298,7 @@ export interface UpdateTransactionParams {
   price?: number;
   transactedAt?: string;
   memo?: string | null;
+  accountId?: string | null;
 }
 
 /**
@@ -377,6 +381,7 @@ export async function updateTransaction(
   if (params.transactedAt !== undefined)
     updateData.transacted_at = params.transactedAt;
   if (params.memo !== undefined) updateData.memo = params.memo;
+  if (params.accountId !== undefined) updateData.account_id = params.accountId;
 
   const { data, error } = await supabase
     .from("transactions")

@@ -125,6 +125,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
         price: input.price,
         transactedAt: input.transactedAt,
         memo: input.memo,
+        accountId: input.accountId,
       },
     );
 
