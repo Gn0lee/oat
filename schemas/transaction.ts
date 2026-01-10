@@ -20,6 +20,7 @@ export const createTransactionSchema = z.object({
     .string()
     .datetime({ message: "유효한 날짜 형식이 아닙니다." }),
   memo: z.string().max(500, "메모는 500자 이내여야 합니다.").optional(),
+  accountId: z.string().uuid("유효한 계좌 ID가 아닙니다.").optional(),
 
   // 종목 정보 (첫 거래 시 household_stock_settings 생성용)
   stock: z.object({
@@ -58,6 +59,11 @@ export const updateTransactionSchema = z.object({
   memo: z
     .string()
     .max(500, "메모는 500자 이내여야 합니다.")
+    .nullable()
+    .optional(),
+  accountId: z
+    .string()
+    .uuid("유효한 계좌 ID가 아닙니다.")
     .nullable()
     .optional(),
 });

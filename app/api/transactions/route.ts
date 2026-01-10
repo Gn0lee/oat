@@ -133,6 +133,7 @@ export async function POST(request: Request) {
       price: input.price,
       transactedAt: input.transactedAt,
       memo: input.memo,
+      accountId: input.accountId,
       stock: {
         name: input.stock.name,
         market: input.stock.market,
