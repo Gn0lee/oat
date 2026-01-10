@@ -21,12 +21,22 @@ interface Member {
   name: string;
 }
 
+interface Account {
+  id: string;
+  name: string;
+}
+
 interface HoldingsListProps {
   initialData: PaginatedResult<HoldingWithDetails>;
   members: Member[];
+  accounts: Account[];
 }
 
-export function HoldingsList({ initialData, members }: HoldingsListProps) {
+export function HoldingsList({
+  initialData,
+  members,
+  accounts,
+}: HoldingsListProps) {
   const [data, setData] = useState(initialData);
   const [filters, setFilters] = useState<Filters>({});
   const [page, setPage] = useState(1);
@@ -39,6 +49,7 @@ export function HoldingsList({ initialData, members }: HoldingsListProps) {
       if (newFilters.ownerId) params.set("ownerId", newFilters.ownerId);
       if (newFilters.assetType) params.set("assetType", newFilters.assetType);
       if (newFilters.market) params.set("market", newFilters.market);
+      if (newFilters.accountId) params.set("accountId", newFilters.accountId);
       params.set("page", String(newPage));
 
       const response = await fetch(`/api/holdings?${params.toString()}`);
@@ -69,6 +80,7 @@ export function HoldingsList({ initialData, members }: HoldingsListProps) {
         filters={filters}
         onFiltersChange={handleFiltersChange}
         members={members}
+        accounts={accounts}
       />
 
       <div className={isLoading ? "opacity-50 pointer-events-none" : ""}>

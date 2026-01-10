@@ -16,16 +16,23 @@ interface Member {
   name: string;
 }
 
+interface Account {
+  id: string;
+  name: string;
+}
+
 interface HoldingsFiltersProps {
   filters: Filters;
   onFiltersChange: (filters: Filters) => void;
   members: Member[];
+  accounts: Account[];
 }
 
 export function HoldingsFilters({
   filters,
   onFiltersChange,
   members,
+  accounts,
 }: HoldingsFiltersProps) {
   const handleOwnerChange = (value: string) => {
     onFiltersChange({
@@ -38,6 +45,13 @@ export function HoldingsFilters({
     onFiltersChange({
       ...filters,
       market: value === "all" ? undefined : (value as MarketType),
+    });
+  };
+
+  const handleAccountChange = (value: string) => {
+    onFiltersChange({
+      ...filters,
+      accountId: value === "all" ? undefined : value,
     });
   };
 
@@ -58,6 +72,29 @@ export function HoldingsFilters({
               {members.map((member) => (
                 <SelectItem key={member.id} value={member.id}>
                   {member.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      {accounts.length > 0 && (
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-gray-500">계좌</span>
+          <Select
+            value={filters.accountId ?? "all"}
+            onValueChange={handleAccountChange}
+          >
+            <SelectTrigger className="w-[120px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">전체</SelectItem>
+              <SelectItem value="unassigned">계좌 미지정</SelectItem>
+              {accounts.map((account) => (
+                <SelectItem key={account.id} value={account.id}>
+                  {account.name}
                 </SelectItem>
               ))}
             </SelectContent>

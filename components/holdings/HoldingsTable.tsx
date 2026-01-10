@@ -77,15 +77,19 @@ const columns: ColumnDef<HoldingWithDetails>[] = [
     id: "owner",
     accessorKey: "owner",
     header: "소유자",
-    meta: { className: "hidden lg:table-cell" },
     cell: ({ row }) => row.original.owner.name,
+  },
+  {
+    id: "account",
+    accessorKey: "account",
+    header: "계좌",
+    cell: ({ row }) => row.original.account.name ?? "-",
   },
   {
     accessorKey: "quantity",
     header: ({ column }) => (
       <SortableHeader column={column}>수량</SortableHeader>
     ),
-    meta: { className: "hidden md:table-cell" },
     cell: ({ row }) => (
       <span className="tabular-nums">
         {row.original.quantity.toLocaleString()}
@@ -97,7 +101,6 @@ const columns: ColumnDef<HoldingWithDetails>[] = [
     header: ({ column }) => (
       <SortableHeader column={column}>평균 매수가</SortableHeader>
     ),
-    meta: { className: "hidden md:table-cell" },
     cell: ({ row }) => (
       <span className="tabular-nums">
         {formatCurrency(row.original.avgPrice, row.original.currency)}
@@ -119,7 +122,6 @@ const columns: ColumnDef<HoldingWithDetails>[] = [
     id: "market",
     accessorKey: "market",
     header: "시장",
-    meta: { className: "hidden lg:table-cell" },
     cell: ({ row }) => (
       <Badge variant="outline">
         {MARKET_LABELS[row.original.market] ?? row.original.market}
@@ -130,7 +132,6 @@ const columns: ColumnDef<HoldingWithDetails>[] = [
     id: "assetType",
     accessorKey: "assetType",
     header: "유형",
-    meta: { className: "hidden lg:table-cell" },
     cell: ({ row }) => (
       <span className="text-gray-600">
         {ASSET_TYPE_LABELS[row.original.assetType] ?? row.original.assetType}
@@ -156,7 +157,7 @@ export function HoldingsTable({ data }: HoldingsTableProps) {
   });
 
   return (
-    <div className="rounded-xl border bg-white overflow-hidden">
+    <div className="rounded-xl border bg-white overflow-x-auto">
       <Table>
         <TableHeader>
           {table.getHeaderGroups().map((headerGroup) => (
