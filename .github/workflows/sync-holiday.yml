@@ -1,0 +1,39 @@
+name: Sync Market Holidays
+
+on:
+  schedule:
+    # 매주 월요일 00:00 KST (일요일 15:00 UTC)
+    - cron: '0 15 * * 0'
+  workflow_dispatch:
+    # 수동 실행 가능
+
+env:
+  SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+  SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+  KIS_BASE_URL: ${{ secrets.KIS_BASE_URL }}
+  KIS_APP_KEY: ${{ secrets.KIS_APP_KEY }}
+  KIS_APP_SECRET: ${{ secrets.KIS_APP_SECRET }}
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Sync market holidays
+        run: pnpm sync:holiday

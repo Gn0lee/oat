@@ -220,3 +220,37 @@ export interface KISFluctuationRankOutput {
   prd_rsfl: string; // 기간 등락
   prd_rsfl_rate: string; // 기간 등락 비율
 }
+
+// ============================================================================
+// 휴장일 조회 타입
+// ============================================================================
+
+/**
+ * 국내 주식 휴장일 조회 응답
+ * API: /uapi/domestic-stock/v1/quotations/chk-holiday
+ * tr_id: CTCA0903R
+ */
+export interface KISHolidayOutput {
+  bass_dt: string; // 기준일자 (YYYYMMDD)
+  wday_dvsn_cd: string; // 요일구분코드 (01:일 ~ 07:토)
+  bzdy_yn: string; // 영업일여부 (Y/N)
+  tr_day_yn: string; // 거래일여부 (Y/N)
+  opnd_yn: string; // 개장일여부 (Y/N)
+  sttl_day_yn: string; // 결제일여부 (Y/N)
+}
+
+/**
+ * 휴장일 캐시 데이터 (system_config 저장용)
+ */
+export interface MarketHolidayCache {
+  holidays: MarketHolidayItem[];
+  syncedAt: string; // ISO8601
+}
+
+/**
+ * 휴장일 항목
+ */
+export interface MarketHolidayItem {
+  date: string; // YYYYMMDD
+  dayOfWeek: string; // 요일 (월, 화, ...)
+}

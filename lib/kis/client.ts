@@ -13,6 +13,7 @@ import type {
   KISDomesticMultiPriceOutput,
   KISDomesticPriceOutput,
   KISFluctuationRankOutput,
+  KISHolidayOutput,
   KISOverseasPriceOutput,
   KISTokenResponse,
   KISVolumeRankOutput,
@@ -490,4 +491,62 @@ export async function getDomesticFluctuationRank(
   }
 
   return (data.output ?? []).slice(0, limit);
+}
+
+// ============================================================================
+// 국내 주식 휴장일 조회
+// ============================================================================
+
+/**
+ * 국내 주식 휴장일 조회
+ * API: /uapi/domestic-stock/v1/quotations/chk-holiday
+ * tr_id: CTCA0903R
+ *
+ * @param baseDate 기준일자 (YYYYMMDD), 미입력 시 오늘
+ * @returns 기준일로부터 한 달간 일자별 개장 여부 목록
+ */
+export async function getDomesticHolidays(
+  baseDate?: string,
+): Promise<KISHolidayOutput[]> {
+  validateKISConfig();
+
+  const url = new URL(
+    `${KIS_BASE_URL}/uapi/domestic-stock/v1/quotations/chk-holiday`,
+  );
+
+  // 기준일자: 미입력 시 오늘 날짜
+  const today =
+    baseDate ?? new Date().toISOString().slice(0, 10).replace(/-/g, "");
+
+  url.searchParams.set("BASS_DT", today);
+  url.searchParams.set("CTX_AREA_NK", "");
+  url.searchParams.set("CTX_AREA_FK", "");
+
+  const headers = await createHeaders("CTCA0903R");
+
+  const response = await fetch(url.toString(), {
+    method: "GET",
+    headers,
+  });
+
+  if (!response.ok) {
+    throw new APIError(
+      "KIS_HOLIDAY_ERROR",
+      `휴장일 조회 실패: ${response.status}`,
+      response.status,
+    );
+  }
+
+  const data = (await response.json()) as KISAPIResponse<KISHolidayOutput[]>;
+
+  if (data.rt_cd !== "0") {
+    throw new APIError(
+      "KIS_HOLIDAY_ERROR",
+      `휴장일 조회 실패: ${data.msg1}`,
+      400,
+    );
+  }
+
+  // output1에서 데이터 추출
+  return data.output1 ?? data.output ?? [];
 }

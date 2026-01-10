@@ -1,9 +1,11 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { BarChart3, TrendingDown, TrendingUp } from "lucide-react";
+import { BarChart3, Calendar, TrendingDown, TrendingUp } from "lucide-react";
 import { useEffect, useRef } from "react";
+import { useMarketHoliday } from "@/hooks/use-market-holiday";
 import { useDomesticMarketTrend } from "@/hooks/use-market-trend";
+import type { MarketHolidayItem } from "@/lib/kis/types";
 import { cn } from "@/lib/utils/cn";
 import { formatCurrency } from "@/lib/utils/format";
 import type { MarketTrendItem } from "@/types";
@@ -63,9 +65,87 @@ function formatVolume(volume: number): string {
   return `${volume.toLocaleString()}주`;
 }
 
+/**
+ * YYYYMMDD를 "M월 D일" 형식으로 변환
+ */
+function formatHolidayDate(dateStr: string): string {
+  const month = Number.parseInt(dateStr.slice(4, 6), 10);
+  const day = Number.parseInt(dateStr.slice(6, 8), 10);
+  return `${month}월 ${day}일`;
+}
+
 // ============================================================================
 // 컴포넌트
 // ============================================================================
+
+/**
+ * 휴장일 로딩 스켈레톤 (1열)
+ */
+function HolidayLoadingSkeleton() {
+  return (
+    <section>
+      <h2 className="text-lg font-semibold text-gray-900 mb-4">
+        국내 시장 동향
+      </h2>
+      <div className="bg-white rounded-2xl p-6 shadow-sm">
+        <div className="animate-pulse">
+          <div className="flex items-center gap-3">
+            <div className="size-10 rounded-full bg-gray-200" />
+            <div className="space-y-2">
+              <div className="h-4 w-32 bg-gray-200 rounded" />
+              <div className="h-3 w-24 bg-gray-200 rounded" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/**
+ * 휴장일 안내 컴포넌트
+ */
+function HolidayNotice({
+  holidayInfo,
+  nextTradingDate,
+}: {
+  holidayInfo: MarketHolidayItem;
+  nextTradingDate?: string;
+}) {
+  const formattedDate = formatHolidayDate(holidayInfo.date);
+  const formattedNextDate = nextTradingDate
+    ? formatHolidayDate(nextTradingDate)
+    : null;
+
+  return (
+    <section>
+      <h2 className="text-lg font-semibold text-gray-900 mb-4">
+        국내 시장 동향
+      </h2>
+      <div className="bg-white rounded-2xl p-6 shadow-sm">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="size-10 rounded-full bg-amber-100 flex items-center justify-center">
+            <Calendar className="size-5 text-amber-600" />
+          </div>
+          <div>
+            <p className="text-base font-medium text-gray-900">
+              오늘은 휴장일입니다
+            </p>
+            <p className="text-sm text-gray-500">
+              {formattedDate} ({holidayInfo.dayOfWeek})
+            </p>
+          </div>
+        </div>
+        {formattedNextDate && (
+          <p className="text-sm text-gray-600 mt-4 pt-4 border-t border-gray-100">
+            다음 거래일:{" "}
+            <span className="font-medium">{formattedNextDate}</span>
+          </p>
+        )}
+      </div>
+    </section>
+  );
+}
 
 function TrendCard({
   title,
@@ -214,7 +294,13 @@ function ErrorState() {
 }
 
 export function MarketTrendSection() {
-  const { data, isLoading, error } = useDomesticMarketTrend();
+  const { data: holidayData, isLoading: isHolidayLoading } = useMarketHoliday();
+
+  // 휴장일이 아닌 경우에만 시장 동향 API 호출
+  const isHoliday = holidayData?.isHoliday ?? false;
+  const { data, isLoading, error } = useDomesticMarketTrend({
+    enabled: !isHolidayLoading && !isHoliday,
+  });
 
   // 이전 데이터를 저장하여 순위 변동 감지
   const prevDataRef = useRef<{
@@ -243,6 +329,22 @@ export function MarketTrendSection() {
     }
   }, [data]);
 
+  // 휴장일 데이터 로딩 중이면 1열 스켈레톤 표시
+  if (isHolidayLoading) {
+    return <HolidayLoadingSkeleton />;
+  }
+
+  // 휴장일인 경우 휴장 안내 표시
+  if (isHoliday && holidayData?.holidayInfo) {
+    return (
+      <HolidayNotice
+        holidayInfo={holidayData.holidayInfo}
+        nextTradingDate={holidayData.nextTradingDate}
+      />
+    );
+  }
+
+  // 시장 동향 데이터 로딩 중
   if (isLoading) {
     return <LoadingSkeleton />;
   }

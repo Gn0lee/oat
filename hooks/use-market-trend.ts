@@ -23,16 +23,27 @@ async function fetchDomesticMarketTrend(): Promise<DomesticMarketTrendData> {
   return json as DomesticMarketTrendData;
 }
 
+interface UseDomesticMarketTrendOptions {
+  enabled?: boolean;
+}
+
 /**
  * 국내 시장 동향 조회 훅
  * - 1분마다 자동 갱신
  * - 에러 발생 시 자동 갱신 중지
  * - 30초 staleTime
+ *
+ * @param options.enabled 쿼리 활성화 여부 (기본값: true)
  */
-export function useDomesticMarketTrend() {
+export function useDomesticMarketTrend(
+  options: UseDomesticMarketTrendOptions = {},
+) {
+  const { enabled = true } = options;
+
   return useQuery({
     queryKey: queries.marketTrend.domestic.queryKey,
     queryFn: fetchDomesticMarketTrend,
+    enabled,
     staleTime: 30 * 1000, // 30초
     retry: 2, // 최대 2회 재시도 (총 3회 시도)
     refetchInterval: (query) => {
