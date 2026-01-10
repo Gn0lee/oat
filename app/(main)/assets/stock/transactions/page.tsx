@@ -1,6 +1,5 @@
 import { Plus } from "lucide-react";
 import Link from "next/link";
-import { StockTabNav } from "@/components/assets/stock";
 import { PageHeader } from "@/components/layout";
 import { TransactionList } from "@/components/transactions/TransactionList";
 import { Button } from "@/components/ui/button";
@@ -32,8 +31,8 @@ export default async function TransactionsPage() {
   return (
     <>
       <PageHeader
-        title="주식"
-        backHref="/assets"
+        title="거래 내역"
+        backHref="/assets/stock"
         action={
           <Button asChild size="sm">
             <Link href="/assets/stock/transactions/new">
@@ -43,9 +42,6 @@ export default async function TransactionsPage() {
           </Button>
         }
       />
-
-      {/* 탭 네비게이션 */}
-      <StockTabNav activeTab="transactions" />
 
       {/* 거래 내역 목록 */}
       <TransactionList members={members} currentUserId={user.id} />

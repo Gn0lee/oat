@@ -28,7 +28,7 @@ const ASSET_TYPE_CONFIG: Record<AssetType, AssetTypeConfig> = {
     label: "주식/ETF",
     color: "text-indigo-600",
     bgColor: "bg-indigo-50",
-    href: "/assets/stock/holdings",
+    href: "/assets/stock",
     description: "국내외 주식 보유 현황과 수익률을 한눈에 확인하세요",
   },
   cash: {
