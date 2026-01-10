@@ -22,6 +22,7 @@ export interface HoldingsFilters {
   ownerId?: string;
   assetType?: AssetType;
   market?: MarketType;
+  accountId?: string;
 }
 
 /**
@@ -51,6 +52,10 @@ export interface HoldingWithDetails {
   owner: {
     id: string;
     name: string;
+  };
+  account: {
+    id: string | null;
+    name: string | null;
   };
 }
 
@@ -96,6 +101,13 @@ export async function getHoldings(
   }
   if (filters?.market) {
     query = query.eq("market", filters.market);
+  }
+  if (filters?.accountId) {
+    if (filters.accountId === "unassigned") {
+      query = query.is("account_id", null);
+    } else {
+      query = query.eq("account_id", filters.accountId);
+    }
   }
 
   // 정렬 적용
@@ -151,6 +163,10 @@ export async function getHoldings(
     owner: {
       id: h.owner_id ?? "",
       name: ownerMap.get(h.owner_id ?? "") ?? "알 수 없음",
+    },
+    account: {
+      id: h.account_id,
+      name: h.account_name,
     },
   }));
 

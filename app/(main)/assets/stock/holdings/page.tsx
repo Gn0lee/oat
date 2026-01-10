@@ -3,6 +3,7 @@ import Link from "next/link";
 import { HoldingsList } from "@/components/holdings/HoldingsList";
 import { PageHeader } from "@/components/layout";
 import { Button } from "@/components/ui/button";
+import { getAccounts } from "@/lib/api/account";
 import { getHoldings } from "@/lib/api/holdings";
 import { getHouseholdWithMembers } from "@/lib/api/household";
 import { getUserHouseholdId } from "@/lib/api/invitation";
@@ -28,6 +29,10 @@ export default async function HoldingsPage() {
   const household = await getHouseholdWithMembers(supabase, user.id);
   const members =
     household?.members.map((m) => ({ id: m.userId, name: m.name })) ?? [];
+
+  // 계좌 목록 조회
+  const accountsData = await getAccounts(supabase, householdId);
+  const accounts = accountsData.map((a) => ({ id: a.id, name: a.name }));
 
   // 초기 보유 현황 조회
   const initialData = await getHoldings(supabase, householdId, {
@@ -55,7 +60,11 @@ export default async function HoldingsPage() {
       </p>
 
       {/* 보유 현황 목록 */}
-      <HoldingsList initialData={initialData} members={members} />
+      <HoldingsList
+        initialData={initialData}
+        members={members}
+        accounts={accounts}
+      />
     </>
   );
 }
