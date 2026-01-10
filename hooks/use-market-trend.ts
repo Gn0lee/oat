@@ -2,7 +2,11 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { queries } from "@/lib/queries/keys";
-import type { DomesticMarketTrendData } from "@/types";
+import type {
+  DomesticMarketTrendData,
+  OverseasMarketTrendData,
+  OverseasNewsData,
+} from "@/types";
 
 interface MarketTrendError {
   error: {
@@ -56,5 +60,95 @@ export function useDomesticMarketTrend(
       }
       return 60 * 1000; // 1분마다 자동 갱신
     },
+  });
+}
+
+// ============================================================================
+// 해외 시장 동향
+// ============================================================================
+
+async function fetchOverseasMarketTrend(): Promise<OverseasMarketTrendData> {
+  const response = await fetch("/api/market-trend/overseas");
+  const json = await response.json();
+
+  if (!response.ok) {
+    const error = json as MarketTrendError;
+    throw new Error(error.error.message);
+  }
+
+  return json as OverseasMarketTrendData;
+}
+
+interface UseOverseasMarketTrendOptions {
+  enabled?: boolean;
+}
+
+/**
+ * 해외 시장 동향 조회 훅
+ * - 1분마다 자동 갱신
+ * - 에러 발생 시 자동 갱신 중지
+ * - 30초 staleTime
+ *
+ * @param options.enabled 쿼리 활성화 여부 (기본값: true)
+ */
+export function useOverseasMarketTrend(
+  options: UseOverseasMarketTrendOptions = {},
+) {
+  const { enabled = true } = options;
+
+  return useQuery({
+    queryKey: queries.marketTrend.overseas.queryKey,
+    queryFn: fetchOverseasMarketTrend,
+    enabled,
+    staleTime: 30 * 1000, // 30초
+    retry: 2,
+    refetchInterval: (query) => {
+      if (
+        query.state.status === "error" ||
+        query.state.fetchFailureCount >= 3
+      ) {
+        return false;
+      }
+      return 60 * 1000; // 1분마다 자동 갱신
+    },
+  });
+}
+
+// ============================================================================
+// 해외 뉴스
+// ============================================================================
+
+async function fetchOverseasNews(): Promise<OverseasNewsData> {
+  const response = await fetch("/api/market-trend/overseas/news");
+  const json = await response.json();
+
+  if (!response.ok) {
+    const error = json as MarketTrendError;
+    throw new Error(error.error.message);
+  }
+
+  return json as OverseasNewsData;
+}
+
+interface UseOverseasNewsOptions {
+  enabled?: boolean;
+}
+
+/**
+ * 해외 뉴스 조회 훅
+ * - 5분 staleTime
+ * - 자동 갱신 없음
+ *
+ * @param options.enabled 쿼리 활성화 여부 (기본값: true)
+ */
+export function useOverseasNews(options: UseOverseasNewsOptions = {}) {
+  const { enabled = true } = options;
+
+  return useQuery({
+    queryKey: queries.marketTrend.overseasNews.queryKey,
+    queryFn: fetchOverseasNews,
+    enabled,
+    staleTime: 5 * 60 * 1000, // 5분
+    retry: 2,
   });
 }

@@ -184,3 +184,27 @@ export interface DomesticMarketTrendData {
   losers: MarketTrendItem[];
   updatedAt: string;
 }
+
+// 해외 시장 동향 데이터 (거래량/가격)
+export interface OverseasMarketTrendData {
+  volumeSurge: MarketTrendItem[];
+  gainers: MarketTrendItem[];
+  losers: MarketTrendItem[];
+  updatedAt: string;
+}
+
+// 해외 뉴스 항목
+export interface OverseasNewsItem {
+  newsKey: string;
+  title: string;
+  source: string;
+  datetime: string;
+  ticker?: string;
+  tickerName?: string;
+}
+
+// 해외 뉴스 데이터
+export interface OverseasNewsData {
+  news: OverseasNewsItem[];
+  updatedAt: string;
+}

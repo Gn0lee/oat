@@ -14,7 +14,10 @@ import type {
   KISDomesticPriceOutput,
   KISFluctuationRankOutput,
   KISHolidayOutput,
+  KISOverseasNewsOutput,
+  KISOverseasPriceFluctOutput,
   KISOverseasPriceOutput,
+  KISOverseasVolumeSurgeOutput,
   KISTokenResponse,
   KISVolumeRankOutput,
   OverseasExchangeCode,
@@ -549,4 +552,174 @@ export async function getDomesticHolidays(
 
   // output1에서 데이터 추출
   return data.output1 ?? data.output ?? [];
+}
+
+// ============================================================================
+// 해외 주식 순위 조회
+// ============================================================================
+
+/**
+ * 해외주식 가격급등락 조회
+ * API: /uapi/overseas-stock/v1/ranking/price-fluct
+ * tr_id: HHDFS76260000
+ */
+export async function getOverseasPriceFluct(
+  exchangeCode: "NYS" | "NAS" | "AMS" = "NAS",
+  direction: "up" | "down" = "up",
+  limit = 5,
+): Promise<KISOverseasPriceFluctOutput[]> {
+  validateKISConfig();
+
+  const url = new URL(
+    `${KIS_BASE_URL}/uapi/overseas-stock/v1/ranking/price-fluct`,
+  );
+
+  url.searchParams.set("AUTH", "");
+  url.searchParams.set("EXCD", exchangeCode);
+  url.searchParams.set("GUBN", direction === "up" ? "0" : "1"); // 0:급등, 1:급락
+  url.searchParams.set("BYSL", ""); // 매수/매도 구분
+  url.searchParams.set("PRCN", ""); // 등락율 조건
+
+  const headers = await createHeaders("HHDFS76260000");
+
+  const response = await fetch(url.toString(), {
+    method: "GET",
+    headers,
+  });
+
+  if (!response.ok) {
+    throw new APIError(
+      "KIS_OVERSEAS_PRICE_FLUCT_ERROR",
+      `해외주식 가격급등락 조회 실패: ${response.status}`,
+      response.status,
+    );
+  }
+
+  const data = (await response.json()) as KISAPIResponse<{
+    output1?: { zdiv: string; stat: string; nrec: string };
+    output2?: KISOverseasPriceFluctOutput[];
+  }>;
+
+  if (data.rt_cd !== "0") {
+    throw new APIError(
+      "KIS_OVERSEAS_PRICE_FLUCT_ERROR",
+      `해외주식 가격급등락 조회 실패: ${data.msg1}`,
+      400,
+    );
+  }
+
+  const output = data.output as unknown as {
+    output1?: { zdiv: string; stat: string; nrec: string };
+    output2?: KISOverseasPriceFluctOutput[];
+  };
+
+  return (output?.output2 ?? []).slice(0, limit);
+}
+
+/**
+ * 해외주식 거래량급증 조회
+ * API: /uapi/overseas-stock/v1/ranking/volume-surge
+ * tr_id: HHDFS76270000
+ */
+export async function getOverseasVolumeSurge(
+  exchangeCode: "NYS" | "NAS" | "AMS" = "NAS",
+  limit = 5,
+): Promise<KISOverseasVolumeSurgeOutput[]> {
+  validateKISConfig();
+
+  const url = new URL(
+    `${KIS_BASE_URL}/uapi/overseas-stock/v1/ranking/volume-surge`,
+  );
+
+  url.searchParams.set("AUTH", "");
+  url.searchParams.set("EXCD", exchangeCode);
+  url.searchParams.set("NDAY", "1"); // 기간 (1일)
+  url.searchParams.set("VOL_RATE", ""); // 거래량 증가율 조건
+
+  const headers = await createHeaders("HHDFS76270000");
+
+  const response = await fetch(url.toString(), {
+    method: "GET",
+    headers,
+  });
+
+  if (!response.ok) {
+    throw new APIError(
+      "KIS_OVERSEAS_VOLUME_SURGE_ERROR",
+      `해외주식 거래량급증 조회 실패: ${response.status}`,
+      response.status,
+    );
+  }
+
+  const data = (await response.json()) as KISAPIResponse<{
+    output1?: { zdiv: string; stat: string; nrec: string };
+    output2?: KISOverseasVolumeSurgeOutput[];
+  }>;
+
+  if (data.rt_cd !== "0") {
+    throw new APIError(
+      "KIS_OVERSEAS_VOLUME_SURGE_ERROR",
+      `해외주식 거래량급증 조회 실패: ${data.msg1}`,
+      400,
+    );
+  }
+
+  const output = data.output as unknown as {
+    output1?: { zdiv: string; stat: string; nrec: string };
+    output2?: KISOverseasVolumeSurgeOutput[];
+  };
+
+  return (output?.output2 ?? []).slice(0, limit);
+}
+
+/**
+ * 해외뉴스 조회
+ * API: /uapi/overseas-price/v1/quotations/news-title
+ * tr_id: HHPSTH60100C1
+ */
+export async function getOverseasNews(
+  limit = 10,
+): Promise<KISOverseasNewsOutput[]> {
+  validateKISConfig();
+
+  const url = new URL(
+    `${KIS_BASE_URL}/uapi/overseas-price/v1/quotations/news-title`,
+  );
+
+  url.searchParams.set("AUTH", "");
+  url.searchParams.set("EXCD", ""); // 전체 거래소
+  url.searchParams.set("SYMB", ""); // 전체 종목
+  url.searchParams.set("GUBN", ""); // 전체 뉴스
+
+  const headers = await createHeaders("HHPSTH60100C1");
+
+  const response = await fetch(url.toString(), {
+    method: "GET",
+    headers,
+  });
+
+  if (!response.ok) {
+    throw new APIError(
+      "KIS_OVERSEAS_NEWS_ERROR",
+      `해외뉴스 조회 실패: ${response.status}`,
+      response.status,
+    );
+  }
+
+  const data = (await response.json()) as {
+    rt_cd: string;
+    msg_cd: string;
+    msg1: string;
+    outblock1?: KISOverseasNewsOutput[];
+  };
+
+  if (data.rt_cd !== "0") {
+    throw new APIError(
+      "KIS_OVERSEAS_NEWS_ERROR",
+      `해외뉴스 조회 실패: ${data.msg1}`,
+      400,
+    );
+  }
+
+  return (data.outblock1 ?? []).slice(0, limit);
 }
