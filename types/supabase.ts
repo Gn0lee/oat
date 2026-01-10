@@ -37,7 +37,7 @@ export type Database = {
       accounts: {
         Row: {
           account_number: string | null;
-          account_type: string | null;
+          account_type: Database["public"]["Enums"]["account_type"] | null;
           broker: string | null;
           created_at: string;
           household_id: string;
@@ -50,7 +50,7 @@ export type Database = {
         };
         Insert: {
           account_number?: string | null;
-          account_type?: string | null;
+          account_type?: Database["public"]["Enums"]["account_type"] | null;
           broker?: string | null;
           created_at?: string;
           household_id: string;
@@ -63,7 +63,7 @@ export type Database = {
         };
         Update: {
           account_number?: string | null;
-          account_type?: string | null;
+          account_type?: Database["public"]["Enums"]["account_type"] | null;
           broker?: string | null;
           created_at?: string;
           household_id?: string;
@@ -482,6 +482,7 @@ export type Database = {
       };
       transactions: {
         Row: {
+          account_id: string | null;
           created_at: string;
           household_id: string;
           id: string;
@@ -494,6 +495,7 @@ export type Database = {
           type: Database["public"]["Enums"]["transaction_type"];
         };
         Insert: {
+          account_id?: string | null;
           created_at?: string;
           household_id: string;
           id?: string;
@@ -506,6 +508,7 @@ export type Database = {
           type: Database["public"]["Enums"]["transaction_type"];
         };
         Update: {
+          account_id?: string | null;
           created_at?: string;
           household_id?: string;
           id?: string;
@@ -518,6 +521,13 @@ export type Database = {
           type?: Database["public"]["Enums"]["transaction_type"];
         };
         Relationships: [
+          {
+            foreignKeyName: "transactions_account_id_fkey";
+            columns: ["account_id"];
+            isOneToOne: false;
+            referencedRelation: "accounts";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "transactions_household_id_fkey";
             columns: ["household_id"];
@@ -605,10 +615,17 @@ export type Database = {
           isSetofReturn: true;
         };
       };
-      show_limit: { Args: never; Returns: number };
-      show_trgm: { Args: { "": string }; Returns: string[] };
     };
     Enums: {
+      account_type:
+        | "stock"
+        | "savings"
+        | "deposit"
+        | "checking"
+        | "isa"
+        | "pension"
+        | "cma"
+        | "other";
       allocation_category:
         | "equity_kr"
         | "equity_us"
@@ -774,6 +791,16 @@ export const Constants = {
   },
   public: {
     Enums: {
+      account_type: [
+        "stock",
+        "savings",
+        "deposit",
+        "checking",
+        "isa",
+        "pension",
+        "cma",
+        "other",
+      ],
       allocation_category: [
         "equity_kr",
         "equity_us",
