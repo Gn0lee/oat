@@ -548,6 +548,8 @@ export type Database = {
     Views: {
       holdings: {
         Row: {
+          account_id: string | null;
+          account_name: string | null;
           asset_type: Database["public"]["Enums"]["asset_type"] | null;
           avg_price: number | null;
           currency: Database["public"]["Enums"]["currency_type"] | null;
@@ -563,6 +565,13 @@ export type Database = {
           total_invested: number | null;
         };
         Relationships: [
+          {
+            foreignKeyName: "transactions_account_id_fkey";
+            columns: ["account_id"];
+            isOneToOne: false;
+            referencedRelation: "accounts";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "transactions_household_id_fkey";
             columns: ["household_id"];
