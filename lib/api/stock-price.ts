@@ -19,6 +19,7 @@ import type {
   StockPriceRow,
   StockQuery,
 } from "@/lib/kis/types";
+import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database, MarketType } from "@/types";
 
 // 캐시 버킷 단위: 1시간 (밀리초)
@@ -118,12 +119,11 @@ async function getCachedPrices(
 }
 
 /**
- * 가격 데이터 DB에 upsert
+ * 가격 데이터 DB에 upsert (admin 클라이언트 사용)
+ * stock_prices 테이블은 RLS로 일반 사용자 쓰기가 차단되어 있어
+ * service_role 키를 가진 admin 클라이언트로 upsert합니다.
  */
-async function upsertPrices(
-  supabase: SupabaseClient<Database>,
-  prices: StockPriceResult[],
-): Promise<void> {
+async function upsertPrices(prices: StockPriceResult[]): Promise<void> {
   if (prices.length === 0) {
     return;
   }
@@ -136,7 +136,8 @@ async function upsertPrices(
     fetched_at: p.fetchedAt.toISOString(),
   }));
 
-  const { error } = await supabase
+  const admin = createAdminClient();
+  const { error } = await admin
     .from("stock_prices")
     .upsert(rows, { onConflict: "market,code" });
 
@@ -305,7 +306,7 @@ export async function getStockPrices(
 
   // 5. 새로 조회한 가격을 캐시에 저장
   const newPrices = [...domesticPrices, ...overseasPrices];
-  await upsertPrices(supabase, newPrices);
+  await upsertPrices(newPrices);
 
   // 6. 결과 병합
   const result: Record<string, StockPriceResult> =

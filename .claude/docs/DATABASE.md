@@ -494,7 +494,11 @@ create index target_allocations_household_id_idx on public.target_allocations(ho
 
 ## 시스템 테이블 (GitHub Actions 동기화)
 
-> RLS 미적용. GitHub Actions에서 service_role_key로 접근.
+> GitHub Actions에서 service_role_key로 쓰기 접근.
+>
+> **RLS 상태**:
+> - `stock_master`, `exchange_rates`, `stock_prices`: RLS 활성화 + 읽기 허용 (`using(true)`)
+> - `system_config`: RLS 활성화 + 전체 차단 (service_role만 접근 가능)
 
 ### 12. stock_master (종목 마스터)
 
@@ -623,7 +627,7 @@ where from_currency = 'USD' and to_currency = 'KRW';
 
 KIS API 조회 결과를 캐싱. 1시간 버킷 단위로 캐시 유효성 판단.
 
-> ⚠️ RLS 미적용. 서버 컴포넌트/Server Action에서만 접근.
+> RLS 활성화 + 읽기 허용. 쓰기는 서버 컴포넌트/Server Action에서만 접근.
 
 ```sql
 create table public.stock_prices (
