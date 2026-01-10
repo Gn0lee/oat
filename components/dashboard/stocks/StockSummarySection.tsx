@@ -176,12 +176,6 @@ export function StockSummarySection() {
           {summary.holdingCount}
           <span className="text-lg font-normal text-gray-500 ml-1">종목</span>
         </p>
-        <Link
-          href="/assets/stock/holdings"
-          className="text-sm text-indigo-600 hover:text-indigo-700 mt-1 inline-block"
-        >
-          전체 보기 →
-        </Link>
       </div>
     </div>
   );
