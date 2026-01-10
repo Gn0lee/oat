@@ -1,4 +1,4 @@
-import { PortfolioNavSection } from "@/components/assets/stock";
+import { MyStockSection, PortfolioNavSection } from "@/components/assets/stock";
 import { StockSummarySection } from "@/components/dashboard/stocks";
 import { PageHeader } from "@/components/layout";
 
@@ -9,6 +9,9 @@ export default function StockMainPage() {
       <StockSummarySection />
       <div className="mt-6">
         <PortfolioNavSection />
+      </div>
+      <div className="mt-6">
+        <MyStockSection />
       </div>
     </>
   );
