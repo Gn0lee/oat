@@ -222,6 +222,75 @@ export interface KISFluctuationRankOutput {
 }
 
 // ============================================================================
+// 해외주식 순위 타입
+// ============================================================================
+
+/**
+ * 해외주식 가격급등락 응답
+ * API: /uapi/overseas-stock/v1/ranking/price-fluct
+ */
+export interface KISOverseasPriceFluctOutput {
+  rsym: string; // 실시간조회심볼
+  excd: string; // 거래소코드
+  symb: string; // 종목코드
+  knam: string; // 종목명
+  last: string; // 현재가
+  sign: string; // 기호
+  diff: string; // 대비
+  rate: string; // 등락율
+  tvol: string; // 거래량
+  pask: string; // 매도호가
+  pbid: string; // 매수호가
+  n_base: string; // 기준가격
+  n_diff: string; // 기준가격대비
+  n_rate: string; // 기준가격대비율
+  enam: string; // 영문종목명
+  e_ordyn: string; // 매매가능
+}
+
+/**
+ * 해외주식 거래량급증 응답
+ * API: /uapi/overseas-stock/v1/ranking/volume-surge
+ */
+export interface KISOverseasVolumeSurgeOutput {
+  rsym: string; // 실시간조회심볼
+  excd: string; // 거래소코드
+  symb: string; // 종목코드
+  knam: string; // 종목명
+  last: string; // 현재가
+  sign: string; // 기호
+  diff: string; // 대비
+  rate: string; // 등락율
+  tvol: string; // 거래량
+  pask: string; // 매도호가
+  pbid: string; // 매수호가
+  n_tvol: string; // 기준거래량
+  n_diff: string; // 증가량
+  n_rate: string; // 증가율
+  enam: string; // 영문종목명
+  e_ordyn: string; // 매매가능
+}
+
+/**
+ * 해외뉴스 응답
+ * API: /uapi/overseas-price/v1/quotations/news-title
+ */
+export interface KISOverseasNewsOutput {
+  info_gb: string; // 뉴스구분
+  news_key: string; // 뉴스키
+  data_dt: string; // 조회일자
+  data_tm: string; // 조회시간
+  class_cd: string; // 중분류
+  class_name: string; // 중분류명
+  source: string; // 자료원
+  nation_cd: string; // 국가코드
+  exchange_cd: string; // 거래소코드
+  symb: string; // 종목코드
+  symb_name: string; // 종목명
+  title: string; // 제목
+}
+
+// ============================================================================
 // 휴장일 조회 타입
 // ============================================================================
 
