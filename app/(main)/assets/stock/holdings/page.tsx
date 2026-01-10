@@ -1,6 +1,5 @@
 import { Plus } from "lucide-react";
 import Link from "next/link";
-import { StockTabNav } from "@/components/assets/stock";
 import { HoldingsList } from "@/components/holdings/HoldingsList";
 import { PageHeader } from "@/components/layout";
 import { Button } from "@/components/ui/button";
@@ -38,8 +37,8 @@ export default async function HoldingsPage() {
   return (
     <>
       <PageHeader
-        title="주식"
-        backHref="/assets"
+        title="보유 현황"
+        backHref="/assets/stock"
         action={
           <Button asChild size="sm">
             <Link href="/assets/stock/transactions/new">
@@ -49,9 +48,6 @@ export default async function HoldingsPage() {
           </Button>
         }
       />
-
-      {/* 탭 네비게이션 */}
-      <StockTabNav activeTab="holdings" />
 
       {/* 보유 현황 요약 */}
       <p className="text-sm text-gray-500">

@@ -27,10 +27,7 @@ export default async function StockSettingsPage() {
 
   return (
     <>
-      <PageHeader
-        title="종목 설정"
-        subtitle={`총 ${initialData.total}개 종목 등록됨`}
-      />
+      <PageHeader title="종목 설정" backHref="/assets/stock" />
 
       {/* 종목 설정 목록 */}
       <StockSettingsList initialData={initialData} />
