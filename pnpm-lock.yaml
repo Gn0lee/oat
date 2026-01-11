@@ -50,6 +50,9 @@ importers:
       '@tanstack/react-table':
         specifier: ^8.21.3
         version: 8.21.3(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      '@use-funnel/browser':
+        specifier: ^0.0.16
+        version: 0.0.16(react@19.2.3)
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -1190,6 +1193,16 @@ packages:
 
   '@types/ws@8.18.1':
     resolution: {integrity: sha512-ThVF6DCVhA8kUGy+aazFQ4kXQ7E1Ty7A3ypFOe0IcJV8O/M511G99AW24irKrW56Wt44yG9+ij8FaqoBGkuBXg==}
+
+  '@use-funnel/browser@0.0.16':
+    resolution: {integrity: sha512-L3qOxT3aU82LVKcj14K6Z/qndCt1qV8XBfyK2zRNR/btD6787bznmuevwFwcPZnze9VkzsQAJlRHHsrPAByIKw==}
+    peerDependencies:
+      react: '>=16.8'
+
+  '@use-funnel/core@0.0.13':
+    resolution: {integrity: sha512-0cFqUs0Z5QWnTG5ua2FZloKyGn3KAbA9miaFOa6RAeBmm74lilyFk4ovLe/9g1W58ZZlR3+1wbjDzyAT9yIGig==}
+    peerDependencies:
+      react: '>=16.8'
 
   agent-base@7.1.4:
     resolution: {integrity: sha512-MnA+YT8fwfJPgBx3m60MNqakm30XOkyIoH1y6huTQvC0PwZG7ki8NacLBcrPbNoo8vEZy7Jpuk7+jMO+CUovTQ==}
@@ -2848,6 +2861,15 @@ snapshots:
   '@types/ws@8.18.1':
     dependencies:
       '@types/node': 20.19.27
+
+  '@use-funnel/browser@0.0.16(react@19.2.3)':
+    dependencies:
+      '@use-funnel/core': 0.0.13(react@19.2.3)
+      react: 19.2.3
+
+  '@use-funnel/core@0.0.13(react@19.2.3)':
+    dependencies:
+      react: 19.2.3
 
   agent-base@7.1.4: {}
 

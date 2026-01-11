@@ -8,6 +8,7 @@ import type {
 import { queries } from "@/lib/queries/keys";
 import type { PaginatedResult } from "@/lib/utils/query";
 import type {
+  CreateBatchTransactionInput,
   CreateTransactionInput,
   UpdateTransactionInput,
 } from "@/schemas/transaction";
@@ -95,6 +96,50 @@ export function useCreateTransaction() {
 
   return useMutation({
     mutationFn: createTransaction,
+    onSuccess: () => {
+      // 관련 캐시 무효화
+      queryClient.invalidateQueries({ queryKey: queries.transactions._def });
+      queryClient.invalidateQueries({ queryKey: queries.holdings._def });
+      queryClient.invalidateQueries({ queryKey: queries.dashboard._def });
+      queryClient.invalidateQueries({ queryKey: queries.stocks._def });
+    },
+  });
+}
+
+// ============================================================================
+// 배치 거래 생성
+// ============================================================================
+
+interface BatchTransactionResponse {
+  data: Transaction[];
+  count: number;
+}
+
+async function createBatchTransactions(
+  input: CreateBatchTransactionInput,
+): Promise<Transaction[]> {
+  const response = await fetch("/api/transactions/batch", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(input),
+  });
+  const json = await response.json();
+
+  if (!response.ok) {
+    const error = json as TransactionError;
+    throw new Error(error.error.message);
+  }
+
+  return (json as BatchTransactionResponse).data;
+}
+
+export function useCreateBatchTransactions() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: createBatchTransactions,
     onSuccess: () => {
       // 관련 캐시 무효화
       queryClient.invalidateQueries({ queryKey: queries.transactions._def });

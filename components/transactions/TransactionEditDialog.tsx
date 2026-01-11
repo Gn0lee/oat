@@ -18,7 +18,15 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useAccounts } from "@/hooks/use-accounts";
 import { useUpdateTransaction } from "@/hooks/use-transaction";
 import type { TransactionWithDetails } from "@/lib/api/transaction";
 
@@ -41,6 +49,7 @@ const editFormSchema = z.object({
       message: "가격은 0 이상이어야 합니다.",
     }),
   transactedAt: z.string().min(1, "거래일을 입력해주세요."),
+  accountId: z.string().optional(),
   memo: z.string().max(500, "메모는 500자 이내여야 합니다.").optional(),
 });
 
@@ -52,15 +61,20 @@ export function TransactionEditDialog({
   onOpenChange,
 }: TransactionEditDialogProps) {
   const updateMutation = useUpdateTransaction();
+  const { data: accounts } = useAccounts();
 
   const {
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<EditFormValues>({
     resolver: zodResolver(editFormSchema),
   });
+
+  const watchAccountId = watch("accountId");
 
   // transaction이 변경될 때 폼 값 초기화
   useEffect(() => {
@@ -73,6 +87,7 @@ export function TransactionEditDialog({
         quantity: String(transaction.quantity),
         price: String(transaction.price),
         transactedAt: formattedDate,
+        accountId: transaction.accountId ?? "__none__",
         memo: transaction.memo ?? "",
       });
     }
@@ -85,12 +100,17 @@ export function TransactionEditDialog({
       // transactedAt을 ISO 형식으로 변환
       const transactedAtISO = new Date(data.transactedAt).toISOString();
 
+      // "__none__"은 계좌 없음을 의미
+      const accountId =
+        data.accountId === "__none__" ? null : data.accountId || null;
+
       await updateMutation.mutateAsync({
         id: transaction.id,
         data: {
           quantity: Number(data.quantity),
           price: Number(data.price),
           transactedAt: transactedAtISO,
+          accountId,
           memo: data.memo || null,
         },
       });
@@ -185,6 +205,30 @@ export function TransactionEditDialog({
               </p>
             )}
           </div>
+
+          {/* 계좌 */}
+          {accounts && accounts.length > 0 && (
+            <div className="space-y-2">
+              <Label htmlFor="accountId">거래 계좌</Label>
+              <Select
+                value={watchAccountId ?? "__none__"}
+                onValueChange={(value) => setValue("accountId", value)}
+              >
+                <SelectTrigger id="accountId">
+                  <SelectValue placeholder="계좌를 선택하세요" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">계좌 없음</SelectItem>
+                  {accounts.map((account) => (
+                    <SelectItem key={account.id} value={account.id}>
+                      {account.name}
+                      {account.broker && ` (${account.broker})`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {/* 메모 */}
           <div className="space-y-2">

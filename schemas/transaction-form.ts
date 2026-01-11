@@ -22,6 +22,7 @@ export const transactionFormSchema = z.object({
       message: "거래 단가는 0 이상이어야 합니다.",
     }),
   transactedAt: z.string().min(1, "거래일을 선택해주세요."),
+  accountId: z.string().optional(),
   memo: z.string().max(500, "메모는 500자 이내여야 합니다.").optional(),
 });
 
