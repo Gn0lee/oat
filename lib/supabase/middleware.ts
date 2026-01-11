@@ -2,13 +2,8 @@ import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 import type { Database } from "@/types";
 
-// 세션 체크가 필요한 인증 라우트 (로그인된 사용자 리다이렉트용)
-const AUTH_ROUTES_WITH_SESSION_CHECK = ["/login", "/signup", "/reset-password"];
-// 세션 체크 없이 통과해야 하는 라우트 (세션 생성 전이므로)
-const AUTH_ROUTES_WITHOUT_SESSION_CHECK = [
-  "/auth/callback",
-  "/auth/invite/callback",
-];
+// 인증된 사용자가 접근하면 홈으로 리다이렉트할 라우트
+const AUTH_ROUTES = ["/login", "/signup", "/reset-password"];
 const PUBLIC_ROUTES = ["/"];
 const LANDING_ROUTE = "/";
 
@@ -19,16 +14,6 @@ export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
   });
-
-  const { pathname } = request.nextUrl;
-
-  // 세션 체크 없이 통과해야 하는 라우트 (exchangeCodeForSession으로 세션 생성 전이므로)
-  const isNoSessionCheckRoute = AUTH_ROUTES_WITHOUT_SESSION_CHECK.some(
-    (route) => pathname.startsWith(route),
-  );
-  if (isNoSessionCheckRoute) {
-    return supabaseResponse;
-  }
 
   const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -53,20 +38,25 @@ export async function updateSession(request: NextRequest) {
     },
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // IMPORTANT: createServerClient와 getClaims() 사이에 코드를 넣지 마세요.
+  // getClaims()를 제거하면 사용자가 무작위로 로그아웃될 수 있습니다.
+  const { data } = await supabase.auth.getClaims();
+  const user = data?.claims;
 
-  const isAuthRoute = AUTH_ROUTES_WITH_SESSION_CHECK.some((route) =>
-    pathname.startsWith(route),
-  );
-  const isPublicRoute = PUBLIC_ROUTES.includes(pathname);
-  const isApiRoute = pathname.startsWith("/api");
+  const { pathname } = request.nextUrl;
 
-  // API 라우트는 미들웨어에서 리다이렉트하지 않음 (각 API에서 처리)
-  if (isApiRoute) {
+  // /auth로 시작하는 경로는 세션 체크 없이 통과 (callback 등)
+  if (pathname.startsWith("/auth")) {
     return supabaseResponse;
   }
+
+  // API 라우트는 미들웨어에서 리다이렉트하지 않음 (각 API에서 처리)
+  if (pathname.startsWith("/api")) {
+    return supabaseResponse;
+  }
+
+  const isAuthRoute = AUTH_ROUTES.some((route) => pathname.startsWith(route));
+  const isPublicRoute = PUBLIC_ROUTES.includes(pathname);
 
   // 인증된 사용자가 auth 라우트 접근 시 홈으로 리다이렉트
   if (user && isAuthRoute) {
