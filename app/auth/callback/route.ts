@@ -1,3 +1,4 @@
+import { error } from "console";
 import { type NextRequest, NextResponse } from "next/server";
 import {
   acceptInvitation,
@@ -43,6 +44,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(`${origin}${next}`);
     }
   }
+
+  console.log("Auth callback error", error, code);
 
   // 에러 발생 시 로그인 페이지로 리다이렉트
   return NextResponse.redirect(`${origin}/login?error=auth_callback_error`);
