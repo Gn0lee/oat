@@ -25,7 +25,7 @@ export interface CreateTransactionParams {
   price: number;
   transactedAt: string;
   memo?: string;
-  accountId?: string;
+  accountId: string;
   stock: {
     name: string;
     market: MarketType;
@@ -82,19 +82,20 @@ export async function createTransaction(
     );
   }
 
-  // 2. 매도 시 보유 수량 검증
+  // 2. 매도 시 해당 계좌의 보유 수량 검증
   if (type === "sell") {
     const currentQuantity = await getHoldingQuantity(
       supabase,
       householdId,
       ownerId,
       ticker,
+      accountId,
     );
 
     if (currentQuantity < quantity) {
       throw new APIError(
         "INSUFFICIENT_QUANTITY",
-        `보유 수량(${currentQuantity})이 매도 수량(${quantity})보다 적습니다.`,
+        `해당 계좌의 보유 수량(${currentQuantity})이 매도 수량(${quantity})보다 적습니다.`,
         400,
       );
     }
@@ -112,7 +113,7 @@ export async function createTransaction(
       price,
       transacted_at: transactedAt,
       memo: memo || null,
-      account_id: accountId || null,
+      account_id: accountId,
     })
     .select()
     .single();
@@ -354,26 +355,39 @@ export async function updateTransaction(
     throw new APIError("FORBIDDEN", "본인의 거래만 수정할 수 있습니다.", 403);
   }
 
-  // 3. 매도 거래 수정 시 보유 수량 재검증
+  // 3. 매도 거래 수정 시 해당 계좌의 보유 수량 재검증
   if (existingTransaction.type === "sell" && params.quantity !== undefined) {
-    const currentQuantity = await getHoldingQuantity(
-      supabase,
-      householdId,
-      userId,
-      existingTransaction.ticker,
-    );
+    // 계좌가 변경되는 경우 새 계좌의 보유 수량 확인, 아니면 기존 계좌
+    const targetAccountId =
+      params.accountId !== undefined
+        ? params.accountId
+        : existingTransaction.account_id;
 
-    // 현재 보유량 + 기존 매도 수량 - 새 매도 수량 >= 0
-    const originalQuantity = Number(existingTransaction.quantity);
-    const newQuantity = params.quantity;
-    const availableQuantity = currentQuantity + originalQuantity;
-
-    if (availableQuantity < newQuantity) {
-      throw new APIError(
-        "INSUFFICIENT_QUANTITY",
-        `매도 가능 수량(${availableQuantity})이 수정하려는 수량(${newQuantity})보다 적습니다.`,
-        400,
+    if (targetAccountId) {
+      const currentQuantity = await getHoldingQuantity(
+        supabase,
+        householdId,
+        userId,
+        existingTransaction.ticker,
+        targetAccountId,
       );
+
+      // 현재 보유량 + 기존 매도 수량 - 새 매도 수량 >= 0
+      // 단, 계좌가 동일한 경우에만 기존 매도 수량을 더함
+      const isSameAccount = targetAccountId === existingTransaction.account_id;
+      const originalQuantity = isSameAccount
+        ? Number(existingTransaction.quantity)
+        : 0;
+      const newQuantity = params.quantity;
+      const availableQuantity = currentQuantity + originalQuantity;
+
+      if (availableQuantity < newQuantity) {
+        throw new APIError(
+          "INSUFFICIENT_QUANTITY",
+          `해당 계좌의 매도 가능 수량(${availableQuantity})이 수정하려는 수량(${newQuantity})보다 적습니다.`,
+          400,
+        );
+      }
     }
   }
 
@@ -460,7 +474,7 @@ export interface CreateBatchTransactionsParams {
   ownerId: string;
   type: "buy" | "sell";
   transactedAt: string;
-  accountId?: string;
+  accountId: string;
   items: BatchTransactionItem[];
 }
 
@@ -509,7 +523,7 @@ export async function createBatchTransactions(
     }
   }
 
-  // 2. 매도 시 종목별 누적 수량 검증
+  // 2. 매도 시 해당 계좌의 종목별 누적 수량 검증
   if (type === "sell") {
     // 같은 종목 매도 수량 합산
     const sellQuantityByTicker = items.reduce(
@@ -531,13 +545,14 @@ export async function createBatchTransactions(
         householdId,
         ownerId,
         ticker,
+        accountId,
       );
 
       if (currentQuantity < totalSellQuantity) {
         const stockName =
           items.find((i) => i.ticker === ticker)?.stock.name || ticker;
         insufficientStocks.push(
-          `${stockName}: 보유 ${currentQuantity}주, 매도 ${totalSellQuantity}주`,
+          `${stockName}: 해당 계좌 보유 ${currentQuantity}주, 매도 ${totalSellQuantity}주`,
         );
       }
     }
@@ -546,7 +561,7 @@ export async function createBatchTransactions(
     if (insufficientStocks.length > 0) {
       throw new APIError(
         "INSUFFICIENT_QUANTITY",
-        `보유 수량이 부족합니다.\n${insufficientStocks.join("\n")}`,
+        `해당 계좌의 보유 수량이 부족합니다.\n${insufficientStocks.join("\n")}`,
         400,
       );
     }
@@ -562,7 +577,7 @@ export async function createBatchTransactions(
     price: item.price,
     transacted_at: transactedAt,
     memo: item.memo || null,
-    account_id: accountId || null,
+    account_id: accountId,
   }));
 
   const { data, error } = await supabase
@@ -583,13 +598,14 @@ export async function createBatchTransactions(
 // ============================================================================
 
 /**
- * 특정 종목의 현재 보유 수량 조회
+ * 특정 계좌에서 특정 종목의 현재 보유 수량 조회
  */
 async function getHoldingQuantity(
   supabase: SupabaseClient<Database>,
   householdId: string,
   ownerId: string,
   ticker: string,
+  accountId: string,
 ): Promise<number> {
   const { data, error } = await supabase
     .from("holdings")
@@ -597,10 +613,11 @@ async function getHoldingQuantity(
     .eq("household_id", householdId)
     .eq("owner_id", ownerId)
     .eq("ticker", ticker)
+    .eq("account_id", accountId)
     .single();
 
   if (error) {
-    // PGRST116: 결과 없음 (보유하지 않은 종목)
+    // PGRST116: 결과 없음 (해당 계좌에 보유하지 않은 종목)
     if (error.code === "PGRST116") {
       return 0;
     }

@@ -20,7 +20,7 @@ export const createTransactionSchema = z.object({
     .string()
     .datetime({ message: "유효한 날짜 형식이 아닙니다." }),
   memo: z.string().max(500, "메모는 500자 이내여야 합니다.").optional(),
-  accountId: z.string().uuid("유효한 계좌 ID가 아닙니다.").optional(),
+  accountId: z.string().uuid("유효한 계좌 ID가 아닙니다."),
 
   // 종목 정보 (첫 거래 시 household_stock_settings 생성용)
   stock: z.object({
@@ -108,7 +108,7 @@ export const createBatchTransactionSchema = z.object({
   transactedAt: z
     .string()
     .datetime({ message: "유효한 날짜 형식이 아닙니다." }),
-  accountId: z.string().uuid("유효한 계좌 ID가 아닙니다.").optional(),
+  accountId: z.string().uuid("유효한 계좌 ID가 아닙니다."),
   items: z
     .array(batchTransactionItemSchema)
     .min(1, "최소 1개 이상의 거래가 필요합니다.")

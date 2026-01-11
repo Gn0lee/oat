@@ -29,7 +29,7 @@ export type TransactionItemFormData = z.infer<typeof transactionItemSchema>;
 export const multiTransactionFormSchema = z.object({
   type: z.enum(["buy", "sell"]),
   transactedAt: z.string().min(1, "거래일을 선택해주세요."),
-  accountId: z.string().optional(),
+  accountId: z.string().min(1, "계좌를 선택해주세요."),
   items: z
     .array(transactionItemSchema)
     .min(1, "최소 1개 이상의 종목을 입력해주세요."),

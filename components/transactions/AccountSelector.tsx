@@ -1,7 +1,10 @@
 "use client";
 
+import { PlusCircle } from "lucide-react";
+import Link from "next/link";
 import type { Control, FieldValues, Path } from "react-hook-form";
 import { useController } from "react-hook-form";
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -17,9 +20,10 @@ interface AccountSelectorProps<T extends FieldValues> {
   name?: Path<T>;
 }
 
-export function AccountSelector<
-  T extends FieldValues & { accountId?: string },
->({ control, name = "accountId" as Path<T> }: AccountSelectorProps<T>) {
+export function AccountSelector<T extends FieldValues & { accountId: string }>({
+  control,
+  name = "accountId" as Path<T>,
+}: AccountSelectorProps<T>) {
   const { data: accounts, isLoading } = useAccounts();
   const { field } = useController({
     control,
@@ -36,20 +40,32 @@ export function AccountSelector<
   }
 
   if (!accounts || accounts.length === 0) {
-    return null;
+    return (
+      <div className="bg-white rounded-2xl shadow-sm p-5 space-y-4">
+        <Label className="text-gray-700">거래 계좌</Label>
+        <div className="text-center py-4 space-y-3">
+          <p className="text-gray-500 text-sm">
+            거래를 등록하려면 계좌가 필요합니다.
+          </p>
+          <Button asChild variant="outline" className="rounded-xl">
+            <Link href="/assets/stock/accounts">
+              <PlusCircle className="w-4 h-4 mr-2" />
+              계좌 추가하기
+            </Link>
+          </Button>
+        </div>
+      </div>
+    );
   }
-
-  const NONE_VALUE = "__none__";
 
   return (
     <div className="bg-white rounded-2xl shadow-sm p-5 space-y-4">
       <Label className="text-gray-700">거래 계좌</Label>
-      <Select value={field.value ?? NONE_VALUE} onValueChange={field.onChange}>
+      <Select value={field.value} onValueChange={field.onChange}>
         <SelectTrigger className="h-12 rounded-xl w-full">
           <SelectValue placeholder="계좌를 선택하세요" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value={NONE_VALUE}>계좌 없음</SelectItem>
           {accounts.map((account) => (
             <SelectItem key={account.id} value={account.id}>
               <span className="flex items-center gap-2">

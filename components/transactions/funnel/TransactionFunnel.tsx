@@ -4,6 +4,7 @@ import { useFunnel } from "@use-funnel/browser";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useAccounts } from "@/hooks/use-accounts";
+import { useCurrentUserId } from "@/hooks/use-current-user";
 import { useCreateBatchTransactions } from "@/hooks/use-transaction";
 import type { TransactionItemFormData } from "@/schemas/multi-transaction-form";
 import type { CreateBatchTransactionInput } from "@/schemas/transaction";
@@ -21,12 +22,12 @@ type TransactionFunnelContext = {
   AddItems: {
     type: "buy" | "sell";
     transactedAt: string;
-    accountId?: string;
+    accountId: string;
   };
   Confirm: {
     type: "buy" | "sell";
     transactedAt: string;
-    accountId?: string;
+    accountId: string;
     items: TransactionItemFormData[];
   };
 };
@@ -37,6 +38,7 @@ interface TransactionFunnelProps {
 
 export function TransactionFunnel({ defaultDate }: TransactionFunnelProps) {
   const router = useRouter();
+  const { userId: currentUserId } = useCurrentUserId();
   const createBatchTransactions = useCreateBatchTransactions();
   const { data: accounts = [], isLoading: isLoadingAccounts } = useAccounts();
 
@@ -58,13 +60,10 @@ export function TransactionFunnel({ defaultDate }: TransactionFunnelProps) {
       return;
     }
 
-    const accountId =
-      context.accountId === "__none__" ? undefined : context.accountId;
-
     const input: CreateBatchTransactionInput = {
       type: context.type,
       transactedAt: new Date(context.transactedAt).toISOString(),
-      accountId: accountId || undefined,
+      accountId: context.accountId,
       items: validItems.map((item) => ({
         ticker: item.stock!.code,
         quantity: Number(item.quantity),
@@ -96,8 +95,9 @@ export function TransactionFunnel({ defaultDate }: TransactionFunnelProps) {
     }
   };
 
-  // 기본 계좌 찾기
-  const defaultAccount = accounts.find((a) => a.isDefault);
+  // 기본 계좌 찾기 (본인 계좌 중에서만)
+  const myAccounts = accounts.filter((a) => a.ownerId === currentUserId);
+  const defaultAccount = myAccounts.find((a) => a.isDefault) ?? myAccounts[0];
   const defaultAccountId = defaultAccount?.id;
 
   return (
@@ -114,7 +114,7 @@ export function TransactionFunnel({ defaultDate }: TransactionFunnelProps) {
           type={context.type}
           defaultDate={defaultDate}
           defaultAccountId={defaultAccountId}
-          accounts={accounts}
+          accounts={myAccounts}
           isLoadingAccounts={isLoadingAccounts}
           onNext={(meta) => {
             history.push("AddItems", (prev) => ({
