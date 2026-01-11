@@ -20,6 +20,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useAccounts, useUpdateAccount } from "@/hooks/use-accounts";
+import { useCurrentUserId } from "@/hooks/use-current-user";
 import type { AccountWithOwner } from "@/lib/api/account";
 import { AccountDeleteDialog } from "./AccountDeleteDialog";
 import { AccountFormDialog } from "./AccountFormDialog";
@@ -33,6 +34,7 @@ const ACCOUNT_TYPE_LABELS: Record<string, string> = {
 
 export function AccountList() {
   const { data: accounts, isLoading, error } = useAccounts();
+  const { userId: currentUserId } = useCurrentUserId();
   const updateAccount = useUpdateAccount();
 
   const [editingAccount, setEditingAccount] = useState<AccountWithOwner | null>(
@@ -111,6 +113,7 @@ export function AccountList() {
           <TableHeader>
             <TableRow>
               <TableHead className="pl-5">계좌명</TableHead>
+              <TableHead>소유자</TableHead>
               <TableHead>증권사/은행</TableHead>
               <TableHead>계좌유형</TableHead>
               <TableHead>계좌번호</TableHead>
@@ -118,63 +121,75 @@ export function AccountList() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {accounts.map((account) => (
-              <TableRow key={account.id}>
-                <TableCell className="font-medium pl-5">
-                  <div className="flex items-center gap-2">
-                    {account.name}
-                    {account.isDefault && (
-                      <Badge variant="secondary" className="text-xs">
-                        기본
-                      </Badge>
-                    )}
-                  </div>
-                </TableCell>
-                <TableCell className="text-gray-600">
-                  {account.broker || "-"}
-                </TableCell>
-                <TableCell className="text-gray-600">
-                  {account.accountType
-                    ? ACCOUNT_TYPE_LABELS[account.accountType] ||
-                      account.accountType
-                    : "-"}
-                </TableCell>
-                <TableCell className="text-gray-600">
-                  {account.accountNumber || "-"}
-                </TableCell>
-                <TableCell className="pr-5">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <MoreHorizontal className="h-4 w-4" />
-                        <span className="sr-only">메뉴 열기</span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => handleEdit(account)}>
-                        <Pencil className="h-4 w-4 mr-2" />
-                        수정
-                      </DropdownMenuItem>
-                      {!account.isDefault && (
-                        <DropdownMenuItem
-                          onClick={() => handleSetDefault(account)}
-                        >
-                          <Star className="h-4 w-4 mr-2" />
-                          기본 계좌로 설정
-                        </DropdownMenuItem>
+            {accounts.map((account) => {
+              const isOwner = currentUserId === account.ownerId;
+              return (
+                <TableRow key={account.id}>
+                  <TableCell className="font-medium pl-5">
+                    <div className="flex items-center gap-2">
+                      {account.name}
+                      {account.isDefault && (
+                        <Badge variant="secondary" className="text-xs">
+                          기본
+                        </Badge>
                       )}
-                      <DropdownMenuItem
-                        className="text-destructive focus:text-destructive"
-                        onClick={() => handleDelete(account)}
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        삭제
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              </TableRow>
-            ))}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-gray-600">
+                    {account.ownerName}
+                  </TableCell>
+                  <TableCell className="text-gray-600">
+                    {account.broker || "-"}
+                  </TableCell>
+                  <TableCell className="text-gray-600">
+                    {account.accountType
+                      ? ACCOUNT_TYPE_LABELS[account.accountType] ||
+                        account.accountType
+                      : "-"}
+                  </TableCell>
+                  <TableCell className="text-gray-600">
+                    {account.accountNumber || "-"}
+                  </TableCell>
+                  <TableCell className="pr-5">
+                    {isOwner && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                          >
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">메뉴 열기</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleEdit(account)}>
+                            <Pencil className="h-4 w-4 mr-2" />
+                            수정
+                          </DropdownMenuItem>
+                          {!account.isDefault && (
+                            <DropdownMenuItem
+                              onClick={() => handleSetDefault(account)}
+                            >
+                              <Star className="h-4 w-4 mr-2" />
+                              기본 계좌로 설정
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive"
+                            onClick={() => handleDelete(account)}
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            삭제
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </div>

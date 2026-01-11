@@ -21,7 +21,7 @@ import type { CreateBatchTransactionInput } from "@/schemas/transaction";
 
 interface MultiTransactionFormProps {
   defaultDate: string;
-  defaultAccountId?: string;
+  defaultAccountId: string;
 }
 
 export function MultiTransactionForm({
@@ -59,14 +59,11 @@ export function MultiTransactionForm({
     data: MultiTransactionFormData,
   ): CreateBatchTransactionInput => {
     const validItems = getValidItems();
-    // "__none__"은 계좌 없음을 의미
-    const accountId =
-      data.accountId === "__none__" ? undefined : data.accountId;
 
     return {
       type: data.type,
       transactedAt: new Date(data.transactedAt).toISOString(),
-      accountId: accountId || undefined,
+      accountId: data.accountId,
       items: validItems.map((item) => ({
         ticker: item.stock!.code,
         quantity: Number(item.quantity),

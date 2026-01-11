@@ -1,6 +1,7 @@
 "use client";
 
-import { ArrowLeftIcon, ChevronRightIcon } from "lucide-react";
+import { ArrowLeftIcon, ChevronRightIcon, PlusCircle } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,7 +23,7 @@ interface SelectMetaStepProps {
   defaultAccountId?: string;
   accounts: AccountWithOwner[];
   isLoadingAccounts?: boolean;
-  onNext: (meta: { transactedAt: string; accountId?: string }) => void;
+  onNext: (meta: { transactedAt: string; accountId: string }) => void;
   onBack: () => void;
 }
 
@@ -35,19 +36,27 @@ export function SelectMetaStep({
   onNext,
   onBack,
 }: SelectMetaStepProps) {
+  // 기본 계좌 찾기: defaultAccountId > isDefault=true > 첫 번째 계좌
+  const getDefaultAccountId = () => {
+    if (defaultAccountId) return defaultAccountId;
+    const defaultAccount = accounts.find((a) => a.isDefault);
+    if (defaultAccount) return defaultAccount.id;
+    if (accounts.length > 0) return accounts[0].id;
+    return "";
+  };
+
   const [transactedAt, setTransactedAt] = useState(defaultDate);
-  const [accountId, setAccountId] = useState<string>(
-    defaultAccountId ?? "__none__",
-  );
+  const [accountId, setAccountId] = useState<string>(getDefaultAccountId());
 
   const typeText = type === "buy" ? "매수" : "매도";
   const typeColor = type === "buy" ? "text-red-600" : "text-blue-600";
+  const hasAccounts = accounts.length > 0;
 
   const handleNext = () => {
-    if (!transactedAt) return;
+    if (!transactedAt || !accountId) return;
     onNext({
       transactedAt,
-      accountId: accountId === "__none__" ? undefined : accountId,
+      accountId,
     });
   };
 
@@ -84,13 +93,12 @@ export function SelectMetaStep({
         <Label className="text-gray-700 font-medium">거래 계좌</Label>
         {isLoadingAccounts ? (
           <Skeleton className="h-12 w-full rounded-xl" />
-        ) : (
+        ) : hasAccounts ? (
           <Select value={accountId} onValueChange={setAccountId}>
             <SelectTrigger className="h-12 rounded-xl">
               <SelectValue placeholder="계좌 선택" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="__none__">계좌 없음</SelectItem>
               {accounts.map((account) => (
                 <SelectItem key={account.id} value={account.id}>
                   <span className="flex items-center gap-2">
@@ -109,13 +117,25 @@ export function SelectMetaStep({
               ))}
             </SelectContent>
           </Select>
+        ) : (
+          <div className="text-center py-4 space-y-3">
+            <p className="text-gray-500 text-sm">
+              거래를 등록하려면 계좌가 필요합니다.
+            </p>
+            <Button asChild variant="outline" className="rounded-xl">
+              <Link href="/assets/stock/accounts">
+                <PlusCircle className="w-4 h-4 mr-2" />
+                계좌 추가하기
+              </Link>
+            </Button>
+          </div>
         )}
       </div>
 
       {/* 다음 버튼 */}
       <Button
         onClick={handleNext}
-        disabled={!transactedAt}
+        disabled={!transactedAt || !accountId}
         className="w-full h-14 rounded-xl text-base font-semibold"
       >
         종목 입력하기
