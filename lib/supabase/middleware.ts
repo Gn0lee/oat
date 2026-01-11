@@ -2,10 +2,10 @@ import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 import type { Database } from "@/types";
 
-const AUTH_ROUTES = [
-  "/login",
-  "/signup",
-  "/reset-password",
+// 세션 체크가 필요한 인증 라우트 (로그인된 사용자 리다이렉트용)
+const AUTH_ROUTES_WITH_SESSION_CHECK = ["/login", "/signup", "/reset-password"];
+// 세션 체크 없이 통과해야 하는 라우트 (세션 생성 전이므로)
+const AUTH_ROUTES_WITHOUT_SESSION_CHECK = [
   "/auth/callback",
   "/auth/invite/callback",
 ];
@@ -19,6 +19,16 @@ export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
   });
+
+  const { pathname } = request.nextUrl;
+
+  // 세션 체크 없이 통과해야 하는 라우트 (exchangeCodeForSession으로 세션 생성 전이므로)
+  const isNoSessionCheckRoute = AUTH_ROUTES_WITHOUT_SESSION_CHECK.some(
+    (route) => pathname.startsWith(route),
+  );
+  if (isNoSessionCheckRoute) {
+    return supabaseResponse;
+  }
 
   const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -47,9 +57,9 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { pathname } = request.nextUrl;
-
-  const isAuthRoute = AUTH_ROUTES.some((route) => pathname.startsWith(route));
+  const isAuthRoute = AUTH_ROUTES_WITH_SESSION_CHECK.some((route) =>
+    pathname.startsWith(route),
+  );
   const isPublicRoute = PUBLIC_ROUTES.includes(pathname);
   const isApiRoute = pathname.startsWith("/api");
 
