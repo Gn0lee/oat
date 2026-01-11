@@ -1,16 +1,12 @@
-"use client";
-
-import { PageContainer, PageHeader } from "@/components/layout";
-import { TransactionForm } from "@/components/transactions/TransactionForm";
+import { PageContainer } from "@/components/layout";
+import { TransactionFunnel } from "@/components/transactions/funnel";
 
 export default function NewTransactionPage() {
+  const today = new Date().toISOString().split("T")[0];
+
   return (
     <PageContainer maxWidth="narrow">
-      <PageHeader
-        title="주식 거래 등록"
-        backHref="/assets/stock/transactions"
-      />
-      <TransactionForm />
+      <TransactionFunnel defaultDate={today} />
     </PageContainer>
   );
 }

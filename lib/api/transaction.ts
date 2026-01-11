@@ -157,6 +157,7 @@ export interface TransactionWithDetails {
   currency: CurrencyType;
   transactedAt: string;
   memo: string | null;
+  accountId: string | null;
   owner: {
     id: string;
     name: string;
@@ -202,6 +203,7 @@ export async function getTransactions(
       price,
       transacted_at,
       memo,
+      account_id,
       owner_id,
       profiles!transactions_owner_id_fkey (
         id,
@@ -279,6 +281,7 @@ export async function getTransactions(
       currency: stockSettings?.currency ?? "KRW",
       transactedAt: t.transacted_at,
       memo: t.memo,
+      accountId: t.account_id,
       owner: {
         id: profile?.id ?? t.owner_id,
         name: profile?.name ?? "알 수 없음",
@@ -433,6 +436,146 @@ export async function deleteTransaction(
     console.error("Transaction delete error:", error);
     throw new APIError("TRANSACTION_ERROR", "거래 삭제에 실패했습니다.", 500);
   }
+}
+
+// ============================================================================
+// 배치 거래 생성
+// ============================================================================
+
+export interface BatchTransactionItem {
+  ticker: string;
+  quantity: number;
+  price: number;
+  memo?: string;
+  stock: {
+    name: string;
+    market: MarketType;
+    currency: CurrencyType;
+    assetType?: AssetType;
+  };
+}
+
+export interface CreateBatchTransactionsParams {
+  householdId: string;
+  ownerId: string;
+  type: "buy" | "sell";
+  transactedAt: string;
+  accountId?: string;
+  items: BatchTransactionItem[];
+}
+
+/**
+ * 배치 거래 생성
+ * 1. 모든 종목의 stock_settings UPSERT
+ * 2. 매도 시 종목별 보유 수량 검증 (같은 종목 매도 수량 누적)
+ * 3. 트랜잭션으로 일괄 INSERT
+ */
+export async function createBatchTransactions(
+  supabase: SupabaseClient<Database>,
+  params: CreateBatchTransactionsParams,
+): Promise<Transaction[]> {
+  const { householdId, ownerId, type, transactedAt, accountId, items } = params;
+
+  // 1. 종목별 stock_settings UPSERT (중복 제거)
+  const uniqueTickersMap = new Map<string, BatchTransactionItem>();
+  for (const item of items) {
+    if (!uniqueTickersMap.has(item.ticker)) {
+      uniqueTickersMap.set(item.ticker, item);
+    }
+  }
+
+  for (const item of uniqueTickersMap.values()) {
+    const { error: settingsError } = await supabase
+      .from("household_stock_settings")
+      .upsert(
+        {
+          household_id: householdId,
+          ticker: item.ticker,
+          name: item.stock.name,
+          market: item.stock.market,
+          currency: item.stock.currency,
+          asset_type: item.stock.assetType ?? "equity",
+        },
+        { onConflict: "household_id,ticker" },
+      );
+
+    if (settingsError) {
+      console.error("household_stock_settings upsert error:", settingsError);
+      throw new APIError(
+        "STOCK_SETTINGS_ERROR",
+        "종목 설정 저장에 실패했습니다.",
+        500,
+      );
+    }
+  }
+
+  // 2. 매도 시 종목별 누적 수량 검증
+  if (type === "sell") {
+    // 같은 종목 매도 수량 합산
+    const sellQuantityByTicker = items.reduce(
+      (acc, item) => {
+        acc[item.ticker] = (acc[item.ticker] || 0) + item.quantity;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
+
+    // 모든 초과 종목 수집
+    const insufficientStocks: string[] = [];
+
+    for (const [ticker, totalSellQuantity] of Object.entries(
+      sellQuantityByTicker,
+    )) {
+      const currentQuantity = await getHoldingQuantity(
+        supabase,
+        householdId,
+        ownerId,
+        ticker,
+      );
+
+      if (currentQuantity < totalSellQuantity) {
+        const stockName =
+          items.find((i) => i.ticker === ticker)?.stock.name || ticker;
+        insufficientStocks.push(
+          `${stockName}: 보유 ${currentQuantity}주, 매도 ${totalSellQuantity}주`,
+        );
+      }
+    }
+
+    // 초과 종목이 있으면 모두 표시
+    if (insufficientStocks.length > 0) {
+      throw new APIError(
+        "INSUFFICIENT_QUANTITY",
+        `보유 수량이 부족합니다.\n${insufficientStocks.join("\n")}`,
+        400,
+      );
+    }
+  }
+
+  // 3. 일괄 INSERT
+  const insertData = items.map((item) => ({
+    household_id: householdId,
+    owner_id: ownerId,
+    ticker: item.ticker,
+    type,
+    quantity: item.quantity,
+    price: item.price,
+    transacted_at: transactedAt,
+    memo: item.memo || null,
+    account_id: accountId || null,
+  }));
+
+  const { data, error } = await supabase
+    .from("transactions")
+    .insert(insertData)
+    .select();
+
+  if (error) {
+    console.error("Batch transaction insert error:", error);
+    throw new APIError("TRANSACTION_ERROR", "거래 저장에 실패했습니다.", 500);
+  }
+
+  return data;
 }
 
 // ============================================================================
