@@ -89,6 +89,7 @@ export interface StockAnalysisData {
   holdings: StockHoldingWithReturn[];
   byMarket: MarketBreakdown[];
   byCurrency: CurrencyBreakdown[];
+  byAccount: AccountBreakdown[];
   exchangeRate: number;
 }
 
@@ -114,6 +115,11 @@ export interface StockHoldingWithReturn {
   returnAmount: number;
   returnRate: number;
   allocationPercent: number;
+  account: {
+    id: string | null;
+    name: string | null;
+    broker: string | null;
+  };
 }
 
 export interface MarketBreakdown {
@@ -126,6 +132,18 @@ export interface CurrencyBreakdown {
   currency: CurrencyType;
   totalValue: number;
   percentage: number;
+}
+
+export interface AccountBreakdown {
+  accountId: string | null;
+  accountName: string | null;
+  broker: string | null;
+  totalValue: number;
+  totalInvested: number;
+  returnAmount: number;
+  returnRate: number;
+  percentage: number;
+  holdingCount: number;
 }
 
 // 소유자별 분석 페이지용 타입

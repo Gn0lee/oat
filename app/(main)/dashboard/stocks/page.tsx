@@ -1,5 +1,7 @@
 import {
+  AccountBreakdownSection,
   MarketBreakdownSection,
+  StockAccountDistributionSection,
   StockAllocationSection,
   StockSummarySection,
   TopPerformersSection,
@@ -17,6 +19,8 @@ export default function StocksAnalysisPage() {
       <StockSummarySection />
       <StockAllocationSection />
       <MarketBreakdownSection />
+      <AccountBreakdownSection />
+      <StockAccountDistributionSection />
       <TopPerformersSection />
     </>
   );

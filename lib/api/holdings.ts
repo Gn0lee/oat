@@ -56,6 +56,7 @@ export interface HoldingWithDetails {
   account: {
     id: string | null;
     name: string | null;
+    broker: string | null;
   };
 }
 
@@ -167,6 +168,7 @@ export async function getHoldings(
     account: {
       id: h.account_id,
       name: h.account_name,
+      broker: h.account_broker,
     },
   }));
 
