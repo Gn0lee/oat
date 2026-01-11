@@ -128,6 +128,11 @@ export async function GET() {
         returnAmount,
         returnRate,
         allocationPercent: 0, // 나중에 계산
+        account: {
+          id: h.account.id,
+          name: h.account.name,
+          broker: h.account.broker,
+        },
       };
 
       const ownerId = h.owner.id;

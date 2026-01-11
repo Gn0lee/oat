@@ -550,6 +550,7 @@ export type Database = {
         Row: {
           account_id: string | null;
           account_name: string | null;
+          account_broker: string | null;
           asset_type: Database["public"]["Enums"]["asset_type"] | null;
           avg_price: number | null;
           currency: Database["public"]["Enums"]["currency_type"] | null;

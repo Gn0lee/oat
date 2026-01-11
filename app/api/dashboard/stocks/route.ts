@@ -6,6 +6,7 @@ import { getUserHouseholdId } from "@/lib/api/invitation";
 import { getStockPrices } from "@/lib/api/stock-price";
 import { createClient } from "@/lib/supabase/server";
 import type {
+  AccountBreakdown,
   CurrencyBreakdown,
   CurrencyType,
   MarketBreakdown,
@@ -72,6 +73,7 @@ export async function GET() {
         holdings: [],
         byMarket: [],
         byCurrency: [],
+        byAccount: [],
         exchangeRate,
       };
       return NextResponse.json(emptyData);
@@ -136,6 +138,11 @@ export async function GET() {
         returnAmount,
         returnRate,
         allocationPercent: 0, // 나중에 계산
+        account: {
+          id: h.account.id,
+          name: h.account.name,
+          broker: h.account.broker,
+        },
       };
     });
 
@@ -180,6 +187,60 @@ export async function GET() {
       percentage: totalValueSum > 0 ? (value / totalValueSum) * 100 : 0,
     }));
 
+    // 계좌별 집계
+    const accountMap = new Map<
+      string | null,
+      {
+        accountName: string | null;
+        broker: string | null;
+        totalValue: number;
+        totalInvested: number;
+        holdingCount: number;
+      }
+    >();
+
+    for (const h of holdingsWithReturn) {
+      const accountId = h.account.id;
+      const existing = accountMap.get(accountId);
+
+      if (existing) {
+        existing.totalValue += h.currentValue;
+        existing.totalInvested += h.totalInvested;
+        existing.holdingCount += 1;
+      } else {
+        accountMap.set(accountId, {
+          accountName: h.account.name,
+          broker: h.account.broker,
+          totalValue: h.currentValue,
+          totalInvested: h.totalInvested,
+          holdingCount: 1,
+        });
+      }
+    }
+
+    const byAccount: AccountBreakdown[] = Array.from(accountMap.entries())
+      .map(([accountId, data]) => {
+        const returnAmount = data.totalValue - data.totalInvested;
+        const returnRate =
+          data.totalInvested > 0
+            ? (returnAmount / data.totalInvested) * 100
+            : 0;
+
+        return {
+          accountId,
+          accountName: data.accountName,
+          broker: data.broker,
+          totalValue: data.totalValue,
+          totalInvested: data.totalInvested,
+          returnAmount,
+          returnRate,
+          percentage:
+            totalValueSum > 0 ? (data.totalValue / totalValueSum) * 100 : 0,
+          holdingCount: data.holdingCount,
+        };
+      })
+      .sort((a, b) => b.totalValue - a.totalValue); // 평가금액 내림차순 정렬
+
     // 평가금액 내림차순 정렬
     holdingsWithReturn.sort((a, b) => b.currentValue - a.currentValue);
 
@@ -195,6 +256,7 @@ export async function GET() {
       holdings: holdingsWithReturn,
       byMarket,
       byCurrency,
+      byAccount,
       exchangeRate,
     };
 
