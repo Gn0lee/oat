@@ -17,6 +17,7 @@ import type {
   KISOverseasNewsOutput,
   KISOverseasPriceFluctOutput,
   KISOverseasPriceOutput,
+  KISOverseasTrendOutput,
   KISOverseasVolumeSurgeOutput,
   KISTokenResponse,
   KISVolumeRankOutput,
@@ -388,9 +389,9 @@ export async function getDomesticVolumeRank(
   // 시장 구분 코드: J(코스피), Q(코스닥)
   const marketCode = market === "KOSPI" ? "J" : "Q";
 
-  url.searchParams.set("FID_COND_MRKT_DIV_CODE", marketCode);
-  url.searchParams.set("FID_COND_SCR_DIV_CODE", "20101"); // 거래량 순위
-  url.searchParams.set("FID_INPUT_ISCD", market === "KOSPI" ? "0001" : "1001");
+  url.searchParams.set("FID_COND_MRKT_DIV_CODE", "J");
+  url.searchParams.set("FID_COND_SCR_DIV_CODE", "20171"); // 거래량 순위
+  url.searchParams.set("FID_INPUT_ISCD", "0000");
   url.searchParams.set("FID_DIV_CLS_CODE", "0"); // 전체
   url.searchParams.set("FID_BLNG_CLS_CODE", "0"); // 전체
   url.searchParams.set("FID_TRGT_CLS_CODE", "111111111"); // 전체
@@ -415,7 +416,10 @@ export async function getDomesticVolumeRank(
     );
   }
 
-  const data = (await response.json()) as KISAPIResponse<KISVolumeRankOutput[]>;
+  const data = (await response.json()) as KISAPIResponse<
+    KISVolumeRankOutput[],
+    KISVolumeRankOutput[]
+  >;
 
   if (data.rt_cd !== "0") {
     throw new APIError(
@@ -427,6 +431,7 @@ export async function getDomesticVolumeRank(
 
   // output 또는 output1에서 데이터 추출
   const items = data.output ?? data.output1 ?? [];
+
   return items.slice(0, limit);
 }
 
@@ -540,7 +545,10 @@ export async function getDomesticHolidays(
     );
   }
 
-  const data = (await response.json()) as KISAPIResponse<KISHolidayOutput[]>;
+  const data = (await response.json()) as KISAPIResponse<
+    KISHolidayOutput[],
+    KISHolidayOutput[]
+  >;
 
   if (data.rt_cd !== "0") {
     throw new APIError(
@@ -574,11 +582,12 @@ export async function getOverseasPriceFluct(
     `${KIS_BASE_URL}/uapi/overseas-stock/v1/ranking/price-fluct`,
   );
 
+  url.searchParams.set("KEYB", "");
   url.searchParams.set("AUTH", "");
   url.searchParams.set("EXCD", exchangeCode);
   url.searchParams.set("GUBN", direction === "up" ? "0" : "1"); // 0:급등, 1:급락
-  url.searchParams.set("BYSL", ""); // 매수/매도 구분
-  url.searchParams.set("PRCN", ""); // 등락율 조건
+  url.searchParams.set("MIXN", "0"); // N분전콤보값
+  url.searchParams.set("VOL_RANG", "0"); // 거래량조건
 
   const headers = await createHeaders("HHDFS76260000");
 
@@ -595,10 +604,11 @@ export async function getOverseasPriceFluct(
     );
   }
 
-  const data = (await response.json()) as KISAPIResponse<{
-    output1?: { zdiv: string; stat: string; nrec: string };
-    output2?: KISOverseasPriceFluctOutput[];
-  }>;
+  const data = (await response.json()) as KISAPIResponse<
+    unknown,
+    KISOverseasTrendOutput,
+    KISOverseasPriceFluctOutput[]
+  >;
 
   if (data.rt_cd !== "0") {
     throw new APIError(
@@ -608,12 +618,7 @@ export async function getOverseasPriceFluct(
     );
   }
 
-  const output = data.output as unknown as {
-    output1?: { zdiv: string; stat: string; nrec: string };
-    output2?: KISOverseasPriceFluctOutput[];
-  };
-
-  return (output?.output2 ?? []).slice(0, limit);
+  return (data?.output2 ?? []).slice(0, limit);
 }
 
 /**
@@ -631,10 +636,11 @@ export async function getOverseasVolumeSurge(
     `${KIS_BASE_URL}/uapi/overseas-stock/v1/ranking/volume-surge`,
   );
 
+  url.searchParams.set("KEYB", "");
   url.searchParams.set("AUTH", "");
   url.searchParams.set("EXCD", exchangeCode);
-  url.searchParams.set("NDAY", "1"); // 기간 (1일)
-  url.searchParams.set("VOL_RATE", ""); // 거래량 증가율 조건
+  url.searchParams.set("MIXN", "9"); // N분전콤보값
+  url.searchParams.set("VOL_RANG", "0"); // 거래량조건
 
   const headers = await createHeaders("HHDFS76270000");
 
@@ -651,10 +657,11 @@ export async function getOverseasVolumeSurge(
     );
   }
 
-  const data = (await response.json()) as KISAPIResponse<{
-    output1?: { zdiv: string; stat: string; nrec: string };
-    output2?: KISOverseasVolumeSurgeOutput[];
-  }>;
+  const data = (await response.json()) as KISAPIResponse<
+    unknown,
+    KISOverseasTrendOutput,
+    KISOverseasVolumeSurgeOutput[]
+  >;
 
   if (data.rt_cd !== "0") {
     throw new APIError(
@@ -664,12 +671,7 @@ export async function getOverseasVolumeSurge(
     );
   }
 
-  const output = data.output as unknown as {
-    output1?: { zdiv: string; stat: string; nrec: string };
-    output2?: KISOverseasVolumeSurgeOutput[];
-  };
-
-  return (output?.output2 ?? []).slice(0, limit);
+  return (data?.output2 ?? []).slice(0, limit);
 }
 
 /**

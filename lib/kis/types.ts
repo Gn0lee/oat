@@ -9,12 +9,17 @@
 /**
  * KIS API 응답 공통 구조
  */
-export interface KISAPIResponse<T> {
+export interface KISAPIResponse<
+  Output = unknown,
+  Output1 = unknown,
+  Output2 = unknown,
+> {
   rt_cd: string; // 성공실패여부 (0: 성공)
   msg_cd: string; // 응답코드
   msg1: string; // 응답메시지
-  output?: T;
-  output1?: T;
+  output?: Output;
+  output1?: Output1;
+  output2?: Output2;
 }
 
 /**
@@ -224,6 +229,16 @@ export interface KISFluctuationRankOutput {
 // ============================================================================
 // 해외주식 순위 타입
 // ============================================================================
+
+/**
+ * 해외주식 시세분석 공통응답
+ * Output1에 사용됨
+ */
+export interface KISOverseasTrendOutput {
+  zdiv: string; // 소수점 자리수
+  stat: string; // 거래상태
+  nrec: string; // RecordCount
+}
 
 /**
  * 해외주식 가격급등락 응답
