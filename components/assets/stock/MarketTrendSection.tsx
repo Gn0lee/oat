@@ -2,10 +2,21 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { BarChart3, Calendar, TrendingDown, TrendingUp } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useMarketHoliday } from "@/hooks/use-market-holiday";
 import { useDomesticMarketTrend } from "@/hooks/use-market-trend";
-import type { MarketHolidayItem } from "@/lib/kis/types";
+import {
+  DOMESTIC_EXCHANGE_LABELS,
+  type DomesticExchangeCodeUnion,
+  type MarketHolidayItem,
+} from "@/lib/kis/types";
 import { cn } from "@/lib/utils/cn";
 import { formatCurrency } from "@/lib/utils/format";
 import type { MarketTrendItem } from "@/types";
@@ -192,7 +203,7 @@ function TrendCard({
                     y: { duration: 0.2 },
                   }}
                   className={cn(
-                    "flex items-center justify-between py-2 px-2 rounded-lg transition-colors duration-500",
+                    "flex items-center justify-between py-2 px-2 rounded-lg transition-colors duration-500 gap-3",
                     rankChange === "up" && "bg-green-50",
                     rankChange === "down" && "bg-red-50",
                     rankChange === "new" && "bg-yellow-50",
@@ -203,7 +214,7 @@ function TrendCard({
                       {item.rank}
                     </span>
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">
+                      <p className="text-sm font-medium text-gray-900 line-clamp-1">
                         {item.name}
                       </p>
                       <p className="text-xs text-gray-500">{item.ticker}</p>
@@ -294,12 +305,15 @@ function ErrorState() {
 }
 
 export function MarketTrendSection() {
+  const [exchange, setExchange] = useState<DomesticExchangeCodeUnion>("KRX");
+
   const { data: holidayData, isLoading: isHolidayLoading } = useMarketHoliday();
 
   // 휴장일이 아닌 경우에만 시장 동향 API 호출
   const isHoliday = holidayData?.isHoliday ?? false;
   const { data, isLoading, error } = useDomesticMarketTrend({
     enabled: !isHolidayLoading && !isHoliday,
+    exchange,
   });
 
   // 이전 데이터를 저장하여 순위 변동 감지
@@ -355,10 +369,32 @@ export function MarketTrendSection() {
 
   return (
     <section>
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">
-        국내 시장 동향
-      </h2>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-semibold text-gray-900">국내 시장 동향</h2>
+        <Select
+          value={exchange}
+          onValueChange={(value) =>
+            setExchange(value as DomesticExchangeCodeUnion)
+          }
+        >
+          <SelectTrigger size="sm">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {Object.entries(DOMESTIC_EXCHANGE_LABELS).map(([code, label]) => (
+              <SelectItem key={code} value={code}>
+                {label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div
+        className={cn(
+          "grid grid-cols-1 md:grid-cols-3 gap-4 transition-opacity duration-200",
+          isLoading && "opacity-50 blur-sm",
+        )}
+      >
         <TrendCard
           title="거래량 TOP 5"
           icon={<BarChart3 className="size-4 text-indigo-600" />}

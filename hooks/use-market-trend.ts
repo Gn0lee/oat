@@ -1,6 +1,11 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import type {
+  DomesticExchangeCodeUnion,
+  OverseasTimeRangeUnion,
+  SupportedOverseasExchangeCodeUnion,
+} from "@/lib/kis/types";
 import { queries } from "@/lib/queries/keys";
 import type {
   DomesticMarketTrendData,
@@ -15,8 +20,12 @@ interface MarketTrendError {
   };
 }
 
-async function fetchDomesticMarketTrend(): Promise<DomesticMarketTrendData> {
-  const response = await fetch("/api/market-trend/domestic");
+async function fetchDomesticMarketTrend(
+  exchange: DomesticExchangeCodeUnion,
+): Promise<DomesticMarketTrendData> {
+  const response = await fetch(
+    `/api/market-trend/domestic?exchange=${exchange}`,
+  );
   const json = await response.json();
 
   if (!response.ok) {
@@ -29,6 +38,7 @@ async function fetchDomesticMarketTrend(): Promise<DomesticMarketTrendData> {
 
 interface UseDomesticMarketTrendOptions {
   enabled?: boolean;
+  exchange?: DomesticExchangeCodeUnion;
 }
 
 /**
@@ -42,11 +52,11 @@ interface UseDomesticMarketTrendOptions {
 export function useDomesticMarketTrend(
   options: UseDomesticMarketTrendOptions = {},
 ) {
-  const { enabled = true } = options;
+  const { enabled = true, exchange = "KRX" } = options;
 
   return useQuery({
-    queryKey: queries.marketTrend.domestic.queryKey,
-    queryFn: fetchDomesticMarketTrend,
+    queryKey: [...queries.marketTrend.domestic.queryKey, exchange],
+    queryFn: () => fetchDomesticMarketTrend(exchange),
     enabled,
     staleTime: 30 * 1000, // 30초
     retry: 2, // 최대 2회 재시도 (총 3회 시도)
@@ -67,8 +77,13 @@ export function useDomesticMarketTrend(
 // 해외 시장 동향
 // ============================================================================
 
-async function fetchOverseasMarketTrend(): Promise<OverseasMarketTrendData> {
-  const response = await fetch("/api/market-trend/overseas");
+async function fetchOverseasMarketTrend(
+  exchange: SupportedOverseasExchangeCodeUnion,
+  timeRange: OverseasTimeRangeUnion,
+): Promise<OverseasMarketTrendData> {
+  const response = await fetch(
+    `/api/market-trend/overseas?exchange=${exchange}&timeRange=${timeRange}`,
+  );
   const json = await response.json();
 
   if (!response.ok) {
@@ -81,6 +96,8 @@ async function fetchOverseasMarketTrend(): Promise<OverseasMarketTrendData> {
 
 interface UseOverseasMarketTrendOptions {
   enabled?: boolean;
+  exchange?: SupportedOverseasExchangeCodeUnion;
+  timeRange?: OverseasTimeRangeUnion;
 }
 
 /**
@@ -94,11 +111,11 @@ interface UseOverseasMarketTrendOptions {
 export function useOverseasMarketTrend(
   options: UseOverseasMarketTrendOptions = {},
 ) {
-  const { enabled = true } = options;
+  const { enabled = true, exchange = "NAS", timeRange = "0" } = options;
 
   return useQuery({
-    queryKey: queries.marketTrend.overseas.queryKey,
-    queryFn: fetchOverseasMarketTrend,
+    queryKey: [...queries.marketTrend.overseas.queryKey, exchange, timeRange],
+    queryFn: () => fetchOverseasMarketTrend(exchange, timeRange),
     enabled,
     staleTime: 30 * 1000, // 30초
     retry: 2,

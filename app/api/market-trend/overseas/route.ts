@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { APIError, toErrorResponse } from "@/lib/api/error";
 import {
   getOverseasPriceFluct,
@@ -9,6 +10,20 @@ import type {
   KISOverseasVolumeSurgeOutput,
 } from "@/lib/kis/types";
 import type { MarketTrendItem, OverseasMarketTrendData } from "@/types";
+
+const exchangeParamSchema = z.enum(["NAS", "NYS", "AMS"]);
+const timeRangeParamSchema = z.enum([
+  "0",
+  "1",
+  "2",
+  "3",
+  "4",
+  "5",
+  "6",
+  "7",
+  "8",
+  "9",
+]);
 
 /**
  * 해외주식 대비 부호를 변환
@@ -60,18 +75,55 @@ function mapVolumeSurge(
 
 /**
  * 해외주식 시장 동향 조회
- * GET /api/market-trend/overseas
+ * GET /api/market-trend/overseas?exchange=NAS&timeRange=0
  *
  * 인증 불필요 (공개 데이터)
  * 1분 캐싱 (Cache-Control 헤더)
  */
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    // 병렬로 3개 API 호출 (NASDAQ 기준)
+    const { searchParams } = new URL(request.url);
+    const exchangeParam = searchParams.get("exchange") || "NAS";
+    const timeRangeParam = searchParams.get("timeRange") || "0";
+
+    // 거래소 파라미터 검증
+    const exchangeParseResult = exchangeParamSchema.safeParse(exchangeParam);
+    if (!exchangeParseResult.success) {
+      return NextResponse.json(
+        toErrorResponse(
+          new APIError(
+            "INVALID_EXCHANGE_PARAM",
+            `유효하지 않은 거래소 파라미터입니다: ${exchangeParam}. NAS, NYS, AMS만 허용됩니다.`,
+            400,
+          ),
+        ),
+        { status: 400 },
+      );
+    }
+
+    // 시간 범위 파라미터 검증
+    const timeRangeParseResult = timeRangeParamSchema.safeParse(timeRangeParam);
+    if (!timeRangeParseResult.success) {
+      return NextResponse.json(
+        toErrorResponse(
+          new APIError(
+            "INVALID_TIME_RANGE_PARAM",
+            `유효하지 않은 시간 범위 파라미터입니다: ${timeRangeParam}. 0~9만 허용됩니다.`,
+            400,
+          ),
+        ),
+        { status: 400 },
+      );
+    }
+
+    const exchange = exchangeParseResult.data;
+    const timeRange = timeRangeParseResult.data;
+
+    // 병렬로 3개 API 호출
     const [volumeSurge, gainers, losers] = await Promise.all([
-      getOverseasVolumeSurge("NAS", 5),
-      getOverseasPriceFluct("NAS", "up", 5),
-      getOverseasPriceFluct("NAS", "down", 5),
+      getOverseasVolumeSurge(exchange, timeRange, 5),
+      getOverseasPriceFluct(exchange, "up", timeRange, 5),
+      getOverseasPriceFluct(exchange, "down", timeRange, 5),
     ]);
 
     const result: OverseasMarketTrendData = {
