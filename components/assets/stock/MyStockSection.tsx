@@ -37,11 +37,11 @@ function PerformerCard({ title, icon, items, type }: PerformerCardProps) {
               className="flex items-center justify-between"
             >
               <div className="flex items-center gap-3">
-                <span className="size-6 rounded-full bg-gray-100 flex items-center justify-center text-xs font-medium text-gray-600">
+                <span className="size-6 rounded-full bg-gray-100 flex items-center justify-center text-xs font-medium text-gray-600 flex-none">
                   {index + 1}
                 </span>
                 <div>
-                  <p className="text-sm font-medium text-gray-900">
+                  <p className="text-sm font-medium text-gray-900 line-clamp-1">
                     {item.name}
                   </p>
                   <p className="text-xs text-gray-500">{item.ticker}</p>

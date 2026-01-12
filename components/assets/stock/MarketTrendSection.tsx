@@ -210,7 +210,7 @@ function TrendCard({
                   )}
                 >
                   <div className="flex items-center gap-3">
-                    <span className="size-6 rounded-full bg-gray-100 flex items-center justify-center text-xs font-medium text-gray-600">
+                    <span className="size-6 rounded-full bg-gray-100 flex items-center justify-center text-xs font-medium text-gray-600 flex-none">
                       {item.rank}
                     </span>
                     <div className="min-w-0">
