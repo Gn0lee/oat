@@ -107,7 +107,7 @@ export function StockSearchDialog({
             티커, 종목명, 초성으로 검색하세요
           </DialogDescription>
         </DialogHeader>
-        <DialogContent className="overflow-hidden p-0 sm:max-w-lg">
+        <DialogContent className="overflow-hidden p-0 sm:max-w-lg [&>button]:top-[10px] [&>button]:right-[10px]">
           <Command shouldFilter={false}>
             <div className="relative">
               <CommandInput
