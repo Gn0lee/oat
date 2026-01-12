@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { APIError } from "@/lib/api/error";
 import type { Account, AccountType, Database } from "@/types";
-import { APIError } from "./error";
 
 export interface CreateAccountParams {
   householdId: string;
