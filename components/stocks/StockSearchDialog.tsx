@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useStockSearch } from "@/hooks/use-stock-search";
+import { cn } from "@/lib/utils/cn";
 import type { MarketType, StockMaster } from "@/types";
 
 interface StockSearchDialogProps {
@@ -41,7 +42,11 @@ export function StockSearchDialog({
   const [query, setQuery] = useState("");
   const debouncedQuery = useDebouncedValue(query, 300);
 
-  const { data: stocks = [], isLoading } = useStockSearch({
+  const {
+    data: stocks,
+    isLoading, // 데이터가 없고 첫 로딩일 때만 true
+    isFetching, // 데이터를 가져오는 중이면 무조건 true (배경 로딩 포함)
+  } = useStockSearch({
     query: debouncedQuery,
     market,
     limit: 50,
@@ -60,6 +65,18 @@ export function StockSearchDialog({
       setQuery("");
     }
   };
+
+  // debouncedQuery가 빈 문자열이면 false로 취급됩니다.
+  const hasQuery = debouncedQuery.length > 0;
+
+  const showInitialLoading = isLoading && stocks.length === 0;
+
+  // 검색어가 있고, 로딩이 끝났는데, 결과가 0개일 때
+  const showEmptyState =
+    !isLoading && !isFetching && stocks.length === 0 && hasQuery;
+
+  // [핵심 변경] 데이터가 있어도, 검색어(hasQuery)가 없으면 리스트를 보여주지 않음
+  const showList = stocks.length > 0 && hasQuery;
 
   return (
     <>
@@ -92,28 +109,56 @@ export function StockSearchDialog({
         </DialogHeader>
         <DialogContent className="overflow-hidden p-0 sm:max-w-lg">
           <Command shouldFilter={false}>
-            <CommandInput
-              placeholder="종목명, 티커, 초성으로 검색해보세요"
-              value={query}
-              onValueChange={setQuery}
-            />
-            <CommandList className="max-h-[400px]">
-              {isLoading && (
-                <div className="flex items-center justify-center py-6">
-                  <LoaderIcon className="size-5 animate-spin text-muted-foreground" />
+            <div className="relative">
+              <CommandInput
+                placeholder="종목명, 티커, 초성으로 검색해보세요"
+                value={query}
+                onValueChange={setQuery}
+              />
+              {/* 우측 상단에 작은 로딩 인디케이터 표시 (UX 개선) */}
+              {isFetching && (
+                <div className="absolute right-3 top-3.5">
+                  <LoaderIcon className="size-4 animate-spin text-muted-foreground" />
                 </div>
               )}
-              {!isLoading && !debouncedQuery && (
-                <div className="py-6 text-center text-sm text-muted-foreground">
+            </div>
+
+            {/* min-h-[300px]를 주어 높이 흔들림 방지 */}
+            <CommandList className="max-h-[400px] min-h-[300px]">
+              {/* 1. 최초 로딩 (데이터 없음) */}
+              {showInitialLoading && (
+                <div className="flex h-[300px] items-center justify-center">
+                  <LoaderIcon className="size-6 animate-spin text-muted-foreground" />
+                </div>
+              )}
+
+              {/* 2. 검색어 없음 */}
+              {!hasQuery && (
+                <div className="flex h-[300px] items-center justify-center text-sm text-muted-foreground">
                   검색어를 입력하세요
                 </div>
               )}
-              {!isLoading && debouncedQuery && stocks.length === 0 && (
-                <CommandEmpty>검색 결과가 없습니다</CommandEmpty>
+
+              {/* 3. 검색 결과 없음 (로딩 끝난 후) */}
+              {showEmptyState && (
+                <div className="flex h-[300px] items-center justify-center">
+                  <CommandEmpty className="py-6 text-center text-sm text-muted-foreground">
+                    검색 결과가 없습니다
+                  </CommandEmpty>
+                </div>
               )}
-              {!isLoading && stocks.length > 0 && (
+
+              {/* 4. 리스트 표시 (이전 데이터 유지 + 배경 로딩 시 투명도 조절) */}
+              {showList && (
                 <CommandGroup
-                  heading={`검색 결과 ${stocks.length}${stocks.length >= 50 ? "+" : ""}건`}
+                  heading={`검색 결과 ${stocks.length}${
+                    stocks.length >= 50 ? "+" : ""
+                  }건`}
+                  // 새 데이터를 가져오는 중이면 살짝 흐리게 처리
+                  className={cn(
+                    "transition-opacity duration-200",
+                    isFetching && "opacity-60",
+                  )}
                 >
                   {stocks.map((stock) => (
                     <CommandItem

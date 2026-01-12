@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { queries } from "@/lib/queries/keys";
 import type { MarketType, StockMaster } from "@/types";
 
@@ -50,10 +50,17 @@ export function useStockSearch({
 }: UseStockSearchParams) {
   const trimmedQuery = query.trim();
 
-  return useQuery({
+  const result = useQuery({
     queryKey: queries.stocks.search(trimmedQuery).queryKey,
     queryFn: () => fetchStocks(trimmedQuery, market, limit),
     enabled: enabled && trimmedQuery.length > 0,
-    staleTime: 1000 * 60 * 5, // 5분
+    staleTime: 1000 * 60 * 5,
+    placeholderData: keepPreviousData, // 이전 데이터를 유지하는 핵심 설정
   });
+
+  return {
+    ...result,
+    // data가 undefined일 때 빈 배열 보장
+    data: result.data ?? [],
+  };
 }
