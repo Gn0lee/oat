@@ -2,11 +2,26 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { BarChart3, Newspaper, TrendingDown, TrendingUp } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   useOverseasMarketTrend,
   useOverseasNews,
 } from "@/hooks/use-market-trend";
+import type {
+  OverseasTimeRangeUnion,
+  SupportedOverseasExchangeCodeUnion,
+} from "@/lib/kis/types";
+import {
+  OVERSEAS_EXCHANGE_LABELS,
+  OVERSEAS_TIME_RANGE_LABELS,
+} from "@/lib/kis/types";
 import { cn } from "@/lib/utils/cn";
 import type { MarketTrendItem, OverseasNewsItem } from "@/types";
 
@@ -167,7 +182,7 @@ function TrendCard({
                     y: { duration: 0.2 },
                   }}
                   className={cn(
-                    "flex items-center justify-between py-2 px-2 rounded-lg transition-colors duration-500",
+                    "flex items-center justify-between py-2 px-2 rounded-lg transition-colors duration-500 gap-3",
                     rankChange === "up" && "bg-green-50",
                     rankChange === "down" && "bg-red-50",
                     rankChange === "new" && "bg-yellow-50",
@@ -178,7 +193,7 @@ function TrendCard({
                       {item.rank}
                     </span>
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate max-w-[120px]">
+                      <p className="text-sm font-medium text-gray-900 line-clamp-1">
                         {item.name}
                       </p>
                       <p className="text-xs text-gray-500">{item.ticker}</p>
@@ -338,11 +353,18 @@ function ErrorState() {
  * 해외 시장 동향 섹션 메인 컴포넌트
  */
 export function OverseasMarketTrendSection() {
+  const [exchange, setExchange] =
+    useState<SupportedOverseasExchangeCodeUnion>("NAS");
+  const [timeRange, setTimeRange] = useState<OverseasTimeRangeUnion>("0");
+
   const {
     data: trendData,
     isLoading: isTrendLoading,
     error: trendError,
-  } = useOverseasMarketTrend();
+  } = useOverseasMarketTrend({
+    exchange,
+    timeRange,
+  });
   const { data: newsData, isLoading: isNewsLoading } = useOverseasNews();
 
   // 이전 데이터를 저장하여 순위 변동 감지
@@ -383,10 +405,54 @@ export function OverseasMarketTrendSection() {
 
   return (
     <section>
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">
-        해외 시장 동향
-      </h2>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-semibold text-gray-900">해외 시장 동향</h2>
+        <div className="flex items-center gap-2">
+          <Select
+            value={exchange}
+            onValueChange={(value) =>
+              setExchange(value as SupportedOverseasExchangeCodeUnion)
+            }
+          >
+            <SelectTrigger size="sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.entries(OVERSEAS_EXCHANGE_LABELS).map(([code, label]) => (
+                <SelectItem key={code} value={code}>
+                  {label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={timeRange}
+            onValueChange={(value) =>
+              setTimeRange(value as OverseasTimeRangeUnion)
+            }
+          >
+            <SelectTrigger size="sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.entries(OVERSEAS_TIME_RANGE_LABELS).map(
+                ([code, label]) => (
+                  <SelectItem key={code} value={code}>
+                    {label}
+                  </SelectItem>
+                ),
+              )}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      <div
+        className={cn(
+          "grid grid-cols-1 md:grid-cols-3 gap-4 transition-opacity duration-200",
+          isTrendLoading && "opacity-50 blur-sm",
+        )}
+      >
         <TrendCard
           title="급등주 TOP 5"
           icon={<TrendingUp className="size-4 text-[#F04452]" />}

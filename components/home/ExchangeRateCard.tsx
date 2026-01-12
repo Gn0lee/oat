@@ -40,8 +40,8 @@ export function ExchangeRateCard({ rates }: ExchangeRateCardProps) {
     new Set(rates.flatMap((r) => [r.from, r.to])),
   ).sort();
 
-  const [fromCurrency, setFromCurrency] = useState(currencies[0] || "USD");
-  const [toCurrency, setToCurrency] = useState(currencies[1] || "KRW");
+  const [fromCurrency, setFromCurrency] = useState("USD");
+  const [toCurrency, setToCurrency] = useState("KRW");
   const [isFromOpen, setIsFromOpen] = useState(false);
   const [isToOpen, setIsToOpen] = useState(false);
 

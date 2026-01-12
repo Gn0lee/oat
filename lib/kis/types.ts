@@ -9,12 +9,17 @@
 /**
  * KIS API 응답 공통 구조
  */
-export interface KISAPIResponse<T> {
+export interface KISAPIResponse<
+  Output = unknown,
+  Output1 = unknown,
+  Output2 = unknown,
+> {
   rt_cd: string; // 성공실패여부 (0: 성공)
   msg_cd: string; // 응답코드
   msg1: string; // 응답메시지
-  output?: T;
-  output1?: T;
+  output?: Output;
+  output1?: Output1;
+  output2?: Output2;
 }
 
 /**
@@ -94,19 +99,87 @@ export interface KISDomesticMultiPriceOutput {
 // 해외 주식 시세 타입
 // ============================================================================
 
+export const SupportedOverseasExchangeCode = ["NAS", "NYS", "AMS"] as const;
+
+export type SupportedOverseasExchangeCodeUnion =
+  (typeof SupportedOverseasExchangeCode)[number];
+
+export const OverseasExchangeCode = [
+  ...SupportedOverseasExchangeCode,
+  "HKS",
+  "TSE",
+  "SHS",
+  "SZS",
+  "HSX",
+  "HNX",
+] as const;
+
+export type OverseasExchangeCodeUnion = (typeof OverseasExchangeCode)[number];
+
 /**
- * 해외 거래소 코드
+ * 해외주식 N분전 콤보값
+ * 0:1분전, 1:2분전, 2:3분전, 3:5분전, 4:10분전,
+ * 5:15분전, 6:20분전, 7:30분전, 8:60분전, 9:120분전
  */
-export type OverseasExchangeCode =
-  | "NAS" // 나스닥
-  | "NYS" // 뉴욕
-  | "AMS" // 아멕스
-  | "HKS" // 홍콩
-  | "TSE" // 도쿄
-  | "SHS" // 상해
-  | "SZS" // 심천
-  | "HSX" // 호치민
-  | "HNX"; // 하노이
+export const OverseasTimeRange = [
+  "0",
+  "1",
+  "2",
+  "3",
+  "4",
+  "5",
+  "6",
+  "7",
+  "8",
+  "9",
+] as const;
+
+/**
+ * 해외주식 N분전 콤보값
+ * 0:1분전, 1:2분전, 2:3분전, 3:5분전, 4:10분전,
+ * 5:15분전, 6:20분전, 7:30분전, 8:60분전, 9:120분전
+ */
+export type OverseasTimeRangeUnion = (typeof OverseasTimeRange)[number];
+
+export const OVERSEAS_TIME_RANGE_LABELS: Record<
+  OverseasTimeRangeUnion,
+  string
+> = {
+  "0": "1분전",
+  "1": "2분전",
+  "2": "3분전",
+  "3": "5분전",
+  "4": "10분전",
+  "5": "15분전",
+  "6": "20분전",
+  "7": "30분전",
+  "8": "60분전",
+  "9": "120분전",
+};
+
+/**
+ * 국내 거래소 코드
+ */
+export const DomesticExchangeCode = ["KRX", "NXT"] as const;
+
+export type DomesticExchangeCodeUnion = (typeof DomesticExchangeCode)[number];
+
+export const DOMESTIC_EXCHANGE_LABELS: Record<
+  DomesticExchangeCodeUnion,
+  string
+> = {
+  KRX: "한국거래소",
+  NXT: "넥스트트레이드",
+};
+
+export const OVERSEAS_EXCHANGE_LABELS: Record<
+  SupportedOverseasExchangeCodeUnion,
+  string
+> = {
+  NAS: "나스닥",
+  NYS: "뉴욕",
+  AMS: "아멕스",
+};
 
 /**
  * 해외 주식 현재가 응답
@@ -224,6 +297,16 @@ export interface KISFluctuationRankOutput {
 // ============================================================================
 // 해외주식 순위 타입
 // ============================================================================
+
+/**
+ * 해외주식 시세분석 공통응답
+ * Output1에 사용됨
+ */
+export interface KISOverseasTrendOutput {
+  zdiv: string; // 소수점 자리수
+  stat: string; // 거래상태
+  nrec: string; // RecordCount
+}
 
 /**
  * 해외주식 가격급등락 응답

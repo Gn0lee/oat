@@ -1,14 +1,18 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { APIError, toErrorResponse } from "@/lib/api/error";
 import {
   getDomesticFluctuationRank,
   getDomesticVolumeRank,
 } from "@/lib/kis/client";
-import type {
-  KISFluctuationRankOutput,
-  KISVolumeRankOutput,
+import {
+  DomesticExchangeCode,
+  type KISFluctuationRankOutput,
+  type KISVolumeRankOutput,
 } from "@/lib/kis/types";
 import type { DomesticMarketTrendData, MarketTrendItem } from "@/types";
+
+const exchangeParamSchema = z.enum(DomesticExchangeCode);
 
 /**
  * 전일 대비 부호를 변환
@@ -54,18 +58,38 @@ function mapFluctuationRank(item: KISFluctuationRankOutput): MarketTrendItem {
 
 /**
  * 국내 시장 동향 조회
- * GET /api/market-trend/domestic
+ * GET /api/market-trend/domestic?exchange=KRX
  *
  * 인증 불필요 (공개 데이터)
  * 1분 캐싱 (Cache-Control 헤더)
  */
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const exchangeParam = searchParams.get("exchange") || "KRX";
+
+    // 거래소 파라미터 검증
+    const parseResult = exchangeParamSchema.safeParse(exchangeParam);
+    if (!parseResult.success) {
+      return NextResponse.json(
+        toErrorResponse(
+          new APIError(
+            "INVALID_EXCHANGE_PARAM",
+            `유효하지 않은 거래소 파라미터입니다: ${exchangeParam}. KRX 또는 NXT만 허용됩니다.`,
+            400,
+          ),
+        ),
+        { status: 400 },
+      );
+    }
+
+    const exchange = parseResult.data;
+
     // 병렬로 3개 API 호출
     const [volumeRank, gainers, losers] = await Promise.all([
-      getDomesticVolumeRank("KOSPI", 5),
-      getDomesticFluctuationRank("KOSPI", "up", 5),
-      getDomesticFluctuationRank("KOSPI", "down", 5),
+      getDomesticVolumeRank(exchange, 5),
+      getDomesticFluctuationRank(exchange, "up", 5),
+      getDomesticFluctuationRank(exchange, "down", 5),
     ]);
 
     const result: DomesticMarketTrendData = {
