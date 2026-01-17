@@ -33,20 +33,22 @@ function PerformerCard({ title, icon, items, type }: PerformerCardProps) {
           {items.map((item, index) => (
             <div
               key={item.ticker}
-              className="flex items-center justify-between"
+              className="flex items-center justify-between gap-4"
             >
-              <div className="flex items-center gap-3">
-                <span className="size-6 rounded-full bg-gray-100 flex items-center justify-center text-xs font-medium text-gray-600 flex-none">
+              <div className="flex items-center gap-3 min-w-0">
+                <span className="size-6 rounded-full bg-gray-100 flex items-center justify-center text-xs font-medium text-gray-600 shrink-0">
                   {index + 1}
                 </span>
-                <div>
-                  <p className="text-sm font-medium text-gray-900 line-clamp-1">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">
                     {item.name}
                   </p>
-                  <p className="text-xs text-gray-500">{item.ticker}</p>
+                  <p className="text-xs text-gray-500 truncate">
+                    {item.ticker}
+                  </p>
                 </div>
               </div>
-              <div className="text-right">
+              <div className="text-right shrink-0">
                 <p className={cn("text-sm font-medium", colorClass)}>
                   {formatPercent(item.returnRate)}
                 </p>
