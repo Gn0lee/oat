@@ -7,6 +7,7 @@ import { getStockPrices } from "@/lib/api/stock-price";
 import { createClient } from "@/lib/supabase/server";
 import type {
   AccountBreakdown,
+  AggregatedStockHolding,
   CurrencyBreakdown,
   CurrencyType,
   MarketBreakdown,
@@ -71,6 +72,7 @@ export async function GET() {
           missingPriceCount: 0,
         },
         holdings: [],
+        byTicker: [],
         byMarket: [],
         byCurrency: [],
         byAccount: [],
@@ -142,9 +144,48 @@ export async function GET() {
           id: h.account.id,
           name: h.account.name,
           broker: h.account.broker,
+          ownerName: h.owner.name,
         },
       };
     });
+
+    // 종목별(Ticker) 집계
+    const tickerMap = new Map<string, AggregatedStockHolding>();
+    for (const h of holdingsWithReturn) {
+      const existing = tickerMap.get(h.ticker);
+      if (existing) {
+        existing.quantity += h.quantity;
+        existing.totalInvested += h.totalInvested;
+        existing.currentValue += h.currentValue;
+        existing.returnAmount += h.returnAmount;
+      } else {
+        tickerMap.set(h.ticker, {
+          ticker: h.ticker,
+          name: h.name,
+          market: h.market,
+          currency: h.currency,
+          quantity: h.quantity,
+          avgPrice: h.avgPrice, // 합산 매수가 계산은 아래에서
+          totalInvested: h.totalInvested,
+          currentValue: h.currentValue,
+          returnAmount: h.returnAmount,
+          returnRate: 0,
+          allocationPercent: 0,
+        });
+      }
+    }
+
+    const byTicker: AggregatedStockHolding[] = Array.from(tickerMap.values());
+    for (const item of byTicker) {
+      item.avgPrice =
+        item.quantity > 0 ? item.totalInvested / item.quantity : 0;
+      item.returnRate =
+        item.totalInvested > 0
+          ? (item.returnAmount / item.totalInvested) * 100
+          : 0;
+      item.allocationPercent =
+        totalValueSum > 0 ? (item.currentValue / totalValueSum) * 100 : 0;
+    }
 
     // 비중 계산
     for (const holding of holdingsWithReturn) {
@@ -193,6 +234,7 @@ export async function GET() {
       {
         accountName: string | null;
         broker: string | null;
+        accountOwnerName: string | null;
         totalValue: number;
         totalInvested: number;
         holdingCount: number;
@@ -211,6 +253,7 @@ export async function GET() {
         accountMap.set(accountId, {
           accountName: h.account.name,
           broker: h.account.broker,
+          accountOwnerName: h.account.ownerName,
           totalValue: h.currentValue,
           totalInvested: h.totalInvested,
           holdingCount: 1,
@@ -230,6 +273,7 @@ export async function GET() {
           accountId,
           accountName: data.accountName,
           broker: data.broker,
+          accountOwnerName: data.accountOwnerName,
           totalValue: data.totalValue,
           totalInvested: data.totalInvested,
           returnAmount,
@@ -250,10 +294,11 @@ export async function GET() {
         totalInvested: totalInvestedSum,
         totalReturn,
         returnRate: totalReturnRate,
-        holdingCount: holdings.length,
+        holdingCount: byTicker.length,
         missingPriceCount,
       },
       holdings: holdingsWithReturn,
+      byTicker,
       byMarket,
       byCurrency,
       byAccount,

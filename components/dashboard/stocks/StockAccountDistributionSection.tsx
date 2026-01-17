@@ -61,7 +61,12 @@ export function StockAccountDistributionSection() {
     // 계좌별로 그룹핑
     const accountMap = new Map<
       string | null,
-      { name: string | null; quantity: number; value: number }
+      {
+        name: string | null;
+        ownerName: string | null;
+        quantity: number;
+        value: number;
+      }
     >();
 
     for (const holding of selectedHoldings) {
@@ -74,6 +79,7 @@ export function StockAccountDistributionSection() {
       } else {
         accountMap.set(accountId, {
           name: holding.account.name,
+          ownerName: holding.account.ownerName,
           quantity: holding.quantity,
           value: holding.currentValue,
         });
@@ -91,6 +97,7 @@ export function StockAccountDistributionSection() {
       .map(([accountId, data], index) => ({
         id: accountId ?? "unassigned",
         name: data.name ?? "미배정",
+        ownerName: data.ownerName,
         quantity: data.quantity,
         value: data.value,
         percentage: totalValue > 0 ? (data.value / totalValue) * 100 : 0,
@@ -161,7 +168,14 @@ export function StockAccountDistributionSection() {
                     <ChartTooltipContent
                       formatter={(_value, _name, item) => (
                         <div className="flex items-center justify-between gap-4">
-                          <span>{item.payload.name}</span>
+                          <div className="flex flex-col">
+                            <span>{item.payload.name}</span>
+                            {item.payload.ownerName && (
+                              <span className="text-[10px] text-gray-400">
+                                {item.payload.ownerName}
+                              </span>
+                            )}
+                          </div>
                           <span className="font-mono font-medium">
                             {item.payload.percentage.toFixed(1)}%
                           </span>
@@ -198,7 +212,16 @@ export function StockAccountDistributionSection() {
                     className="size-3 rounded-full"
                     style={{ backgroundColor: item.fill }}
                   />
-                  <span className="text-sm text-gray-700">{item.name}</span>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium text-gray-700">
+                      {item.name}
+                    </span>
+                    {item.ownerName && (
+                      <span className="text-[10px] text-gray-500">
+                        {item.ownerName}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div className="text-right">
                   <div className="text-sm font-medium text-gray-900">
