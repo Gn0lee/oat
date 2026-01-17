@@ -132,6 +132,7 @@ export async function GET() {
           id: h.account.id,
           name: h.account.name,
           broker: h.account.broker,
+          ownerName: h.owner.name,
         },
       };
 

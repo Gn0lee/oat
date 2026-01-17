@@ -87,10 +87,25 @@ export interface AssetClassSummary {
 export interface StockAnalysisData {
   summary: StockAnalysisSummary;
   holdings: StockHoldingWithReturn[];
+  byTicker: AggregatedStockHolding[];
   byMarket: MarketBreakdown[];
   byCurrency: CurrencyBreakdown[];
   byAccount: AccountBreakdown[];
   exchangeRate: number;
+}
+
+export interface AggregatedStockHolding {
+  ticker: string;
+  name: string;
+  market: MarketType;
+  currency: CurrencyType;
+  quantity: number;
+  avgPrice: number;
+  totalInvested: number;
+  currentValue: number;
+  returnAmount: number;
+  returnRate: number;
+  allocationPercent: number;
 }
 
 export interface StockAnalysisSummary {
@@ -119,6 +134,7 @@ export interface StockHoldingWithReturn {
     id: string | null;
     name: string | null;
     broker: string | null;
+    ownerName: string | null;
   };
 }
 
@@ -138,6 +154,7 @@ export interface AccountBreakdown {
   accountId: string | null;
   accountName: string | null;
   broker: string | null;
+  accountOwnerName: string | null;
   totalValue: number;
   totalInvested: number;
   returnAmount: number;

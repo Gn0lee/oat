@@ -29,6 +29,7 @@ export function AccountBreakdownSection() {
     return data.byAccount.map((account, index) => ({
       id: account.accountId ?? "unassigned",
       name: account.accountName ?? "미배정",
+      ownerName: account.accountOwnerName,
       value: account.totalValue,
       percentage: account.percentage,
       returnRate: account.returnRate,
@@ -77,7 +78,7 @@ export function AccountBreakdownSection() {
       <h3 className="text-sm font-medium text-gray-900 mb-4">계좌별 비중</h3>
       <div className="flex flex-col md:flex-row gap-6">
         {/* 도넛 차트 */}
-        <div className="flex-shrink-0">
+        <div className="shrink-0">
           <ChartContainer config={chartConfig} className="size-48">
             <PieChart>
               <ChartTooltip
@@ -123,7 +124,16 @@ export function AccountBreakdownSection() {
                   style={{ backgroundColor: item.fill }}
                 />
                 <div className="flex flex-col">
-                  <span className="text-sm text-gray-700">{item.name}</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm font-semibold text-gray-900">
+                      {item.name}
+                    </span>
+                    {item.ownerName && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-gray-100 text-gray-500 font-medium">
+                        {item.ownerName}
+                      </span>
+                    )}
+                  </div>
                   <span className="text-xs text-gray-500">
                     {item.holdingCount}종목
                   </span>

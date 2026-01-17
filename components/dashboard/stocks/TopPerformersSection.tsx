@@ -5,12 +5,12 @@ import { useMemo } from "react";
 import { useStockAnalysis } from "@/hooks/use-stock-analysis";
 import { cn } from "@/lib/utils/cn";
 import { formatCurrency } from "@/lib/utils/format";
-import type { StockHoldingWithReturn } from "@/types";
+import type { AggregatedStockHolding, StockHoldingWithReturn } from "@/types";
 
 interface PerformerCardProps {
   title: string;
   icon: React.ReactNode;
-  items: StockHoldingWithReturn[];
+  items: (StockHoldingWithReturn | AggregatedStockHolding)[];
   type: "gainer" | "loser";
 }
 
@@ -68,12 +68,12 @@ export function TopPerformersSection() {
   const { data, isLoading } = useStockAnalysis();
 
   const { gainers, losers } = useMemo(() => {
-    if (!data || data.holdings.length === 0) {
+    if (!data || !data.byTicker || data.byTicker.length === 0) {
       return { gainers: [], losers: [] };
     }
 
     // 수익률 기준 정렬
-    const sorted = [...data.holdings].sort(
+    const sorted = [...data.byTicker].sort(
       (a, b) => b.returnRate - a.returnRate,
     );
 
@@ -108,7 +108,7 @@ export function TopPerformersSection() {
     );
   }
 
-  if (!data || data.holdings.length === 0) {
+  if (!data || !data.byTicker || data.byTicker.length === 0) {
     return null;
   }
 
