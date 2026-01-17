@@ -4,7 +4,7 @@ import { TrendingDown, Trophy } from "lucide-react";
 import { useMemo } from "react";
 import { useStockAnalysis } from "@/hooks/use-stock-analysis";
 import { cn } from "@/lib/utils/cn";
-import { formatCurrency } from "@/lib/utils/format";
+import { formatCurrency, formatPercent } from "@/lib/utils/format";
 import type { AggregatedStockHolding, StockHoldingWithReturn } from "@/types";
 
 interface PerformerCardProps {
@@ -48,11 +48,10 @@ function PerformerCard({ title, icon, items, type }: PerformerCardProps) {
               </div>
               <div className="text-right">
                 <p className={cn("text-sm font-medium", colorClass)}>
-                  {isGainer ? "+" : ""}
-                  {item.returnRate.toFixed(2)}%
+                  {formatPercent(item.returnRate)}
                 </p>
                 <p className="text-xs text-gray-500">
-                  {isGainer ? "+" : ""}
+                  {item.returnAmount >= 0 ? "+" : ""}
                   {formatCurrency(item.returnAmount, "KRW")}
                 </p>
               </div>

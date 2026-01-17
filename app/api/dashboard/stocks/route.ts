@@ -294,7 +294,7 @@ export async function GET() {
         totalInvested: totalInvestedSum,
         totalReturn,
         returnRate: totalReturnRate,
-        holdingCount: holdings.length,
+        holdingCount: byTicker.length,
         missingPriceCount,
       },
       holdings: holdingsWithReturn,
