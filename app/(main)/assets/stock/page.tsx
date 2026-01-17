@@ -11,6 +11,9 @@ export default function StockMainPage() {
   return (
     <>
       <PageHeader title="주식" backHref="/assets" />
+      <div className="mt-6">
+        <PortfolioNavSection />
+      </div>
       <StockSummarySection />
       <div className="mt-6">
         <MyStockSection />
@@ -20,9 +23,6 @@ export default function StockMainPage() {
       </div>
       <div className="mt-6">
         <OverseasMarketTrendSection />
-      </div>
-      <div className="mt-6">
-        <PortfolioNavSection />
       </div>
     </>
   );
