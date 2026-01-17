@@ -3,12 +3,13 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { resetPasswordAction } from "@/app/(auth)/reset-password/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Spinner } from "@/components/ui/spinner";
 import {
   type ResetPasswordRequestFormData,
   resetPasswordRequestSchema,
@@ -17,12 +18,12 @@ import {
 export function ResetPasswordRequestForm() {
   const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
 
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-    getValues,
   } = useForm<ResetPasswordRequestFormData>({
     resolver: zodResolver(resetPasswordRequestSchema),
     defaultValues: {
@@ -42,9 +43,11 @@ export function ResetPasswordRequestForm() {
       return;
     }
 
-    router.push(
-      `/reset-password/verify?email=${encodeURIComponent(data.email)}`,
-    );
+    startTransition(() => {
+      router.push(
+        `/reset-password/verify?email=${encodeURIComponent(data.email)}`,
+      );
+    });
   };
 
   return (
@@ -73,9 +76,10 @@ export function ResetPasswordRequestForm() {
       <Button
         type="submit"
         className="w-full h-12 rounded-xl text-base font-semibold"
-        disabled={isSubmitting}
+        disabled={isSubmitting || isPending}
       >
-        {isSubmitting ? "발송 중..." : "인증 코드 받기"}
+        {(isSubmitting || isPending) && <Spinner className="mr-2 text-white" />}
+        인증 코드 받기
       </Button>
 
       <p className="text-center text-sm text-gray-500">

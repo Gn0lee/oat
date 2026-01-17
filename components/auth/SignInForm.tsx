@@ -3,17 +3,19 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { signInAction } from "@/app/(auth)/login/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Spinner } from "@/components/ui/spinner";
 import { type SignInFormData, signInSchema } from "@/lib/schemas/auth";
 
 export function SignInForm() {
   const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
 
   const {
     register,
@@ -40,8 +42,10 @@ export function SignInForm() {
       return;
     }
 
-    router.push("/home");
-    router.refresh();
+    startTransition(() => {
+      router.push("/home");
+      router.refresh();
+    });
   };
 
   return (
@@ -87,9 +91,10 @@ export function SignInForm() {
       <Button
         type="submit"
         className="w-full h-12 rounded-xl text-base font-semibold"
-        disabled={isSubmitting}
+        disabled={isSubmitting || isPending}
       >
-        {isSubmitting ? "로그인 중..." : "로그인"}
+        {(isSubmitting || isPending) && <Spinner className="mr-2 text-white" />}
+        로그인
       </Button>
 
       <div className="space-y-2 text-center text-sm">

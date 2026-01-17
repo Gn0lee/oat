@@ -3,17 +3,19 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { signUpAction } from "@/app/(auth)/signup/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Spinner } from "@/components/ui/spinner";
 import { type SignUpFormData, signUpSchema } from "@/lib/schemas/auth";
 
 export function SignUpForm() {
   const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
 
   const {
     register,
@@ -43,7 +45,9 @@ export function SignUpForm() {
       return;
     }
 
-    router.push(`/signup/verify?email=${encodeURIComponent(data.email)}`);
+    startTransition(() => {
+      router.push(`/signup/verify?email=${encodeURIComponent(data.email)}`);
+    });
   };
 
   return (
@@ -125,9 +129,10 @@ export function SignUpForm() {
       <Button
         type="submit"
         className="w-full h-12 rounded-xl text-base font-semibold"
-        disabled={isSubmitting}
+        disabled={isSubmitting || isPending}
       >
-        {isSubmitting ? "가입 중..." : "회원가입"}
+        {(isSubmitting || isPending) && <Spinner className="mr-2 text-white" />}
+        회원가입
       </Button>
 
       <p className="text-center text-sm text-gray-500">

@@ -2,11 +2,12 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Spinner } from "@/components/ui/spinner";
 import {
   type SetPasswordFormData,
   setPasswordSchema,
@@ -16,6 +17,7 @@ import { createClient } from "@/lib/supabase/client";
 export function SetPasswordForm() {
   const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
 
   const {
     register,
@@ -62,7 +64,9 @@ export function SetPasswordForm() {
       }
     }
 
-    router.replace("/home");
+    startTransition(() => {
+      router.replace("/home");
+    });
   };
 
   return (
@@ -127,9 +131,10 @@ export function SetPasswordForm() {
       <Button
         type="submit"
         className="w-full h-12 rounded-xl text-base font-semibold"
-        disabled={isSubmitting}
+        disabled={isSubmitting || isPending}
       >
-        {isSubmitting ? "설정 중..." : "비밀번호 설정"}
+        {(isSubmitting || isPending) && <Spinner className="mr-2 text-white" />}
+        비밀번호 설정
       </Button>
     </form>
   );
