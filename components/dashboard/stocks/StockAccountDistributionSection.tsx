@@ -112,12 +112,6 @@ export function StockAccountDistributionSection() {
     return config;
   }, [distributionData]);
 
-  // 선택된 종목 정보
-  const selectedStock = useMemo(() => {
-    if (!data || !selectedTicker) return null;
-    return stockOptions.find((s) => s.ticker === selectedTicker);
-  }, [data, selectedTicker, stockOptions]);
-
   if (isLoading) {
     return (
       <div className="bg-white rounded-2xl p-5 shadow-sm">
@@ -159,7 +153,7 @@ export function StockAccountDistributionSection() {
       {selectedTicker && distributionData.length > 0 ? (
         <div className="flex flex-col md:flex-row gap-6">
           {/* 도넛 차트 */}
-          <div className="flex-shrink-0">
+          <div className="shrink-0">
             <ChartContainer config={chartConfig} className="size-48">
               <PieChart>
                 <ChartTooltip

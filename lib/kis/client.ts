@@ -7,6 +7,7 @@
  */
 
 import { APIError } from "@/lib/api/error";
+import { withSystemLock } from "@/lib/supabase/lock";
 import { getSystemConfigClient } from "@/lib/supabase/system-config-client";
 import type {
   DomesticExchangeCodeUnion,
@@ -152,23 +153,47 @@ async function issueToken(): Promise<string> {
 
 /**
  * 유효한 액세스 토큰 가져오기 (DB 조회 → 만료 시 재발급)
+ * Mutex Lock을 사용하여 동시성 제어
  */
 async function getAccessToken(): Promise<string> {
-  // DB에서 토큰 조회
+  // 1. [Fast Path] DB에서 토큰 조회 (락 없이 빠르게)
   const cached = await getTokenFromDB();
 
   if (cached) {
     const now = Date.now();
     const expiresAt = cached.expiresAt.getTime();
 
-    // 만료 전이면 유효
-    if (now < expiresAt) {
+    // 만료 1분 전까지 여유를 두고 유효성 판단
+    if (now < expiresAt - 60000) {
       return cached.accessToken;
     }
   }
 
-  // 새 토큰 발급
-  return issueToken();
+  // 2. [Slow Path] 락 획득 후 토큰 갱신 시도
+  // KIS API 토큰 발급은 하루 1회 제한이 있으므로, 동시에 여러 요청이 오더라도
+  // 단 하나의 요청만 토큰을 발급하고 나머지는 대기 후 발급된 토큰을 가져가야 함.
+  return await withSystemLock(
+    "kis_token",
+    async () => {
+      // 2-1. [Double-Checked Locking]
+      // 락을 기다리는 동안 다른 스레드/프로세스가 이미 갱신했을 수 있음.
+      const freshCached = await getTokenFromDB();
+      if (freshCached) {
+        const now = Date.now();
+        if (now < freshCached.expiresAt.getTime() - 60000) {
+          return freshCached.accessToken;
+        }
+      }
+
+      // 2-2. 진짜 만료됨 -> 새 토큰 발급
+      return await issueToken();
+    },
+    {
+      ttl: 60, // 락 유효 시간 60초 (API 타임아웃 고려)
+      maxRetries: 20, // 0.5초 * 20 = 10초간 대기
+      retryIntervalMs: 500,
+    },
+  );
 }
 
 /**

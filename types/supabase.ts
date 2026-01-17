@@ -413,6 +413,21 @@ export type Database = {
         };
         Relationships: [];
       };
+      system_locks: {
+        Row: {
+          expires_at: string;
+          key: string;
+        };
+        Insert: {
+          expires_at: string;
+          key: string;
+        };
+        Update: {
+          expires_at?: string;
+          key?: string;
+        };
+        Relationships: [];
+      };
       tags: {
         Row: {
           color: string | null;
@@ -482,7 +497,7 @@ export type Database = {
       };
       transactions: {
         Row: {
-          account_id: string | null;
+          account_id: string;
           created_at: string;
           household_id: string;
           id: string;
@@ -495,7 +510,7 @@ export type Database = {
           type: Database["public"]["Enums"]["transaction_type"];
         };
         Insert: {
-          account_id?: string | null;
+          account_id: string;
           created_at?: string;
           household_id: string;
           id?: string;
@@ -508,7 +523,7 @@ export type Database = {
           type: Database["public"]["Enums"]["transaction_type"];
         };
         Update: {
-          account_id?: string | null;
+          account_id?: string;
           created_at?: string;
           household_id?: string;
           id?: string;
@@ -548,9 +563,9 @@ export type Database = {
     Views: {
       holdings: {
         Row: {
+          account_broker: string | null;
           account_id: string | null;
           account_name: string | null;
-          account_broker: string | null;
           asset_type: Database["public"]["Enums"]["asset_type"] | null;
           avg_price: number | null;
           currency: Database["public"]["Enums"]["currency_type"] | null;
