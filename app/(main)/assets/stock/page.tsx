@@ -4,7 +4,6 @@ import {
   OverseasMarketTrendSection,
   PortfolioNavSection,
 } from "@/components/assets/stock";
-import { StockSummarySection } from "@/components/dashboard/stocks";
 import { PageHeader } from "@/components/layout";
 
 export default function StockMainPage() {
@@ -14,7 +13,6 @@ export default function StockMainPage() {
       <div className="mt-6">
         <PortfolioNavSection />
       </div>
-      <StockSummarySection />
       <div className="mt-6">
         <MyStockSection />
       </div>
