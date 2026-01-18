@@ -21,7 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ASSET_TYPE_LABELS, MARKET_LABELS } from "@/constants/enums";
+import { MARKET_LABELS } from "@/constants/enums";
 import type { HoldingWithDetails } from "@/lib/api/holdings";
 import { cn } from "@/lib/utils/cn";
 import { formatCurrency } from "@/lib/utils/format";
@@ -126,16 +126,6 @@ const columns: ColumnDef<HoldingWithDetails>[] = [
       <Badge variant="outline">
         {MARKET_LABELS[row.original.market] ?? row.original.market}
       </Badge>
-    ),
-  },
-  {
-    id: "assetType",
-    accessorKey: "assetType",
-    header: "유형",
-    cell: ({ row }) => (
-      <span className="text-gray-600">
-        {ASSET_TYPE_LABELS[row.original.assetType] ?? row.original.assetType}
-      </span>
     ),
   },
 ];

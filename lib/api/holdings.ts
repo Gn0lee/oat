@@ -23,6 +23,7 @@ export interface HoldingsFilters {
   assetType?: AssetType;
   market?: MarketType;
   accountId?: string;
+  search?: string;
 }
 
 /**
@@ -109,6 +110,11 @@ export async function getHoldings(
     } else {
       query = query.eq("account_id", filters.accountId);
     }
+  }
+  if (filters?.search) {
+    query = query.or(
+      `name.ilike.%${filters.search}%,ticker.ilike.%${filters.search}%`,
+    );
   }
 
   // 정렬 적용

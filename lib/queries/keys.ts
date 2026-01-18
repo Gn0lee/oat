@@ -18,8 +18,19 @@ export const queries = createQueryKeyStore({
 
   transactions: {
     all: null,
-    list: (filters?: { memberId?: string; stockSymbol?: string }) => ({
-      queryKey: [filters],
+    list: (params?: {
+      filters?: {
+        type?: "buy" | "sell";
+        ownerId?: string;
+        ticker?: string;
+        search?: string;
+        startDate?: string;
+        endDate?: string;
+      };
+      page?: number;
+      pageSize?: number;
+    }) => ({
+      queryKey: [params],
     }),
     detail: (id: string) => ({ queryKey: [id] }),
   },

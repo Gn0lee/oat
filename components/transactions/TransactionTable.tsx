@@ -144,7 +144,6 @@ const baseColumns: ColumnDef<TransactionWithDetails>[] = [
     id: "owner",
     accessorKey: "owner",
     header: "소유자",
-    meta: { className: "hidden lg:table-cell" },
     cell: ({ row }) => row.original.owner.name,
   },
 ];

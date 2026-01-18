@@ -41,6 +41,7 @@ export async function GET(request: NextRequest) {
     const assetType = searchParams.get("assetType") as AssetType | null;
     const market = searchParams.get("market") as MarketType | null;
     const accountId = searchParams.get("accountId");
+    const search = searchParams.get("search");
     const page = Number(searchParams.get("page")) || 1;
     const pageSize = Number(searchParams.get("pageSize")) || 20;
 
@@ -49,6 +50,7 @@ export async function GET(request: NextRequest) {
     if (assetType) filters.assetType = assetType;
     if (market) filters.market = market;
     if (accountId) filters.accountId = accountId;
+    if (search) filters.search = search;
 
     // 보유 현황 조회
     const result = await getHoldings(supabase, householdId, {

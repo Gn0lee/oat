@@ -16,6 +16,7 @@ export interface StockSettingsFilters {
   assetType?: AssetType;
   riskLevel?: RiskLevel | "null";
   market?: MarketType;
+  search?: string;
 }
 
 /**
@@ -82,6 +83,11 @@ export async function getStockSettings(
   }
   if (filters?.market) {
     query = query.eq("market", filters.market);
+  }
+  if (filters?.search) {
+    query = query.or(
+      `name.ilike.%${filters.search}%,ticker.ilike.%${filters.search}%`,
+    );
   }
 
   // 정렬 적용
