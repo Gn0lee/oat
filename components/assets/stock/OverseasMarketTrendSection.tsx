@@ -23,6 +23,7 @@ import {
   OVERSEAS_TIME_RANGE_LABELS,
 } from "@/lib/kis/types";
 import { cn } from "@/lib/utils/cn";
+import { formatPercent } from "@/lib/utils/format";
 import type { MarketTrendItem, OverseasNewsItem } from "@/types";
 
 // ============================================================================
@@ -215,8 +216,7 @@ function TrendCard({
                                 : "text-gray-500",
                           )}
                         >
-                          {item.changeSign === "up" ? "+" : ""}
-                          {item.changeRate.toFixed(2)}%
+                          {formatPercent(item.changeRate)}
                         </p>
                       </>
                     ) : (
@@ -227,8 +227,7 @@ function TrendCard({
                             isGainer ? "text-[#F04452]" : "text-[#3182F6]",
                           )}
                         >
-                          {isGainer ? "+" : ""}
-                          {item.changeRate.toFixed(2)}%
+                          {formatPercent(item.changeRate)}
                         </p>
                         <p className="text-xs text-gray-500">
                           {formatUSDPrice(item.price)}
@@ -454,6 +453,13 @@ export function OverseasMarketTrendSection() {
         )}
       >
         <TrendCard
+          title="거래량 급증 TOP 5"
+          icon={<BarChart3 className="size-4 text-indigo-600" />}
+          items={trendData.volumeSurge}
+          type="volume"
+          previousItems={prevDataRef.current.volumeSurge}
+        />
+        <TrendCard
           title="급등주 TOP 5"
           icon={<TrendingUp className="size-4 text-[#F04452]" />}
           items={trendData.gainers}
@@ -466,13 +472,6 @@ export function OverseasMarketTrendSection() {
           items={trendData.losers}
           type="loser"
           previousItems={prevDataRef.current.losers}
-        />
-        <TrendCard
-          title="거래량 급증 TOP 5"
-          icon={<BarChart3 className="size-4 text-indigo-600" />}
-          items={trendData.volumeSurge}
-          type="volume"
-          previousItems={prevDataRef.current.volumeSurge}
         />
       </div>
       {!isNewsLoading && newsData && (

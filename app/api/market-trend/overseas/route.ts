@@ -5,9 +5,10 @@ import {
   getOverseasPriceFluct,
   getOverseasVolumeSurge,
 } from "@/lib/kis/client";
-import type {
-  KISOverseasPriceFluctOutput,
-  KISOverseasVolumeSurgeOutput,
+import {
+  KIS_SIGN,
+  type KISOverseasPriceFluctOutput,
+  type KISOverseasVolumeSurgeOutput,
 } from "@/lib/kis/types";
 import type { MarketTrendItem, OverseasMarketTrendData } from "@/types";
 
@@ -29,9 +30,8 @@ const timeRangeParamSchema = z.enum([
  * 해외주식 대비 부호를 변환
  */
 function parseChangeSign(sign: string): "up" | "down" | "flat" {
-  // 1:상한, 2:상승, 3:보합, 4:하한, 5:하락
-  if (sign === "1" || sign === "2") return "up";
-  if (sign === "4" || sign === "5") return "down";
+  if (sign === KIS_SIGN.LIMIT_UP || sign === KIS_SIGN.RISE) return "up";
+  if (sign === KIS_SIGN.LIMIT_DOWN || sign === KIS_SIGN.FALL) return "down";
   return "flat";
 }
 
@@ -42,14 +42,18 @@ function mapPriceFluct(
   item: KISOverseasPriceFluctOutput,
   rank: number,
 ): MarketTrendItem {
+  const changeSign = parseChangeSign(item.sign);
+  const multiplier = changeSign === "down" ? -1 : 1;
+
   return {
     rank,
     ticker: item.symb,
     name: item.knam || item.enam,
     price: Number.parseFloat(item.last),
-    change: Number.parseFloat(item.diff),
-    changeRate: Number.parseFloat(item.rate),
-    changeSign: parseChangeSign(item.sign),
+    // 방어적 정규화: API 부호 정보를 최우선하여 수치 강제 조정
+    change: multiplier * Math.abs(Number.parseFloat(item.diff)),
+    changeRate: multiplier * Math.abs(Number.parseFloat(item.rate)),
+    changeSign,
     volume: Number.parseInt(item.tvol, 10),
   };
 }
@@ -61,14 +65,17 @@ function mapVolumeSurge(
   item: KISOverseasVolumeSurgeOutput,
   rank: number,
 ): MarketTrendItem {
+  const changeSign = parseChangeSign(item.sign);
+  const multiplier = changeSign === "down" ? -1 : 1;
+
   return {
     rank,
     ticker: item.symb,
     name: item.knam || item.enam,
     price: Number.parseFloat(item.last),
-    change: Number.parseFloat(item.diff),
-    changeRate: Number.parseFloat(item.rate),
-    changeSign: parseChangeSign(item.sign),
+    change: multiplier * Math.abs(Number.parseFloat(item.diff)),
+    changeRate: multiplier * Math.abs(Number.parseFloat(item.rate)),
+    changeSign,
     volume: Number.parseInt(item.tvol, 10),
   };
 }

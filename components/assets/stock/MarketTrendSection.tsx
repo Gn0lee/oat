@@ -18,7 +18,7 @@ import {
   type MarketHolidayItem,
 } from "@/lib/kis/types";
 import { cn } from "@/lib/utils/cn";
-import { formatCurrency } from "@/lib/utils/format";
+import { formatCurrency, formatPercent } from "@/lib/utils/format";
 import type { MarketTrendItem } from "@/types";
 
 // ============================================================================
@@ -236,8 +236,7 @@ function TrendCard({
                                 : "text-gray-500",
                           )}
                         >
-                          {item.changeSign === "up" ? "+" : ""}
-                          {item.changeRate.toFixed(2)}%
+                          {formatPercent(item.changeRate)}
                         </p>
                       </>
                     ) : (
@@ -248,8 +247,7 @@ function TrendCard({
                             isGainer ? "text-[#F04452]" : "text-[#3182F6]",
                           )}
                         >
-                          {isGainer ? "+" : ""}
-                          {item.changeRate.toFixed(2)}%
+                          {formatPercent(item.changeRate)}
                         </p>
                         <p className="text-xs text-gray-500">
                           {formatCurrency(item.price, "KRW")}

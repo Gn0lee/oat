@@ -7,6 +7,20 @@
 // ============================================================================
 
 /**
+ * KIS API 전일 대비 부호 상수
+ * 1:상한, 2:상승, 3:보합, 4:하한, 5:하락
+ */
+export const KIS_SIGN = {
+  LIMIT_UP: "1",
+  RISE: "2",
+  UNCHANGED: "3",
+  LIMIT_DOWN: "4",
+  FALL: "5",
+} as const;
+
+export type KISSignUnion = (typeof KIS_SIGN)[keyof typeof KIS_SIGN];
+
+/**
  * KIS API 응답 공통 구조
  */
 export interface KISAPIResponse<

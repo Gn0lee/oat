@@ -430,8 +430,6 @@ export async function getDomesticVolumeRank(
   // 시장 구분 코드 변환 (KRX -> J, NXT -> NX)
   const marketCode = mapDomesticExchangeCode(exchange);
 
-  console.log(marketCode, exchange);
-
   url.searchParams.set("FID_COND_MRKT_DIV_CODE", marketCode);
   url.searchParams.set("FID_COND_SCR_DIV_CODE", "20171"); // 거래량 순위
   url.searchParams.set("FID_INPUT_ISCD", "0000");
@@ -498,11 +496,11 @@ export async function getDomesticFluctuationRank(
 
   url.searchParams.set("FID_COND_MRKT_DIV_CODE", marketCode);
   url.searchParams.set("FID_COND_SCR_DIV_CODE", "20170"); // 등락률 순위
-  url.searchParams.set("FID_INPUT_ISCD", exchange === "KRX" ? "0001" : "1001");
+  url.searchParams.set("FID_INPUT_ISCD", "0000"); // 0000:전체, 0001:코스피, 1001:코스닥
   url.searchParams.set(
     "FID_RANK_SORT_CLS_CODE",
     direction === "up" ? "0" : "1",
-  ); // 0:상승률, 1:하락률
+  ); // 0:상승률, 1:하락률 (관측 기반 최종 수정: 0이 상위)
   url.searchParams.set("FID_INPUT_CNT_1", "0"); // 조회 건수 (0:전체)
   url.searchParams.set("FID_PRC_CLS_CODE", "0"); // 가격 구분
   url.searchParams.set("FID_INPUT_PRICE_1", ""); // 가격 조건 없음
@@ -629,7 +627,9 @@ export async function getOverseasPriceFluct(
   url.searchParams.set("KEYB", "");
   url.searchParams.set("AUTH", "");
   url.searchParams.set("EXCD", exchangeCode);
-  url.searchParams.set("GUBN", direction === "up" ? "0" : "1"); // 0:급등, 1:급락
+  // 해외주식 가격급등락 (HHDFS76260000)
+  // 관측 결과: 1이 대비율상위(Gainers), 0이 대비율하위(Losers)
+  url.searchParams.set("GUBN", direction === "up" ? "1" : "0");
   url.searchParams.set("MIXN", timeRange); // N분전콤보값
   url.searchParams.set("VOL_RANG", "0"); // 거래량조건
 
