@@ -48,10 +48,10 @@ export function StockAllocationSection() {
   const [hoveredTicker, setHoveredTicker] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
 
-  // 초기 선택: 상위 5개 종목을 기본으로 보여줌
+  // 초기 선택: 모든 종목을 기본으로 보여줌
   useEffect(() => {
     if (data?.byTicker && selectedTickers.length === 0) {
-      setSelectedTickers(data.byTicker.slice(0, 5).map((h) => h.ticker));
+      setSelectedTickers(data.byTicker.map((h) => h.ticker));
     }
   }, [data, selectedTickers.length]);
 
@@ -169,9 +169,9 @@ export function StockAllocationSection() {
               <div className="flex items-center gap-2 overflow-hidden">
                 <Search className="size-3.5 shrink-0 text-gray-400" />
                 <span className="truncate">
-                  {selectedTickers.length > 0
-                    ? `${selectedTickers.length}개 종목 선택됨`
-                    : "비교할 종목 선택"}
+                  {selectedTickers.length === data.byTicker.length
+                    ? "모든 종목 선택됨"
+                    : `${selectedTickers.length}개 종목 선택됨`}
                 </span>
               </div>
               <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />

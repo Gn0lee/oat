@@ -175,7 +175,10 @@ export async function GET() {
       }
     }
 
-    const byTicker: AggregatedStockHolding[] = Array.from(tickerMap.values());
+    const byTicker: AggregatedStockHolding[] = Array.from(
+      tickerMap.values(),
+    ).sort((a, b) => b.currentValue - a.currentValue);
+
     for (const item of byTicker) {
       item.avgPrice =
         item.quantity > 0 ? item.totalInvested / item.quantity : 0;
