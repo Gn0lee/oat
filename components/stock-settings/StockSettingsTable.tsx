@@ -23,7 +23,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  ASSET_TYPE_LABELS,
   MARKET_LABELS,
   RISK_LEVEL_COLORS,
   RISK_LEVEL_LABELS,
@@ -89,18 +88,6 @@ function createColumns(
         <Badge variant="outline">
           {MARKET_LABELS[row.original.market] ?? row.original.market}
         </Badge>
-      ),
-    },
-    {
-      id: "assetType",
-      accessorKey: "assetType",
-      header: ({ column }) => (
-        <SortableHeader column={column}>자산유형</SortableHeader>
-      ),
-      cell: ({ row }) => (
-        <span className="text-gray-600">
-          {ASSET_TYPE_LABELS[row.original.assetType] ?? row.original.assetType}
-        </span>
       ),
     },
     {

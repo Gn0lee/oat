@@ -47,9 +47,9 @@ export function HoldingsList({
     try {
       const params = new URLSearchParams();
       if (newFilters.ownerId) params.set("ownerId", newFilters.ownerId);
-      if (newFilters.assetType) params.set("assetType", newFilters.assetType);
       if (newFilters.market) params.set("market", newFilters.market);
       if (newFilters.accountId) params.set("accountId", newFilters.accountId);
+      if (newFilters.search) params.set("search", newFilters.search);
       params.set("page", String(newPage));
 
       const response = await fetch(`/api/holdings?${params.toString()}`);

@@ -63,6 +63,17 @@ export function formatDateShort(date: Date | string): string {
 }
 
 /**
+ * 날짜를 ISO 형식(YYYY-MM-DD)으로 포맷 (API용)
+ */
+export function formatDateISO(date: Date | string): string {
+  const d = typeof date === "string" ? new Date(date) : date;
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+/**
  * 남은 시간을 한국어 형식으로 포맷
  */
 export function formatRemainingTime(targetDate: Date | string): string {

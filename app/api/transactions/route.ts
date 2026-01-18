@@ -6,6 +6,7 @@ import {
   createTransaction,
   getTransactions,
   type TransactionFilters,
+  type TransactionSortField,
 } from "@/lib/api/transaction";
 import { createClient } from "@/lib/supabase/server";
 import { createTransactionSchema } from "@/schemas/transaction";
@@ -44,18 +45,32 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get("type") as "buy" | "sell" | null;
     const ownerId = searchParams.get("ownerId");
     const ticker = searchParams.get("ticker");
+    const search = searchParams.get("search");
+    const startDate = searchParams.get("startDate");
+    const endDate = searchParams.get("endDate");
     const page = Number(searchParams.get("page")) || 1;
     const pageSize = Number(searchParams.get("pageSize")) || 20;
+    const orderBy = searchParams.get("orderBy") as TransactionSortField | null;
+    const orderDirection = searchParams.get("orderDirection") as
+      | "asc"
+      | "desc"
+      | null;
 
     const filters: TransactionFilters = {};
     if (type) filters.type = type;
     if (ownerId) filters.ownerId = ownerId;
     if (ticker) filters.ticker = ticker;
+    if (search) filters.search = search;
+    if (startDate) filters.startDate = startDate;
+    if (endDate) filters.endDate = endDate;
 
     // 거래 내역 조회
     const result = await getTransactions(supabase, householdId, {
       filters,
       pagination: { page, pageSize },
+      sort: orderBy
+        ? { field: orderBy, direction: orderDirection ?? "desc" }
+        : undefined,
     });
 
     return NextResponse.json(result);

@@ -46,6 +46,7 @@ export async function GET(request: NextRequest) {
       | "null"
       | null;
     const market = searchParams.get("market") as MarketType | null;
+    const search = searchParams.get("search");
     const page = Number(searchParams.get("page")) || 1;
     const pageSize = Number(searchParams.get("pageSize")) || 20;
 
@@ -53,6 +54,7 @@ export async function GET(request: NextRequest) {
     if (assetType) filters.assetType = assetType;
     if (riskLevel) filters.riskLevel = riskLevel;
     if (market) filters.market = market;
+    if (search) filters.search = search;
 
     // 종목 설정 조회
     const result = await getStockSettings(supabase, householdId, {

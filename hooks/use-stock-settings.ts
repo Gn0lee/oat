@@ -10,6 +10,7 @@ export interface StockSettingsFilters {
   assetType?: AssetType;
   riskLevel?: RiskLevel | "null";
   market?: MarketType;
+  search?: string;
 }
 
 interface StockSettingsError {
@@ -29,6 +30,7 @@ async function fetchStockSettings(
   if (filters?.assetType) params.set("assetType", filters.assetType);
   if (filters?.riskLevel) params.set("riskLevel", filters.riskLevel);
   if (filters?.market) params.set("market", filters.market);
+  if (filters?.search) params.set("search", filters.search);
   params.set("page", String(page));
   params.set("pageSize", String(pageSize));
 

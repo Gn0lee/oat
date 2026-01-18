@@ -47,6 +47,11 @@ async function fetchTransactions(
   if (params.filters?.ownerId)
     searchParams.set("ownerId", params.filters.ownerId);
   if (params.filters?.ticker) searchParams.set("ticker", params.filters.ticker);
+  if (params.filters?.search) searchParams.set("search", params.filters.search);
+  if (params.filters?.startDate)
+    searchParams.set("startDate", params.filters.startDate);
+  if (params.filters?.endDate)
+    searchParams.set("endDate", params.filters.endDate);
   if (params.page) searchParams.set("page", String(params.page));
   if (params.pageSize) searchParams.set("pageSize", String(params.pageSize));
 
@@ -59,10 +64,7 @@ async function fetchTransactions(
 
 export function useTransactions(params: UseTransactionsParams = {}) {
   return useQuery({
-    queryKey: queries.transactions.list({
-      memberId: params.filters?.ownerId,
-      stockSymbol: params.filters?.ticker,
-    }).queryKey,
+    queryKey: queries.transactions.list(params).queryKey,
     queryFn: () => fetchTransactions(params),
   });
 }

@@ -133,6 +133,9 @@ export interface TransactionFilters {
   type?: TransactionType;
   ownerId?: string;
   ticker?: string;
+  search?: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 /**
@@ -224,6 +227,28 @@ export async function getTransactions(
   }
   if (filters?.ticker) {
     query = query.eq("ticker", filters.ticker);
+  }
+  if (filters?.search) {
+    // 종목명 또는 티커로 검색하기 위해 먼저 매칭되는 티커들을 조회
+    const { data: matchedStocks } = await supabase
+      .from("household_stock_settings")
+      .select("ticker")
+      .eq("household_id", householdId)
+      .or(`name.ilike.%${filters.search}%,ticker.ilike.%${filters.search}%`);
+
+    const matchedTickers = matchedStocks?.map((s) => s.ticker) ?? [];
+    if (matchedTickers.length > 0) {
+      query = query.in("ticker", matchedTickers);
+    } else {
+      // 매칭되는 종목이 없으면 결과가 나오지 않도록 처리
+      query = query.eq("ticker", "NON_EXISTENT_TICKER");
+    }
+  }
+  if (filters?.startDate) {
+    query = query.gte("transacted_at", filters.startDate);
+  }
+  if (filters?.endDate) {
+    query = query.lte("transacted_at", filters.endDate);
   }
 
   // 정렬 적용
