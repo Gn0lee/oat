@@ -14,6 +14,8 @@ export function formatCurrency(
 
 /**
  * 숫자를 퍼센트 형식으로 포맷
+ * 양수/0일 경우 '+'를 앞에 붙임 (예: +10.46%, +0.00%)
+ * 음수일 경우 '-'를 앞에 붙임 (예: -5.20%)
  */
 export function formatPercent(value: number, decimals = 2): string {
   const sign = value >= 0 ? "+" : "";

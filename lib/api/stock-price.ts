@@ -136,10 +136,18 @@ async function upsertPrices(prices: StockPriceResult[]): Promise<void> {
     fetched_at: p.fetchedAt.toISOString(),
   }));
 
+  // 중복 제거 (ON CONFLICT DO UPDATE cannot affect row a second time 에러 방지)
+  const uniqueRowsMap = new Map<string, StockPriceRow>();
+  for (const row of rows) {
+    const key = `${row.market}:${row.code}`;
+    uniqueRowsMap.set(key, row);
+  }
+  const uniqueRows = Array.from(uniqueRowsMap.values());
+
   const admin = createAdminClient();
   const { error } = await admin
     .from("stock_prices")
-    .upsert(rows, { onConflict: "market,code" });
+    .upsert(uniqueRows, { onConflict: "market,code" });
 
   if (error) {
     console.error("Price upsert error:", error);

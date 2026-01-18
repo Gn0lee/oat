@@ -7,6 +7,7 @@ import {
 } from "@/lib/kis/client";
 import {
   DomesticExchangeCode,
+  KIS_SIGN,
   type KISFluctuationRankOutput,
   type KISVolumeRankOutput,
 } from "@/lib/kis/types";
@@ -18,9 +19,8 @@ const exchangeParamSchema = z.enum(DomesticExchangeCode);
  * 전일 대비 부호를 변환
  */
 function parseChangeSign(sign: string): "up" | "down" | "flat" {
-  // 1:상한, 2:상승, 3:보합, 4:하한, 5:하락
-  if (sign === "1" || sign === "2") return "up";
-  if (sign === "4" || sign === "5") return "down";
+  if (sign === KIS_SIGN.LIMIT_UP || sign === KIS_SIGN.RISE) return "up";
+  if (sign === KIS_SIGN.LIMIT_DOWN || sign === KIS_SIGN.FALL) return "down";
   return "flat";
 }
 
@@ -28,14 +28,17 @@ function parseChangeSign(sign: string): "up" | "down" | "flat" {
  * 거래량 순위 응답을 MarketTrendItem으로 변환
  */
 function mapVolumeRank(item: KISVolumeRankOutput): MarketTrendItem {
+  const changeSign = parseChangeSign(item.prdy_vrss_sign);
+  const multiplier = changeSign === "down" ? -1 : 1;
+
   return {
     rank: Number.parseInt(item.data_rank, 10),
     ticker: item.mksc_shrn_iscd,
     name: item.hts_kor_isnm,
     price: Number.parseInt(item.stck_prpr, 10),
-    change: Number.parseInt(item.prdy_vrss, 10),
-    changeRate: Number.parseFloat(item.prdy_ctrt),
-    changeSign: parseChangeSign(item.prdy_vrss_sign),
+    change: multiplier * Math.abs(Number.parseInt(item.prdy_vrss, 10)),
+    changeRate: multiplier * Math.abs(Number.parseFloat(item.prdy_ctrt)),
+    changeSign,
     volume: Number.parseInt(item.acml_vol, 10),
   };
 }
@@ -44,14 +47,17 @@ function mapVolumeRank(item: KISVolumeRankOutput): MarketTrendItem {
  * 등락률 순위 응답을 MarketTrendItem으로 변환
  */
 function mapFluctuationRank(item: KISFluctuationRankOutput): MarketTrendItem {
+  const changeSign = parseChangeSign(item.prdy_vrss_sign);
+  const multiplier = changeSign === "down" ? -1 : 1;
+
   return {
     rank: Number.parseInt(item.data_rank, 10),
     ticker: item.stck_shrn_iscd,
     name: item.hts_kor_isnm,
     price: Number.parseInt(item.stck_prpr, 10),
-    change: Number.parseInt(item.prdy_vrss, 10),
-    changeRate: Number.parseFloat(item.prdy_ctrt),
-    changeSign: parseChangeSign(item.prdy_vrss_sign),
+    change: multiplier * Math.abs(Number.parseInt(item.prdy_vrss, 10)),
+    changeRate: multiplier * Math.abs(Number.parseFloat(item.prdy_ctrt)),
+    changeSign,
     volume: Number.parseInt(item.acml_vol, 10),
   };
 }
