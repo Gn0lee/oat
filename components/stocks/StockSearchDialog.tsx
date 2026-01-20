@@ -170,9 +170,16 @@ export function StockSearchDialog({
                         <span className="shrink-0 w-16 font-mono font-medium text-sm">
                           {stock.code}
                         </span>
-                        <span className="flex-1 truncate text-muted-foreground">
-                          {stock.name}
-                        </span>
+                        <div className="flex flex-col flex-1 min-w-0">
+                          <span className="truncate font-medium text-foreground">
+                            {stock.name}
+                          </span>
+                          {stock.name_en && (
+                            <span className="truncate text-[11px] text-muted-foreground/80 leading-tight">
+                              {stock.name_en}
+                            </span>
+                          )}
+                        </div>
                         {value?.id === stock.id && (
                           <CheckIcon className="shrink-0 size-4 text-primary" />
                         )}
