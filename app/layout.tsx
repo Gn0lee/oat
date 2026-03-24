@@ -1,6 +1,8 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "sonner";
+import { InstallPrompt } from "@/components/InstallPrompt";
+import { PushNotificationManager } from "@/components/PushNotificationManager";
 import { Providers } from "@/lib/providers";
 import "./globals.css";
 
@@ -14,9 +16,27 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+export const viewport: Viewport = {
+  themeColor: "#4F46E5",
+};
+
 export const metadata: Metadata = {
   title: "oat - 가족 자산 통합 관리",
   description: "가족 구성원의 투자 자산을 한 대시보드에서 통합 조회",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "oat",
+  },
+  icons: {
+    icon: [
+      { url: "/favicon-96x96.png", sizes: "96x96", type: "image/png" },
+      { url: "/favicon.ico" },
+    ],
+    shortcut: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+  },
 };
 
 export default function RootLayout({
@@ -30,6 +50,8 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Providers>{children}</Providers>
+        <PushNotificationManager />
+        <InstallPrompt />
         <Toaster position="top-right" richColors closeButton />
       </body>
     </html>
