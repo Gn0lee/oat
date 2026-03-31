@@ -1,0 +1,66 @@
+name: "✨ 기능 개발"
+description: "새로운 기능 개발 또는 기존 기능 개선"
+title: "[기능] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 기능 요청
+        기능의 목적과 배경을 상세히 작성해주세요.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: "설명"
+      description: "기능의 목적, 배경, 사용자 시나리오를 작성해주세요."
+      placeholder: "이 기능은..."
+    validations:
+      required: true
+
+  - type: input
+    id: prd-reference
+    attributes:
+      label: "관련 PRD 항목"
+      description: "PRD의 관련 ID를 입력해주세요. (예: LEDGER-01, ACCT-02)"
+      placeholder: "LEDGER-01"
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: "Acceptance Criteria"
+      description: "완료 조건을 체크리스트로 작성해주세요."
+      value: |
+        - [ ] 
+        - [ ] 
+        - [ ] 
+    validations:
+      required: true
+
+  - type: textarea
+    id: design
+    attributes:
+      label: "디자인 / 와이어프레임"
+      description: "참고할 PRD 섹션, 와이어프레임, 스크린샷 등을 첨부해주세요."
+
+  - type: textarea
+    id: technical-notes
+    attributes:
+      label: "기술 참고사항"
+      description: "DB 변경, API 설계, 의존성 등 기술적 고려사항을 작성해주세요."
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: "기능 영역"
+      options:
+        - "가계부 (ledger)"
+        - "계좌/결제수단 (account)"
+        - "대시보드/분석 (dashboard)"
+        - "네비게이션 (navigation)"
+        - "인증 (auth)"
+        - "가구 관리 (household)"
+        - "시스템 (system)"
+        - "기타"
+    validations:
+      required: true

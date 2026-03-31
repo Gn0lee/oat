@@ -1,0 +1,64 @@
+name: "🐛 버그 리포트"
+description: "버그를 발견했을 때 사용해주세요."
+title: "[버그] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 버그 리포트
+        버그를 최대한 상세히 설명해주세요.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: "버그 설명"
+      description: "어떤 버그인지 간단히 설명해주세요."
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: "재현 방법"
+      description: "버그를 재현하기 위한 단계를 작성해주세요."
+      value: |
+        1. 
+        2. 
+        3. 
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: "기대 동작"
+      description: "정상적으로 동작했을 때 예상되는 결과를 작성해주세요."
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: "실제 동작"
+      description: "현재 실제로 발생하는 결과를 작성해주세요."
+    validations:
+      required: true
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: "스크린샷 / 로그"
+      description: "관련 스크린샷이나 에러 로그를 첨부해주세요."
+
+  - type: dropdown
+    id: device
+    attributes:
+      label: "환경"
+      options:
+        - "iOS (PWA)"
+        - "Android (PWA)"
+        - "데스크톱 브라우저"
+        - "기타"
+    validations:
+      required: true
