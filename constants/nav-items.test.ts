@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { NAV_ITEMS } from "./nav-items";
+import { isNavItemActive, NAV_ITEMS } from "./nav-items";
 
 describe("NAV_ITEMS", () => {
   it("4개의 네비게이션 항목을 가진다", () => {
@@ -21,5 +21,38 @@ describe("NAV_ITEMS", () => {
       expect(item.icon).toBeDefined();
       expect(item.icon.$$typeof).toBeDefined();
     }
+  });
+});
+
+describe("isNavItemActive", () => {
+  const assetsItem = NAV_ITEMS.find((item) => item.href === "/assets")!;
+  const settingsItem = NAV_ITEMS.find((item) => item.href === "/settings")!;
+  const homeItem = NAV_ITEMS.find((item) => item.href === "/home")!;
+
+  it("정확한 경로에서 활성 상태이다", () => {
+    expect(isNavItemActive(assetsItem, "/assets")).toBe(true);
+  });
+
+  it("하위 경로에서 활성 상태이다", () => {
+    expect(isNavItemActive(assetsItem, "/assets/stock/holdings")).toBe(true);
+  });
+
+  it("/home은 정확히 일치할 때만 활성이다", () => {
+    expect(isNavItemActive(homeItem, "/home")).toBe(true);
+    expect(isNavItemActive(homeItem, "/home/sub")).toBe(false);
+  });
+
+  it("/dashboard 경로에서 자산 항목이 활성이다", () => {
+    expect(isNavItemActive(assetsItem, "/dashboard")).toBe(true);
+    expect(isNavItemActive(assetsItem, "/dashboard/stocks")).toBe(true);
+  });
+
+  it("/household 경로에서 설정 항목이 활성이다", () => {
+    expect(isNavItemActive(settingsItem, "/household")).toBe(true);
+  });
+
+  it("관련 없는 경로에서 비활성이다", () => {
+    expect(isNavItemActive(assetsItem, "/home")).toBe(false);
+    expect(isNavItemActive(settingsItem, "/ledger")).toBe(false);
   });
 });

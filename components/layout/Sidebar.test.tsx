@@ -56,4 +56,20 @@ describe("Sidebar", () => {
     const ledgerLink = screen.getByText("가계부").closest("a");
     expect(ledgerLink?.className).toContain("bg-primary/10");
   });
+
+  it("/dashboard 경로에서 자산 항목이 활성 상태이다", () => {
+    vi.mocked(usePathname).mockReturnValue("/dashboard/stocks");
+    render(<Sidebar />);
+
+    const assetsLink = screen.getByText("자산").closest("a");
+    expect(assetsLink?.className).toContain("bg-primary/10");
+  });
+
+  it("/household 경로에서 설정 항목이 활성 상태이다", () => {
+    vi.mocked(usePathname).mockReturnValue("/household");
+    render(<Sidebar />);
+
+    const settingsLink = screen.getByText("설정").closest("a");
+    expect(settingsLink?.className).toContain("bg-primary/10");
+  });
 });

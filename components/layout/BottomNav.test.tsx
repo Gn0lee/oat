@@ -69,4 +69,28 @@ describe("BottomNav", () => {
     const nav = container.querySelector("nav");
     expect(nav?.className).toContain("pb-[env(safe-area-inset-bottom)]");
   });
+
+  it("/dashboard 경로에서 자산 탭이 활성 상태이다", () => {
+    vi.mocked(usePathname).mockReturnValue("/dashboard");
+    render(<BottomNav />);
+
+    const assetsLink = screen.getByText("자산").closest("a");
+    expect(assetsLink?.className).toContain("text-primary");
+  });
+
+  it("/dashboard/stocks 하위 경로에서도 자산 탭이 활성 상태이다", () => {
+    vi.mocked(usePathname).mockReturnValue("/dashboard/stocks");
+    render(<BottomNav />);
+
+    const assetsLink = screen.getByText("자산").closest("a");
+    expect(assetsLink?.className).toContain("text-primary");
+  });
+
+  it("/household 경로에서 설정 탭이 활성 상태이다", () => {
+    vi.mocked(usePathname).mockReturnValue("/household");
+    render(<BottomNav />);
+
+    const settingsLink = screen.getByText("설정").closest("a");
+    expect(settingsLink?.className).toContain("text-primary");
+  });
 });

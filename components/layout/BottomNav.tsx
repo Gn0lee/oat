@@ -2,25 +2,18 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { NAV_ITEMS } from "@/constants/nav-items";
+import { isNavItemActive, NAV_ITEMS } from "@/constants/nav-items";
 import { cn } from "@/lib/utils/cn";
 
 export function BottomNav() {
   const pathname = usePathname();
-
-  const isActive = (href: string) => {
-    if (href === "/home") {
-      return pathname === "/home";
-    }
-    return pathname === href || pathname.startsWith(`${href}/`);
-  };
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 pb-[env(safe-area-inset-bottom)] lg:hidden">
       <div className="h-16 grid grid-cols-4">
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
-          const active = isActive(item.href);
+          const active = isNavItemActive(item, pathname);
 
           return (
             <Link

@@ -2,25 +2,18 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { NAV_ITEMS } from "@/constants/nav-items";
+import { isNavItemActive, NAV_ITEMS } from "@/constants/nav-items";
 import { cn } from "@/lib/utils/cn";
 
 export function Sidebar() {
   const pathname = usePathname();
-
-  const isActive = (href: string) => {
-    if (href === "/home") {
-      return pathname === "/home";
-    }
-    return pathname === href || pathname.startsWith(`${href}/`);
-  };
 
   return (
     <aside className="hidden lg:block w-56 shrink-0 bg-white border-r border-gray-200 overflow-y-auto">
       <nav className="p-4 space-y-1">
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
-          const active = isActive(item.href);
+          const active = isNavItemActive(item, pathname);
 
           return (
             <Link
