@@ -50,6 +50,7 @@
 }
 
 :root {
+  --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
   --radius: 0.625rem;
   --positive: #f04452;
   --negative: #3182f6;

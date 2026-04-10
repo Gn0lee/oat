@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { BookText, Home, Settings, Wallet } from "lucide-react";
+import { BookOpen, Briefcase, Home, Settings } from "lucide-react";
 
 export interface NavItem {
   href: string;
@@ -26,11 +26,11 @@ export function isNavItemActive(item: NavItem, pathname: string): boolean {
 
 export const NAV_ITEMS: NavItem[] = [
   { href: "/home", label: "홈", icon: Home },
-  { href: "/ledger", label: "가계부", icon: BookText },
+  { href: "/ledger", label: "가계부", icon: BookOpen },
   {
     href: "/assets",
     label: "자산",
-    icon: Wallet,
+    icon: Briefcase,
     aliasPatterns: ["/dashboard"],
   },
   {
