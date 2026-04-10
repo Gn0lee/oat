@@ -1,17 +1,9 @@
 "use client";
 
-import { BarChart3, Briefcase, Home, Settings, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { NAV_ITEMS } from "@/constants/nav-items";
 import { cn } from "@/lib/utils/cn";
-
-const navItems = [
-  { href: "/home", label: "홈", icon: Home },
-  { href: "/dashboard", label: "분석", icon: BarChart3 },
-  { href: "/assets", label: "자산", icon: Briefcase },
-  { href: "/household", label: "가구", icon: Users },
-  { href: "/settings", label: "설정", icon: Settings },
-];
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -26,7 +18,7 @@ export function Sidebar() {
   return (
     <aside className="hidden lg:block w-56 shrink-0 bg-white border-r border-gray-200 overflow-y-auto">
       <nav className="p-4 space-y-1">
-        {navItems.map((item) => {
+        {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
           const active = isActive(item.href);
 
