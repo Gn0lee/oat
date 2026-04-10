@@ -1,34 +1,19 @@
 "use client";
 
-import { BarChart3, Briefcase, Home, Settings, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { isNavItemActive, NAV_ITEMS } from "@/constants/nav-items";
 import { cn } from "@/lib/utils/cn";
-
-const navItems = [
-  { href: "/home", label: "홈", icon: Home },
-  { href: "/dashboard", label: "분석", icon: BarChart3 },
-  { href: "/assets", label: "자산", icon: Briefcase },
-  { href: "/household", label: "가구", icon: Users },
-  { href: "/settings", label: "설정", icon: Settings },
-];
 
 export function BottomNav() {
   const pathname = usePathname();
 
-  const isActive = (href: string) => {
-    if (href === "/home") {
-      return pathname === "/home";
-    }
-    return pathname === href || pathname.startsWith(`${href}/`);
-  };
-
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 h-16 bg-white border-t border-gray-200 lg:hidden">
-      <div className="h-full grid grid-cols-5">
-        {navItems.map((item) => {
+    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 pb-[env(safe-area-inset-bottom)] lg:hidden">
+      <div className="h-16 grid grid-cols-4">
+        {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
-          const active = isActive(item.href);
+          const active = isNavItemActive(item, pathname);
 
           return (
             <Link

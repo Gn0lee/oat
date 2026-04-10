@@ -11,7 +11,7 @@ export default function MainLayout({
       <div className="flex flex-1 overflow-hidden">
         <Sidebar />
         <div className="size-full overflow-y-scroll">
-          <main className="flex-1 p-4 pb-20 lg:pb-4 ">
+          <main className="flex-1 p-4 pb-[calc(6rem+env(safe-area-inset-bottom))] lg:pb-4">
             <div className="max-w-4xl mx-auto space-y-6">{children}</div>
           </main>
         </div>
