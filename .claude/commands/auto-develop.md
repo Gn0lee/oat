@@ -83,9 +83,10 @@ gh pr list --head $(git branch --show-current) --state open --json number,url,ti
 
 #### Case B: PR이 없는 경우 (첫 작업)
 
-드래프트 PR을 생성합니다:
+빈 커밋을 생성하고 드래프트 PR을 생성합니다:
 
 ```bash
+git commit --allow-empty -m "chore: #{이슈번호} 자동 개발 시작"
 git push -u origin $(git branch --show-current)
 gh pr create --draft \
   --title "[WIP] #{이슈번호} {이슈제목}" \
@@ -120,7 +121,7 @@ date +%s
 
 - **팀 이름**: `auto-dev-{이슈번호}`
 - **Planner 팀메이트**: `planner` 에이전트 타입 사용, Sonnet 모델
-- **Developer 팀메이트**: `developer` 에이전트 타입 사용, Opus 모델, **plan approval 필수**
+- **Developer 팀메이트**: `developer` 에이전트 타입 사용, Sonnet(1M) 모델, **plan approval 필수**
 
 Planner 스폰 시 다음 컨텍스트를 프롬프트에 포함합니다:
 
