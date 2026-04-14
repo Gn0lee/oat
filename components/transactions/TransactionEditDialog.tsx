@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { DatePickerInput } from "@/components/ui/date-picker";
 import {
   Dialog,
   DialogContent,
@@ -16,6 +17,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -27,6 +36,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useAccounts } from "@/hooks/use-accounts";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import { useUpdateTransaction } from "@/hooks/use-transaction";
 import type { TransactionWithDetails } from "@/lib/api/transaction";
 
@@ -62,6 +72,7 @@ export function TransactionEditDialog({
 }: TransactionEditDialogProps) {
   const updateMutation = useUpdateTransaction();
   const { data: accounts } = useAccounts();
+  const isDesktop = useMediaQuery("(min-width: 768px)");
 
   const {
     register,
@@ -75,6 +86,7 @@ export function TransactionEditDialog({
   });
 
   const watchAccountId = watch("accountId");
+  const watchTransactedAt = watch("transactedAt");
 
   // transaction이 변경될 때 폼 값 초기화
   useEffect(() => {
@@ -130,135 +142,193 @@ export function TransactionEditDialog({
   const typeLabel = transaction.type === "buy" ? "매수" : "매도";
   const typeVariant = transaction.type === "buy" ? "default" : "secondary";
 
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>거래 수정</DialogTitle>
-          <DialogDescription asChild>
-            <div className="flex items-center gap-2">
-              <span className="font-medium text-foreground">
-                {transaction.stockName}
-              </span>
-              <span className="text-muted-foreground">
-                ({transaction.ticker})
-              </span>
-              <Badge variant={typeVariant}>{typeLabel}</Badge>
-            </div>
-          </DialogDescription>
-        </DialogHeader>
+  const descriptionContent = (
+    <div className="flex items-center gap-2">
+      <span className="font-medium text-foreground">
+        {transaction.stockName}
+      </span>
+      <span className="text-muted-foreground">({transaction.ticker})</span>
+      <Badge variant={typeVariant}>{typeLabel}</Badge>
+    </div>
+  );
 
-        {/* 안내 문구 */}
-        <div className="flex items-start gap-2 rounded-md bg-muted/50 p-3 text-sm text-muted-foreground">
-          <InfoIcon className="mt-0.5 h-4 w-4 shrink-0" />
-          <p>
-            종목이나 거래유형을 변경하려면 이 거래를 삭제 후 다시 등록해주세요.
+  const infoBanner = (
+    <div className="flex items-start gap-2 rounded-md bg-muted/50 p-3 text-sm text-muted-foreground">
+      <InfoIcon className="mt-0.5 h-4 w-4 shrink-0" />
+      <p>종목이나 거래유형을 변경하려면 이 거래를 삭제 후 다시 등록해주세요.</p>
+    </div>
+  );
+
+  const formFields = (
+    <>
+      {/* 수량 */}
+      <div className="space-y-2">
+        <Label htmlFor="quantity">수량</Label>
+        <Input
+          id="quantity"
+          type="number"
+          step="any"
+          min="0"
+          {...register("quantity")}
+        />
+        {errors.quantity && (
+          <p className="text-sm text-destructive">{errors.quantity.message}</p>
+        )}
+      </div>
+
+      {/* 단가 */}
+      <div className="space-y-2">
+        <Label htmlFor="price">
+          단가 ({transaction.currency === "KRW" ? "원" : "$"})
+        </Label>
+        <Input
+          id="price"
+          type="number"
+          step="any"
+          min="0"
+          {...register("price")}
+        />
+        {errors.price && (
+          <p className="text-sm text-destructive">{errors.price.message}</p>
+        )}
+      </div>
+
+      {/* 거래일 */}
+      <div className="space-y-2">
+        <Label htmlFor="transactedAt">거래일</Label>
+        <DatePickerInput
+          id="transactedAt"
+          value={watchTransactedAt ?? ""}
+          onChange={(v) =>
+            setValue("transactedAt", v, { shouldValidate: true })
+          }
+        />
+        {errors.transactedAt && (
+          <p className="text-sm text-destructive">
+            {errors.transactedAt.message}
           </p>
+        )}
+      </div>
+
+      {/* 계좌 */}
+      {accounts && accounts.length > 0 && (
+        <div className="space-y-2">
+          <Label htmlFor="accountId">거래 계좌</Label>
+          <Select
+            value={watchAccountId ?? "__none__"}
+            onValueChange={(value) => setValue("accountId", value)}
+          >
+            <SelectTrigger id="accountId">
+              <SelectValue placeholder="계좌를 선택하세요" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__none__">계좌 없음</SelectItem>
+              {accounts.map((account) => (
+                <SelectItem key={account.id} value={account.id}>
+                  {account.name}
+                  {account.broker && ` (${account.broker})`}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      {/* 메모 */}
+      <div className="space-y-2">
+        <Label htmlFor="memo">메모 (선택)</Label>
+        <Textarea
+          id="memo"
+          placeholder="메모를 입력하세요"
+          rows={2}
+          {...register("memo")}
+        />
+        {errors.memo && (
+          <p className="text-sm text-destructive">{errors.memo.message}</p>
+        )}
+      </div>
+    </>
+  );
+
+  if (isDesktop) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>거래 수정</DialogTitle>
+            <DialogDescription asChild>{descriptionContent}</DialogDescription>
+          </DialogHeader>
+
+          {infoBanner}
+
+          <form
+            id="transaction-edit-form"
+            onSubmit={handleSubmit(onSubmit)}
+            className="space-y-4"
+          >
+            {formFields}
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                disabled={isSubmitting}
+              >
+                취소
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "저장 중..." : "저장"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  // 모바일: Drawer (Bottom Sheet)
+  return (
+    <Drawer open={open} onOpenChange={onOpenChange}>
+      <DrawerContent>
+        <DrawerHeader>
+          <DrawerTitle>거래 수정</DrawerTitle>
+          <DrawerDescription asChild>{descriptionContent}</DrawerDescription>
+        </DrawerHeader>
+
+        <div className="overflow-y-auto flex-1 px-4">
+          <form
+            id="transaction-edit-form"
+            onSubmit={handleSubmit(onSubmit)}
+            className="space-y-4 pb-2"
+          >
+            {infoBanner}
+            {formFields}
+          </form>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          {/* 수량 */}
-          <div className="space-y-2">
-            <Label htmlFor="quantity">수량</Label>
-            <Input
-              id="quantity"
-              type="number"
-              step="any"
-              min="0"
-              {...register("quantity")}
-            />
-            {errors.quantity && (
-              <p className="text-sm text-destructive">
-                {errors.quantity.message}
-              </p>
-            )}
-          </div>
-
-          {/* 단가 */}
-          <div className="space-y-2">
-            <Label htmlFor="price">
-              단가 ({transaction.currency === "KRW" ? "원" : "$"})
-            </Label>
-            <Input
-              id="price"
-              type="number"
-              step="any"
-              min="0"
-              {...register("price")}
-            />
-            {errors.price && (
-              <p className="text-sm text-destructive">{errors.price.message}</p>
-            )}
-          </div>
-
-          {/* 거래일 */}
-          <div className="space-y-2">
-            <Label htmlFor="transactedAt">거래일</Label>
-            <Input
-              id="transactedAt"
-              type="date"
-              {...register("transactedAt")}
-            />
-            {errors.transactedAt && (
-              <p className="text-sm text-destructive">
-                {errors.transactedAt.message}
-              </p>
-            )}
-          </div>
-
-          {/* 계좌 */}
-          {accounts && accounts.length > 0 && (
-            <div className="space-y-2">
-              <Label htmlFor="accountId">거래 계좌</Label>
-              <Select
-                value={watchAccountId ?? "__none__"}
-                onValueChange={(value) => setValue("accountId", value)}
-              >
-                <SelectTrigger id="accountId">
-                  <SelectValue placeholder="계좌를 선택하세요" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none__">계좌 없음</SelectItem>
-                  {accounts.map((account) => (
-                    <SelectItem key={account.id} value={account.id}>
-                      {account.name}
-                      {account.broker && ` (${account.broker})`}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          {/* 메모 */}
-          <div className="space-y-2">
-            <Label htmlFor="memo">메모 (선택)</Label>
-            <Textarea
-              id="memo"
-              placeholder="메모를 입력하세요"
-              rows={2}
-              {...register("memo")}
-            />
-            {errors.memo && (
-              <p className="text-sm text-destructive">{errors.memo.message}</p>
-            )}
-          </div>
-
-          <DialogFooter>
+        <DrawerFooter>
+          <div className="flex gap-2">
             <Button
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
               disabled={isSubmitting}
+              className="flex-1"
             >
               취소
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button
+              type="submit"
+              form="transaction-edit-form"
+              disabled={isSubmitting}
+              className="flex-1"
+            >
               {isSubmitting ? "저장 중..." : "저장"}
             </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+          </div>
+        </DrawerFooter>
+      </DrawerContent>
+    </Drawer>
   );
 }

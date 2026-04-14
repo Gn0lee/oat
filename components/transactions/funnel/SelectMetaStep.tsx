@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { DatePickerInput } from "@/components/ui/date-picker";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -80,10 +80,9 @@ export function SelectMetaStep({
       {/* 거래일 */}
       <div className="bg-white rounded-2xl shadow-sm p-5 space-y-3">
         <Label className="text-gray-700 font-medium">거래일</Label>
-        <Input
-          type="date"
+        <DatePickerInput
           value={transactedAt}
-          onChange={(e) => setTransactedAt(e.target.value)}
+          onChange={setTransactedAt}
           className="h-12 rounded-xl"
         />
       </div>

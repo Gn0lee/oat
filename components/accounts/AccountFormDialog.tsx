@@ -15,6 +15,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -26,6 +34,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useCreateAccount, useUpdateAccount } from "@/hooks/use-accounts";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import type { AccountWithOwner } from "@/lib/api/account";
 import type { AccountType } from "@/types";
 
@@ -182,139 +191,193 @@ export function AccountFormDialog({
   const handleSaveAndContinue = handleSubmit((data) => onSubmit(data, true));
 
   const isPending = createAccount.isPending || updateAccount.isPending;
+  const isDesktop = useMediaQuery("(min-width: 768px)");
 
+  const formFields = (
+    <>
+      <div className="space-y-2">
+        <Label htmlFor="name">
+          계좌명 <span className="text-destructive">*</span>
+        </Label>
+        <Input
+          id="name"
+          placeholder="예: 삼성증권 주식계좌"
+          {...register("name")}
+          aria-invalid={!!errors.name}
+        />
+        {errors.name && (
+          <p className="text-sm text-destructive">{errors.name.message}</p>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="broker">증권사/은행</Label>
+        <Input
+          id="broker"
+          placeholder="예: 삼성증권, 토스증권"
+          {...register("broker")}
+          aria-invalid={!!errors.broker}
+        />
+        {errors.broker && (
+          <p className="text-sm text-destructive">{errors.broker.message}</p>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="accountType">
+          계좌 유형 <span className="text-destructive">*</span>
+        </Label>
+        <Select
+          value={watch("accountType")}
+          onValueChange={(value: StockAccountType) =>
+            setValue("accountType", value)
+          }
+        >
+          <SelectTrigger id="accountType">
+            <SelectValue placeholder="계좌 유형 선택" />
+          </SelectTrigger>
+          <SelectContent>
+            {ACCOUNT_TYPES.map((type) => (
+              <SelectItem key={type.value} value={type.value}>
+                {type.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {errors.accountType && (
+          <p className="text-sm text-destructive">
+            {errors.accountType.message}
+          </p>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="accountNumber">계좌번호</Label>
+        <Input
+          id="accountNumber"
+          placeholder="예: 123-456-78901234"
+          {...register("accountNumber")}
+          aria-invalid={!!errors.accountNumber}
+        />
+        {errors.accountNumber && (
+          <p className="text-sm text-destructive">
+            {errors.accountNumber.message}
+          </p>
+        )}
+      </div>
+
+      <div className="flex items-center space-x-2">
+        <Checkbox
+          id="isDefault"
+          checked={watchIsDefault}
+          onCheckedChange={(checked) => setValue("isDefault", checked === true)}
+        />
+        <Label htmlFor="isDefault" className="font-normal cursor-pointer">
+          기본 계좌로 설정
+        </Label>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="memo">메모</Label>
+        <Textarea
+          id="memo"
+          placeholder="계좌에 대한 메모를 입력하세요"
+          rows={2}
+          {...register("memo")}
+          aria-invalid={!!errors.memo}
+        />
+        {errors.memo && (
+          <p className="text-sm text-destructive">{errors.memo.message}</p>
+        )}
+      </div>
+    </>
+  );
+
+  if (isDesktop) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{isEditing ? "계좌 수정" : "계좌 추가"}</DialogTitle>
+            <DialogDescription>
+              {isEditing
+                ? "계좌 정보를 수정합니다."
+                : "새로운 계좌를 등록합니다."}
+            </DialogDescription>
+          </DialogHeader>
+
+          <form className="space-y-4">{formFields}</form>
+
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            {!isEditing && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleSaveAndContinue}
+                disabled={isPending || isSubmitting}
+                className="sm:order-1"
+              >
+                저장하고 추가 계속
+              </Button>
+            )}
+            <div className="flex gap-2 sm:order-2">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => onOpenChange(false)}
+                disabled={isPending || isSubmitting}
+              >
+                취소
+              </Button>
+              <Button
+                type="button"
+                onClick={handleSave}
+                disabled={isPending || isSubmitting}
+              >
+                {isPending || isSubmitting ? "저장 중..." : "저장"}
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  // 모바일: Drawer (Bottom Sheet)
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>{isEditing ? "계좌 수정" : "계좌 추가"}</DialogTitle>
-          <DialogDescription>
+    <Drawer open={open} onOpenChange={onOpenChange}>
+      <DrawerContent>
+        <DrawerHeader>
+          <DrawerTitle>{isEditing ? "계좌 수정" : "계좌 추가"}</DrawerTitle>
+          <DrawerDescription>
             {isEditing
               ? "계좌 정보를 수정합니다."
               : "새로운 계좌를 등록합니다."}
-          </DialogDescription>
-        </DialogHeader>
+          </DrawerDescription>
+        </DrawerHeader>
 
-        <form className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">
-              계좌명 <span className="text-destructive">*</span>
-            </Label>
-            <Input
-              id="name"
-              placeholder="예: 삼성증권 주식계좌"
-              {...register("name")}
-              aria-invalid={!!errors.name}
-            />
-            {errors.name && (
-              <p className="text-sm text-destructive">{errors.name.message}</p>
-            )}
-          </div>
+        <div className="overflow-y-auto flex-1 px-4">
+          <form className="space-y-4 pb-2">{formFields}</form>
+        </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="broker">증권사/은행</Label>
-            <Input
-              id="broker"
-              placeholder="예: 삼성증권, 토스증권"
-              {...register("broker")}
-              aria-invalid={!!errors.broker}
-            />
-            {errors.broker && (
-              <p className="text-sm text-destructive">
-                {errors.broker.message}
-              </p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="accountType">
-              계좌 유형 <span className="text-destructive">*</span>
-            </Label>
-            <Select
-              value={watch("accountType")}
-              onValueChange={(value: StockAccountType) =>
-                setValue("accountType", value)
-              }
-            >
-              <SelectTrigger id="accountType">
-                <SelectValue placeholder="계좌 유형 선택" />
-              </SelectTrigger>
-              <SelectContent>
-                {ACCOUNT_TYPES.map((type) => (
-                  <SelectItem key={type.value} value={type.value}>
-                    {type.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {errors.accountType && (
-              <p className="text-sm text-destructive">
-                {errors.accountType.message}
-              </p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="accountNumber">계좌번호</Label>
-            <Input
-              id="accountNumber"
-              placeholder="예: 123-456-78901234"
-              {...register("accountNumber")}
-              aria-invalid={!!errors.accountNumber}
-            />
-            {errors.accountNumber && (
-              <p className="text-sm text-destructive">
-                {errors.accountNumber.message}
-              </p>
-            )}
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="isDefault"
-              checked={watchIsDefault}
-              onCheckedChange={(checked) =>
-                setValue("isDefault", checked === true)
-              }
-            />
-            <Label htmlFor="isDefault" className="font-normal cursor-pointer">
-              기본 계좌로 설정
-            </Label>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="memo">메모</Label>
-            <Textarea
-              id="memo"
-              placeholder="계좌에 대한 메모를 입력하세요"
-              rows={2}
-              {...register("memo")}
-              aria-invalid={!!errors.memo}
-            />
-            {errors.memo && (
-              <p className="text-sm text-destructive">{errors.memo.message}</p>
-            )}
-          </div>
-        </form>
-
-        <DialogFooter className="flex-col sm:flex-row gap-2">
+        <DrawerFooter>
           {!isEditing && (
             <Button
               type="button"
               variant="outline"
               onClick={handleSaveAndContinue}
               disabled={isPending || isSubmitting}
-              className="sm:order-1"
             >
               저장하고 추가 계속
             </Button>
           )}
-          <div className="flex gap-2 sm:order-2">
+          <div className="flex gap-2">
             <Button
               type="button"
               variant="ghost"
               onClick={() => onOpenChange(false)}
               disabled={isPending || isSubmitting}
+              className="flex-1"
             >
               취소
             </Button>
@@ -322,12 +385,13 @@ export function AccountFormDialog({
               type="button"
               onClick={handleSave}
               disabled={isPending || isSubmitting}
+              className="flex-1"
             >
               {isPending || isSubmitting ? "저장 중..." : "저장"}
             </Button>
           </div>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </DrawerFooter>
+      </DrawerContent>
+    </Drawer>
   );
 }
