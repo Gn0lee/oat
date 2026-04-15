@@ -58,9 +58,10 @@ pnpm vitest run
 
 **테스트 작성 규칙:**
 - 테스트 파일 위치: 테스트 대상 파일과 같은 디렉토리에 `*.test.ts` 또는 `*.test.tsx`
-- 유틸/비즈니스 로직: Vitest 단위 테스트
-- React 컴포넌트: @testing-library/react 사용
 - 테스트명은 한글로 작성 (예: `it('양수 수익률에 + 기호를 붙인다')`)
+- 테스트 원칙과 예시는 `.claude/docs/CONVENTIONS_FE.md` 9번 테스트 섹션을 따르세요
+- `supabase/migrations/` 파일에 대한 vitest 테스트는 작성하지 않습니다
+  → 마이그레이션 검증은 `supabase db reset --local`로만 확인합니다
 
 ### 3단계: TDD Green - 테스트 통과하는 최소 코드 구현
 
