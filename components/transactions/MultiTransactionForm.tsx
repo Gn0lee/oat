@@ -9,7 +9,7 @@ import { TransactionItemRow } from "@/components/transactions/TransactionItemRow
 import { TransactionSummary } from "@/components/transactions/TransactionSummary";
 import { TransactionTypeSelector } from "@/components/transactions/TransactionTypeSelector";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { DatePickerInput } from "@/components/ui/date-picker";
 import { Label } from "@/components/ui/label";
 import { useCreateBatchTransactions } from "@/hooks/use-transaction";
 import {
@@ -47,6 +47,7 @@ export function MultiTransactionForm({
 
   const watchType = useWatch({ control: form.control, name: "type" });
   const watchItems = useWatch({ control: form.control, name: "items" });
+  const watchTransactedAt = form.watch("transactedAt");
 
   // 유효한 항목만 필터링 (종목 선택 + 수량 > 0)
   const getValidItems = () => {
@@ -127,10 +128,12 @@ export function MultiTransactionForm({
       {/* 거래일 */}
       <div className="bg-white rounded-2xl shadow-sm p-5 space-y-4">
         <Label className="text-gray-700">거래일</Label>
-        <Input
-          type="date"
+        <DatePickerInput
+          value={watchTransactedAt ?? ""}
+          onChange={(v) =>
+            form.setValue("transactedAt", v, { shouldValidate: true })
+          }
           className="h-12 rounded-xl"
-          {...form.register("transactedAt")}
         />
         {form.formState.errors.transactedAt && (
           <p className="text-sm text-destructive">

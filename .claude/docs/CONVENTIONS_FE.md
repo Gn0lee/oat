@@ -298,13 +298,39 @@ interface HoldingCardProps {
 
 ## 9. 테스트
 
-### 우선순위 (점진적)
+### 핵심 원칙
 
-| 단계 | 대상 | 도구 |
-|------|------|------|
-| 1단계 (MVP) | 유틸 함수 | Vitest |
-| 2단계 | 폼/컴포넌트 | React Testing Library |
-| 3단계 | E2E | Playwright |
+테스트는 사용자가 앱을 사용하는 방식으로 작성합니다.
+구현 세부사항(CSS 클래스, 내부 state)이 아닌, 사용자에게 보이고 작동하는 것을 검증합니다.
+이 원칙을 지키면 리팩토링 시 테스트가 깨지지 않고, 코드가 실제로 동작하는지 신뢰를 줍니다.
+
+### 예시
+
+```typescript
+// 나쁜 예 — Tailwind 클래스 이름이 바뀌면 깨지지만 사용자에게는 차이 없음
+const grid = container.querySelector('.grid-cols-4')
+expect(grid).toBeInTheDocument()
+
+// 좋은 예 — 클래스가 바뀌어도 사용자 경험은 동일하게 검증됨
+expect(screen.getAllByRole('link')).toHaveLength(4)
+
+// 나쁜 예 — active 상태를 CSS 클래스로 검증
+expect(link.className).toContain('bg-primary/10')
+
+// 좋은 예 — 사용자/스크린리더가 인식하는 방식으로 검증
+expect(screen.getByRole('link', { name: '홈' }))
+  .toHaveAttribute('aria-current', 'page')
+```
+
+### 범위
+
+| 대상 | 도구 |
+|------|------|
+| 유틸 함수, API 함수, 커스텀 훅 | Vitest |
+| UI 컴포넌트 인터랙션 | React Testing Library |
+| 핵심 사용자 플로우 | Playwright (3단계) |
+
+DB 마이그레이션, RLS 정책, 외부 API 실제 호출은 테스트하지 않습니다.
 
 ### 파일 위치
 
