@@ -38,7 +38,10 @@ export type Database = {
         Row: {
           account_number: string | null;
           account_type: Database["public"]["Enums"]["account_type"] | null;
+          balance: number | null;
+          balance_updated_at: string | null;
           broker: string | null;
+          category: Database["public"]["Enums"]["account_category"] | null;
           created_at: string;
           household_id: string;
           id: string;
@@ -51,7 +54,10 @@ export type Database = {
         Insert: {
           account_number?: string | null;
           account_type?: Database["public"]["Enums"]["account_type"] | null;
+          balance?: number | null;
+          balance_updated_at?: string | null;
           broker?: string | null;
+          category?: Database["public"]["Enums"]["account_category"] | null;
           created_at?: string;
           household_id: string;
           id?: string;
@@ -64,7 +70,10 @@ export type Database = {
         Update: {
           account_number?: string | null;
           account_type?: Database["public"]["Enums"]["account_type"] | null;
+          balance?: number | null;
+          balance_updated_at?: string | null;
           broker?: string | null;
+          category?: Database["public"]["Enums"]["account_category"] | null;
           created_at?: string;
           household_id?: string;
           id?: string;
@@ -286,6 +295,76 @@ export type Database = {
             columns: ["household_id"];
             isOneToOne: false;
             referencedRelation: "households";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      payment_methods: {
+        Row: {
+          created_at: string;
+          household_id: string;
+          id: string;
+          is_default: boolean | null;
+          issuer: string | null;
+          last_four: string | null;
+          linked_account_id: string | null;
+          memo: string | null;
+          name: string;
+          owner_id: string;
+          payment_day: number | null;
+          type: Database["public"]["Enums"]["payment_method_type"];
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          household_id: string;
+          id?: string;
+          is_default?: boolean | null;
+          issuer?: string | null;
+          last_four?: string | null;
+          linked_account_id?: string | null;
+          memo?: string | null;
+          name: string;
+          owner_id: string;
+          payment_day?: number | null;
+          type: Database["public"]["Enums"]["payment_method_type"];
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          household_id?: string;
+          id?: string;
+          is_default?: boolean | null;
+          issuer?: string | null;
+          last_four?: string | null;
+          linked_account_id?: string | null;
+          memo?: string | null;
+          name?: string;
+          owner_id?: string;
+          payment_day?: number | null;
+          type?: Database["public"]["Enums"]["payment_method_type"];
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "payment_methods_household_id_fkey";
+            columns: ["household_id"];
+            isOneToOne: false;
+            referencedRelation: "households";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "payment_methods_linked_account_id_fkey";
+            columns: ["linked_account_id"];
+            isOneToOne: false;
+            referencedRelation: "accounts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "payment_methods_owner_id_fkey";
+            columns: ["owner_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
             referencedColumns: ["id"];
           },
         ];
@@ -642,6 +721,7 @@ export type Database = {
       };
     };
     Enums: {
+      account_category: "bank" | "investment";
       account_type:
         | "stock"
         | "savings"
@@ -672,6 +752,12 @@ export type Database = {
       household_role: "owner" | "member";
       invitation_status: "pending" | "accepted" | "expired" | "cancelled";
       market_type: "KR" | "US" | "OTHER";
+      payment_method_type:
+        | "credit_card"
+        | "debit_card"
+        | "prepaid"
+        | "gift_card"
+        | "cash";
       risk_level: "safe" | "moderate" | "aggressive";
       stock_type_category:
         | "stock"
@@ -816,6 +902,7 @@ export const Constants = {
   },
   public: {
     Enums: {
+      account_category: ["bank", "investment"],
       account_type: [
         "stock",
         "savings",
@@ -849,6 +936,13 @@ export const Constants = {
       household_role: ["owner", "member"],
       invitation_status: ["pending", "accepted", "expired", "cancelled"],
       market_type: ["KR", "US", "OTHER"],
+      payment_method_type: [
+        "credit_card",
+        "debit_card",
+        "prepaid",
+        "gift_card",
+        "cash",
+      ],
       risk_level: ["safe", "moderate", "aggressive"],
       stock_type_category: [
         "stock",

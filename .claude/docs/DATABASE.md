@@ -123,6 +123,21 @@ create type account_type as enum (
   'cma',       -- CMA 계좌
   'other'      -- 기타 계좌
 );
+
+-- 계좌 범주 (account_type의 상위 분류)
+create type account_category as enum (
+  'bank',        -- 일반 은행 계좌 (checking, savings, deposit)
+  'investment'   -- 투자 계좌 (stock, cma, isa, pension)
+);
+
+-- 결제수단 유형
+create type payment_method_type as enum (
+  'credit_card',  -- 신용카드
+  'debit_card',   -- 체크카드
+  'prepaid',      -- 선불지갑 (카카오페이머니, 네이버페이머니 등)
+  'gift_card',    -- 상품권
+  'cash'          -- 현금
+);
 ```
 
 ---
@@ -301,6 +316,9 @@ create table public.accounts (
   broker text,
   account_number text,
   account_type account_type,
+  category account_category,         -- 계좌 범주 (bank/investment)
+  balance numeric(18, 2),            -- 현재 잔액 (예수금 포함, 수동 입력)
+  balance_updated_at timestamptz,    -- 잔액 마지막 수정일
   is_default boolean default false,
   memo text,
   created_at timestamptz default now() not null,
@@ -322,10 +340,20 @@ create index accounts_owner_id_idx on public.accounts(owner_id);
 | broker | text (nullable) | 증권사/은행명 |
 | account_number | text (nullable) | 계좌번호 |
 | account_type | enum (nullable) | 계좌 유형 |
+| category | enum (nullable) | 계좌 범주 (bank/investment) |
+| balance | numeric (nullable) | 현재 잔액 — 증권 계좌는 예수금, 은행 계좌는 잔액 |
+| balance_updated_at | timestamptz (nullable) | 잔액 마지막 수정일 |
 | is_default | boolean | 기본 계좌 여부 |
 | memo | text (nullable) | 메모 |
 | created_at | timestamptz | 생성일 |
 | updated_at | timestamptz | 수정일 |
+
+**account_category 분류**
+
+| category | account_type |
+|----------|-------------|
+| bank | checking, savings, deposit |
+| investment | stock, cma, isa, pension |
 
 ---
 
@@ -471,7 +499,55 @@ create index holding_tags_tag_id_idx on public.holding_tags(tag_id);
 
 ---
 
-### 11. target_allocations (목표 비중)
+### 11. payment_methods (결제수단)
+
+결제수단은 지출 시 "어떻게 결제했는지"를 추적하기 위한 수단입니다. 계좌(accounts)와 달리 총 자산에 포함되지 않습니다.
+
+> **선불지갑 (카카오페이머니 등)**: 현재는 `type = 'prepaid'`로 등록하여 지출 추적에만 사용합니다. 향후 `prepaid_wallets` 테이블 추가 시 `payment_methods`에 FK 컬럼을 추가하여 잔액/자산 추적을 확장할 수 있습니다.
+
+```sql
+create table public.payment_methods (
+  id uuid primary key default gen_random_uuid(),
+  household_id uuid not null references public.households(id) on delete cascade,
+  owner_id uuid not null references public.profiles(id) on delete cascade,
+  name text not null,
+  type payment_method_type not null,
+  linked_account_id uuid references public.accounts(id) on delete set null,
+  issuer text,
+  last_four text,
+  payment_day smallint check (payment_day is null or (payment_day between 1 and 31)),
+  is_default boolean default false,
+  memo text,
+  created_at timestamptz default now() not null,
+  updated_at timestamptz default now() not null,
+  unique (household_id, owner_id, name)
+);
+
+-- 인덱스
+create index payment_methods_household_id_idx on public.payment_methods(household_id);
+create index payment_methods_owner_id_idx on public.payment_methods(owner_id);
+create index payment_methods_linked_account_id_idx on public.payment_methods(linked_account_id);
+```
+
+| 컬럼 | 타입 | 설명 |
+|------|------|------|
+| id | uuid (PK) | 고유 ID |
+| household_id | uuid (FK) | 소속 가구 |
+| owner_id | uuid (FK) | 소유자 |
+| name | text | 결제수단명 (예: 삼성카드 체크) |
+| type | enum | 결제수단 유형 |
+| linked_account_id | uuid (FK, nullable) | 연결 계좌 (체크카드→출금계좌, 신용카드→결제계좌) |
+| issuer | text (nullable) | 카드사/서비스명 (삼성카드, 카카오 등) |
+| last_four | text (nullable) | 카드 끝 4자리 |
+| payment_day | smallint (nullable) | 신용카드 결제일 (1~31) |
+| is_default | boolean | 기본 결제수단 여부 |
+| memo | text (nullable) | 메모 |
+| created_at | timestamptz | 생성일 |
+| updated_at | timestamptz | 수정일 |
+
+---
+
+### 12. target_allocations (목표 비중)
 
 ```sql
 create table public.target_allocations (
@@ -897,6 +973,28 @@ create policy "Users can view household holding_tags"
 create policy "Users can manage household holding_tags"
   on public.holding_tags for all
   using (is_household_member(household_id));
+```
+
+### payment_methods
+
+```sql
+alter table public.payment_methods enable row level security;
+
+create policy "Users can view household payment methods"
+  on public.payment_methods for select
+  using (is_household_member(household_id));
+
+create policy "Users can insert household payment methods"
+  on public.payment_methods for insert
+  with check (is_household_member(household_id));
+
+create policy "Users can update own payment methods"
+  on public.payment_methods for update
+  using (is_household_member(household_id) and owner_id = (select auth.uid()));
+
+create policy "Users can delete own payment methods"
+  on public.payment_methods for delete
+  using (is_household_member(household_id) and owner_id = (select auth.uid()));
 ```
 
 ### target_allocations
