@@ -1,8 +1,5 @@
 import { z } from "zod";
 
-/**
- * 계좌 유형 enum 값
- */
 const accountTypeValues = [
   "stock",
   "savings",
@@ -14,9 +11,8 @@ const accountTypeValues = [
   "other",
 ] as const;
 
-/**
- * 계좌 생성 요청 스키마
- */
+const accountCategoryValues = ["bank", "investment"] as const;
+
 export const createAccountSchema = z.object({
   name: z
     .string()
@@ -33,15 +29,14 @@ export const createAccountSchema = z.object({
   accountType: z.enum(accountTypeValues, {
     message: "계좌 유형을 선택해주세요.",
   }),
+  category: z.enum(accountCategoryValues).optional(),
+  balance: z.number().optional(),
   isDefault: z.boolean().optional().default(false),
   memo: z.string().max(500, "메모는 500자 이내여야 합니다.").optional(),
 });
 
 export type CreateAccountInput = z.infer<typeof createAccountSchema>;
 
-/**
- * 계좌 수정 요청 스키마
- */
 export const updateAccountSchema = z.object({
   name: z
     .string()
@@ -63,6 +58,8 @@ export const updateAccountSchema = z.object({
       message: "유효한 계좌 유형이 아닙니다.",
     })
     .optional(),
+  category: z.enum(accountCategoryValues).nullable().optional(),
+  balance: z.number().nullable().optional(),
   isDefault: z.boolean().optional(),
   memo: z
     .string()

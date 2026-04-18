@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { APIError } from "@/lib/api/error";
-import type { Account, AccountType, Database } from "@/types";
+import type { Account, AccountCategory, AccountType, Database } from "@/types";
 
 export interface CreateAccountParams {
   householdId: string;
@@ -9,6 +9,8 @@ export interface CreateAccountParams {
   broker?: string;
   accountNumber?: string;
   accountType: AccountType;
+  category?: AccountCategory;
+  balance?: number;
   isDefault?: boolean;
   memo?: string;
 }
@@ -18,6 +20,8 @@ export interface UpdateAccountParams {
   broker?: string | null;
   accountNumber?: string | null;
   accountType?: AccountType;
+  category?: AccountCategory | null;
+  balance?: number | null;
   isDefault?: boolean;
   memo?: string | null;
 }
@@ -31,6 +35,9 @@ export interface AccountWithOwner {
   broker: string | null;
   accountNumber: string | null;
   accountType: AccountType | null;
+  category: AccountCategory | null;
+  balance: number | null;
+  balanceUpdatedAt: string | null;
   isDefault: boolean;
   memo: string | null;
   createdAt: string;
@@ -73,6 +80,9 @@ export async function getAccounts(
     broker: account.broker,
     accountNumber: account.account_number,
     accountType: account.account_type,
+    category: account.category,
+    balance: account.balance,
+    balanceUpdatedAt: account.balance_updated_at,
     isDefault: account.is_default ?? false,
     memo: account.memo,
     createdAt: account.created_at,
@@ -95,6 +105,8 @@ export async function createAccount(
     broker,
     accountNumber,
     accountType,
+    category,
+    balance,
     isDefault,
     memo,
   } = params;
@@ -134,6 +146,9 @@ export async function createAccount(
       broker: broker || null,
       account_number: accountNumber || null,
       account_type: accountType,
+      category: category ?? null,
+      balance: balance ?? null,
+      balance_updated_at: balance != null ? new Date().toISOString() : null,
       is_default: isDefault ?? false,
       memo: memo || null,
     })
@@ -217,6 +232,11 @@ export async function updateAccount(
       }),
       ...(params.accountType !== undefined && {
         account_type: params.accountType,
+      }),
+      ...(params.category !== undefined && { category: params.category }),
+      ...(params.balance !== undefined && {
+        balance: params.balance,
+        balance_updated_at: new Date().toISOString(),
       }),
       ...(params.isDefault !== undefined && { is_default: params.isDefault }),
       ...(params.memo !== undefined && { memo: params.memo }),
