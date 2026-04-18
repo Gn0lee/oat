@@ -127,4 +127,24 @@ describe("updatePaymentMethodSchema", () => {
     });
     expect(result.success).toBe(true);
   });
+
+  it("lastFour가 3자리이면 실패한다", () => {
+    const result = updatePaymentMethodSchema.safeParse({ lastFour: "123" });
+    expect(result.success).toBe(false);
+  });
+
+  it("lastFour가 문자 포함이면 실패한다", () => {
+    const result = updatePaymentMethodSchema.safeParse({ lastFour: "12AB" });
+    expect(result.success).toBe(false);
+  });
+
+  it("paymentDay가 0이면 실패한다", () => {
+    const result = updatePaymentMethodSchema.safeParse({ paymentDay: 0 });
+    expect(result.success).toBe(false);
+  });
+
+  it("paymentDay가 32이면 실패한다", () => {
+    const result = updatePaymentMethodSchema.safeParse({ paymentDay: 32 });
+    expect(result.success).toBe(false);
+  });
 });

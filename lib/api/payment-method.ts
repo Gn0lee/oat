@@ -73,7 +73,9 @@ export async function getPaymentMethods(
   ];
 
   const [{ data: profiles }, { data: accounts }] = await Promise.all([
-    supabase.from("profiles").select("id, name").in("id", ownerIds),
+    ownerIds.length > 0
+      ? supabase.from("profiles").select("id, name").in("id", ownerIds)
+      : Promise.resolve({ data: [] }),
     accountIds.length > 0
       ? supabase.from("accounts").select("id, name").in("id", accountIds)
       : Promise.resolve({ data: [] }),
