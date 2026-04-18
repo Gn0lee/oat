@@ -36,37 +36,52 @@ import { Textarea } from "@/components/ui/textarea";
 import { useCreateAccount, useUpdateAccount } from "@/hooks/use-accounts";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import type { AccountWithOwner } from "@/lib/api/account";
-import type { AccountType } from "@/types";
 
-type StockAccountType = Extract<
-  AccountType,
-  "stock" | "isa" | "pension" | "cma"
->;
+const BANK_ACCOUNT_TYPES = ["checking", "savings", "deposit"] as const;
+const INVESTMENT_ACCOUNT_TYPES = ["stock", "isa", "pension", "cma"] as const;
 
-const STOCK_ACCOUNT_TYPE_VALUES: StockAccountType[] = [
-  "stock",
-  "isa",
-  "pension",
-  "cma",
-];
+type BankAccountType = (typeof BANK_ACCOUNT_TYPES)[number];
+type InvestmentAccountType = (typeof INVESTMENT_ACCOUNT_TYPES)[number];
 
-const accountFormSchema = z.object({
+const bankAccountFormSchema = z.object({
   name: z
     .string()
     .min(1, "계좌명은 필수입니다.")
     .max(50, "계좌명은 50자 이내여야 합니다."),
   broker: z.string().max(50, "증권사/은행명은 50자 이내여야 합니다."),
   accountNumber: z.string().max(50, "계좌번호는 50자 이내여야 합니다."),
-  accountType: z.enum(["stock", "isa", "pension", "cma"], {
+  accountType: z.enum(BANK_ACCOUNT_TYPES, {
     message: "계좌 유형을 선택해주세요.",
   }),
   isDefault: z.boolean(),
   memo: z.string().max(500, "메모는 500자 이내여야 합니다."),
 });
 
-type AccountFormData = z.infer<typeof accountFormSchema>;
+const investmentAccountFormSchema = z.object({
+  name: z
+    .string()
+    .min(1, "계좌명은 필수입니다.")
+    .max(50, "계좌명은 50자 이내여야 합니다."),
+  broker: z.string().max(50, "증권사/은행명은 50자 이내여야 합니다."),
+  accountNumber: z.string().max(50, "계좌번호는 50자 이내여야 합니다."),
+  accountType: z.enum(INVESTMENT_ACCOUNT_TYPES, {
+    message: "계좌 유형을 선택해주세요.",
+  }),
+  isDefault: z.boolean(),
+  memo: z.string().max(500, "메모는 500자 이내여야 합니다."),
+});
 
-const ACCOUNT_TYPES = [
+type BankAccountFormData = z.infer<typeof bankAccountFormSchema>;
+type InvestmentAccountFormData = z.infer<typeof investmentAccountFormSchema>;
+type AccountFormData = BankAccountFormData | InvestmentAccountFormData;
+
+const BANK_ACCOUNT_TYPE_OPTIONS = [
+  { value: "checking", label: "입출금" },
+  { value: "savings", label: "적금" },
+  { value: "deposit", label: "예금" },
+] as const;
+
+const INVESTMENT_ACCOUNT_TYPE_OPTIONS = [
   { value: "stock", label: "일반" },
   { value: "isa", label: "ISA" },
   { value: "pension", label: "연금저축" },
@@ -77,16 +92,31 @@ interface AccountFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   account?: AccountWithOwner | null;
+  category?: "bank" | "investment";
 }
 
 export function AccountFormDialog({
   open,
   onOpenChange,
   account,
+  category = "investment",
 }: AccountFormDialogProps) {
   const isEditing = !!account;
   const createAccount = useCreateAccount();
   const updateAccount = useUpdateAccount();
+
+  const effectiveCategory =
+    account?.category ??
+    (BANK_ACCOUNT_TYPES.includes(account?.accountType as BankAccountType)
+      ? "bank"
+      : category);
+
+  const isBank = effectiveCategory === "bank";
+  const schema = isBank ? bankAccountFormSchema : investmentAccountFormSchema;
+  const defaultAccountType = isBank ? "checking" : "stock";
+  const accountTypeOptions = isBank
+    ? BANK_ACCOUNT_TYPE_OPTIONS
+    : INVESTMENT_ACCOUNT_TYPE_OPTIONS;
 
   const {
     register,
@@ -96,12 +126,13 @@ export function AccountFormDialog({
     reset,
     formState: { errors, isSubmitting },
   } = useForm<AccountFormData>({
-    resolver: zodResolver(accountFormSchema),
+    resolver: zodResolver(schema),
     defaultValues: {
       name: "",
       broker: "",
       accountNumber: "",
-      accountType: "stock",
+      accountType: defaultAccountType as BankAccountType &
+        InvestmentAccountType,
       isDefault: false,
       memo: "",
     },
@@ -112,21 +143,18 @@ export function AccountFormDialog({
   useEffect(() => {
     if (open) {
       if (account) {
-        const isStockAccountType = (
-          type: AccountType | null,
-        ): type is StockAccountType =>
-          type !== null &&
-          STOCK_ACCOUNT_TYPE_VALUES.includes(type as StockAccountType);
-
-        const accountType = isStockAccountType(account.accountType)
+        const validTypes = isBank
+          ? (BANK_ACCOUNT_TYPES as readonly string[])
+          : (INVESTMENT_ACCOUNT_TYPES as readonly string[]);
+        const resolvedType = validTypes.includes(account.accountType ?? "")
           ? account.accountType
-          : "stock";
+          : defaultAccountType;
 
         reset({
           name: account.name,
           broker: account.broker || "",
           accountNumber: account.accountNumber || "",
-          accountType,
+          accountType: resolvedType as BankAccountType & InvestmentAccountType,
           isDefault: account.isDefault,
           memo: account.memo || "",
         });
@@ -135,13 +163,14 @@ export function AccountFormDialog({
           name: "",
           broker: "",
           accountNumber: "",
-          accountType: "stock",
+          accountType: defaultAccountType as BankAccountType &
+            InvestmentAccountType,
           isDefault: false,
           memo: "",
         });
       }
     }
-  }, [open, account, reset]);
+  }, [open, account, reset, isBank, defaultAccountType]);
 
   const onSubmit = async (data: AccountFormData, continueAdding = false) => {
     try {
@@ -153,6 +182,7 @@ export function AccountFormDialog({
             broker: data.broker || null,
             accountNumber: data.accountNumber || null,
             accountType: data.accountType,
+            category: isBank ? "bank" : "investment",
             isDefault: data.isDefault,
             memo: data.memo || null,
           },
@@ -160,7 +190,10 @@ export function AccountFormDialog({
         toast.success("계좌가 수정되었습니다.");
         onOpenChange(false);
       } else {
-        await createAccount.mutateAsync(data);
+        await createAccount.mutateAsync({
+          ...data,
+          category: isBank ? "bank" : "investment",
+        });
         toast.success(`${data.name} 계좌가 추가되었습니다.`);
 
         if (continueAdding) {
@@ -201,7 +234,9 @@ export function AccountFormDialog({
         </Label>
         <Input
           id="name"
-          placeholder="예: 삼성증권 주식계좌"
+          placeholder={
+            isBank ? "예: 국민은행 입출금통장" : "예: 삼성증권 주식계좌"
+          }
           {...register("name")}
           aria-invalid={!!errors.name}
         />
@@ -211,10 +246,12 @@ export function AccountFormDialog({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="broker">증권사/은행</Label>
+        <Label htmlFor="broker">{isBank ? "은행" : "증권사/은행"}</Label>
         <Input
           id="broker"
-          placeholder="예: 삼성증권, 토스증권"
+          placeholder={
+            isBank ? "예: 국민은행, 신한은행" : "예: 삼성증권, 토스증권"
+          }
           {...register("broker")}
           aria-invalid={!!errors.broker}
         />
@@ -229,15 +266,18 @@ export function AccountFormDialog({
         </Label>
         <Select
           value={watch("accountType")}
-          onValueChange={(value: StockAccountType) =>
-            setValue("accountType", value)
+          onValueChange={(value) =>
+            setValue(
+              "accountType",
+              value as BankAccountType & InvestmentAccountType,
+            )
           }
         >
           <SelectTrigger id="accountType">
             <SelectValue placeholder="계좌 유형 선택" />
           </SelectTrigger>
           <SelectContent>
-            {ACCOUNT_TYPES.map((type) => (
+            {accountTypeOptions.map((type) => (
               <SelectItem key={type.value} value={type.value}>
                 {type.label}
               </SelectItem>
@@ -293,17 +333,24 @@ export function AccountFormDialog({
     </>
   );
 
+  const title = isEditing
+    ? "계좌 수정"
+    : isBank
+      ? "은행 계좌 추가"
+      : "투자 계좌 추가";
+  const description = isEditing
+    ? "계좌 정보를 수정합니다."
+    : isBank
+      ? "새로운 은행 계좌를 등록합니다."
+      : "새로운 투자 계좌를 등록합니다.";
+
   if (isDesktop) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{isEditing ? "계좌 수정" : "계좌 추가"}</DialogTitle>
-            <DialogDescription>
-              {isEditing
-                ? "계좌 정보를 수정합니다."
-                : "새로운 계좌를 등록합니다."}
-            </DialogDescription>
+            <DialogTitle>{title}</DialogTitle>
+            <DialogDescription>{description}</DialogDescription>
           </DialogHeader>
 
           <form className="space-y-4">{formFields}</form>
@@ -343,17 +390,12 @@ export function AccountFormDialog({
     );
   }
 
-  // 모바일: Drawer (Bottom Sheet)
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent>
         <DrawerHeader>
-          <DrawerTitle>{isEditing ? "계좌 수정" : "계좌 추가"}</DrawerTitle>
-          <DrawerDescription>
-            {isEditing
-              ? "계좌 정보를 수정합니다."
-              : "새로운 계좌를 등록합니다."}
-          </DrawerDescription>
+          <DrawerTitle>{title}</DrawerTitle>
+          <DrawerDescription>{description}</DrawerDescription>
         </DrawerHeader>
 
         <div className="overflow-y-auto flex-1 px-4">

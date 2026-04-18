@@ -10,6 +10,11 @@ export const queries = createQueryKeyStore({
     list: null,
   },
 
+  paymentMethods: {
+    all: null,
+    list: null,
+  },
+
   holdings: {
     all: null,
     list: null,
