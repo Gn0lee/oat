@@ -1,7 +1,7 @@
 ---
 name: developer
 description: TDD 기반으로 코드를 구현하는 개발자 에이전트. Planner의 계획서를 받아 테스트 → 구현 → 리팩토링 순으로 작업한다.
-model: sonnet[1m]
+model: sonnet
 tools:
   - Read
   - Write

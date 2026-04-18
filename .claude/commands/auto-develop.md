@@ -122,7 +122,7 @@ date +%s
 - **팀 이름**: `auto-dev-{이슈번호}`
 - **Planner 팀메이트**: `planner` 에이전트 타입 사용, Sonnet 모델
 - **Reviewer 팀메이트**: `reviewer` 에이전트 타입 사용, Sonnet 모델
-- **Developer 팀메이트**: `developer` 에이전트 타입 사용, Sonnet(1M) 모델, **plan approval 필수**
+- **Developer 팀메이트**: `developer` 에이전트 타입 사용, Sonnet 모델, **plan approval 필수**
 
 Planner 스폰 시 다음 컨텍스트를 프롬프트에 포함합니다:
 
