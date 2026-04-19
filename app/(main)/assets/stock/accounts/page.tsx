@@ -22,7 +22,7 @@ export default function AccountsPage() {
         }
       />
 
-      <AccountList />
+      <AccountList filter="investment" />
 
       <AccountFormDialog open={isFormOpen} onOpenChange={setIsFormOpen} />
     </PageContainer>
