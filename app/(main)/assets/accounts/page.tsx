@@ -1,19 +1,10 @@
-"use client";
-
 import { Plus } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
-import {
-  AccountList,
-  PaymentMethodFormDialog,
-  PaymentMethodList,
-} from "@/components/accounts";
+import { AccountList, PaymentMethodList } from "@/components/accounts";
 import { PageContainer, PageHeader } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 
 export default function AccountsPage() {
-  const [openPaymentDialog, setOpenPaymentDialog] = useState(false);
-
   return (
     <PageContainer maxWidth="medium">
       <PageHeader
@@ -40,11 +31,6 @@ export default function AccountsPage() {
           <PaymentMethodList />
         </section>
       </div>
-
-      <PaymentMethodFormDialog
-        open={openPaymentDialog}
-        onOpenChange={setOpenPaymentDialog}
-      />
     </PageContainer>
   );
 }
