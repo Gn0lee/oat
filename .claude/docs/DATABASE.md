@@ -27,23 +27,24 @@
 ┌─────────────┐       ┌─────────────┐         ┌─────────────┐
 │ invitations │       │  accounts   │────────>│transactions │
 └─────────────┘       └─────────────┘         └─────────────┘
-                                                      │
-                      ┌──────────────────────┐        │
-                      │ household_stock_     │────────┘
-                      │ settings             │
-                      └──────────────────────┘
-                                                        │
-                                                        ▼
-┌─────────────┐       ┌─────────────┐           ┌─────────────┐
-│    tags     │──────<│holding_tags │>─────────<│  holdings   │
-└─────────────┘       └─────────────┘           │   (View)    │
-                                                └─────────────┘
-                                                        │
-                                                        ▼
-                                                ┌───────────────┐
-                                                │ target_       │
-                                                │ allocations   │
-                                                └───────────────┘
+                             │                        │
+                             │         ┌──────────────────────┐
+                             │         │ household_stock_     │────┘
+                             │         │ settings             │
+                             │         └──────────────────────┘
+                             │                        │
+                             ▼                        ▼
+                      ┌──────────────┐        ┌─────────────┐
+                      │ payment_     │        │  holdings   │
+                      │ methods      │        │   (View)    │
+                      └──────────────┘        └─────────────┘
+                             │
+                             ▼
+=== 가계부 테이블 ===
+
+┌─────────────┐       ┌──────────────────┐
+│ categories  │──────<│  ledger_entries  │
+└─────────────┘       └──────────────────┘
 
 === 시스템 테이블 (GitHub Actions 동기화) ===
 
@@ -137,6 +138,19 @@ create type payment_method_type as enum (
   'prepaid',      -- 선불지갑 (카카오페이머니, 네이버페이머니 등)
   'gift_card',    -- 상품권
   'cash'          -- 현금
+);
+
+-- 가계부 항목 유형
+create type ledger_entry_type as enum (
+  'expense',   -- 지출
+  'income',    -- 수입
+  'transfer'   -- 이체 (계좌→계좌, 계좌→결제수단)
+);
+
+-- 카테고리 유형
+create type category_type as enum (
+  'expense',  -- 지출 카테고리
+  'income'    -- 수입 카테고리
 );
 ```
 
@@ -565,6 +579,95 @@ create table public.target_allocations (
 -- 인덱스
 create index target_allocations_household_id_idx on public.target_allocations(household_id);
 ```
+
+---
+
+## 가계부 테이블
+
+### categories (지출/수입 카테고리)
+
+가구별로 기본 카테고리를 복사하여 사용. 가입 시 `seed_household_categories()` 함수로 자동 생성.
+
+```sql
+create table public.categories (
+  id            uuid primary key default gen_random_uuid(),
+  household_id  uuid not null references public.households(id) on delete cascade,
+  type          category_type not null,        -- expense / income
+  name          text not null,
+  icon          text,                          -- Lucide 아이콘명 (예: 'utensils'). null이면 UI 기본 아이콘
+  display_order integer not null default 0,
+  is_system     boolean not null default false, -- true: 기본 제공, RLS로 수정/삭제 불가
+  created_at    timestamptz default now() not null,
+  updated_at    timestamptz default now() not null,
+
+  unique (household_id, type, name)
+);
+```
+
+| 컬럼 | 타입 | 설명 |
+|------|------|------|
+| id | uuid (PK) | 고유 ID |
+| household_id | uuid (FK) | 소속 가구 |
+| type | enum | expense / income |
+| name | text | 카테고리명 |
+| icon | text (nullable) | Lucide 아이콘명. 앱 레이어에서 zod로 유효성 검증 |
+| display_order | integer | 정렬 순서 |
+| is_system | boolean | true면 RLS로 수정/삭제 불가 |
+
+**아이콘 저장 방식**: Lucide 아이콘명 문자열(`'utensils'`, `'home'` 등)을 저장. DB enum 없이 `CATEGORY_ICON_NAMES` 코드 상수와 zod로 유효성 검증. 잘못된 값이 들어온 경우 컴포넌트에서 fallback 아이콘 표시.
+
+---
+
+### ledger_entries (가계부 기록)
+
+지출/수입/이체를 단일 테이블에 저장. `is_shared` 컬럼으로 공용/개인 구분.
+
+```sql
+create table public.ledger_entries (
+  id                   uuid primary key default gen_random_uuid(),
+  household_id         uuid not null references public.households(id) on delete cascade,
+  owner_id             uuid not null references public.profiles(id) on delete cascade,
+  type                 ledger_entry_type not null,          -- expense / income / transfer
+  amount               numeric(18, 2) not null check (amount > 0),
+  category_id          uuid references public.categories(id) on delete set null,
+  payment_method_id    uuid references public.payment_methods(id) on delete set null,  -- 지출 결제수단
+  account_id           uuid references public.accounts(id) on delete set null,         -- 수입 입금 계좌
+  from_account_id      uuid references public.accounts(id) on delete set null,         -- 이체 출금 계좌
+  to_account_id        uuid references public.accounts(id) on delete set null,         -- 이체 입금 계좌
+  to_payment_method_id uuid references public.payment_methods(id) on delete set null,  -- 이체 → 결제수단
+  is_shared            boolean not null default true,
+  memo                 text,
+  transacted_at        timestamptz not null,
+  created_at           timestamptz default now() not null,
+  updated_at           timestamptz default now() not null
+);
+```
+
+| 컬럼 | 타입 | 사용 조건 |
+|------|------|----------|
+| category_id | FK (nullable) | 지출/수입. 이체는 null |
+| payment_method_id | FK (nullable) | 지출 시 결제에 사용한 수단 |
+| account_id | FK (nullable) | 수입 시 입금된 계좌 |
+| from_account_id | FK (nullable) | 이체 시 출금 계좌 |
+| to_account_id | FK (nullable) | 이체 시 입금 계좌 (계좌→계좌) |
+| to_payment_method_id | FK (nullable) | 이체 시 충전 대상 (계좌→결제수단) |
+| is_shared | boolean | true: 가구원 전체 조회 가능 / false: 본인만 조회 가능 |
+
+**이체 유형별 컬럼 사용**
+
+| 이체 유형 | from_account_id | to_account_id | to_payment_method_id |
+|----------|:-:|:-:|:-:|
+| 계좌→계좌 (적금 납입) | ✓ | ✓ | - |
+| 계좌→결제수단 (상품권/페이 충전) | ✓ | - | ✓ |
+
+**RLS 정책 요약**
+
+| 조건 | SELECT 가능 범위 |
+|------|----------------|
+| is_shared = true | 같은 가구 구성원 전체 |
+| is_shared = false | 기록한 본인(owner_id)만. 가구 `owner` 역할과 무관 |
+
+파트너에게 개인 지출 월 합계만 노출: `get_private_entry_totals(hh_id, year, month)` SECURITY DEFINER 함수 사용.
 
 ---
 
@@ -1124,5 +1227,6 @@ supabase/
     ├── 20240101000011_create_rls_helpers.sql
     ├── 20240101000012_create_rls_policies.sql
     ├── 20240101000013_create_stock_master.sql
-    └── 20240101000014_create_exchange_rates.sql
+    ├── 20240101000014_create_exchange_rates.sql
+    └── 20260423000000_create_ledger_schema.sql   ← categories, ledger_entries, RLS
 ```
