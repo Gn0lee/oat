@@ -1,6 +1,44 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { APIError } from "@/lib/api/error";
+import type { CreateLedgerEntryInput } from "@/schemas/ledger-entry";
 import type { Database, LedgerEntry, LedgerEntryType } from "@/types";
+
+export interface LedgerItemFormData {
+  amount: string;
+  title: string;
+  categoryId: string;
+  paymentMethodId?: string;
+  accountId?: string;
+  transactedAt: string;
+  memo?: string;
+}
+
+export function buildLedgerEntryPayload(
+  type: "expense" | "income",
+  isShared: boolean,
+  item: LedgerItemFormData,
+): CreateLedgerEntryInput {
+  const base: CreateLedgerEntryInput = {
+    type,
+    amount: Number(item.amount),
+    transactedAt: item.transactedAt.includes("T")
+      ? item.transactedAt
+      : `${item.transactedAt}T00:00:00.000Z`,
+    title: item.title,
+    categoryId: item.categoryId,
+    isShared,
+    memo: item.memo || undefined,
+  };
+
+  if (type === "expense" && item.paymentMethodId) {
+    base.fromPaymentMethodId = item.paymentMethodId;
+  }
+  if (type === "income" && item.accountId) {
+    base.toAccountId = item.accountId;
+  }
+
+  return base;
+}
 
 export interface LedgerEntryWithDetails {
   id: string;
@@ -9,6 +47,7 @@ export interface LedgerEntryWithDetails {
   ownerName: string;
   type: LedgerEntryType;
   amount: number;
+  title: string | null;
   categoryId: string | null;
   categoryName: string | null;
   categoryIcon: string | null;
@@ -45,6 +84,7 @@ export interface CreateLedgerEntryParams {
   type: LedgerEntryType;
   amount: number;
   transactedAt: string;
+  title?: string;
   categoryId?: string;
   fromAccountId?: string;
   fromPaymentMethodId?: string;
@@ -58,6 +98,7 @@ export interface UpdateLedgerEntryParams {
   type?: LedgerEntryType;
   amount?: number;
   transactedAt?: string;
+  title?: string | null;
   categoryId?: string | null;
   fromAccountId?: string | null;
   fromPaymentMethodId?: string | null;
@@ -201,6 +242,7 @@ export async function getLedgerEntries(
     ownerName: ownerMap.get(r.owner_id) ?? "알 수 없음",
     type: r.type,
     amount: r.amount,
+    title: r.title,
     categoryId: r.category_id,
     categoryName: r.category_id
       ? (categoryMap.get(r.category_id)?.name ?? null)
@@ -271,6 +313,7 @@ export async function createLedgerEntry(
       type: params.type,
       amount: params.amount,
       transacted_at: params.transactedAt,
+      title: params.title ?? null,
       category_id: params.categoryId ?? null,
       from_account_id: params.fromAccountId ?? null,
       from_payment_method_id: params.fromPaymentMethodId ?? null,
@@ -330,6 +373,7 @@ export async function updateLedgerEntry(
       ...(params.transactedAt !== undefined && {
         transacted_at: params.transactedAt,
       }),
+      ...(params.title !== undefined && { title: params.title }),
       ...(params.categoryId !== undefined && {
         category_id: params.categoryId,
       }),

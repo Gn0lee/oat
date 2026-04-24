@@ -8,6 +8,10 @@ export const createLedgerEntrySchema = z.object({
   }),
   amount: z.number().positive("금액은 0보다 커야 합니다."),
   transactedAt: z.string().datetime("올바른 날짜 형식이 아닙니다."),
+  title: z
+    .string()
+    .min(1, "내용을 입력해주세요.")
+    .max(100, "내용은 100자 이내여야 합니다."),
   categoryId: z.string().uuid().optional(),
   fromAccountId: z.string().uuid().optional(),
   fromPaymentMethodId: z.string().uuid().optional(),
@@ -27,6 +31,11 @@ export const updateLedgerEntrySchema = z.object({
     .optional(),
   amount: z.number().positive("금액은 0보다 커야 합니다.").optional(),
   transactedAt: z.string().datetime("올바른 날짜 형식이 아닙니다.").optional(),
+  title: z
+    .string()
+    .max(100, "내용은 100자 이내여야 합니다.")
+    .nullable()
+    .optional(),
   categoryId: z.string().uuid().nullable().optional(),
   fromAccountId: z.string().uuid().nullable().optional(),
   fromPaymentMethodId: z.string().uuid().nullable().optional(),

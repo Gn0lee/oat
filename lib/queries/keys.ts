@@ -68,6 +68,19 @@ export const queries = createQueryKeyStore({
     holiday: null,
   },
 
+  categories: {
+    all: null,
+    list: (type?: "expense" | "income") => ({ queryKey: [type] }),
+  },
+
+  ledgerEntries: {
+    all: null,
+    list: (params?: { year?: number; month?: number; date?: string }) => ({
+      queryKey: [params],
+    }),
+    summary: (year: number, month: number) => ({ queryKey: [year, month] }),
+  },
+
   household: {
     all: null,
     members: null,

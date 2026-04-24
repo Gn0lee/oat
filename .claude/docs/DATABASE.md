@@ -629,6 +629,7 @@ create table public.ledger_entries (
   owner_id             uuid not null references public.profiles(id) on delete cascade,
   type                 ledger_entry_type not null,          -- expense / income / transfer
   amount               numeric(18, 2) not null check (amount > 0),
+  title                text,                                -- 내용/제목 (예: 이마트 장보기)
   category_id            uuid references public.categories(id) on delete set null,
   -- 돈의 출발지/목적지: 계좌 또는 결제수단 중 하나
   -- 지출: from_* 하나만 / 수입: to_* 하나만 / 이체: from_* + to_* 둘 다
@@ -637,7 +638,7 @@ create table public.ledger_entries (
   to_account_id          uuid references public.accounts(id) on delete set null,
   to_payment_method_id   uuid references public.payment_methods(id) on delete set null,
   is_shared            boolean not null default true,
-  memo                 text,
+  memo                 text,                                -- 부가 설명 (선택)
   transacted_at        timestamptz not null,
   created_at           timestamptz default now() not null,
   updated_at           timestamptz default now() not null
@@ -646,12 +647,14 @@ create table public.ledger_entries (
 
 | 컬럼 | 타입 | 설명 |
 |------|------|------|
+| title | text (nullable) | 내용/제목 (예: "이마트 장보기"). 없으면 카테고리명으로 표시 |
 | category_id | FK (nullable) | 지출/수입. 이체는 null |
 | from_account_id | FK (nullable) | 출발지가 계좌인 경우 |
 | from_payment_method_id | FK (nullable) | 출발지가 결제수단인 경우 (카드, 현금, 페이 등) |
 | to_account_id | FK (nullable) | 목적지가 계좌인 경우 |
 | to_payment_method_id | FK (nullable) | 목적지가 결제수단인 경우 (페이 충전, 상품권 구매 등) |
 | is_shared | boolean | true: 가구원 전체 조회 가능 / false: 본인만 조회 가능 |
+| memo | text (nullable) | 부가 설명. title과 분리된 진짜 메모 |
 
 **유형별 컬럼 사용 패턴**
 

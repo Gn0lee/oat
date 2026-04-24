@@ -116,6 +116,7 @@ export async function POST(request: Request) {
       type: input.type,
       amount: input.amount,
       transactedAt: input.transactedAt,
+      title: input.title,
       categoryId: input.categoryId,
       fromAccountId: input.fromAccountId,
       fromPaymentMethodId: input.fromPaymentMethodId,
