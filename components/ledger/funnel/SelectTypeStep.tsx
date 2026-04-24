@@ -1,21 +1,19 @@
 "use client";
 
 import { ArrowLeftIcon, TrendingDownIcon, TrendingUpIcon } from "lucide-react";
-import { useRouter } from "next/navigation";
 
 interface SelectTypeStepProps {
   onSelect: (type: "expense" | "income") => void;
+  onBack: () => void;
 }
 
-export function SelectTypeStep({ onSelect }: SelectTypeStepProps) {
-  const router = useRouter();
-
+export function SelectTypeStep({ onSelect, onBack }: SelectTypeStepProps) {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
         <button
           type="button"
-          onClick={() => router.push("/ledger")}
+          onClick={onBack}
           className="p-2 -ml-2 hover:bg-gray-100 rounded-lg transition-colors"
         >
           <ArrowLeftIcon className="w-5 h-5 text-gray-600" />

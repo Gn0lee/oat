@@ -1,7 +1,7 @@
 "use client";
 
 import { format, parse } from "date-fns";
-import { ArrowLeftIcon, EyeIcon, EyeOffIcon } from "lucide-react";
+import { ArrowLeftIcon, UserIcon, UsersIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAccounts } from "@/hooks/use-accounts";
 import { useCategories } from "@/hooks/use-categories";
@@ -72,12 +72,12 @@ export function ConfirmStep({
           <span className="flex items-center gap-1.5 font-semibold text-gray-900">
             {isShared ? (
               <>
-                <EyeIcon className="w-4 h-4" />
+                <UsersIcon className="w-4 h-4" />
                 공용
               </>
             ) : (
               <>
-                <EyeOffIcon className="w-4 h-4" />
+                <UserIcon className="w-4 h-4" />
                 개인
               </>
             )}

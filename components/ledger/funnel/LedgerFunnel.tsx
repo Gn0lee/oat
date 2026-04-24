@@ -12,9 +12,9 @@ import { SelectPrivacyStep } from "./SelectPrivacyStep";
 import { SelectTypeStep } from "./SelectTypeStep";
 
 type LedgerFunnelContext = {
-  SelectType: Record<string, never>;
-  SelectPrivacy: {
-    type: "expense" | "income";
+  SelectPrivacy: Record<string, never>;
+  SelectType: {
+    isShared: boolean;
   };
   AddItems: {
     type: "expense" | "income";
@@ -34,7 +34,7 @@ export function LedgerFunnel() {
   const funnel = useFunnel<LedgerFunnelContext>({
     id: "ledger-funnel",
     initial: {
-      step: "SelectType",
+      step: "SelectPrivacy",
       context: {},
     },
   });
@@ -59,22 +59,18 @@ export function LedgerFunnel() {
 
   return (
     <funnel.Render
-      SelectType={({ history }) => (
-        <SelectTypeStep
-          onSelect={(type) => {
-            if (type === "income") {
-              // 수입은 공개 범위 선택 skip → 항상 공용
-              history.push("AddItems", () => ({ type, isShared: true }));
-            } else {
-              history.push("SelectPrivacy", () => ({ type }));
-            }
-          }}
-        />
-      )}
       SelectPrivacy={({ history }) => (
         <SelectPrivacyStep
           onNext={(isShared) => {
-            history.push("AddItems", (prev) => ({ ...prev, isShared }));
+            history.push("SelectType", () => ({ isShared }));
+          }}
+          onBack={() => router.push("/ledger")}
+        />
+      )}
+      SelectType={({ context, history }) => (
+        <SelectTypeStep
+          onSelect={(type) => {
+            history.push("AddItems", (prev) => ({ ...prev, type }));
           }}
           onBack={() => history.back()}
         />
