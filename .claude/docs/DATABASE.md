@@ -629,12 +629,13 @@ create table public.ledger_entries (
   owner_id             uuid not null references public.profiles(id) on delete cascade,
   type                 ledger_entry_type not null,          -- expense / income / transfer
   amount               numeric(18, 2) not null check (amount > 0),
-  category_id          uuid references public.categories(id) on delete set null,
-  payment_method_id    uuid references public.payment_methods(id) on delete set null,  -- 지출 결제수단
-  account_id           uuid references public.accounts(id) on delete set null,         -- 수입 입금 계좌
-  from_account_id      uuid references public.accounts(id) on delete set null,         -- 이체 출금 계좌
-  to_account_id        uuid references public.accounts(id) on delete set null,         -- 이체 입금 계좌
-  to_payment_method_id uuid references public.payment_methods(id) on delete set null,  -- 이체 → 결제수단
+  category_id            uuid references public.categories(id) on delete set null,
+  -- 돈의 출발지/목적지: 계좌 또는 결제수단 중 하나
+  -- 지출: from_* 하나만 / 수입: to_* 하나만 / 이체: from_* + to_* 둘 다
+  from_account_id        uuid references public.accounts(id) on delete set null,
+  from_payment_method_id uuid references public.payment_methods(id) on delete set null,
+  to_account_id          uuid references public.accounts(id) on delete set null,
+  to_payment_method_id   uuid references public.payment_methods(id) on delete set null,
   is_shared            boolean not null default true,
   memo                 text,
   transacted_at        timestamptz not null,
@@ -643,22 +644,27 @@ create table public.ledger_entries (
 );
 ```
 
-| 컬럼 | 타입 | 사용 조건 |
-|------|------|----------|
+| 컬럼 | 타입 | 설명 |
+|------|------|------|
 | category_id | FK (nullable) | 지출/수입. 이체는 null |
-| payment_method_id | FK (nullable) | 지출 시 결제에 사용한 수단 |
-| account_id | FK (nullable) | 수입 시 입금된 계좌 |
-| from_account_id | FK (nullable) | 이체 시 출금 계좌 |
-| to_account_id | FK (nullable) | 이체 시 입금 계좌 (계좌→계좌) |
-| to_payment_method_id | FK (nullable) | 이체 시 충전 대상 (계좌→결제수단) |
+| from_account_id | FK (nullable) | 출발지가 계좌인 경우 |
+| from_payment_method_id | FK (nullable) | 출발지가 결제수단인 경우 (카드, 현금, 페이 등) |
+| to_account_id | FK (nullable) | 목적지가 계좌인 경우 |
+| to_payment_method_id | FK (nullable) | 목적지가 결제수단인 경우 (페이 충전, 상품권 구매 등) |
 | is_shared | boolean | true: 가구원 전체 조회 가능 / false: 본인만 조회 가능 |
 
-**이체 유형별 컬럼 사용**
+**유형별 컬럼 사용 패턴**
 
-| 이체 유형 | from_account_id | to_account_id | to_payment_method_id |
-|----------|:-:|:-:|:-:|
-| 계좌→계좌 (적금 납입) | ✓ | ✓ | - |
-| 계좌→결제수단 (상품권/페이 충전) | ✓ | - | ✓ |
+| 유형 | from_account | from_payment | to_account | to_payment |
+|------|:-:|:-:|:-:|:-:|
+| 지출 (카드/현금/페이) | | ✓ | | |
+| 지출 (계좌 직접 출금) | ✓ | | | |
+| 수입 (계좌 입금) | | | ✓ | |
+| 수입 (페이 등으로 입금) | | | | ✓ |
+| 이체 계좌→계좌 | ✓ | | ✓ | |
+| 이체 계좌→결제수단 (페이 충전) | ✓ | | | ✓ |
+| 이체 결제수단→계좌 (페이 출금) | | ✓ | ✓ | |
+| 이체 결제수단→결제수단 | | ✓ | | ✓ |
 
 **RLS 정책 요약**
 

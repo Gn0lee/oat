@@ -42,18 +42,16 @@ create table public.ledger_entries (
   amount               numeric(18, 2) not null check (amount > 0),
 
   -- 카테고리 (이체는 null)
-  category_id          uuid references public.categories(id) on delete set null,
+  category_id            uuid references public.categories(id) on delete set null,
 
-  -- 지출: 결제에 사용한 결제수단
-  payment_method_id    uuid references public.payment_methods(id) on delete set null,
-
-  -- 수입: 입금된 계좌
-  account_id           uuid references public.accounts(id) on delete set null,
-
-  -- 이체: 계좌→계좌 또는 계좌→결제수단(상품권/페이 충전)
-  from_account_id      uuid references public.accounts(id) on delete set null,
-  to_account_id        uuid references public.accounts(id) on delete set null,
-  to_payment_method_id uuid references public.payment_methods(id) on delete set null,
+  -- 돈의 출발지/목적지: 계좌 또는 결제수단 중 하나
+  -- 지출: from_* 하나만 채움 (어떤 수단으로 결제했는지)
+  -- 수입: to_*  하나만 채움 (어느 계좌/수단으로 입금됐는지)
+  -- 이체: from_* + to_* 둘 다 채움
+  from_account_id        uuid references public.accounts(id) on delete set null,
+  from_payment_method_id uuid references public.payment_methods(id) on delete set null,
+  to_account_id          uuid references public.accounts(id) on delete set null,
+  to_payment_method_id   uuid references public.payment_methods(id) on delete set null,
 
   -- 공용(true): 가구원 전체 조회 가능 / 개인(false): 본인만 조회 가능
   is_shared            boolean not null default true,
