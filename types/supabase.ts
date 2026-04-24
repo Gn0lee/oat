@@ -345,17 +345,16 @@ export type Database = {
       };
       ledger_entries: {
         Row: {
-          account_id: string | null;
           amount: number;
           category_id: string | null;
           created_at: string;
           from_account_id: string | null;
+          from_payment_method_id: string | null;
           household_id: string;
           id: string;
           is_shared: boolean;
           memo: string | null;
           owner_id: string;
-          payment_method_id: string | null;
           to_account_id: string | null;
           to_payment_method_id: string | null;
           transacted_at: string;
@@ -363,17 +362,16 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
-          account_id?: string | null;
           amount: number;
           category_id?: string | null;
           created_at?: string;
           from_account_id?: string | null;
+          from_payment_method_id?: string | null;
           household_id: string;
           id?: string;
           is_shared?: boolean;
           memo?: string | null;
           owner_id: string;
-          payment_method_id?: string | null;
           to_account_id?: string | null;
           to_payment_method_id?: string | null;
           transacted_at: string;
@@ -381,17 +379,16 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
-          account_id?: string | null;
           amount?: number;
           category_id?: string | null;
           created_at?: string;
           from_account_id?: string | null;
+          from_payment_method_id?: string | null;
           household_id?: string;
           id?: string;
           is_shared?: boolean;
           memo?: string | null;
           owner_id?: string;
-          payment_method_id?: string | null;
           to_account_id?: string | null;
           to_payment_method_id?: string | null;
           transacted_at?: string;
@@ -399,13 +396,6 @@ export type Database = {
           updated_at?: string;
         };
         Relationships: [
-          {
-            foreignKeyName: "ledger_entries_account_id_fkey";
-            columns: ["account_id"];
-            isOneToOne: false;
-            referencedRelation: "accounts";
-            referencedColumns: ["id"];
-          },
           {
             foreignKeyName: "ledger_entries_category_id_fkey";
             columns: ["category_id"];
@@ -421,6 +411,13 @@ export type Database = {
             referencedColumns: ["id"];
           },
           {
+            foreignKeyName: "ledger_entries_from_payment_method_id_fkey";
+            columns: ["from_payment_method_id"];
+            isOneToOne: false;
+            referencedRelation: "payment_methods";
+            referencedColumns: ["id"];
+          },
+          {
             foreignKeyName: "ledger_entries_household_id_fkey";
             columns: ["household_id"];
             isOneToOne: false;
@@ -432,13 +429,6 @@ export type Database = {
             columns: ["owner_id"];
             isOneToOne: false;
             referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "ledger_entries_payment_method_id_fkey";
-            columns: ["payment_method_id"];
-            isOneToOne: false;
-            referencedRelation: "payment_methods";
             referencedColumns: ["id"];
           },
           {

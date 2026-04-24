@@ -24,6 +24,8 @@ export type TransactionType = Enums<"transaction_type">;
 export type HouseholdRole = Enums<"household_role">;
 export type UserRole = Enums<"user_role">;
 export type AllocationCategory = Enums<"allocation_category">;
+export type LedgerEntryType = Enums<"ledger_entry_type">;
+export type CategoryType = Enums<"category_type">;
 
 // 테이블 Row 타입 (편의를 위해)
 export type Account = Tables<"accounts">;
@@ -39,6 +41,12 @@ export type ExchangeRate = Tables<"exchange_rates">;
 export type Tag = Tables<"tags">;
 export type HoldingTag = Tables<"holding_tags">;
 export type TargetAllocation = Tables<"target_allocations">;
+
+// 가계부 테이블 타입
+export type LedgerEntry = Tables<"ledger_entries">;
+export type LedgerEntryInsert = TablesInsert<"ledger_entries">;
+export type LedgerEntryUpdate = TablesUpdate<"ledger_entries">;
+export type Category = Tables<"categories">;
 
 // View 타입
 export type Holding = Tables<"holdings">;
