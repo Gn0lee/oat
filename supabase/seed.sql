@@ -129,6 +129,11 @@ VALUES (
 );
 
 -- 4. 가구 생성 및 멤버십 설정
+-- handle_new_user 트리거가 auth.users INSERT 시 자동으로 가구/멤버십을 생성하므로
+-- 테스트 가구로 교체하기 위해 트리거 생성 데이터를 먼저 정리한다.
+-- households CASCADE → household_members, categories 함께 삭제
+DELETE FROM public.households;
+
 INSERT INTO public.households (id, name)
 VALUES ('00000000-0000-0000-0000-000000000010', '테스트 가구');
 
@@ -136,6 +141,9 @@ INSERT INTO public.household_members (household_id, user_id, role)
 VALUES
   ('00000000-0000-0000-0000-000000000010', '00000000-0000-0000-0000-000000000001', 'owner'),
   ('00000000-0000-0000-0000-000000000010', '00000000-0000-0000-0000-000000000002', 'member');
+
+-- 테스트 가구 기본 카테고리 생성 (#236)
+SELECT public.seed_household_categories('00000000-0000-0000-0000-000000000010');
 
 -- ============================================================================
 -- 환율 초기 데이터
