@@ -10,46 +10,25 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
+import { type AssetType, BASE_ASSET_TYPE_CONFIG } from "@/lib/constants/assets";
 import { cn } from "@/lib/utils/cn";
 import { formatCurrency, formatPercent } from "@/lib/utils/format";
 
-export type AssetType = "stock" | "cash" | "real-estate" | "other";
-
 interface AssetTypeConfig {
-  icon: LucideIcon;
-  label: string;
-  color: string;
-  bgColor: string;
   href: string;
 }
 
-const ASSET_TYPE_CONFIG: Record<AssetType, AssetTypeConfig> = {
+const ASSET_TYPE_EXTRAS: Record<AssetType, AssetTypeConfig> = {
   stock: {
-    icon: TrendingUp,
-    label: "주식/ETF",
-    color: "text-indigo-600",
-    bgColor: "bg-indigo-50",
     href: "/assets/stock",
   },
   cash: {
-    icon: Wallet,
-    label: "현금/예적금",
-    color: "text-emerald-600",
-    bgColor: "bg-emerald-50",
-    href: "/assets/cash",
+    href: "/assets/accounts",
   },
   "real-estate": {
-    icon: Home,
-    label: "부동산",
-    color: "text-rose-600",
-    bgColor: "bg-rose-50",
     href: "/assets/real-estate",
   },
   other: {
-    icon: Package,
-    label: "기타",
-    color: "text-amber-600",
-    bgColor: "bg-amber-50",
     href: "/assets/other",
   },
 };
@@ -71,8 +50,9 @@ export function AssetTypeListItem({
   disabled = false,
   isLoading = false,
 }: AssetTypeListItemProps) {
-  const config = ASSET_TYPE_CONFIG[type];
-  const Icon = config.icon;
+  const baseConfig = BASE_ASSET_TYPE_CONFIG[type];
+  const extraConfig = ASSET_TYPE_EXTRAS[type];
+  const Icon = baseConfig.icon;
 
   // 로딩 상태
   if (isLoading) {
@@ -95,7 +75,7 @@ export function AssetTypeListItem({
   // 비활성 상태 (준비 중)
   if (disabled) {
     const handleDisabledClick = () => {
-      toast.info(`${config.label} 기능은 준비 중이에요`, {
+      toast.info(`${baseConfig.label} 기능은 준비 중이에요`, {
         description: "조금만 기다려주세요!",
       });
     };
@@ -107,13 +87,13 @@ export function AssetTypeListItem({
         className="w-full flex items-center gap-4 px-4 py-4 hover:bg-gray-50 transition-colors"
       >
         {/* 아이콘 */}
-        <div className={cn("p-2.5 rounded-xl", config.bgColor)}>
-          <Icon className={cn("w-5 h-5", config.color)} />
+        <div className={cn("p-2.5 rounded-xl", baseConfig.bgColor)}>
+          <Icon className={cn("w-5 h-5", baseConfig.color)} />
         </div>
 
         {/* 라벨 */}
         <div className="flex-1 text-left">
-          <p className="font-medium text-gray-900">{config.label}</p>
+          <p className="font-medium text-gray-900">{baseConfig.label}</p>
         </div>
 
         {/* 준비 중 */}
@@ -129,17 +109,17 @@ export function AssetTypeListItem({
 
   return (
     <Link
-      href={config.href}
+      href={extraConfig.href}
       className="flex items-center gap-4 px-4 py-4 hover:bg-gray-50 transition-colors"
     >
       {/* 아이콘 */}
-      <div className={cn("p-2.5 rounded-xl", config.bgColor)}>
-        <Icon className={cn("w-5 h-5", config.color)} />
+      <div className={cn("p-2.5 rounded-xl", baseConfig.bgColor)}>
+        <Icon className={cn("w-5 h-5", baseConfig.color)} />
       </div>
 
       {/* 라벨 + 부가정보 */}
       <div className="flex-1">
-        <p className="font-medium text-gray-900">{config.label}</p>
+        <p className="font-medium text-gray-900">{baseConfig.label}</p>
         {isEmpty ? (
           <p className="text-sm text-gray-400">아직 등록된 자산이 없어요</p>
         ) : (

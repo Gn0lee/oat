@@ -56,8 +56,8 @@ export default async function AssetsPage() {
           returnRate={portfolio.returnRate}
         />
 
-        {/* 현금/예적금 - 준비 중 */}
-        <AssetTypeCard type="cash" disabled />
+        {/* 현금/예적금 - 계좌 관리로 연결됨 */}
+        <AssetTypeCard type="cash" />
 
         {/* 부동산 - 준비 중 */}
         <AssetTypeCard type="real-estate" disabled />
