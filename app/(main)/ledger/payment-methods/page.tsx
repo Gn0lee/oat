@@ -9,7 +9,7 @@ export default function PaymentMethodsPage() {
     <PageContainer maxWidth="medium">
       <PageHeader
         title="결제수단 관리"
-        backHref="/assets"
+        backHref="/ledger"
         action={
           <Link href="/ledger/payment-methods/new?returnUrl=/ledger/payment-methods">
             <Button size="sm">
