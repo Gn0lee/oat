@@ -12,7 +12,10 @@ import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
+  SelectSeparator,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -112,6 +115,26 @@ export function AddItemsStep({ type, onNext, onBack }: AddItemsStepProps) {
       <form onSubmit={handleSubmit} className="space-y-4">
         {fields.map((field, index) => {
           const errors = form.formState.errors.items?.[index];
+
+          const paymentValue = form.watch(`items.${index}.paymentMethodId`)
+            ? `pm:${form.watch(`items.${index}.paymentMethodId`)}`
+            : form.watch(`items.${index}.accountId`)
+              ? `acc:${form.watch(`items.${index}.accountId`)}`
+              : "";
+
+          const handlePaymentChange = (v: string) => {
+            if (v.startsWith("pm:")) {
+              form.setValue(`items.${index}.paymentMethodId`, v.slice(3));
+              form.setValue(`items.${index}.accountId`, undefined);
+            } else if (v.startsWith("acc:")) {
+              form.setValue(`items.${index}.accountId`, v.slice(4));
+              form.setValue(`items.${index}.paymentMethodId`, undefined);
+            } else {
+              form.setValue(`items.${index}.paymentMethodId`, undefined);
+              form.setValue(`items.${index}.accountId`, undefined);
+            }
+          };
+
           return (
             <div
               key={field.id}
@@ -154,39 +177,6 @@ export function AddItemsStep({ type, onNext, onBack }: AddItemsStepProps) {
                 )}
               </div>
 
-              {/* 카테고리 */}
-              <div className="space-y-1">
-                <Label className="text-sm text-gray-700">카테고리 *</Label>
-                {isLoadingCategories ? (
-                  <div className="h-10 bg-gray-100 rounded-xl animate-pulse" />
-                ) : (
-                  <Select
-                    value={form.watch(`items.${index}.categoryId`)}
-                    onValueChange={(v) =>
-                      form.setValue(`items.${index}.categoryId`, v, {
-                        shouldValidate: true,
-                      })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="카테고리 선택" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map((cat) => (
-                        <SelectItem key={cat.id} value={cat.id}>
-                          {cat.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-                {errors?.categoryId && (
-                  <p className="text-xs text-red-500">
-                    {errors.categoryId.message}
-                  </p>
-                )}
-              </div>
-
               {/* 내용 */}
               <div className="space-y-1">
                 <Label className="text-sm text-gray-700">내용 *</Label>
@@ -199,53 +189,102 @@ export function AddItemsStep({ type, onNext, onBack }: AddItemsStepProps) {
                 )}
               </div>
 
-              {/* 결제수단 (지출) / 계좌 (수입) */}
-              {type === "expense" ? (
+              {/* 카테고리 + 결제수단/계좌 — 2컬럼 그리드 */}
+              <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
-                  <Label className="text-sm text-gray-700">결제수단</Label>
-                  <Select
-                    value={form.watch(`items.${index}.paymentMethodId`) ?? ""}
-                    onValueChange={(v) =>
-                      form.setValue(
-                        `items.${index}.paymentMethodId`,
-                        v || undefined,
-                      )
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="선택 안함" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {paymentMethods.map((pm) => (
-                        <SelectItem key={pm.id} value={pm.id}>
-                          {pm.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label className="text-sm text-gray-700">카테고리 *</Label>
+                  {isLoadingCategories ? (
+                    <div className="h-9 bg-gray-100 rounded-md animate-pulse" />
+                  ) : (
+                    <Select
+                      value={form.watch(`items.${index}.categoryId`)}
+                      onValueChange={(v) =>
+                        form.setValue(`items.${index}.categoryId`, v, {
+                          shouldValidate: true,
+                        })
+                      }
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="선택" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categories.map((cat) => (
+                          <SelectItem key={cat.id} value={cat.id}>
+                            {cat.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                  {errors?.categoryId && (
+                    <p className="text-xs text-red-500">
+                      {errors.categoryId.message}
+                    </p>
+                  )}
                 </div>
-              ) : (
+
                 <div className="space-y-1">
-                  <Label className="text-sm text-gray-700">입금 계좌</Label>
-                  <Select
-                    value={form.watch(`items.${index}.accountId`) ?? ""}
-                    onValueChange={(v) =>
-                      form.setValue(`items.${index}.accountId`, v || undefined)
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="선택 안함" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {accounts.map((acc) => (
-                        <SelectItem key={acc.id} value={acc.id}>
-                          {acc.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label className="text-sm text-gray-700">
+                    {type === "expense" ? "결제 방법" : "입금 계좌"}
+                  </Label>
+                  {type === "expense" ? (
+                    <Select
+                      value={paymentValue}
+                      onValueChange={handlePaymentChange}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="선택 안함" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {paymentMethods.length > 0 && (
+                          <SelectGroup>
+                            <SelectLabel>결제수단</SelectLabel>
+                            {paymentMethods.map((pm) => (
+                              <SelectItem key={pm.id} value={`pm:${pm.id}`}>
+                                {pm.name}
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                        )}
+                        {paymentMethods.length > 0 && accounts.length > 0 && (
+                          <SelectSeparator />
+                        )}
+                        {accounts.length > 0 && (
+                          <SelectGroup>
+                            <SelectLabel>계좌</SelectLabel>
+                            {accounts.map((acc) => (
+                              <SelectItem key={acc.id} value={`acc:${acc.id}`}>
+                                {acc.name}
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                        )}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Select
+                      value={form.watch(`items.${index}.accountId`) ?? ""}
+                      onValueChange={(v) =>
+                        form.setValue(
+                          `items.${index}.accountId`,
+                          v || undefined,
+                        )
+                      }
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="선택 안함" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {accounts.map((acc) => (
+                          <SelectItem key={acc.id} value={acc.id}>
+                            {acc.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
-              )}
+              </div>
 
               {/* 날짜 */}
               <div className="space-y-1">

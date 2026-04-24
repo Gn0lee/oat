@@ -73,6 +73,20 @@ describe("buildLedgerEntryPayload", () => {
       transactedAt: validDate,
     });
     expect(result.fromPaymentMethodId).toBe("pm-1");
+    expect(result.fromAccountId).toBeUndefined();
+    expect(result.toAccountId).toBeUndefined();
+  });
+
+  it("지출 + 계좌 → fromAccountId 설정 (계좌이체)", () => {
+    const result = buildLedgerEntryPayload("expense", true, {
+      amount: "200000",
+      title: "월세",
+      categoryId: "cat-1",
+      accountId: "acc-1",
+      transactedAt: validDate,
+    });
+    expect(result.fromAccountId).toBe("acc-1");
+    expect(result.fromPaymentMethodId).toBeUndefined();
     expect(result.toAccountId).toBeUndefined();
   });
 

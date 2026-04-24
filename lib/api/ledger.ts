@@ -30,8 +30,9 @@ export function buildLedgerEntryPayload(
     memo: item.memo || undefined,
   };
 
-  if (type === "expense" && item.paymentMethodId) {
-    base.fromPaymentMethodId = item.paymentMethodId;
+  if (type === "expense") {
+    if (item.paymentMethodId) base.fromPaymentMethodId = item.paymentMethodId;
+    if (item.accountId) base.fromAccountId = item.accountId;
   }
   if (type === "income" && item.accountId) {
     base.toAccountId = item.accountId;
