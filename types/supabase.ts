@@ -100,6 +100,50 @@ export type Database = {
           },
         ];
       };
+      categories: {
+        Row: {
+          created_at: string;
+          display_order: number;
+          household_id: string;
+          icon: string | null;
+          id: string;
+          is_system: boolean;
+          name: string;
+          type: Database["public"]["Enums"]["category_type"];
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          display_order?: number;
+          household_id: string;
+          icon?: string | null;
+          id?: string;
+          is_system?: boolean;
+          name: string;
+          type: Database["public"]["Enums"]["category_type"];
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          display_order?: number;
+          household_id?: string;
+          icon?: string | null;
+          id?: string;
+          is_system?: boolean;
+          name?: string;
+          type?: Database["public"]["Enums"]["category_type"];
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "categories_household_id_fkey";
+            columns: ["household_id"];
+            isOneToOne: false;
+            referencedRelation: "households";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       exchange_rates: {
         Row: {
           from_currency: Database["public"]["Enums"]["currency_type"];
@@ -295,6 +339,120 @@ export type Database = {
             columns: ["household_id"];
             isOneToOne: false;
             referencedRelation: "households";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      ledger_entries: {
+        Row: {
+          account_id: string | null;
+          amount: number;
+          category_id: string | null;
+          created_at: string;
+          from_account_id: string | null;
+          household_id: string;
+          id: string;
+          is_shared: boolean;
+          memo: string | null;
+          owner_id: string;
+          payment_method_id: string | null;
+          to_account_id: string | null;
+          to_payment_method_id: string | null;
+          transacted_at: string;
+          type: Database["public"]["Enums"]["ledger_entry_type"];
+          updated_at: string;
+        };
+        Insert: {
+          account_id?: string | null;
+          amount: number;
+          category_id?: string | null;
+          created_at?: string;
+          from_account_id?: string | null;
+          household_id: string;
+          id?: string;
+          is_shared?: boolean;
+          memo?: string | null;
+          owner_id: string;
+          payment_method_id?: string | null;
+          to_account_id?: string | null;
+          to_payment_method_id?: string | null;
+          transacted_at: string;
+          type: Database["public"]["Enums"]["ledger_entry_type"];
+          updated_at?: string;
+        };
+        Update: {
+          account_id?: string | null;
+          amount?: number;
+          category_id?: string | null;
+          created_at?: string;
+          from_account_id?: string | null;
+          household_id?: string;
+          id?: string;
+          is_shared?: boolean;
+          memo?: string | null;
+          owner_id?: string;
+          payment_method_id?: string | null;
+          to_account_id?: string | null;
+          to_payment_method_id?: string | null;
+          transacted_at?: string;
+          type?: Database["public"]["Enums"]["ledger_entry_type"];
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "ledger_entries_account_id_fkey";
+            columns: ["account_id"];
+            isOneToOne: false;
+            referencedRelation: "accounts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "ledger_entries_category_id_fkey";
+            columns: ["category_id"];
+            isOneToOne: false;
+            referencedRelation: "categories";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "ledger_entries_from_account_id_fkey";
+            columns: ["from_account_id"];
+            isOneToOne: false;
+            referencedRelation: "accounts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "ledger_entries_household_id_fkey";
+            columns: ["household_id"];
+            isOneToOne: false;
+            referencedRelation: "households";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "ledger_entries_owner_id_fkey";
+            columns: ["owner_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "ledger_entries_payment_method_id_fkey";
+            columns: ["payment_method_id"];
+            isOneToOne: false;
+            referencedRelation: "payment_methods";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "ledger_entries_to_account_id_fkey";
+            columns: ["to_account_id"];
+            isOneToOne: false;
+            referencedRelation: "accounts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "ledger_entries_to_payment_method_id_fkey";
+            columns: ["to_payment_method_id"];
+            isOneToOne: false;
+            referencedRelation: "payment_methods";
             referencedColumns: ["id"];
           },
         ];
@@ -685,6 +843,13 @@ export type Database = {
       };
     };
     Functions: {
+      get_private_entry_totals: {
+        Args: { hh_id: string; p_month: number; p_year: number };
+        Returns: {
+          owner_id: string;
+          total_amount: number;
+        }[];
+      };
       get_user_household_ids: { Args: never; Returns: string[] };
       is_admin: { Args: never; Returns: boolean };
       is_household_member: { Args: { hh_id: string }; Returns: boolean };
@@ -719,6 +884,10 @@ export type Database = {
           isSetofReturn: true;
         };
       };
+      seed_household_categories: {
+        Args: { hh_id: string };
+        Returns: undefined;
+      };
     };
     Enums: {
       account_category: "bank" | "investment";
@@ -747,10 +916,12 @@ export type Database = {
         | "commodity"
         | "crypto"
         | "alternative";
+      category_type: "expense" | "income";
       currency_type: "KRW" | "USD";
       exchange_type: "KOSPI" | "KOSDAQ" | "NYSE" | "NASDAQ" | "AMEX";
       household_role: "owner" | "member";
       invitation_status: "pending" | "accepted" | "expired" | "cancelled";
+      ledger_entry_type: "expense" | "income" | "transfer";
       market_type: "KR" | "US" | "OTHER";
       payment_method_type:
         | "credit_card"
@@ -931,10 +1102,12 @@ export const Constants = {
         "crypto",
         "alternative",
       ],
+      category_type: ["expense", "income"],
       currency_type: ["KRW", "USD"],
       exchange_type: ["KOSPI", "KOSDAQ", "NYSE", "NASDAQ", "AMEX"],
       household_role: ["owner", "member"],
       invitation_status: ["pending", "accepted", "expired", "cancelled"],
+      ledger_entry_type: ["expense", "income", "transfer"],
       market_type: ["KR", "US", "OTHER"],
       payment_method_type: [
         "credit_card",
