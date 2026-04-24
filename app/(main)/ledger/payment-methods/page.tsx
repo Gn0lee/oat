@@ -1,20 +1,20 @@
 import { Plus } from "lucide-react";
 import Link from "next/link";
-import { AccountList } from "@/components/accounts";
+import { PaymentMethodList } from "@/components/accounts";
 import { PageContainer, PageHeader } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 
-export default function AccountsPage() {
+export default function PaymentMethodsPage() {
   return (
     <PageContainer maxWidth="medium">
       <PageHeader
-        title="계좌 관리"
+        title="결제수단 관리"
         backHref="/assets"
         action={
-          <Link href="/assets/accounts/new">
+          <Link href="/ledger/payment-methods/new?returnUrl=/ledger/payment-methods">
             <Button size="sm">
               <Plus className="w-4 h-4 mr-1" />
-              계좌 추가
+              결제수단 추가
             </Button>
           </Link>
         }
@@ -22,8 +22,7 @@ export default function AccountsPage() {
 
       <div className="space-y-8">
         <section>
-          <h2 className="text-base font-semibold mb-3">자산 계좌</h2>
-          <AccountList />
+          <PaymentMethodList />
         </section>
       </div>
     </PageContainer>

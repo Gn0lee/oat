@@ -2,8 +2,8 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Building2, TrendingUp } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -99,6 +99,8 @@ interface DetailFormProps {
 
 function DetailForm({ category, onBack }: DetailFormProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const returnUrl = searchParams.get("returnUrl") || "/assets/accounts";
   const createAccount = useCreateAccount();
   const isBank = category === "bank";
   const defaultAccountType: AllAccountType = isBank ? "checking" : "stock";
@@ -145,7 +147,7 @@ function DetailForm({ category, onBack }: DetailFormProps) {
         memo: data.memo || undefined,
       });
       toast.success(`${data.name} 계좌가 추가되었습니다.`);
-      router.push("/assets/accounts");
+      router.push(returnUrl);
     } catch (error) {
       if (error instanceof Error) {
         toast.error(error.message);
@@ -298,7 +300,7 @@ function DetailForm({ category, onBack }: DetailFormProps) {
   );
 }
 
-export function AccountNewForm() {
+export function AccountNewFormInner() {
   const [category, setCategory] = useState<AccountCategory | null>(null);
 
   if (category) {
@@ -323,5 +325,13 @@ export function AccountNewForm() {
         />
       </div>
     </div>
+  );
+}
+
+export function AccountNewForm() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <AccountNewFormInner />
+    </Suspense>
   );
 }
