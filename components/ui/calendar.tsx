@@ -1,5 +1,6 @@
 "use client";
 
+import { ko } from "date-fns/locale";
 import {
   ChevronDownIcon,
   ChevronLeftIcon,
@@ -22,6 +23,7 @@ function Calendar({
   buttonVariant = "ghost",
   formatters,
   components,
+  locale = ko,
   ...props
 }: React.ComponentProps<typeof DayPicker> & {
   buttonVariant?: React.ComponentProps<typeof Button>["variant"];
@@ -30,6 +32,7 @@ function Calendar({
 
   return (
     <DayPicker
+      locale={locale}
       showOutsideDays={showOutsideDays}
       className={cn(
         "group/calendar bg-background p-3 [--cell-size:--spacing(8)] [[data-slot=card-content]_&]:bg-transparent [[data-slot=popover-content]_&]:bg-transparent",
@@ -116,7 +119,7 @@ function Calendar({
         range_middle: cn("rounded-none", defaultClassNames.range_middle),
         range_end: cn("rounded-r-md bg-accent", defaultClassNames.range_end),
         today: cn(
-          "rounded-md bg-accent text-accent-foreground data-[selected=true]:rounded-none",
+          "text-accent-foreground data-[selected=true]:rounded-none bg-transparent font-bold",
           defaultClassNames.today,
         ),
         outside: cn(
