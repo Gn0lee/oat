@@ -97,7 +97,7 @@ export function LedgerCalendar({
   );
 
   return (
-    <div className="relative bg-white rounded-2xl shadow-sm p-2">
+    <div className="relative bg-white rounded-2xl overflow-hidden">
       <Button
         variant="ghost"
         size="icon"
@@ -116,6 +116,9 @@ export function LedgerCalendar({
         hideNavigation
         components={{ DayButton: DayButtonWithAmounts }}
         className="w-full"
+        classNames={{
+          day: "group/day relative w-full p-0 text-center select-none [&:last-child[data-selected=true]_button]:rounded-r-md [&:first-child[data-selected=true]_button]:rounded-l-md",
+        }}
       />
     </div>
   );
