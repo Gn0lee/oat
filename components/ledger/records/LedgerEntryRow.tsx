@@ -25,7 +25,7 @@ export function LedgerEntryRow({
 }: LedgerEntryRowProps) {
   const isIncome = entry.type === "income";
   const amountSign = isIncome ? "+" : "-";
-  const amountColor = isIncome ? "text-red-500" : "text-gray-900";
+  const amountColor = isIncome ? "text-red-500" : "text-blue-500";
 
   const paymentLabel =
     entry.fromPaymentMethodName ?? entry.fromAccountName ?? entry.toAccountName;

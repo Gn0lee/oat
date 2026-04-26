@@ -1,7 +1,9 @@
 "use client";
 
+import { RefreshCw } from "lucide-react";
 import { type ComponentProps, useCallback } from "react";
 import type { DayButton } from "react-day-picker";
+import { Button } from "@/components/ui/button";
 import { Calendar, CalendarDayButton } from "@/components/ui/calendar";
 import type { LedgerEntryWithDetails } from "@/lib/api/ledger";
 
@@ -19,6 +21,7 @@ interface LedgerCalendarProps {
   selectedDate: Date;
   onDateSelect: (date: Date) => void;
   entriesByDate: Map<string, LedgerEntryWithDetails[]>;
+  onRefresh: () => void;
 }
 
 export function LedgerCalendar({
@@ -27,6 +30,7 @@ export function LedgerCalendar({
   selectedDate,
   onDateSelect,
   entriesByDate,
+  onRefresh,
 }: LedgerCalendarProps) {
   const DayButtonWithAmounts = useCallback(
     function DayButtonWithAmounts({
@@ -76,12 +80,12 @@ export function LedgerCalendar({
           {/* 금액 텍스트 — 선택 상태 무관, 항상 동일 색상 */}
           <span className="flex min-h-[22px] flex-col items-center justify-start gap-0.5 pt-0.5">
             {income > 0 && (
-              <span className="text-[9px] font-medium text-blue-500 leading-none">
+              <span className="text-[9px] font-medium text-red-500 leading-none">
                 +{formatAmountShort(income)}
               </span>
             )}
             {expense > 0 && (
-              <span className="text-[9px] text-gray-400 leading-none">
+              <span className="text-[9px] text-blue-500 leading-none">
                 -{formatAmountShort(expense)}
               </span>
             )}
@@ -93,7 +97,16 @@ export function LedgerCalendar({
   );
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm p-2 ">
+    <div className="relative bg-white rounded-2xl shadow-sm p-2">
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={onRefresh}
+        className="absolute top-5 right-6 h-7 w-7 text-gray-400 hover:text-gray-600 z-10"
+        title="새로고침"
+      >
+        <RefreshCw className="w-3.5 h-3.5" />
+      </Button>
       <Calendar
         mode="single"
         month={currentMonth}

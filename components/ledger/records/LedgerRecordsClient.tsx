@@ -1,22 +1,34 @@
 "use client";
 
-import { addMonths, format, startOfMonth, subMonths } from "date-fns";
-import { ko } from "date-fns/locale";
+import { useQueryClient } from "@tanstack/react-query";
+import { addMonths, getYear, startOfMonth, subMonths } from "date-fns";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { LedgerEntryDeleteDialog } from "@/components/ledger/LedgerEntryDeleteDialog";
 import { LedgerEntryEditDialog } from "@/components/ledger/LedgerEntryEditDialog";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLedgerEntries } from "@/hooks/use-ledger-entries";
 import {
   calculateLedgerSummary,
   type LedgerEntryWithDetails,
 } from "@/lib/api/ledger";
+import { queries } from "@/lib/queries/keys";
 import { formatCurrency, formatDateISO } from "@/lib/utils/format";
 import { LedgerCalendar } from "./LedgerCalendar";
 import { LedgerDayEntryList } from "./LedgerDayEntryList";
+
+const CURRENT_YEAR = getYear(new Date());
+const YEAR_OPTIONS = Array.from({ length: 11 }, (_, i) => CURRENT_YEAR - 5 + i);
+const MONTH_OPTIONS = Array.from({ length: 12 }, (_, i) => i + 1);
 
 export function LedgerRecordsClient() {
   const [currentMonth, setCurrentMonth] = useState<Date>(() =>
@@ -28,23 +40,36 @@ export function LedgerRecordsClient() {
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
+  const queryClient = useQueryClient();
+
+  const prevMonth = useMemo(() => subMonths(currentMonth, 1), [currentMonth]);
+  const nextMonth = useMemo(() => addMonths(currentMonth, 1), [currentMonth]);
+
+  const { data: prevEntries = [] } = useLedgerEntries({
+    year: prevMonth.getFullYear(),
+    month: prevMonth.getMonth() + 1,
+  });
   const { data: entries = [], isLoading } = useLedgerEntries({
     year: currentMonth.getFullYear(),
     month: currentMonth.getMonth() + 1,
+  });
+  const { data: nextEntries = [] } = useLedgerEntries({
+    year: nextMonth.getFullYear(),
+    month: nextMonth.getMonth() + 1,
   });
 
   const summary = useMemo(() => calculateLedgerSummary(entries), [entries]);
 
   const entriesByDate = useMemo(() => {
     const map = new Map<string, LedgerEntryWithDetails[]>();
-    for (const entry of entries) {
+    for (const entry of [...prevEntries, ...entries, ...nextEntries]) {
       const key = entry.transactedAt.slice(0, 10);
       const list = map.get(key) ?? [];
       list.push(entry);
       map.set(key, list);
     }
     return map;
-  }, [entries]);
+  }, [prevEntries, entries, nextEntries]);
 
   const dayEntries = entriesByDate.get(formatDateISO(selectedDate)) ?? [];
 
@@ -65,6 +90,26 @@ export function LedgerRecordsClient() {
 
   const handleMonthChange = (month: Date) =>
     setCurrentMonth(startOfMonth(month));
+
+  const handleYearChange = (year: string) => {
+    setCurrentMonth((m) => {
+      const next = new Date(m);
+      next.setFullYear(Number(year));
+      return startOfMonth(next);
+    });
+  };
+
+  const handleRefresh = () => {
+    queryClient.invalidateQueries({ queryKey: queries.ledgerEntries._def });
+  };
+
+  const handleMonthSelect = (month: string) => {
+    setCurrentMonth((m) => {
+      const next = new Date(m);
+      next.setMonth(Number(month) - 1);
+      return startOfMonth(next);
+    });
+  };
 
   const handleDateSelect = (date: Date) => {
     setSelectedDate(date);
@@ -116,6 +161,7 @@ export function LedgerRecordsClient() {
       selectedDate={selectedDate}
       onDateSelect={handleDateSelect}
       entriesByDate={entriesByDate}
+      onRefresh={handleRefresh}
     />
   );
 
@@ -126,9 +172,38 @@ export function LedgerRecordsClient() {
         <Button variant="ghost" size="icon" onClick={goToPrevMonth}>
           <ChevronLeft className="w-5 h-5" />
         </Button>
-        <span className="text-lg font-semibold text-gray-900">
-          {format(currentMonth, "yyyy년 M월", { locale: ko })}
-        </span>
+        <div className="flex items-center gap-1">
+          <Select
+            value={String(currentMonth.getFullYear())}
+            onValueChange={handleYearChange}
+          >
+            <SelectTrigger className="h-auto w-auto gap-0.5 border-none shadow-none px-1.5 py-0.5 text-lg font-semibold text-gray-900 focus:ring-0 rounded-lg hover:bg-gray-100 transition-colors">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {YEAR_OPTIONS.map((y) => (
+                <SelectItem key={y} value={String(y)}>
+                  {y}년
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
+            value={String(currentMonth.getMonth() + 1)}
+            onValueChange={handleMonthSelect}
+          >
+            <SelectTrigger className="h-auto w-auto gap-0.5 border-none shadow-none px-1.5 py-0.5 text-lg font-semibold text-gray-900 focus:ring-0 rounded-lg hover:bg-gray-100 transition-colors">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {MONTH_OPTIONS.map((m) => (
+                <SelectItem key={m} value={String(m)}>
+                  {m}월
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         <Button variant="ghost" size="icon" onClick={goToNextMonth}>
           <ChevronRight className="w-5 h-5" />
         </Button>

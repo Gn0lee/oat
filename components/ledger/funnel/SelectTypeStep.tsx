@@ -27,10 +27,10 @@ export function SelectTypeStep({ onSelect, onBack }: SelectTypeStepProps) {
         <button
           type="button"
           onClick={() => onSelect("expense")}
-          className="w-full flex items-center gap-4 p-5 rounded-2xl border-2 border-gray-100 bg-white hover:border-red-200 hover:bg-red-50 transition-colors text-left"
+          className="w-full flex items-center gap-4 p-5 rounded-2xl border-2 border-gray-100 bg-white hover:border-blue-200 hover:bg-blue-50 transition-colors text-left"
         >
-          <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center shrink-0">
-            <TrendingDownIcon className="w-6 h-6 text-red-500" />
+          <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
+            <TrendingDownIcon className="w-6 h-6 text-blue-500" />
           </div>
           <div>
             <p className="text-lg font-semibold text-gray-900">지출</p>
@@ -41,10 +41,10 @@ export function SelectTypeStep({ onSelect, onBack }: SelectTypeStepProps) {
         <button
           type="button"
           onClick={() => onSelect("income")}
-          className="w-full flex items-center gap-4 p-5 rounded-2xl border-2 border-gray-100 bg-white hover:border-blue-200 hover:bg-blue-50 transition-colors text-left"
+          className="w-full flex items-center gap-4 p-5 rounded-2xl border-2 border-gray-100 bg-white hover:border-red-200 hover:bg-red-50 transition-colors text-left"
         >
-          <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
-            <TrendingUpIcon className="w-6 h-6 text-blue-500" />
+          <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+            <TrendingUpIcon className="w-6 h-6 text-red-500" />
           </div>
           <div>
             <p className="text-lg font-semibold text-gray-900">수입</p>
