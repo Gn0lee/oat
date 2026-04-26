@@ -355,6 +355,7 @@ export type Database = {
           is_shared: boolean;
           memo: string | null;
           owner_id: string;
+          title: string | null;
           to_account_id: string | null;
           to_payment_method_id: string | null;
           transacted_at: string;
@@ -372,6 +373,7 @@ export type Database = {
           is_shared?: boolean;
           memo?: string | null;
           owner_id: string;
+          title?: string | null;
           to_account_id?: string | null;
           to_payment_method_id?: string | null;
           transacted_at: string;
@@ -389,6 +391,7 @@ export type Database = {
           is_shared?: boolean;
           memo?: string | null;
           owner_id?: string;
+          title?: string | null;
           to_account_id?: string | null;
           to_payment_method_id?: string | null;
           transacted_at?: string;
