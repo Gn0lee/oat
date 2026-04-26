@@ -21,6 +21,14 @@ describe("nextDisplayOrder", () => {
   it("큰 순서 값도 올바르게 처리한다", () => {
     expect(nextDisplayOrder([10, 20, 15])).toBe(21);
   });
+
+  it("음수 순서 값이 포함되어도 최댓값 + 1을 반환한다", () => {
+    expect(nextDisplayOrder([-1, 0, 3])).toBe(4);
+  });
+
+  it("동일한 순서 값이 있어도 최댓값 + 1을 반환한다", () => {
+    expect(nextDisplayOrder([2, 2, 2])).toBe(3);
+  });
 });
 
 describe("validateReorderIds", () => {
