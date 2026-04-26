@@ -288,15 +288,42 @@
 
 ---
 
-### 4.3 현금 흐름 분석 (가계부 이후)
+### 4.3 가계부 분석 대시보드 (/ledger/analysis)
 
-| ID | 기능 | 우선순위 | 설명 |
-|----|------|----------|------|
-| FLOW-01 | 월별 수입/지출 요약 | 🔴 필수 | 이번 달 총 수입, 총 지출, 잔액 |
-| FLOW-02 | 카테고리별 지출 비율 | 🔴 필수 | 파이차트/바 차트 |
-| FLOW-03 | 결제수단별 지출 | 🟡 권장 | 어떤 카드/페이로 얼마 썼는지 |
-| FLOW-04 | 월별 추이 | 🟡 권장 | 최근 6개월 수입/지출 추이 |
-| FLOW-05 | 저축률 표시 | 🟡 권장 | (수입 - 지출) / 수입 |
+가계부 홈에서 진입. 현재 월 및 최근 추이를 분석하는 통계 대시보드. **가계부 전용 독립 페이지**로 구성 (기존 투자 대시보드 `/dashboard`와 분리).
+
+#### 데이터 범위 (scope)
+
+| scope | 설명 |
+|-------|------|
+| `all` | 공용 + 본인 개인 (기본값, RLS 자동 적용) |
+| `shared` | 공용 항목만 (가구 전체 동일한 뷰) |
+| `personal` | 본인 개인 항목만 |
+
+> 파트너의 개인 지출 세부 내역은 RLS로 차단. 합산 금액만 `get_private_entry_totals()` SECURITY DEFINER 함수로 제공.
+
+#### 화면 섹션 및 API
+
+| ID | 기능 | 우선순위 | scope 선택 | API |
+|----|------|----------|:---:|-----|
+| FLOW-01 | 가구 전체 월별 요약 | 🔴 필수 | - | `GET /api/ledger/stats/summary` |
+| FLOW-02 | 멤버별 공용/개인 지출 | 🔴 필수 | - | `GET /api/ledger/stats/by-member` |
+| FLOW-03 | 카테고리별 지출 비율 | 🔴 필수 | ✅ | `GET /api/ledger/stats/by-category` |
+| FLOW-04 | 결제수단별 지출 | 🟡 권장 | ✅ | `GET /api/ledger/stats/by-payment-method` |
+| FLOW-05 | 저축률 표시 | 🟡 권장 | - | summary API에 포함 |
+| FLOW-06 | 월별 추이 (최근 N개월) | 🟡 권장 | - | `GET /api/ledger/stats/trend` |
+| FLOW-07 | 일별 지출 분포 | 🟡 권장 | ✅ | `GET /api/ledger/stats/daily` |
+
+#### API 파라미터 요약
+
+| API | 주요 파라미터 | 응답 주요 필드 |
+|-----|-------------|--------------|
+| summary | `year`, `month` | `totalIncome`, `totalSharedExpense`, `totalPersonalExpense`, `savingsRate` |
+| by-member | `year`, `month` | `members[]{sharedExpense, personalExpense, personalExpenseVisible}` |
+| by-category | `year`, `month`, `type`, `scope` | `items[]{categoryName, amount, percentage}` |
+| by-payment-method | `year`, `month`, `scope` | `items[]{paymentMethodName, amount, percentage}` |
+| trend | `months` (기본 6, 최대 12) | `items[]{year, month, totalExpense, savingsRate}` |
+| daily | `year`, `month`, `scope` | `items[]{date, totalIncome, totalExpense}` (캘린더 히트맵용) |
 
 ### 4.4 자산 유형 확장 (향후)
 
@@ -452,7 +479,7 @@
 | 기록 내역 | `/ledger/records` | 캘린더 기반 월간 기록 및 일별 상세 내역 (날짜별 그룹핑) |
 | 기록 추가 | `/ledger/new` | 퍼널(Funnel) 방식의 지출/수입/이체 기록 추가 폼 |
 | 카테고리 관리 | `/ledger/categories` | 카테고리 목록 및 추가/수정/삭제 |
-| 분석 | `/ledger/analysis` | 카테고리별/결제수단별 지출 분석 통계 (대시보드) |
+| 분석 | `/ledger/analysis` | 가계부 통계 대시보드 — 가구 요약/멤버별/카테고리별/결제수단별/월별추이/일별 분포 |
 | 정기 관리 | `/ledger/recurring` | 정기 수입/지출 관리 |
 | 결제수단 관리 | `/ledger/payment-methods` | 결제수단 목록 및 관리 |
 | 결제수단 등록 | `/ledger/payment-methods/new` | 결제수단 등록/수정 폼 |
