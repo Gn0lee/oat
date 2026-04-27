@@ -37,12 +37,16 @@ export async function GET(request: NextRequest) {
     const { searchParams } = request.nextUrl;
     const monthsParam = Number(searchParams.get("months") ?? 6);
     const months = Math.min(Math.max(monthsParam, 1), 12);
+    const rawScope = searchParams.get("scope") ?? "all";
+    const scope =
+      rawScope === "shared" || rawScope === "personal" ? rawScope : "all";
 
     const data = await getLedgerStatsTrend(
       supabase,
       householdId,
       user.id,
       months,
+      scope,
     );
 
     return NextResponse.json({ data });

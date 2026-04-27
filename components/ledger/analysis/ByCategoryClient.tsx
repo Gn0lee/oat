@@ -139,7 +139,10 @@ export function ByCategoryClient({ scope }: ByCategoryClientProps) {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="카테고리별 지출" backHref="/ledger/analysis" />
+      <PageHeader
+        title="카테고리 분석"
+        backHref={`/ledger/analysis?scope=${scope}`}
+      />
 
       <MonthSelector value={currentMonth} onChange={setCurrentMonth} />
 

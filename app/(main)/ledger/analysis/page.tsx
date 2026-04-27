@@ -19,15 +19,18 @@ import {
 import { requireUser } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
 
+export const dynamic = "force-dynamic";
+
 const NAV_CARDS = [
   {
     key: "by-category",
     icon: PieChart,
-    title: "카테고리별 지출",
-    description: "어디에 얼마나 썼는지 확인",
+    title: "카테고리 분석",
+    description: "카테고리별 지출·수입 비중 확인",
     color: "text-indigo-600",
     bg: "bg-indigo-50",
     scopeAware: true,
+    sharedOnly: false,
   },
   {
     key: "by-member",
@@ -37,24 +40,27 @@ const NAV_CARDS = [
     color: "text-rose-500",
     bg: "bg-rose-50",
     scopeAware: false,
+    sharedOnly: true,
   },
   {
     key: "by-payment-method",
     icon: CreditCard,
-    title: "결제수단별 지출",
+    title: "결제수단 분석",
     description: "어떤 카드·페이로 지출했는지",
     color: "text-blue-500",
     bg: "bg-blue-50",
     scopeAware: true,
+    sharedOnly: false,
   },
   {
     key: "trend",
     icon: TrendingUp,
-    title: "월별 지출 추이",
+    title: "월별 수입·지출",
     description: "최근 6개월 수입·지출 흐름",
     color: "text-amber-500",
     bg: "bg-amber-50",
     scopeAware: true,
+    sharedOnly: false,
   },
   {
     key: "daily",
@@ -64,6 +70,7 @@ const NAV_CARDS = [
     color: "text-emerald-500",
     bg: "bg-emerald-50",
     scopeAware: true,
+    sharedOnly: false,
   },
 ];
 
@@ -73,7 +80,8 @@ export default async function LedgerAnalysisPage({
   searchParams: Promise<{ scope?: string }>;
 }) {
   const { scope: rawScope } = await searchParams;
-  const scope = rawScope === "personal" ? "personal" : "shared";
+  const scope: "shared" | "personal" =
+    rawScope === "personal" ? "personal" : "shared";
 
   const user = await requireUser();
   const supabase = await createClient();
@@ -100,6 +108,10 @@ export default async function LedgerAnalysisPage({
       : null,
   ]);
 
+  const visibleCards = NAV_CARDS.filter(
+    (card) => !(card.sharedOnly && scope === "personal"),
+  );
+
   return (
     <>
       <PageHeader title="통계 대시보드" backHref="/ledger" />
@@ -107,7 +119,7 @@ export default async function LedgerAnalysisPage({
       <ScopeTabs scope={scope} />
 
       {summary ? (
-        <SummaryStatCard summary={summary} />
+        <SummaryStatCard summary={summary} scope={scope} />
       ) : (
         <div className="bg-white rounded-2xl p-6 shadow-sm mb-6">
           <p className="text-sm text-gray-400 text-center">
@@ -127,7 +139,7 @@ export default async function LedgerAnalysisPage({
         <h3 className="text-base font-semibold text-gray-900 px-1">
           분석 보기
         </h3>
-        {NAV_CARDS.map(
+        {visibleCards.map(
           ({ key, icon: Icon, title, description, color, bg, scopeAware }) => {
             const href = scopeAware
               ? `/ledger/analysis/${key}?scope=${scope}`

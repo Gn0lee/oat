@@ -79,12 +79,12 @@ export function useLedgerStatsByPaymentMethod(
   });
 }
 
-export function useLedgerStatsTrend(months = 6) {
+export function useLedgerStatsTrend(months = 6, scope?: string) {
   return useQuery({
-    queryKey: queries.ledgerStats.trend(months).queryKey,
+    queryKey: queries.ledgerStats.trend(months, scope).queryKey,
     queryFn: () =>
       fetchJson<LedgerStatsTrendResult>(
-        `/api/ledger/stats/trend?months=${months}`,
+        `/api/ledger/stats/trend?months=${months}${scope ? `&scope=${scope}` : ""}`,
       ),
     staleTime: 1000 * 60 * 5,
   });

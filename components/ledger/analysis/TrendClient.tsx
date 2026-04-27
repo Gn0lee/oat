@@ -18,6 +18,7 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import { useLedgerStatsTrend } from "@/hooks/use-ledger-stats";
+import type { StatsScope } from "@/lib/api/ledger-stats";
 import { formatCurrency } from "@/lib/utils/format";
 
 const chartConfig = {
@@ -26,8 +27,12 @@ const chartConfig = {
   savingsRate: { label: "저축률", color: "#4F46E5" },
 };
 
-export function TrendClient() {
-  const { data, isLoading } = useLedgerStatsTrend(6);
+interface TrendClientProps {
+  scope: StatsScope;
+}
+
+export function TrendClient({ scope }: TrendClientProps) {
+  const { data, isLoading } = useLedgerStatsTrend(6, scope);
 
   const chartData = useMemo(() => {
     return (data?.items ?? []).map((item) => ({
@@ -56,7 +61,10 @@ export function TrendClient() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="월별 지출 추이" backHref="/ledger/analysis" />
+      <PageHeader
+        title="월별 수입·지출"
+        backHref={`/ledger/analysis?scope=${scope}`}
+      />
 
       {/* Section 1: ComposedChart */}
       <div className="bg-white rounded-2xl p-5 shadow-sm">

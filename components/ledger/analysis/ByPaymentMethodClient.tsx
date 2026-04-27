@@ -72,7 +72,10 @@ export function ByPaymentMethodClient({ scope }: ByPaymentMethodClientProps) {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="결제수단별 지출" backHref="/ledger/analysis" />
+      <PageHeader
+        title="결제수단 분석"
+        backHref={`/ledger/analysis?scope=${scope}`}
+      />
       <MonthSelector value={currentMonth} onChange={setCurrentMonth} />
 
       {/* 섹션 1: 도넛 차트 */}

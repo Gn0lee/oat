@@ -118,7 +118,7 @@ export const queries = createQueryKeyStore({
     byPaymentMethod: (year: number, month: number, scope: StatsScope) => ({
       queryKey: [year, month, scope],
     }),
-    trend: (months: number) => ({ queryKey: [months] }),
+    trend: (months: number, scope?: string) => ({ queryKey: [months, scope] }),
     daily: (year: number, month: number, scope: StatsScope) => ({
       queryKey: [year, month, scope],
     }),
