@@ -43,15 +43,11 @@ export function TrendClient() {
 
   const avgStats = useMemo(() => {
     const items = data?.items ?? [];
-    if (items.length === 0) return { avgExpense: 0, avgSavingsRate: 0 };
+    if (items.length === 0) return { avgExpense: 0 };
     return {
       avgExpense: Math.round(
         items.reduce((s, i) => s + i.totalExpense, 0) / items.length,
       ),
-      avgSavingsRate:
-        Math.round(
-          (items.reduce((s, i) => s + i.savingsRate, 0) / items.length) * 10,
-        ) / 10,
     };
   }, [data]);
 
@@ -157,30 +153,13 @@ export function TrendClient() {
         )}
       </div>
 
-      {/* Section 2: 평균 인사이트 카드 */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="bg-white rounded-2xl p-4 shadow-sm">
-          <p className="text-xs text-gray-500 mb-1">평균 월 지출</p>
-          <p className="text-lg font-bold text-gray-900">
-            {formatCurrency(avgStats.avgExpense)}
-          </p>
-          <p className="text-xs text-gray-400 mt-1">최근 6개월 기준</p>
-        </div>
-        <div className="bg-white rounded-2xl p-4 shadow-sm">
-          <p className="text-xs text-gray-500 mb-1">평균 저축률</p>
-          <p
-            className={`text-lg font-bold ${
-              avgStats.avgSavingsRate >= 20
-                ? "text-green-600"
-                : avgStats.avgSavingsRate >= 10
-                  ? "text-yellow-600"
-                  : "text-red-500"
-            }`}
-          >
-            {avgStats.avgSavingsRate.toFixed(1)}%
-          </p>
-          <p className="text-xs text-gray-400 mt-1">최근 6개월 기준</p>
-        </div>
+      {/* Section 2: 평균 지출 카드 */}
+      <div className="bg-white rounded-2xl p-4 shadow-sm">
+        <p className="text-xs text-gray-500 mb-1">월 평균 지출</p>
+        <p className="text-lg font-bold text-gray-900">
+          {formatCurrency(avgStats.avgExpense)}
+        </p>
+        <p className="text-xs text-gray-400 mt-1">최근 6개월 기준</p>
       </div>
 
       {/* Section 3: 월별 요약 테이블 */}

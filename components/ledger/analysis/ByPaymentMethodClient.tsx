@@ -15,7 +15,6 @@ import { useLedgerStatsByPaymentMethod } from "@/hooks/use-ledger-stats";
 import type { StatsScope } from "@/lib/api/ledger-stats";
 import { formatCurrency } from "@/lib/utils/format";
 import { MonthSelector } from "./MonthSelector";
-import { ScopeToggle } from "./ScopeToggle";
 
 const CHART_COLORS = [
   "#4F46E5",
@@ -35,11 +34,14 @@ function PaymentIcon({ type }: { type: string | null }) {
   return <Tag className="w-4 h-4" />;
 }
 
-export function ByPaymentMethodClient() {
+interface ByPaymentMethodClientProps {
+  scope: StatsScope;
+}
+
+export function ByPaymentMethodClient({ scope }: ByPaymentMethodClientProps) {
   const [currentMonth, setCurrentMonth] = useState<Date>(() =>
     startOfMonth(new Date()),
   );
-  const [scope, setScope] = useState<StatsScope>("all");
   const [hoveredId, setHoveredId] = useState<string | null>(null);
 
   const year = currentMonth.getFullYear();
@@ -72,7 +74,6 @@ export function ByPaymentMethodClient() {
     <div className="space-y-4">
       <PageHeader title="결제수단별 지출" backHref="/ledger/analysis" />
       <MonthSelector value={currentMonth} onChange={setCurrentMonth} />
-      <ScopeToggle value={scope} onChange={setScope} />
 
       {/* 섹션 1: 도넛 차트 */}
       <div className="bg-white rounded-2xl p-5 shadow-sm">

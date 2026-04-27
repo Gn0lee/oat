@@ -9,6 +9,7 @@ import {
 import Link from "next/link";
 import { PageHeader } from "@/components/layout";
 import { CategoryTopPreview } from "@/components/ledger/analysis/CategoryTopPreview";
+import { ScopeTabs } from "@/components/ledger/analysis/ScopeTabs";
 import { SummaryStatCard } from "@/components/ledger/analysis/SummaryStatCard";
 import { getUserHouseholdId } from "@/lib/api/invitation";
 import {
@@ -20,48 +21,60 @@ import { createClient } from "@/lib/supabase/server";
 
 const NAV_CARDS = [
   {
-    href: "/ledger/analysis/by-category",
+    key: "by-category",
     icon: PieChart,
     title: "카테고리별 지출",
     description: "어디에 얼마나 썼는지 확인",
     color: "text-indigo-600",
     bg: "bg-indigo-50",
+    scopeAware: true,
   },
   {
-    href: "/ledger/analysis/by-member",
+    key: "by-member",
     icon: Users,
     title: "구성원별 지출",
-    description: "가족 구성원별 소비 현황",
+    description: "공용 지출에서 누가 얼마나 결제했는지",
     color: "text-rose-500",
     bg: "bg-rose-50",
+    scopeAware: false,
   },
   {
-    href: "/ledger/analysis/by-payment-method",
+    key: "by-payment-method",
     icon: CreditCard,
     title: "결제수단별 지출",
     description: "어떤 카드·페이로 지출했는지",
     color: "text-blue-500",
     bg: "bg-blue-50",
+    scopeAware: true,
   },
   {
-    href: "/ledger/analysis/trend",
+    key: "trend",
     icon: TrendingUp,
     title: "월별 지출 추이",
     description: "최근 6개월 수입·지출 흐름",
     color: "text-amber-500",
     bg: "bg-amber-50",
+    scopeAware: true,
   },
   {
-    href: "/ledger/analysis/daily",
+    key: "daily",
     icon: CalendarDays,
     title: "일별 지출 현황",
     description: "이번 달 날짜별 소비 패턴",
     color: "text-emerald-500",
     bg: "bg-emerald-50",
+    scopeAware: true,
   },
 ];
 
-export default async function LedgerAnalysisPage() {
+export default async function LedgerAnalysisPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ scope?: string }>;
+}) {
+  const { scope: rawScope } = await searchParams;
+  const scope = rawScope === "personal" ? "personal" : "shared";
+
   const user = await requireUser();
   const supabase = await createClient();
   const householdId = await getUserHouseholdId(supabase, user.id);
@@ -82,7 +95,7 @@ export default async function LedgerAnalysisPage() {
           year,
           month,
           "expense",
-          "all",
+          scope,
         )
       : null,
   ]);
@@ -90,6 +103,8 @@ export default async function LedgerAnalysisPage() {
   return (
     <>
       <PageHeader title="통계 대시보드" backHref="/ledger" />
+
+      <ScopeTabs scope={scope} />
 
       {summary ? (
         <SummaryStatCard summary={summary} />
@@ -113,26 +128,33 @@ export default async function LedgerAnalysisPage() {
           분석 보기
         </h3>
         {NAV_CARDS.map(
-          ({ href, icon: Icon, title, description, color, bg }) => (
-            <Link
-              key={href}
-              href={href}
-              className="flex items-center justify-between p-4 bg-white rounded-2xl shadow-sm hover:bg-gray-50 transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                <div
-                  className={`w-10 h-10 rounded-full ${bg} flex items-center justify-center shrink-0`}
-                >
-                  <Icon className={`w-5 h-5 ${color}`} />
+          ({ key, icon: Icon, title, description, color, bg, scopeAware }) => {
+            const href = scopeAware
+              ? `/ledger/analysis/${key}?scope=${scope}`
+              : `/ledger/analysis/${key}`;
+            return (
+              <Link
+                key={key}
+                href={href}
+                className="flex items-center justify-between p-4 bg-white rounded-2xl shadow-sm hover:bg-gray-50 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`w-10 h-10 rounded-full ${bg} flex items-center justify-center shrink-0`}
+                  >
+                    <Icon className={`w-5 h-5 ${color}`} />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900">{title}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {description}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-semibold text-gray-900">{title}</p>
-                  <p className="text-xs text-gray-500 mt-0.5">{description}</p>
-                </div>
-              </div>
-              <ChevronRight className="w-5 h-5 text-gray-400 shrink-0" />
-            </Link>
-          ),
+                <ChevronRight className="w-5 h-5 text-gray-400 shrink-0" />
+              </Link>
+            );
+          },
         )}
       </div>
     </>

@@ -1,6 +1,6 @@
 "use client";
 
-import { startOfMonth } from "date-fns";
+import { getDaysInMonth, startOfMonth } from "date-fns";
 import { useMemo, useState } from "react";
 import { Bar, BarChart, CartesianGrid, Cell, XAxis, YAxis } from "recharts";
 import { PageHeader } from "@/components/layout";
@@ -13,15 +13,17 @@ import { useLedgerStatsDaily } from "@/hooks/use-ledger-stats";
 import type { StatsScope } from "@/lib/api/ledger-stats";
 import { formatCurrency } from "@/lib/utils/format";
 import { MonthSelector } from "./MonthSelector";
-import { ScopeToggle } from "./ScopeToggle";
 
 const DAY_NAMES = ["일", "월", "화", "수", "목", "금", "토"];
 
-export function DailyClient() {
+interface DailyClientProps {
+  scope: StatsScope;
+}
+
+export function DailyClient({ scope }: DailyClientProps) {
   const [currentMonth, setCurrentMonth] = useState<Date>(() =>
     startOfMonth(new Date()),
   );
-  const [scope, setScope] = useState<StatsScope>("all");
 
   const year = currentMonth.getFullYear();
   const month = currentMonth.getMonth() + 1;
@@ -29,16 +31,21 @@ export function DailyClient() {
 
   const items = data?.items ?? [];
 
-  const dailyChartData = useMemo(
-    () =>
-      items.map((item) => ({
-        day: `${Number(item.date.slice(8, 10))}일`,
-        totalExpense: item.totalExpense,
-        totalIncome: item.totalIncome,
-        date: item.date,
-      })),
-    [items],
-  );
+  const dailyChartData = useMemo(() => {
+    const days = getDaysInMonth(currentMonth);
+    const map = new Map(items.map((item) => [item.date, item]));
+    return Array.from({ length: days }, (_, i) => {
+      const day = i + 1;
+      const dateStr = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+      const item = map.get(dateStr);
+      return {
+        label: `${day}일`,
+        dateStr,
+        totalExpense: item?.totalExpense ?? 0,
+        totalIncome: item?.totalIncome ?? 0,
+      };
+    });
+  }, [items, currentMonth, year, month]);
 
   const dayOfWeekData = useMemo(() => {
     const groups = new Map<number, number[]>();
@@ -70,11 +77,12 @@ export function DailyClient() {
     [items],
   );
 
+  const backHref = `/ledger/analysis?scope=${scope}`;
+
   return (
     <div className="space-y-4">
-      <PageHeader title="일별 지출 현황" backHref="/ledger/analysis" />
+      <PageHeader title="일별 지출 현황" backHref={backHref} />
       <MonthSelector value={currentMonth} onChange={setCurrentMonth} />
-      <ScopeToggle value={scope} onChange={setScope} />
 
       {/* 월 요약 스트립 */}
       <div className="grid grid-cols-3 gap-3">
@@ -105,14 +113,10 @@ export function DailyClient() {
         <h3 className="text-sm font-semibold text-gray-900 mb-4">일별 지출</h3>
         {isLoading ? (
           <div className="animate-pulse h-[200px] bg-gray-100 rounded" />
-        ) : items.length === 0 ? (
-          <p className="text-center text-gray-400 text-sm py-8">
-            이번 달 지출 내역이 없어요
-          </p>
         ) : (
           <ChartContainer
             config={{ totalExpense: { label: "지출", color: "#3182F6" } }}
-            className="h-[200px]"
+            className="h-[200px] w-full overflow-hidden"
           >
             <BarChart
               data={dailyChartData}
@@ -123,7 +127,7 @@ export function DailyClient() {
                 stroke="#F3F4F6"
                 vertical={false}
               />
-              <XAxis dataKey="day" tick={{ fontSize: 10 }} interval={4} />
+              <XAxis dataKey="label" tick={{ fontSize: 9 }} interval={4} />
               <YAxis
                 tickFormatter={(v) => `${Math.floor(v / 10000)}만`}
                 tick={{ fontSize: 10 }}
@@ -139,9 +143,9 @@ export function DailyClient() {
               <Bar dataKey="totalExpense" name="지출" radius={[3, 3, 0, 0]}>
                 {dailyChartData.map((entry) => (
                   <Cell
-                    key={entry.date}
+                    key={entry.dateStr}
                     fill="#3182F6"
-                    fillOpacity={entry.totalExpense > 0 ? 1 : 0.2}
+                    fillOpacity={entry.totalExpense > 0 ? 1 : 0.15}
                   />
                 ))}
               </Bar>

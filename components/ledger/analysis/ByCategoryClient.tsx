@@ -30,7 +30,6 @@ import { useLedgerStatsByCategory } from "@/hooks/use-ledger-stats";
 import type { StatsScope } from "@/lib/api/ledger-stats";
 import { formatCurrency } from "@/lib/utils/format";
 import { MonthSelector } from "./MonthSelector";
-import { ScopeToggle } from "./ScopeToggle";
 
 const CHART_COLORS = [
   "#4F46E5",
@@ -42,11 +41,14 @@ const CHART_COLORS = [
   "#EC4899",
 ];
 
-export function ByCategoryClient() {
+interface ByCategoryClientProps {
+  scope: StatsScope;
+}
+
+export function ByCategoryClient({ scope }: ByCategoryClientProps) {
   const [currentMonth, setCurrentMonth] = useState<Date>(() =>
     startOfMonth(new Date()),
   );
-  const [scope, setScope] = useState<StatsScope>("all");
   const [entryType, setEntryType] = useState<"expense" | "income">("expense");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
@@ -138,10 +140,6 @@ export function ByCategoryClient() {
   return (
     <div className="space-y-4">
       <PageHeader title="카테고리별 지출" backHref="/ledger/analysis" />
-
-      <div className="flex items-center justify-between">
-        <ScopeToggle value={scope} onChange={setScope} />
-      </div>
 
       <MonthSelector value={currentMonth} onChange={setCurrentMonth} />
 

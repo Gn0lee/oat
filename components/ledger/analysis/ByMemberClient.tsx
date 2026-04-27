@@ -1,14 +1,11 @@
 "use client";
 
 import { startOfMonth } from "date-fns";
-import { Lock } from "lucide-react";
 import { useMemo, useState } from "react";
-import { Bar, BarChart, Cell, Pie, PieChart, XAxis, YAxis } from "recharts";
+import { Cell, Pie, PieChart } from "recharts";
 import { PageHeader } from "@/components/layout";
 import {
   ChartContainer,
-  ChartLegend,
-  ChartLegendContent,
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
@@ -33,21 +30,13 @@ export function ByMemberClient() {
     () =>
       members.map((m, i) => ({
         name: m.memberName,
-        value: m.sharedExpense + m.personalExpense,
+        value: m.sharedExpense,
         fill: MEMBER_COLORS[i % MEMBER_COLORS.length],
       })),
     [members],
   );
 
-  const barData = useMemo(
-    () =>
-      members.map((m) => ({
-        name: m.memberName,
-        sharedExpense: m.sharedExpense,
-        personalExpense: m.personalExpenseVisible ? m.personalExpense : 0,
-      })),
-    [members],
-  );
+  const totalShared = donutData.reduce((s, d) => s + d.value, 0);
 
   const donutConfig = useMemo(
     () =>
@@ -71,61 +60,46 @@ export function ByMemberClient() {
       {/* 섹션 1: 구성원 요약 카드 */}
       {isLoading ? (
         <div className="animate-pulse grid grid-cols-2 gap-3">
-          <div className="bg-gray-200 rounded-2xl h-32" />
-          <div className="bg-gray-200 rounded-2xl h-32" />
+          <div className="bg-gray-200 rounded-2xl h-24" />
+          <div className="bg-gray-200 rounded-2xl h-24" />
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {members.map((member, i) => (
-            <div
-              key={member.memberId}
-              className="bg-white rounded-2xl p-4 shadow-sm"
-            >
-              <div className="flex items-center gap-2 mb-3">
-                <div
-                  className="w-3 h-3 rounded-full shrink-0"
-                  style={{
-                    backgroundColor: MEMBER_COLORS[i % MEMBER_COLORS.length],
-                  }}
-                />
-                <span className="font-semibold text-gray-900 text-sm">
-                  {member.memberName}
-                </span>
-                {member.isCurrentUser && (
-                  <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">
-                    나
+          {members.map((member, i) => {
+            const ratio =
+              totalShared > 0
+                ? Math.round((member.sharedExpense / totalShared) * 1000) / 10
+                : 0;
+            return (
+              <div
+                key={member.memberId}
+                className="bg-white rounded-2xl p-4 shadow-sm"
+              >
+                <div className="flex items-center gap-2 mb-3">
+                  <div
+                    className="w-3 h-3 rounded-full shrink-0"
+                    style={{
+                      backgroundColor: MEMBER_COLORS[i % MEMBER_COLORS.length],
+                    }}
+                  />
+                  <span className="font-semibold text-gray-900 text-sm">
+                    {member.memberName}
                   </span>
-                )}
-              </div>
-              <div className="space-y-1.5 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-500">공용 지출</span>
-                  <span className="font-medium text-gray-900">
-                    {formatCurrency(member.sharedExpense)}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">개인 지출</span>
-                  {member.personalExpenseVisible ? (
-                    <span className="font-medium text-gray-900">
-                      {formatCurrency(member.personalExpense)}
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-1 text-gray-400 text-xs">
-                      <Lock className="w-3 h-3" />
-                      비공개
+                  {member.isCurrentUser && (
+                    <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">
+                      나
                     </span>
                   )}
                 </div>
-                <div className="flex justify-between pt-1 border-t border-gray-100">
-                  <span className="text-gray-600 font-medium">공용 합계</span>
-                  <span className="font-semibold text-gray-900">
-                    {formatCurrency(member.sharedExpense)}
-                  </span>
-                </div>
+                <p className="text-lg font-bold text-gray-900">
+                  {formatCurrency(member.sharedExpense)}
+                </p>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  공용 지출 {ratio.toFixed(1)}% 기여
+                </p>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -175,59 +149,11 @@ export function ByMemberClient() {
         </div>
       )}
 
-      {/* 섹션 3: 공용/개인 grouped bar */}
-      {!isLoading && barData.length > 0 && (
-        <div className="bg-white rounded-2xl p-5 shadow-sm">
-          <h3 className="text-sm font-semibold text-gray-900 mb-4">
-            공용 · 개인 지출 비교
-          </h3>
-          <ChartContainer
-            config={{
-              sharedExpense: { label: "공용", color: "#4F46E5" },
-              personalExpense: { label: "개인", color: "#3182F6" },
-            }}
-            className="h-[180px]"
-          >
-            <BarChart
-              data={barData}
-              margin={{ left: 0, right: 8, top: 4, bottom: 4 }}
-            >
-              <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-              <YAxis
-                tickFormatter={(v) => `${Math.floor(v / 10000)}만`}
-                tick={{ fontSize: 11 }}
-                width={40}
-              />
-              <ChartTooltip
-                content={
-                  <ChartTooltipContent
-                    formatter={(v) => formatCurrency(Number(v))}
-                  />
-                }
-              />
-              <ChartLegend content={<ChartLegendContent />} />
-              <Bar
-                dataKey="sharedExpense"
-                name="공용"
-                fill="#4F46E5"
-                radius={[4, 4, 0, 0]}
-                barSize={24}
-              />
-              <Bar
-                dataKey="personalExpense"
-                name="개인"
-                fill="#3182F6"
-                radius={[4, 4, 0, 0]}
-                barSize={24}
-              />
-            </BarChart>
-          </ChartContainer>
-        </div>
-      )}
-
       {!isLoading && members.length === 0 && (
         <div className="bg-white rounded-2xl p-8 shadow-sm text-center">
-          <p className="text-gray-400 text-sm">이번 달 데이터가 없어요</p>
+          <p className="text-gray-400 text-sm">
+            이번 달 공용 지출 데이터가 없어요
+          </p>
         </div>
       )}
     </div>
