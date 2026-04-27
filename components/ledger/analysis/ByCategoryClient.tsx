@@ -338,12 +338,12 @@ export function ByCategoryClient({ scope }: ByCategoryClientProps) {
               current: { label: "이번달", color: "#4F46E5" },
               prev: { label: "지난달", color: "#E5E7EB" },
             }}
-            className="h-[200px]"
+            className="h-[200px] w-full"
           >
             <BarChart
               data={comparisonData}
               layout="vertical"
-              margin={{ left: 60, right: 16, top: 4, bottom: 4 }}
+              margin={{ left: 0, right: 16, top: 4, bottom: 4 }}
             >
               <XAxis
                 type="number"
@@ -354,7 +354,7 @@ export function ByCategoryClient({ scope }: ByCategoryClientProps) {
                 type="category"
                 dataKey="name"
                 tick={{ fontSize: 11 }}
-                width={60}
+                width={72}
               />
               <ChartTooltip
                 content={

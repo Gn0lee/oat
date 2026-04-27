@@ -81,20 +81,17 @@ export function TrendClient({ scope }: TrendClientProps) {
           </div>
         ) : (
           <>
-            <ChartContainer
-              config={chartConfig}
-              className="h-[200px] w-full overflow-hidden"
-            >
+            <ChartContainer config={chartConfig} className="h-[200px] w-full">
               <ComposedChart
                 data={chartData}
-                margin={{ left: 0, right: 8, top: 4, bottom: 4 }}
+                margin={{ left: 4, right: 8, top: 4, bottom: 4 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
                 <XAxis dataKey="label" tick={{ fontSize: 11 }} />
                 <YAxis
                   tickFormatter={(v) => `${Math.floor(v / 10000)}만`}
                   tick={{ fontSize: 10 }}
-                  width={36}
+                  width={44}
                 />
                 <ChartTooltip
                   content={
@@ -109,14 +106,12 @@ export function TrendClient({ scope }: TrendClientProps) {
                   name="지출"
                   fill="#3182F6"
                   radius={[4, 4, 0, 0]}
-                  barSize={16}
                 />
                 <Bar
                   dataKey="totalIncome"
                   name="수입"
                   fill="#F04452"
                   radius={[4, 4, 0, 0]}
-                  barSize={16}
                 />
               </ComposedChart>
             </ChartContainer>
@@ -126,17 +121,17 @@ export function TrendClient({ scope }: TrendClientProps) {
               <p className="text-xs text-gray-500 mb-2">저축률 추이</p>
               <ChartContainer
                 config={{ savingsRate: { label: "저축률", color: "#4F46E5" } }}
-                className="h-[80px] w-full overflow-hidden"
+                className="h-[80px] w-full"
               >
                 <ComposedChart
                   data={chartData}
-                  margin={{ left: 0, right: 8, top: 4, bottom: 0 }}
+                  margin={{ left: 4, right: 8, top: 4, bottom: 0 }}
                 >
                   <XAxis dataKey="label" tick={{ fontSize: 10 }} />
                   <YAxis
                     tickFormatter={(v) => `${v}%`}
                     tick={{ fontSize: 10 }}
-                    width={32}
+                    width={36}
                     domain={[0, 100]}
                   />
                   <ChartTooltip

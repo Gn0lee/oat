@@ -116,11 +116,11 @@ export function DailyClient({ scope }: DailyClientProps) {
         ) : (
           <ChartContainer
             config={{ totalExpense: { label: "지출", color: "#3182F6" } }}
-            className="h-[200px] w-full overflow-hidden"
+            className="h-[200px] w-full"
           >
             <BarChart
               data={dailyChartData}
-              margin={{ left: 0, right: 8, top: 4, bottom: 4 }}
+              margin={{ left: 4, right: 8, top: 4, bottom: 4 }}
             >
               <CartesianGrid
                 strokeDasharray="3 3"
@@ -131,7 +131,7 @@ export function DailyClient({ scope }: DailyClientProps) {
               <YAxis
                 tickFormatter={(v) => `${Math.floor(v / 10000)}만`}
                 tick={{ fontSize: 10 }}
-                width={36}
+                width={44}
               />
               <ChartTooltip
                 content={
@@ -163,17 +163,17 @@ export function DailyClient({ scope }: DailyClientProps) {
           <p className="text-xs text-gray-400 mb-4">이번 달 기준</p>
           <ChartContainer
             config={{ avg: { label: "평균 지출", color: "#4F46E5" } }}
-            className="h-[160px]"
+            className="h-[160px] w-full"
           >
             <BarChart
               data={dayOfWeekData}
-              margin={{ left: 0, right: 8, top: 4, bottom: 4 }}
+              margin={{ left: 4, right: 8, top: 4, bottom: 4 }}
             >
               <XAxis dataKey="name" tick={{ fontSize: 13 }} />
               <YAxis
                 tickFormatter={(v) => `${Math.floor(v / 10000)}만`}
                 tick={{ fontSize: 10 }}
-                width={36}
+                width={44}
               />
               <ChartTooltip
                 content={
