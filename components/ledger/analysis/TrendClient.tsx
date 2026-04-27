@@ -76,56 +76,84 @@ export function TrendClient() {
             </div>
           </div>
         ) : (
-          <ChartContainer config={chartConfig} className="h-[220px]">
-            <ComposedChart
-              data={chartData}
-              margin={{ left: 0, right: 16, top: 4, bottom: 4 }}
+          <>
+            <ChartContainer
+              config={chartConfig}
+              className="h-[200px] w-full overflow-hidden"
             >
-              <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
-              <XAxis dataKey="label" tick={{ fontSize: 12 }} />
-              <YAxis
-                yAxisId="amount"
-                tickFormatter={(v) => `${Math.floor(v / 10000)}만`}
-                tick={{ fontSize: 11 }}
-                width={40}
-              />
-              <YAxis
-                yAxisId="rate"
-                orientation="right"
-                tickFormatter={(v) => `${v}%`}
-                tick={{ fontSize: 11 }}
-                width={36}
-                domain={[0, 100]}
-              />
-              <ChartTooltip content={<ChartTooltipContent />} />
-              <ChartLegend content={<ChartLegendContent />} />
-              <Bar
-                yAxisId="amount"
-                dataKey="totalExpense"
-                name="지출"
-                fill="#3182F6"
-                radius={[4, 4, 0, 0]}
-                barSize={20}
-              />
-              <Bar
-                yAxisId="amount"
-                dataKey="totalIncome"
-                name="수입"
-                fill="#F04452"
-                radius={[4, 4, 0, 0]}
-                barSize={20}
-              />
-              <Line
-                yAxisId="rate"
-                type="monotone"
-                dataKey="savingsRate"
-                name="저축률"
-                stroke="#4F46E5"
-                strokeWidth={2}
-                dot={{ fill: "#4F46E5", r: 4 }}
-              />
-            </ComposedChart>
-          </ChartContainer>
+              <ComposedChart
+                data={chartData}
+                margin={{ left: 0, right: 8, top: 4, bottom: 4 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
+                <XAxis dataKey="label" tick={{ fontSize: 11 }} />
+                <YAxis
+                  tickFormatter={(v) => `${Math.floor(v / 10000)}만`}
+                  tick={{ fontSize: 10 }}
+                  width={36}
+                />
+                <ChartTooltip
+                  content={
+                    <ChartTooltipContent
+                      formatter={(v) => formatCurrency(Number(v))}
+                    />
+                  }
+                />
+                <ChartLegend content={<ChartLegendContent />} />
+                <Bar
+                  dataKey="totalExpense"
+                  name="지출"
+                  fill="#3182F6"
+                  radius={[4, 4, 0, 0]}
+                  barSize={16}
+                />
+                <Bar
+                  dataKey="totalIncome"
+                  name="수입"
+                  fill="#F04452"
+                  radius={[4, 4, 0, 0]}
+                  barSize={16}
+                />
+              </ComposedChart>
+            </ChartContainer>
+
+            {/* 저축률 라인 차트 (별도 섹션) */}
+            <div className="mt-4 pt-4 border-t border-gray-50">
+              <p className="text-xs text-gray-500 mb-2">저축률 추이</p>
+              <ChartContainer
+                config={{ savingsRate: { label: "저축률", color: "#4F46E5" } }}
+                className="h-[80px] w-full overflow-hidden"
+              >
+                <ComposedChart
+                  data={chartData}
+                  margin={{ left: 0, right: 8, top: 4, bottom: 0 }}
+                >
+                  <XAxis dataKey="label" tick={{ fontSize: 10 }} />
+                  <YAxis
+                    tickFormatter={(v) => `${v}%`}
+                    tick={{ fontSize: 10 }}
+                    width={32}
+                    domain={[0, 100]}
+                  />
+                  <ChartTooltip
+                    content={
+                      <ChartTooltipContent
+                        formatter={(v) => `${Number(v).toFixed(1)}%`}
+                      />
+                    }
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="savingsRate"
+                    name="저축률"
+                    stroke="#4F46E5"
+                    strokeWidth={2}
+                    dot={{ fill: "#4F46E5", r: 3 }}
+                  />
+                </ComposedChart>
+              </ChartContainer>
+            </div>
+          </>
         )}
       </div>
 

@@ -139,27 +139,7 @@ export function ByCategoryClient() {
     <div className="space-y-4">
       <PageHeader title="카테고리별 지출" backHref="/ledger/analysis" />
 
-      {/* Controls row */}
-      <div className="flex flex-wrap items-center gap-2 mb-2">
-        <div className="inline-flex rounded-lg bg-gray-100 p-1 gap-1">
-          {(["expense", "income"] as const).map((type) => (
-            <button
-              key={type}
-              type="button"
-              onClick={() => {
-                setEntryType(type);
-                setSelectedIds([]);
-              }}
-              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-                entryType === type
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              {type === "expense" ? "지출" : "수입"}
-            </button>
-          ))}
-        </div>
+      <div className="flex items-center justify-between">
         <ScopeToggle value={scope} onChange={setScope} />
       </div>
 
@@ -184,6 +164,25 @@ export function ByCategoryClient() {
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-56 p-0" align="end">
+              <div className="flex border-b border-gray-100">
+                {(["expense", "income"] as const).map((type) => (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => {
+                      setEntryType(type);
+                      setSelectedIds([]);
+                    }}
+                    className={`flex-1 py-2 text-xs font-medium transition-colors ${
+                      entryType === type
+                        ? "text-primary border-b-2 border-primary"
+                        : "text-gray-400"
+                    }`}
+                  >
+                    {type === "expense" ? "지출" : "수입"}
+                  </button>
+                ))}
+              </div>
               <Command>
                 <CommandInput placeholder="카테고리 검색..." className="h-9" />
                 <CommandList className="max-h-48">
