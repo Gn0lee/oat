@@ -444,6 +444,7 @@ export async function getLedgerStatsTrend(
   householdId: string,
   userId: string,
   months: number,
+  scope: StatsScope = "all",
 ): Promise<LedgerStatsTrendResult> {
   const now = new Date();
   const currentYear = now.getFullYear();
@@ -460,20 +461,60 @@ export async function getLedgerStatsTrend(
     monthList.push({ year, month });
   }
 
-  const results = await Promise.all(
-    monthList.map(({ year, month }) =>
-      getLedgerStatsSummary(supabase, householdId, userId, year, month),
-    ),
-  );
+  const first = monthList[0];
+  const from = new Date(first.year, first.month - 1, 1).toISOString();
+  const to = new Date(currentYear, currentMonth, 1).toISOString();
 
-  const items: MonthlyTrendItem[] = results.map((summary) => ({
-    year: summary.year,
-    month: summary.month,
-    totalIncome: summary.totalIncome,
-    totalExpense: summary.totalExpense,
-    balance: summary.balance,
-    savingsRate: summary.savingsRate,
-  }));
+  let query = supabase
+    .from("ledger_entries")
+    .select("type, amount, transacted_at")
+    .eq("household_id", householdId)
+    .in("type", ["expense", "income"])
+    .gte("transacted_at", from)
+    .lt("transacted_at", to);
+
+  if (scope === "shared") {
+    query = query.eq("is_shared", true);
+  } else if (scope === "personal") {
+    query = query.eq("is_shared", false).eq("owner_id", userId);
+  }
+
+  const { data, error } = await query;
+  if (error) {
+    throw new APIError("STATS_FETCH_ERROR", "통계 조회에 실패했습니다.", 500);
+  }
+
+  const monthMap = new Map<string, { income: number; expense: number }>();
+  for (const { year, month } of monthList) {
+    monthMap.set(`${year}-${month}`, { income: 0, expense: 0 });
+  }
+
+  for (const row of data ?? []) {
+    const d = new Date(row.transacted_at);
+    const key = `${d.getFullYear()}-${d.getMonth() + 1}`;
+    const existing = monthMap.get(key);
+    if (!existing) continue;
+    if (row.type === "income") {
+      existing.income += row.amount;
+    } else {
+      existing.expense += row.amount;
+    }
+  }
+
+  const items: MonthlyTrendItem[] = monthList.map(({ year, month }) => {
+    const { income, expense } = monthMap.get(`${year}-${month}`) ?? {
+      income: 0,
+      expense: 0,
+    };
+    return {
+      year,
+      month,
+      totalIncome: income,
+      totalExpense: expense,
+      balance: income - expense,
+      savingsRate: calcSavingsRate(income, expense),
+    };
+  });
 
   return { items };
 }

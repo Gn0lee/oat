@@ -1,4 +1,5 @@
 import { createQueryKeyStore } from "@lukemorales/query-key-factory";
+import type { StatsScope } from "@/lib/api/ledger-stats";
 
 export const queries = createQueryKeyStore({
   auth: {
@@ -102,5 +103,24 @@ export const queries = createQueryKeyStore({
       queryKey: [params],
     }),
     detail: (id: string) => ({ queryKey: [id] }),
+  },
+
+  ledgerStats: {
+    all: null,
+    summary: (year: number, month: number) => ({ queryKey: [year, month] }),
+    byMember: (year: number, month: number) => ({ queryKey: [year, month] }),
+    byCategory: (
+      year: number,
+      month: number,
+      type: "expense" | "income",
+      scope: StatsScope,
+    ) => ({ queryKey: [year, month, type, scope] }),
+    byPaymentMethod: (year: number, month: number, scope: StatsScope) => ({
+      queryKey: [year, month, scope],
+    }),
+    trend: (months: number, scope?: string) => ({ queryKey: [months, scope] }),
+    daily: (year: number, month: number, scope: StatsScope) => ({
+      queryKey: [year, month, scope],
+    }),
   },
 });
