@@ -1,14 +1,15 @@
 import {
-  AssetTypeSummary,
-  ExchangeRateCard,
-  RecentTransactions,
-  TopHoldings,
+  CashFlowCard,
+  HomeTopCategories,
+  QuickActionButtons,
   TotalAssetCard,
 } from "@/components/home";
-import type { ExchangeRateData } from "@/components/home/ExchangeRateCard";
 import { PageHeader } from "@/components/layout";
-import { getAllExchangeRates } from "@/lib/api/exchange";
 import { getUserHouseholdId } from "@/lib/api/invitation";
+import {
+  getLedgerStatsByCategory,
+  getLedgerStatsSummary,
+} from "@/lib/api/ledger-stats";
 import { getPortfolioSummary } from "@/lib/api/portfolio";
 import { requireUser } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
@@ -17,24 +18,32 @@ export default async function HomePage() {
   const user = await requireUser();
   const supabase = await createClient();
 
-  // 가구 ID 조회
   const householdId = await getUserHouseholdId(supabase, user.id);
 
-  // 포트폴리오 요약 조회
-  const portfolio = householdId
-    ? await getPortfolioSummary(supabase, householdId)
-    : { holdingCount: 0, totalValue: 0, totalInvested: 0, returnRate: 0 };
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1;
 
-  // 환율 조회
-  const exchangeRatesData = await getAllExchangeRates(supabase);
-  const exchangeRates: ExchangeRateData[] = exchangeRatesData.map((r) => ({
-    from: r.fromCurrency,
-    to: r.toCurrency,
-    rate: r.rate,
-    updatedAt: r.updatedAt,
-  }));
+  const [cashFlow, categoryResult, portfolio] = await Promise.all([
+    householdId
+      ? getLedgerStatsSummary(supabase, householdId, user.id, year, month)
+      : null,
+    householdId
+      ? getLedgerStatsByCategory(
+          supabase,
+          householdId,
+          user.id,
+          year,
+          month,
+          "expense",
+          "shared",
+        )
+      : null,
+    householdId
+      ? getPortfolioSummary(supabase, householdId)
+      : { holdingCount: 0, totalValue: 0, totalInvested: 0, returnRate: 0 },
+  ]);
 
-  // 사용자 이름 조회
   const { data: profile } = await supabase
     .from("profiles")
     .select("name")
@@ -47,20 +56,19 @@ export default async function HomePage() {
     <>
       <PageHeader title={`안녕하세요, ${userName}님`} />
 
-      {/* 총 자산 카드 & 환율 카드 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <TotalAssetCard totalInvested={portfolio.totalInvested} />
-        <ExchangeRateCard rates={exchangeRates} />
-      </div>
+      <CashFlowCard
+        totalIncome={cashFlow?.totalIncome ?? 0}
+        totalExpense={cashFlow?.totalExpense ?? 0}
+        balance={cashFlow?.balance ?? 0}
+        savingsRate={cashFlow?.savingsRate ?? 0}
+        month={month}
+      />
 
-      {/* 자산 유형별 요약 */}
-      <AssetTypeSummary />
+      <TotalAssetCard totalValue={portfolio.totalValue} />
 
-      {/* 최근 거래 & TOP 5 종목 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <RecentTransactions />
-        <TopHoldings />
-      </div>
+      <HomeTopCategories items={categoryResult?.items ?? []} />
+
+      <QuickActionButtons />
     </>
   );
 }
