@@ -14,7 +14,37 @@ describe("CashFlowCard", () => {
       />,
     );
     expect(
-      screen.getByText("가계부를 기록하면 현금 흐름이 표시돼요"),
+      screen.getByText("첫 지출이나 수입을 기록하면 바로 보여드릴게요"),
+    ).toBeInTheDocument();
+  });
+
+  it("잔액이 양수이면 부드러운 대표 문장을 표시한다", () => {
+    render(
+      <CashFlowCard
+        totalIncome={5_000_000}
+        totalExpense={3_800_000}
+        balance={1_200_000}
+        savingsRate={24}
+        month={4}
+      />,
+    );
+    expect(
+      screen.getByText("이번 달은 아직 ₩1,200,000 남았어요"),
+    ).toBeInTheDocument();
+  });
+
+  it("잔액이 음수이면 초과 지출 문장을 표시한다", () => {
+    render(
+      <CashFlowCard
+        totalIncome={1_000_000}
+        totalExpense={1_500_000}
+        balance={-500_000}
+        savingsRate={-50}
+        month={4}
+      />,
+    );
+    expect(
+      screen.getByText("이번 달은 ₩500,000 초과 지출 중이에요"),
     ).toBeInTheDocument();
   });
 
@@ -69,6 +99,8 @@ describe("CashFlowCard", () => {
         month={4}
       />,
     );
-    expect(screen.getByText("저축률 24.0%")).toBeInTheDocument();
+    expect(
+      screen.getByText("저축률 24%로 흘러가고 있어요"),
+    ).toBeInTheDocument();
   });
 });

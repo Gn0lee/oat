@@ -1,9 +1,9 @@
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils/cn";
 
 interface FeatureCardProps {
-  icon: string;
+  icon: LucideIcon;
   title: string;
   description: string;
   hint?: string;
@@ -43,6 +43,7 @@ export function FeatureCard({
   colorScheme,
 }: FeatureCardProps) {
   const colors = colorMap[colorScheme];
+  const Icon = icon;
 
   return (
     <Link
@@ -55,11 +56,15 @@ export function FeatureCard({
       <div>
         <div
           className={cn(
-            "w-10 h-10 rounded-xl flex items-center justify-center text-xl mb-3",
+            "w-10 h-10 rounded-xl flex items-center justify-center mb-3",
             colors.iconBg,
           )}
         >
-          {icon}
+          <Icon
+            className="w-5 h-5 text-gray-700"
+            aria-hidden="true"
+            data-testid="feature-card-icon"
+          />
         </div>
         <p className="font-semibold text-gray-900 text-sm">{title}</p>
         <p className="text-xs text-gray-400 mt-0.5">{description}</p>
