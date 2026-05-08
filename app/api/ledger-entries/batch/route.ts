@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { APIError, toErrorResponse } from "@/lib/api/error";
 import { getUserHouseholdId } from "@/lib/api/invitation";
-import { createLedgerEntry } from "@/lib/api/ledger";
+import { createLedgerEntryWithBalanceSync } from "@/lib/api/ledger";
 import { createClient } from "@/lib/supabase/server";
 import { createLedgerEntrySchema } from "@/schemas/ledger-entry";
 
@@ -49,25 +49,25 @@ export async function POST(request: Request) {
       );
     }
 
-    const created = await Promise.all(
-      result.data.entries.map((entry) =>
-        createLedgerEntry(supabase, {
-          householdId,
-          ownerId: user.id,
-          type: entry.type,
-          amount: entry.amount,
-          transactedAt: entry.transactedAt,
-          title: entry.title,
-          categoryId: entry.categoryId,
-          fromAccountId: entry.fromAccountId,
-          fromPaymentMethodId: entry.fromPaymentMethodId,
-          toAccountId: entry.toAccountId,
-          toPaymentMethodId: entry.toPaymentMethodId,
-          isShared: entry.isShared,
-          memo: entry.memo,
-        }),
-      ),
-    );
+    const created = [];
+    for (const entry of result.data.entries) {
+      const ledgerEntry = await createLedgerEntryWithBalanceSync(supabase, {
+        householdId,
+        ownerId: user.id,
+        type: entry.type,
+        amount: entry.amount,
+        transactedAt: entry.transactedAt,
+        title: entry.title,
+        categoryId: entry.categoryId,
+        fromAccountId: entry.fromAccountId,
+        fromPaymentMethodId: entry.fromPaymentMethodId,
+        toAccountId: entry.toAccountId,
+        toPaymentMethodId: entry.toPaymentMethodId,
+        isShared: entry.isShared,
+        memo: entry.memo,
+      });
+      created.push(ledgerEntry);
+    }
 
     return NextResponse.json(
       { data: created, count: created.length },

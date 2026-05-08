@@ -68,6 +68,47 @@ export function useLedgerEntries(params?: LedgerEntriesParams) {
 }
 
 // ============================================================================
+// 가계부 항목 생성
+// ============================================================================
+
+async function createLedgerEntry(
+  input: CreateLedgerEntryInput,
+): Promise<LedgerEntry> {
+  const response = await fetch("/api/ledger-entries", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  const json = await response.json();
+
+  if (!response.ok) {
+    const error = json as LedgerError;
+    throw new Error(error.error.message);
+  }
+
+  return (json as LedgerEntryResponse).data;
+}
+
+function invalidateLedgerBalanceQueries(
+  queryClient: ReturnType<typeof useQueryClient>,
+) {
+  queryClient.invalidateQueries({ queryKey: queries.ledgerEntries._def });
+  queryClient.invalidateQueries({ queryKey: queries.accounts._def });
+  queryClient.invalidateQueries({ queryKey: queries.paymentMethods._def });
+}
+
+export function useCreateLedgerEntry() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: createLedgerEntry,
+    onSuccess: () => {
+      invalidateLedgerBalanceQueries(queryClient);
+    },
+  });
+}
+
+// ============================================================================
 // 가계부 항목 일괄 생성
 // ============================================================================
 
@@ -95,7 +136,7 @@ export function useCreateBatchLedgerEntries() {
   return useMutation({
     mutationFn: createBatchLedgerEntries,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queries.ledgerEntries._def });
+      invalidateLedgerBalanceQueries(queryClient);
     },
   });
 }
@@ -134,7 +175,7 @@ export function useUpdateLedgerEntry() {
   return useMutation({
     mutationFn: updateLedgerEntry,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queries.ledgerEntries._def });
+      invalidateLedgerBalanceQueries(queryClient);
     },
   });
 }
@@ -161,7 +202,7 @@ export function useDeleteLedgerEntry() {
   return useMutation({
     mutationFn: deleteLedgerEntry,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queries.ledgerEntries._def });
+      invalidateLedgerBalanceQueries(queryClient);
     },
   });
 }

@@ -3,6 +3,7 @@ import {
   buildLedgerEntryPayload,
   buildTransferLedgerEntryPayload,
   calculateLedgerSummary,
+  getLedgerBalanceEffects,
   isTransferCapablePaymentMethod,
 } from "./ledger";
 
@@ -182,5 +183,33 @@ describe("transfer helpers", () => {
     expect(result.fromAccountId).toBe("acc-1");
     expect(result.toPaymentMethodId).toBe("pm-1");
     expect(result.categoryId).toBeUndefined();
+  });
+});
+
+describe("getLedgerBalanceEffects", () => {
+  it("계좌에서 보조 결제수단으로 이체하면 계좌 감소와 결제수단 증가 효과를 만든다", () => {
+    const effects = getLedgerBalanceEffects({
+      type: "transfer",
+      amount: 50000,
+      fromAccountId: "acc-1",
+      toPaymentMethodId: "pm-1",
+    });
+
+    expect(effects).toEqual([
+      { table: "accounts", id: "acc-1", delta: -50000 },
+      { table: "payment_methods", id: "pm-1", delta: 50000 },
+    ]);
+  });
+
+  it("보조 결제수단 지출은 결제수단 감소 효과를 만든다", () => {
+    const effects = getLedgerBalanceEffects({
+      type: "expense",
+      amount: 12000,
+      fromPaymentMethodId: "pm-1",
+    });
+
+    expect(effects).toEqual([
+      { table: "payment_methods", id: "pm-1", delta: -12000 },
+    ]);
   });
 });
