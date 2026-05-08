@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { buildLedgerEntryPayload, calculateLedgerSummary } from "./ledger";
+import {
+  buildLedgerEntryPayload,
+  buildTransferLedgerEntryPayload,
+  calculateLedgerSummary,
+  isTransferCapablePaymentMethod,
+} from "./ledger";
 
 describe("calculateLedgerSummary", () => {
   it("수입 합계를 정확히 계산한다", () => {
@@ -150,5 +155,32 @@ describe("buildLedgerEntryPayload", () => {
       memo: "이마트 장보기",
     });
     expect(result.memo).toBe("이마트 장보기");
+  });
+});
+
+describe("transfer helpers", () => {
+  it("이체 가능한 결제수단만 true를 반환한다", () => {
+    expect(isTransferCapablePaymentMethod("prepaid")).toBe(true);
+    expect(isTransferCapablePaymentMethod("gift_card")).toBe(true);
+    expect(isTransferCapablePaymentMethod("cash")).toBe(true);
+    expect(isTransferCapablePaymentMethod("credit_card")).toBe(false);
+    expect(isTransferCapablePaymentMethod("debit_card")).toBe(false);
+  });
+
+  it("이체 payload는 카테고리 없이 출발지/도착지를 설정한다", () => {
+    const result = buildTransferLedgerEntryPayload(true, {
+      amount: "30000",
+      title: "카카오페이 충전",
+      from: { kind: "account", id: "acc-1" },
+      to: { kind: "paymentMethod", id: "pm-1" },
+      transactedAt: "2026-05-08",
+      memo: "충전",
+    });
+
+    expect(result.type).toBe("transfer");
+    expect(result.amount).toBe(30000);
+    expect(result.fromAccountId).toBe("acc-1");
+    expect(result.toPaymentMethodId).toBe("pm-1");
+    expect(result.categoryId).toBeUndefined();
   });
 });

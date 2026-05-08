@@ -1,7 +1,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { APIError } from "@/lib/api/error";
 import type { CreateLedgerEntryInput } from "@/schemas/ledger-entry";
-import type { Database, LedgerEntry, LedgerEntryType } from "@/types";
+import type {
+  Database,
+  LedgerEntry,
+  LedgerEntryType,
+  PaymentMethodType,
+} from "@/types";
 
 export interface LedgerItemFormData {
   amount: string;
@@ -11,6 +16,31 @@ export interface LedgerItemFormData {
   accountId?: string;
   transactedAt: string;
   memo?: string;
+}
+
+export type TransferLocation =
+  | { kind: "account"; id: string }
+  | { kind: "paymentMethod"; id: string };
+
+export interface TransferItemFormData {
+  amount: string;
+  title: string;
+  from: TransferLocation;
+  to: TransferLocation;
+  transactedAt: string;
+  memo?: string;
+}
+
+const TRANSFER_CAPABLE_PAYMENT_METHOD_TYPES = new Set<PaymentMethodType>([
+  "prepaid",
+  "gift_card",
+  "cash",
+]);
+
+export function isTransferCapablePaymentMethod(
+  type: PaymentMethodType,
+): boolean {
+  return TRANSFER_CAPABLE_PAYMENT_METHOD_TYPES.has(type);
 }
 
 export function buildLedgerEntryPayload(
@@ -37,6 +67,31 @@ export function buildLedgerEntryPayload(
   if (type === "income" && item.accountId) {
     base.toAccountId = item.accountId;
   }
+
+  return base;
+}
+
+export function buildTransferLedgerEntryPayload(
+  isShared: boolean,
+  item: TransferItemFormData,
+): CreateLedgerEntryInput {
+  const base: CreateLedgerEntryInput = {
+    type: "transfer",
+    amount: Number(item.amount),
+    transactedAt: item.transactedAt.includes("T")
+      ? item.transactedAt
+      : `${item.transactedAt}T00:00:00.000Z`,
+    title: item.title,
+    isShared,
+    memo: item.memo || undefined,
+  };
+
+  if (item.from.kind === "account") base.fromAccountId = item.from.id;
+  if (item.from.kind === "paymentMethod") {
+    base.fromPaymentMethodId = item.from.id;
+  }
+  if (item.to.kind === "account") base.toAccountId = item.to.id;
+  if (item.to.kind === "paymentMethod") base.toPaymentMethodId = item.to.id;
 
   return base;
 }
