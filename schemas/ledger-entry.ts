@@ -2,7 +2,7 @@ import { z } from "zod";
 
 const ledgerEntryTypeValues = ["expense", "income", "transfer"] as const;
 
-export const createLedgerEntrySchema = z.object({
+const createLedgerEntryBaseSchema = z.object({
   type: z.enum(ledgerEntryTypeValues, {
     message: "유효한 항목 유형이 아닙니다.",
   }),
@@ -20,6 +20,43 @@ export const createLedgerEntrySchema = z.object({
   isShared: z.boolean().default(true),
   memo: z.string().max(500, "메모는 500자 이내여야 합니다.").optional(),
 });
+
+export const createLedgerEntrySchema = createLedgerEntryBaseSchema.superRefine(
+  (value, ctx) => {
+    if (value.type !== "transfer") return;
+
+    const sourceCount =
+      Number(Boolean(value.fromAccountId)) +
+      Number(Boolean(value.fromPaymentMethodId));
+    const destinationCount =
+      Number(Boolean(value.toAccountId)) +
+      Number(Boolean(value.toPaymentMethodId));
+
+    if (sourceCount !== 1) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["fromAccountId"],
+        message: "이체 출발지를 하나 선택해주세요.",
+      });
+    }
+
+    if (destinationCount !== 1) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["toAccountId"],
+        message: "이체 도착지를 하나 선택해주세요.",
+      });
+    }
+
+    if (value.categoryId) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["categoryId"],
+        message: "이체에는 카테고리를 선택할 수 없습니다.",
+      });
+    }
+  },
+);
 
 export type CreateLedgerEntryInput = z.infer<typeof createLedgerEntrySchema>;
 

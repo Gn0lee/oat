@@ -86,21 +86,40 @@ describe("createLedgerEntrySchema", () => {
     }
   });
 
-  it("income, transfer 타입도 허용된다", () => {
+  it("income 타입도 허용된다", () => {
     const incomeResult = createLedgerEntrySchema.safeParse({
       type: "income",
       amount: 3000000,
       title: "월급",
       transactedAt: validDatetime,
     });
-    const transferResult = createLedgerEntrySchema.safeParse({
-      type: "transfer",
-      amount: 100000,
-      title: "이체",
-      transactedAt: validDatetime,
-    });
     expect(incomeResult.success).toBe(true);
-    expect(transferResult.success).toBe(true);
+  });
+
+  describe("transfer validation", () => {
+    const base = {
+      type: "transfer" as const,
+      amount: 50000,
+      transactedAt: "2026-05-08T00:00:00.000Z",
+      title: "카카오페이 충전",
+      isShared: true,
+    };
+
+    it("이체는 출발지와 도착지가 필요하다", () => {
+      const result = createLedgerEntrySchema.safeParse(base);
+      expect(result.success).toBe(false);
+    });
+
+    it("이체는 카테고리를 가질 수 없다", () => {
+      const result = createLedgerEntrySchema.safeParse({
+        ...base,
+        categoryId: "00000000-0000-0000-0000-000000000001",
+        fromAccountId: "00000000-0000-0000-0000-000000000002",
+        toAccountId: "00000000-0000-0000-0000-000000000003",
+      });
+
+      expect(result.success).toBe(false);
+    });
   });
 });
 

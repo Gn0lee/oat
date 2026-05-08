@@ -148,3 +148,37 @@ describe("updatePaymentMethodSchema", () => {
     expect(result.success).toBe(false);
   });
 });
+
+describe("payment method auxiliary balance", () => {
+  it("선불/상품권/현금은 보조잔액을 입력할 수 있다", () => {
+    const result = createPaymentMethodSchema.safeParse({
+      name: "카카오페이머니",
+      type: "prepaid",
+      balance: 30000,
+    });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.balance).toBe(30000);
+    }
+  });
+
+  it("보조잔액은 0 이상이어야 한다", () => {
+    const result = createPaymentMethodSchema.safeParse({
+      name: "상품권",
+      type: "gift_card",
+      balance: -1,
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("수정 스키마도 보조잔액 null을 허용한다", () => {
+    const result = updatePaymentMethodSchema.safeParse({
+      type: "credit_card",
+      balance: null,
+    });
+
+    expect(result.success).toBe(true);
+  });
+});

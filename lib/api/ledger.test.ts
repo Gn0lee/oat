@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { buildLedgerEntryPayload, calculateLedgerSummary } from "./ledger";
+import {
+  buildLedgerEntryPayload,
+  buildTransferLedgerEntryPayload,
+  calculateLedgerSummary,
+  getLedgerBalanceEffects,
+  isTransferCapablePaymentMethod,
+} from "./ledger";
 
 describe("calculateLedgerSummary", () => {
   it("수입 합계를 정확히 계산한다", () => {
@@ -150,5 +156,60 @@ describe("buildLedgerEntryPayload", () => {
       memo: "이마트 장보기",
     });
     expect(result.memo).toBe("이마트 장보기");
+  });
+});
+
+describe("transfer helpers", () => {
+  it("이체 가능한 결제수단만 true를 반환한다", () => {
+    expect(isTransferCapablePaymentMethod("prepaid")).toBe(true);
+    expect(isTransferCapablePaymentMethod("gift_card")).toBe(true);
+    expect(isTransferCapablePaymentMethod("cash")).toBe(true);
+    expect(isTransferCapablePaymentMethod("credit_card")).toBe(false);
+    expect(isTransferCapablePaymentMethod("debit_card")).toBe(false);
+  });
+
+  it("이체 payload는 카테고리 없이 출발지/도착지를 설정한다", () => {
+    const result = buildTransferLedgerEntryPayload(true, {
+      amount: "30000",
+      title: "카카오페이 충전",
+      from: { kind: "account", id: "acc-1" },
+      to: { kind: "paymentMethod", id: "pm-1" },
+      transactedAt: "2026-05-08",
+      memo: "충전",
+    });
+
+    expect(result.type).toBe("transfer");
+    expect(result.amount).toBe(30000);
+    expect(result.fromAccountId).toBe("acc-1");
+    expect(result.toPaymentMethodId).toBe("pm-1");
+    expect(result.categoryId).toBeUndefined();
+  });
+});
+
+describe("getLedgerBalanceEffects", () => {
+  it("계좌에서 보조 결제수단으로 이체하면 계좌 감소와 결제수단 증가 효과를 만든다", () => {
+    const effects = getLedgerBalanceEffects({
+      type: "transfer",
+      amount: 50000,
+      fromAccountId: "acc-1",
+      toPaymentMethodId: "pm-1",
+    });
+
+    expect(effects).toEqual([
+      { table: "accounts", id: "acc-1", delta: -50000 },
+      { table: "payment_methods", id: "pm-1", delta: 50000 },
+    ]);
+  });
+
+  it("보조 결제수단 지출은 결제수단 감소 효과를 만든다", () => {
+    const effects = getLedgerBalanceEffects({
+      type: "expense",
+      amount: 12000,
+      fromPaymentMethodId: "pm-1",
+    });
+
+    expect(effects).toEqual([
+      { table: "payment_methods", id: "pm-1", delta: -12000 },
+    ]);
   });
 });

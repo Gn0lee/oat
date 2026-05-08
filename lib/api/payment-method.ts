@@ -2,6 +2,19 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { APIError } from "@/lib/api/error";
 import type { Database, PaymentMethod, PaymentMethodType } from "@/types";
 
+const AUXILIARY_PAYMENT_METHOD_TYPES = new Set([
+  "prepaid",
+  "gift_card",
+  "cash",
+]);
+
+export function normalizePaymentMethodBalance(
+  type: PaymentMethodType,
+  balance?: number | null,
+): number | null {
+  return AUXILIARY_PAYMENT_METHOD_TYPES.has(type) ? (balance ?? null) : null;
+}
+
 export interface CreatePaymentMethodParams {
   householdId: string;
   ownerId: string;
@@ -11,6 +24,7 @@ export interface CreatePaymentMethodParams {
   issuer?: string;
   lastFour?: string;
   paymentDay?: number;
+  balance?: number | null;
   isDefault?: boolean;
   memo?: string;
 }
@@ -22,6 +36,7 @@ export interface UpdatePaymentMethodParams {
   issuer?: string | null;
   lastFour?: string | null;
   paymentDay?: number | null;
+  balance?: number | null;
   isDefault?: boolean;
   memo?: string | null;
 }
@@ -38,6 +53,8 @@ export interface PaymentMethodWithDetails {
   issuer: string | null;
   lastFour: string | null;
   paymentDay: number | null;
+  balance: number | null;
+  balanceUpdatedAt: string | null;
   isDefault: boolean;
   memo: string | null;
   createdAt: string;
@@ -98,6 +115,8 @@ export async function getPaymentMethods(
     issuer: pm.issuer,
     lastFour: pm.last_four,
     paymentDay: pm.payment_day,
+    balance: pm.balance,
+    balanceUpdatedAt: pm.balance_updated_at,
     isDefault: pm.is_default ?? false,
     memo: pm.memo,
     createdAt: pm.created_at,
@@ -118,6 +137,7 @@ export async function createPaymentMethod(
     issuer,
     lastFour,
     paymentDay,
+    balance,
     isDefault,
     memo,
   } = params;
@@ -166,6 +186,9 @@ export async function createPaymentMethod(
       .eq("owner_id", ownerId);
   }
 
+  const normalizedBalance = normalizePaymentMethodBalance(type, balance);
+  const now = new Date().toISOString();
+
   const { data, error } = await supabase
     .from("payment_methods")
     .insert({
@@ -177,6 +200,8 @@ export async function createPaymentMethod(
       issuer: issuer || null,
       last_four: lastFour || null,
       payment_day: paymentDay ?? null,
+      balance: normalizedBalance,
+      balance_updated_at: normalizedBalance !== null ? now : null,
       is_default: isDefault ?? false,
       memo: memo || null,
     })
@@ -271,6 +296,21 @@ export async function updatePaymentMethod(
       .neq("id", paymentMethodId);
   }
 
+  const nextType = params.type ?? existing.type;
+  const nextBalance =
+    params.balance !== undefined ? params.balance : existing.balance;
+  const normalizedBalance = normalizePaymentMethodBalance(
+    nextType,
+    nextBalance,
+  );
+  const shouldUpdateBalanceTimestamp =
+    params.balance !== undefined || params.type !== undefined;
+  const balanceUpdatedAt = shouldUpdateBalanceTimestamp
+    ? normalizedBalance !== null
+      ? new Date().toISOString()
+      : null
+    : undefined;
+
   const { data, error } = await supabase
     .from("payment_methods")
     .update({
@@ -283,6 +323,10 @@ export async function updatePaymentMethod(
       ...(params.lastFour !== undefined && { last_four: params.lastFour }),
       ...(params.paymentDay !== undefined && {
         payment_day: params.paymentDay,
+      }),
+      balance: normalizedBalance,
+      ...(balanceUpdatedAt !== undefined && {
+        balance_updated_at: balanceUpdatedAt,
       }),
       ...(params.isDefault !== undefined && { is_default: params.isDefault }),
       ...(params.memo !== undefined && { memo: params.memo }),

@@ -80,7 +80,10 @@ export function LedgerEntryEditDialog({
   const updateMutation = useUpdateLedgerEntry();
   const isDesktop = useMediaQuery("(min-width: 768px)");
 
-  const categoryType = (entry?.type ?? "expense") as CategoryType;
+  const categoryType =
+    entry?.type === "transfer"
+      ? undefined
+      : ((entry?.type ?? "expense") as CategoryType);
   const { data: categories = [] } = useCategories(categoryType);
   const { data: paymentMethods = [] } = usePaymentMethods();
   const { data: accounts = [] } = useAccounts();
@@ -163,7 +166,13 @@ export function LedgerEntryEditDialog({
 
   if (!entry) return null;
 
-  const typeLabel = entry.type === "expense" ? "지출" : "수입";
+  const isTransfer = entry.type === "transfer";
+  const typeLabel =
+    entry.type === "expense"
+      ? "지출"
+      : entry.type === "income"
+        ? "수입"
+        : "이체";
   const typeVariant = entry.type === "expense" ? "default" : "secondary";
   const privacyLabel = entry.isShared ? "공용" : "개인";
 
@@ -200,6 +209,57 @@ export function LedgerEntryEditDialog({
       <p>유형이나 공개범위를 변경하려면 이 기록을 삭제 후 다시 등록해주세요.</p>
     </div>
   );
+
+  const transferEditNotice = (
+    <div className="flex items-start gap-2 rounded-md bg-muted/50 p-3 text-sm text-muted-foreground">
+      <InfoIcon className="mt-0.5 h-4 w-4 shrink-0" />
+      <p>이체 기록은 삭제 후 다시 등록해주세요.</p>
+    </div>
+  );
+
+  if (isTransfer) {
+    if (isDesktop) {
+      return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>이체 기록</DialogTitle>
+              <DialogDescription asChild>
+                {descriptionContent}
+              </DialogDescription>
+            </DialogHeader>
+
+            {transferEditNotice}
+
+            <DialogFooter>
+              <Button type="button" onClick={() => onOpenChange(false)}>
+                확인
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      );
+    }
+
+    return (
+      <Drawer open={open} onOpenChange={onOpenChange}>
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>이체 기록</DrawerTitle>
+            <DrawerDescription asChild>{descriptionContent}</DrawerDescription>
+          </DrawerHeader>
+
+          <div className="px-4">{transferEditNotice}</div>
+
+          <DrawerFooter>
+            <Button type="button" onClick={() => onOpenChange(false)}>
+              확인
+            </Button>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+    );
+  }
 
   const formFields = (
     <>

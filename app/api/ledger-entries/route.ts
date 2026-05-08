@@ -2,7 +2,10 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { APIError, toErrorResponse } from "@/lib/api/error";
 import { getUserHouseholdId } from "@/lib/api/invitation";
-import { createLedgerEntry, getLedgerEntries } from "@/lib/api/ledger";
+import {
+  createLedgerEntryWithBalanceSync,
+  getLedgerEntries,
+} from "@/lib/api/ledger";
 import { createClient } from "@/lib/supabase/server";
 import { createLedgerEntrySchema } from "@/schemas/ledger-entry";
 
@@ -110,7 +113,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const entry = await createLedgerEntry(supabase, {
+    const entry = await createLedgerEntryWithBalanceSync(supabase, {
       householdId,
       ownerId: user.id,
       type: input.type,

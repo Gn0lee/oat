@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { APIError, toErrorResponse } from "@/lib/api/error";
-import { deleteLedgerEntry, updateLedgerEntry } from "@/lib/api/ledger";
+import {
+  deleteLedgerEntryWithBalanceSync,
+  updateLedgerEntryWithBalanceSync,
+} from "@/lib/api/ledger";
 import { createClient } from "@/lib/supabase/server";
 import { updateLedgerEntrySchema } from "@/schemas/ledger-entry";
 
@@ -40,18 +43,24 @@ export async function PATCH(request: Request, { params }: RouteParams) {
 
     const input = result.data;
 
-    const entry = await updateLedgerEntry(supabase, id, user.id, {
-      type: input.type,
-      amount: input.amount,
-      transactedAt: input.transactedAt,
-      categoryId: input.categoryId,
-      fromAccountId: input.fromAccountId,
-      fromPaymentMethodId: input.fromPaymentMethodId,
-      toAccountId: input.toAccountId,
-      toPaymentMethodId: input.toPaymentMethodId,
-      isShared: input.isShared,
-      memo: input.memo,
-    });
+    const entry = await updateLedgerEntryWithBalanceSync(
+      supabase,
+      id,
+      user.id,
+      {
+        type: input.type,
+        amount: input.amount,
+        transactedAt: input.transactedAt,
+        title: input.title,
+        categoryId: input.categoryId,
+        fromAccountId: input.fromAccountId,
+        fromPaymentMethodId: input.fromPaymentMethodId,
+        toAccountId: input.toAccountId,
+        toPaymentMethodId: input.toPaymentMethodId,
+        isShared: input.isShared,
+        memo: input.memo,
+      },
+    );
 
     return NextResponse.json({ data: entry });
   } catch (error) {
@@ -89,7 +98,7 @@ export async function DELETE(_request: Request, { params }: RouteParams) {
       throw new APIError("AUTH_UNAUTHORIZED", "로그인이 필요합니다.", 401);
     }
 
-    await deleteLedgerEntry(supabase, id, user.id);
+    await deleteLedgerEntryWithBalanceSync(supabase, id, user.id);
 
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -59,6 +59,19 @@ const PAYMENT_METHOD_TYPE_OPTIONS = [
 
 type PaymentMethodTypeValue = (typeof PAYMENT_METHOD_TYPE_VALUES)[number];
 
+const AUXILIARY_PAYMENT_METHOD_TYPES = new Set<PaymentMethodTypeValue>([
+  "prepaid",
+  "gift_card",
+  "cash",
+]);
+
+const AUXILIARY_BALANCE_COPY =
+  "이 잔액은 가계부 기록을 정확하게 맞추기 위한 보조잔액이며, 총자산에는 포함되지 않습니다.";
+
+function isAuxiliaryPaymentMethodType(type: PaymentMethodTypeValue) {
+  return AUXILIARY_PAYMENT_METHOD_TYPES.has(type);
+}
+
 const paymentMethodFormSchema = z.object({
   name: z
     .string()
@@ -85,6 +98,9 @@ const paymentMethodFormSchema = z.object({
     .max(31, "결제일은 31일 이하여야 합니다.")
     .optional()
     .or(z.nan()),
+  balanceStr: z.string().refine((value) => value === "" || Number(value) >= 0, {
+    message: "잔액은 0 이상이어야 합니다.",
+  }),
   isDefault: z.boolean(),
   memo: z.string().max(500, "메모는 500자 이내여야 합니다.").optional(),
 });
@@ -123,6 +139,7 @@ export function PaymentMethodFormDialog({
       issuer: "",
       lastFour: "",
       paymentDay: undefined,
+      balanceStr: "",
       isDefault: false,
       memo: "",
     },
@@ -134,6 +151,7 @@ export function PaymentMethodFormDialog({
   const showCardFields =
     watchType === "credit_card" || watchType === "debit_card";
   const showPaymentDay = watchType === "credit_card";
+  const showAuxiliaryBalance = isAuxiliaryPaymentMethodType(watchType);
 
   useEffect(() => {
     if (open) {
@@ -145,6 +163,8 @@ export function PaymentMethodFormDialog({
           issuer: paymentMethod.issuer ?? "",
           lastFour: paymentMethod.lastFour ?? "",
           paymentDay: paymentMethod.paymentDay ?? undefined,
+          balanceStr:
+            paymentMethod.balance !== null ? String(paymentMethod.balance) : "",
           isDefault: paymentMethod.isDefault,
           memo: paymentMethod.memo ?? "",
         });
@@ -156,6 +176,7 @@ export function PaymentMethodFormDialog({
           issuer: "",
           lastFour: "",
           paymentDay: undefined,
+          balanceStr: "",
           isDefault: false,
           memo: "",
         });
@@ -164,6 +185,11 @@ export function PaymentMethodFormDialog({
   }, [open, paymentMethod, reset]);
 
   const onSubmit = async (data: PaymentMethodFormData) => {
+    const shouldSubmitBalance = isAuxiliaryPaymentMethodType(data.type);
+    const balance =
+      shouldSubmitBalance && data.balanceStr !== ""
+        ? Number(data.balanceStr)
+        : undefined;
     const payload = {
       name: data.name,
       type: data.type,
@@ -175,6 +201,7 @@ export function PaymentMethodFormDialog({
         : (data.paymentDay as number | undefined),
       isDefault: data.isDefault,
       memo: data.memo || undefined,
+      ...(shouldSubmitBalance && { balance }),
     };
 
     try {
@@ -300,6 +327,26 @@ export function PaymentMethodFormDialog({
               {errors.paymentDay.message}
             </p>
           )}
+        </div>
+      )}
+
+      {showAuxiliaryBalance && (
+        <div className="space-y-2">
+          <Label htmlFor="pm-balance">보조잔액</Label>
+          <Input
+            id="pm-balance"
+            type="number"
+            min="0"
+            placeholder="예: 30000"
+            {...register("balanceStr")}
+            aria-invalid={!!errors.balanceStr}
+          />
+          {errors.balanceStr && (
+            <p className="text-sm text-destructive">
+              {errors.balanceStr.message}
+            </p>
+          )}
+          <p className="text-sm text-gray-500">{AUXILIARY_BALANCE_COPY}</p>
         </div>
       )}
 
