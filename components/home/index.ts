@@ -1,5 +1,6 @@
-export { AssetTypeSummary } from "./AssetTypeSummary";
-export { ExchangeRateCard } from "./ExchangeRateCard";
-export { RecentTransactions } from "./RecentTransactions";
-export { TopHoldings } from "./TopHoldings";
+export { CashFlowCard } from "./CashFlowCard";
+export { FamilyExpenseCard } from "./FamilyExpenseCard";
+export { FeatureCard } from "./FeatureCard";
+export { HomeTopCategories } from "./HomeTopCategories";
+export { QuickActionButtons } from "./QuickActionButtons";
 export { TotalAssetCard } from "./TotalAssetCard";
