@@ -62,6 +62,7 @@ vi.mock("next/navigation", () => ({
     push: mockPush,
     back: vi.fn(),
   })),
+  useSearchParams: vi.fn(() => new URLSearchParams()),
 }));
 
 const mockMutateAsync = vi.fn().mockResolvedValue({});
