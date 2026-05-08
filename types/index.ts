@@ -41,6 +41,8 @@ export type ExchangeRate = Tables<"exchange_rates">;
 export type Tag = Tables<"tags">;
 export type HoldingTag = Tables<"holding_tags">;
 export type TargetAllocation = Tables<"target_allocations">;
+export type McpToken = Tables<"mcp_tokens">;
+export type McpAuditLog = Tables<"mcp_audit_logs">;
 
 // 가계부 테이블 타입
 export type LedgerEntry = Tables<"ledger_entries">;
