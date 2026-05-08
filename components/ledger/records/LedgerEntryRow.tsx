@@ -24,15 +24,28 @@ export function LedgerEntryRow({
   onDelete,
 }: LedgerEntryRowProps) {
   const isIncome = entry.type === "income";
-  const amountSign = isIncome ? "+" : "-";
-  const amountColor = isIncome ? "text-red-500" : "text-blue-500";
+  const isTransfer = entry.type === "transfer";
+  const amountSign = isTransfer ? "" : isIncome ? "+" : "-";
+  const amountColor = isTransfer
+    ? "text-gray-900"
+    : isIncome
+      ? "text-red-500"
+      : "text-blue-500";
 
   const paymentLabel =
     entry.fromPaymentMethodName ?? entry.fromAccountName ?? entry.toAccountName;
+  const transferLabel = isTransfer
+    ? `${entry.fromAccountName ?? entry.fromPaymentMethodName ?? "출발지"} → ${
+        entry.toAccountName ?? entry.toPaymentMethodName ?? "도착지"
+      }`
+    : null;
 
-  const metaParts = [entry.categoryName, entry.ownerName, paymentLabel].filter(
-    Boolean,
-  );
+  const metaParts = [
+    entry.categoryName,
+    transferLabel,
+    entry.ownerName,
+    paymentLabel,
+  ].filter(Boolean);
 
   return (
     <div className="flex items-center gap-3 py-3 border-b last:border-b-0">
@@ -48,7 +61,9 @@ export function LedgerEntryRow({
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1">
           <span className="font-semibold text-gray-900 text-sm truncate">
-            {entry.title ?? entry.categoryName ?? "미분류"}
+            {entry.title ??
+              entry.categoryName ??
+              (isTransfer ? "이체" : "미분류")}
           </span>
           {!entry.isShared && (
             <UserIcon className="w-3 h-3 text-gray-400 flex-shrink-0" />
