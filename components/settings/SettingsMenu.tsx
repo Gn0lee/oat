@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, LogOut, Monitor, Shield, User, Users } from "lucide-react";
+import { Bell, Bot, LogOut, Monitor, Shield, User, Users } from "lucide-react";
 import { useTransition } from "react";
 import { signOutAction } from "@/app/(auth)/logout/actions";
 import { SettingsMenuItem } from "./SettingsMenuItem";
@@ -37,6 +37,13 @@ export function SettingsMenu() {
         description="비밀번호 변경"
         href="/settings/security"
         disabled
+      />
+
+      <SettingsMenuItem
+        icon={Bot}
+        label="MCP 연결"
+        description="AI 도구 연결 토큰 관리"
+        href="/settings/mcp"
       />
 
       <SettingsMenuItem
