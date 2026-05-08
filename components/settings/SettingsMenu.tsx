@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, LogOut, Monitor, Shield, User } from "lucide-react";
+import { Bell, LogOut, Monitor, Shield, User, Users } from "lucide-react";
 import { useTransition } from "react";
 import { signOutAction } from "@/app/(auth)/logout/actions";
 import { SettingsMenuItem } from "./SettingsMenuItem";
@@ -22,6 +22,13 @@ export function SettingsMenu() {
         description="이름, 이메일 관리"
         href="/settings/profile"
         disabled
+      />
+
+      <SettingsMenuItem
+        icon={Users}
+        label="가구 관리"
+        description="가구 이름, 구성원, 초대 관리"
+        href="/settings/household"
       />
 
       <SettingsMenuItem

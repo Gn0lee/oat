@@ -1,6 +1,6 @@
 "use client";
 
-import { BarChart3, Receipt, Settings, Wallet } from "lucide-react";
+import { BarChart3, ChartPie, Receipt, Settings, Wallet } from "lucide-react";
 import { AnalysisCard } from "@/components/dashboard/AnalysisCard";
 
 const navItems = [
@@ -19,6 +19,14 @@ const navItems = [
     href: "/assets/stock/transactions",
     color: "text-green-600",
     bgColor: "bg-green-50",
+  },
+  {
+    icon: ChartPie,
+    label: "주식 대시보드",
+    description: "수익률과 비중을 자세히 분석해 보세요",
+    href: "/dashboard/stocks",
+    color: "text-purple-600",
+    bgColor: "bg-purple-50",
   },
   {
     icon: Wallet,
