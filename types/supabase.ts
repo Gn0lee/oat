@@ -452,6 +452,8 @@ export type Database = {
       };
       payment_methods: {
         Row: {
+          balance: number | null;
+          balance_updated_at: string | null;
           created_at: string;
           household_id: string;
           id: string;
@@ -467,6 +469,8 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
+          balance?: number | null;
+          balance_updated_at?: string | null;
           created_at?: string;
           household_id: string;
           id?: string;
@@ -482,6 +486,8 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          balance?: number | null;
+          balance_updated_at?: string | null;
           created_at?: string;
           household_id?: string;
           id?: string;
