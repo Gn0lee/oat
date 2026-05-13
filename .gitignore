@@ -48,3 +48,5 @@ tmp
 # local settings
 .vscode/
 .claude/settings.local.json
+
+CONTEXT.md

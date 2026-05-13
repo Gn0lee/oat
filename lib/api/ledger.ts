@@ -128,6 +128,11 @@ export interface LedgerEntrySummary {
   balance: number;
 }
 
+export interface OwnLedgerActivity {
+  hasRecentOwnLedgerActivity: boolean;
+  lastOwnLedgerEntryCreatedAt: string | null;
+}
+
 export interface GetLedgerEntriesOptions {
   year?: number;
   month?: number;
@@ -411,6 +416,49 @@ export async function getLedgerEntrySummary(
   }
 
   return calculateLedgerSummary(data ?? []);
+}
+
+export async function getOwnLedgerActivity(
+  supabase: SupabaseClient<Database>,
+  householdId: string,
+  ownerId: string,
+  now = new Date(),
+): Promise<OwnLedgerActivity> {
+  const { data, error } = await supabase
+    .from("ledger_entries")
+    .select("created_at")
+    .eq("household_id", householdId)
+    .eq("owner_id", ownerId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Own ledger activity fetch error:", error);
+    throw new APIError(
+      "LEDGER_ACTIVITY_FETCH_ERROR",
+      "가계부 기록 활동 조회에 실패했습니다.",
+      500,
+    );
+  }
+
+  const lastOwnLedgerEntryCreatedAt = data?.created_at ?? null;
+
+  if (!lastOwnLedgerEntryCreatedAt) {
+    return {
+      hasRecentOwnLedgerActivity: false,
+      lastOwnLedgerEntryCreatedAt,
+    };
+  }
+
+  const sevenDaysAgo = new Date(now);
+  sevenDaysAgo.setUTCDate(sevenDaysAgo.getUTCDate() - 7);
+
+  return {
+    hasRecentOwnLedgerActivity:
+      new Date(lastOwnLedgerEntryCreatedAt).getTime() >= sevenDaysAgo.getTime(),
+    lastOwnLedgerEntryCreatedAt,
+  };
 }
 
 export async function createLedgerEntry(

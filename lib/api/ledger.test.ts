@@ -1,9 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   buildLedgerEntryPayload,
   buildTransferLedgerEntryPayload,
   calculateLedgerSummary,
   getLedgerBalanceEffects,
+  getOwnLedgerActivity,
   isTransferCapablePaymentMethod,
 } from "./ledger";
 
@@ -211,5 +212,86 @@ describe("getLedgerBalanceEffects", () => {
     expect(effects).toEqual([
       { table: "payment_methods", id: "pm-1", delta: -12000 },
     ]);
+  });
+});
+
+describe("getOwnLedgerActivity", () => {
+  function createLedgerActivitySupabaseMock(
+    row: { created_at: string } | null,
+  ) {
+    const builder = {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      order: vi.fn().mockReturnThis(),
+      limit: vi.fn().mockReturnThis(),
+      maybeSingle: vi.fn().mockResolvedValue({ data: row, error: null }),
+    };
+
+    return {
+      from: vi.fn(() => builder),
+      builder,
+    };
+  }
+
+  it("최근 7일 내 내가 생성한 가계부 기록이 있으면 활동 있음으로 반환한다", async () => {
+    const supabase = createLedgerActivitySupabaseMock({
+      created_at: "2026-05-10T00:00:00.000Z",
+    });
+
+    const result = await getOwnLedgerActivity(
+      supabase as never,
+      "household-1",
+      "user-1",
+      new Date("2026-05-13T00:00:00.000Z"),
+    );
+
+    expect(result).toEqual({
+      hasRecentOwnLedgerActivity: true,
+      lastOwnLedgerEntryCreatedAt: "2026-05-10T00:00:00.000Z",
+    });
+    expect(supabase.from).toHaveBeenCalledWith("ledger_entries");
+    expect(supabase.builder.eq).toHaveBeenCalledWith(
+      "household_id",
+      "household-1",
+    );
+    expect(supabase.builder.eq).toHaveBeenCalledWith("owner_id", "user-1");
+    expect(supabase.builder.order).toHaveBeenCalledWith("created_at", {
+      ascending: false,
+    });
+    expect(supabase.builder.limit).toHaveBeenCalledWith(1);
+  });
+
+  it("마지막 기록이 최근 7일보다 오래됐으면 마지막 시각과 함께 활동 없음으로 반환한다", async () => {
+    const supabase = createLedgerActivitySupabaseMock({
+      created_at: "2026-05-01T00:00:00.000Z",
+    });
+
+    const result = await getOwnLedgerActivity(
+      supabase as never,
+      "household-1",
+      "user-1",
+      new Date("2026-05-13T00:00:00.000Z"),
+    );
+
+    expect(result).toEqual({
+      hasRecentOwnLedgerActivity: false,
+      lastOwnLedgerEntryCreatedAt: "2026-05-01T00:00:00.000Z",
+    });
+  });
+
+  it("내 기록이 없으면 마지막 시각 없이 활동 없음으로 반환한다", async () => {
+    const supabase = createLedgerActivitySupabaseMock(null);
+
+    const result = await getOwnLedgerActivity(
+      supabase as never,
+      "household-1",
+      "user-1",
+      new Date("2026-05-13T00:00:00.000Z"),
+    );
+
+    expect(result).toEqual({
+      hasRecentOwnLedgerActivity: false,
+      lastOwnLedgerEntryCreatedAt: null,
+    });
   });
 });
