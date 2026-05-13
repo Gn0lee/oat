@@ -3,6 +3,7 @@ import Link from "next/link";
 import { AssetTypeCard } from "@/components/assets";
 import { PageHeader } from "@/components/layout";
 import { Button } from "@/components/ui/button";
+import { getAccounts } from "@/lib/api/account";
 import { getUserHouseholdId } from "@/lib/api/invitation";
 import { getPortfolioSummary } from "@/lib/api/portfolio";
 import { requireUser } from "@/lib/supabase/auth";
@@ -16,10 +17,13 @@ export default async function AssetsPage() {
   // 가구 ID 조회
   const householdId = await getUserHouseholdId(supabase, user.id);
 
-  // 포트폴리오 요약 조회
-  const portfolio = householdId
-    ? await getPortfolioSummary(supabase, householdId)
-    : { holdingCount: 0, totalValue: 0, totalInvested: 0, returnRate: 0 };
+  // 포트폴리오 요약 및 금융 계좌 조회
+  const [portfolio, accounts] = householdId
+    ? await Promise.all([
+        getPortfolioSummary(supabase, householdId),
+        getAccounts(supabase, householdId),
+      ])
+    : [{ holdingCount: 0, totalValue: 0, totalInvested: 0, returnRate: 0 }, []];
 
   return (
     <>
@@ -56,8 +60,15 @@ export default async function AssetsPage() {
           returnRate={portfolio.returnRate}
         />
 
-        {/* 현금/예적금 - 계좌 관리로 연결됨 */}
-        <AssetTypeCard type="cash" />
+        {/* 금융 계좌 - 은행 계좌와 투자 계좌를 함께 관리 */}
+        <AssetTypeCard
+          type="cash"
+          holdingCount={accounts.length}
+          countLabel="계좌"
+          emptyText="아직 등록된 계좌가 없어요"
+          activeActionText="관리하기"
+          showValue={false}
+        />
 
         {/* 부동산 - 준비 중 */}
         <AssetTypeCard type="real-estate" disabled />
