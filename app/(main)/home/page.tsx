@@ -4,11 +4,11 @@ import {
   FamilyExpenseCard,
   FeatureCard,
   HomeTopCategories,
-  QuickActionButtons,
   TotalAssetCard,
 } from "@/components/home";
 import { PageHeader } from "@/components/layout";
 import { getUserHouseholdId } from "@/lib/api/invitation";
+import { getOwnLedgerActivity } from "@/lib/api/ledger";
 import {
   getLedgerStatsByCategory,
   getLedgerStatsSummary,
@@ -28,30 +28,37 @@ export default async function HomePage() {
   const year = now.getFullYear();
   const month = now.getMonth() + 1;
 
-  const [cashFlow, portfolio, topCategories] = await Promise.all([
-    householdId
-      ? getLedgerStatsSummary(supabase, householdId, user.id, year, month)
-      : null,
-    householdId
-      ? getPortfolioSummary(supabase, householdId)
-      : { holdingCount: 0, totalValue: 0, totalInvested: 0, returnRate: 0 },
-    householdId
-      ? getLedgerStatsByCategory(
-          supabase,
-          householdId,
-          user.id,
-          year,
-          month,
-          "expense",
-          "shared",
-        )
-      : {
-          type: "expense" as const,
-          scope: "shared" as const,
-          total: 0,
-          items: [],
-        },
-  ]);
+  const [cashFlow, portfolio, topCategories, ledgerActivity] =
+    await Promise.all([
+      householdId
+        ? getLedgerStatsSummary(supabase, householdId, user.id, year, month)
+        : null,
+      householdId
+        ? getPortfolioSummary(supabase, householdId)
+        : { holdingCount: 0, totalValue: 0, totalInvested: 0, returnRate: 0 },
+      householdId
+        ? getLedgerStatsByCategory(
+            supabase,
+            householdId,
+            user.id,
+            year,
+            month,
+            "expense",
+            "shared",
+          )
+        : {
+            type: "expense" as const,
+            scope: "shared" as const,
+            total: 0,
+            items: [],
+          },
+      householdId
+        ? getOwnLedgerActivity(supabase, householdId, user.id)
+        : {
+            hasRecentOwnLedgerActivity: false,
+            lastOwnLedgerEntryCreatedAt: null,
+          },
+    ]);
 
   const { data: profile } = await supabase
     .from("profiles")
@@ -87,9 +94,11 @@ export default async function HomePage() {
           balance={cashFlow?.balance ?? 0}
           savingsRate={cashFlow?.savingsRate ?? 0}
           month={month}
+          hasRecentOwnLedgerActivity={ledgerActivity.hasRecentOwnLedgerActivity}
+          lastOwnLedgerEntryCreatedAt={
+            ledgerActivity.lastOwnLedgerEntryCreatedAt
+          }
         />
-
-        <QuickActionButtons />
 
         <TotalAssetCard
           totalValue={portfolio.totalValue}

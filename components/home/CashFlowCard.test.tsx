@@ -14,8 +14,34 @@ describe("CashFlowCard", () => {
       />,
     );
     expect(
-      screen.getByText("첫 지출이나 수입을 기록하면 바로 보여드릴게요"),
+      screen.getByText(
+        "첫 지출이나 수입을 기록하면 이번 달 흐름을 볼 수 있어요.",
+      ),
     ).toBeInTheDocument();
+  });
+
+  it("내 기록이 한 번도 없으면 empty state 문장 끝에 기록 링크를 표시한다", () => {
+    render(
+      <CashFlowCard
+        totalIncome={0}
+        totalExpense={0}
+        balance={0}
+        savingsRate={0}
+        month={4}
+        hasRecentOwnLedgerActivity={false}
+        lastOwnLedgerEntryCreatedAt={null}
+      />,
+    );
+
+    expect(
+      screen.getByText(
+        "첫 지출이나 수입을 기록하면 이번 달 흐름을 볼 수 있어요.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "기록해보세요" })).toHaveAttribute(
+      "href",
+      "/ledger/new",
+    );
   });
 
   it("잔액이 양수이면 부드러운 대표 문장을 표시한다", () => {
@@ -102,5 +128,62 @@ describe("CashFlowCard", () => {
     expect(
       screen.getByText("저축률 24%로 흘러가고 있어요"),
     ).toBeInTheDocument();
+  });
+
+  it("최근 7일 내 내 기록이 없으면 카드 하단 안내 문장 끝에 기록 링크를 표시한다", () => {
+    render(
+      <CashFlowCard
+        totalIncome={5_000_000}
+        totalExpense={3_800_000}
+        balance={1_200_000}
+        savingsRate={24}
+        month={4}
+        hasRecentOwnLedgerActivity={false}
+        lastOwnLedgerEntryCreatedAt="2026-05-01T00:00:00.000Z"
+      />,
+    );
+
+    expect(screen.getByText(/최근 기록이 뜸해요/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "기록해보세요" })).toHaveAttribute(
+      "href",
+      "/ledger/new",
+    );
+  });
+
+  it("최근 7일 내 내 기록이 있으면 기록 유도 문장을 표시하지 않는다", () => {
+    render(
+      <CashFlowCard
+        totalIncome={5_000_000}
+        totalExpense={3_800_000}
+        balance={1_200_000}
+        savingsRate={24}
+        month={4}
+        hasRecentOwnLedgerActivity={true}
+        lastOwnLedgerEntryCreatedAt="2026-05-10T00:00:00.000Z"
+      />,
+    );
+
+    expect(screen.queryByText(/최근 기록이 뜸해요/)).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: "기록해보세요" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("이번 달 수입과 지출이 0이어도 최근 내 기록이 있으면 기록 링크를 표시하지 않는다", () => {
+    render(
+      <CashFlowCard
+        totalIncome={0}
+        totalExpense={0}
+        balance={0}
+        savingsRate={0}
+        month={4}
+        hasRecentOwnLedgerActivity={true}
+        lastOwnLedgerEntryCreatedAt="2026-05-10T00:00:00.000Z"
+      />,
+    );
+
+    expect(
+      screen.queryByRole("link", { name: "기록해보세요" }),
+    ).not.toBeInTheDocument();
   });
 });

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { formatCurrency } from "@/lib/utils/format";
 
 interface CashFlowCardProps {
@@ -6,6 +7,8 @@ interface CashFlowCardProps {
   balance: number;
   savingsRate: number;
   month: number;
+  hasRecentOwnLedgerActivity?: boolean;
+  lastOwnLedgerEntryCreatedAt?: string | null;
 }
 
 export function CashFlowCard({
@@ -14,7 +17,12 @@ export function CashFlowCard({
   balance,
   savingsRate,
   month,
+  hasRecentOwnLedgerActivity = true,
+  lastOwnLedgerEntryCreatedAt,
 }: CashFlowCardProps) {
+  const shouldShowLedgerPrompt =
+    !hasRecentOwnLedgerActivity || lastOwnLedgerEntryCreatedAt === null;
+
   if (totalIncome === 0 && totalExpense === 0) {
     return (
       <div className="bg-white rounded-2xl p-6 shadow-sm">
@@ -23,7 +31,18 @@ export function CashFlowCard({
           이번 달 흐름을 아직 알 수 없어요
         </p>
         <p className="mt-2 text-sm text-gray-500">
-          첫 지출이나 수입을 기록하면 바로 보여드릴게요
+          첫 지출이나 수입을 기록하면 이번 달 흐름을 볼 수 있어요.
+          {shouldShowLedgerPrompt && (
+            <>
+              {" "}
+              <Link
+                href="/ledger/new"
+                className="font-medium text-primary underline-offset-2 hover:underline"
+              >
+                기록해보세요
+              </Link>
+            </>
+          )}
         </p>
       </div>
     );
@@ -71,6 +90,18 @@ export function CashFlowCard({
           {formatCurrency(balance)}
         </p>
       </div>
+
+      {!hasRecentOwnLedgerActivity && lastOwnLedgerEntryCreatedAt && (
+        <p className="mt-4 text-sm text-gray-500">
+          최근 기록이 뜸해요. 오늘의 지출이나 수입을{" "}
+          <Link
+            href="/ledger/new"
+            className="font-medium text-primary underline-offset-2 hover:underline"
+          >
+            기록해보세요
+          </Link>
+        </p>
+      )}
     </div>
   );
 }
