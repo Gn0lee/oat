@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  ChevronRight,
-  Home,
-  type LucideIcon,
-  Package,
-  TrendingUp,
-  Wallet,
-} from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { type AssetType, BASE_ASSET_TYPE_CONFIG } from "@/lib/constants/assets";
@@ -38,6 +31,10 @@ interface AssetTypeListItemProps {
   holdingCount?: number;
   totalValue?: number;
   returnRate?: number;
+  countLabel?: string;
+  emptyText?: string;
+  activeActionText?: string;
+  showValue?: boolean;
   disabled?: boolean;
   isLoading?: boolean;
 }
@@ -47,6 +44,10 @@ export function AssetTypeListItem({
   holdingCount = 0,
   totalValue = 0,
   returnRate = 0,
+  countLabel = "종목",
+  emptyText = "아직 등록된 자산이 없어요",
+  activeActionText,
+  showValue = true,
   disabled = false,
   isLoading = false,
 }: AssetTypeListItemProps) {
@@ -121,14 +122,21 @@ export function AssetTypeListItem({
       <div className="flex-1">
         <p className="font-medium text-gray-900">{baseConfig.label}</p>
         {isEmpty ? (
-          <p className="text-sm text-gray-400">아직 등록된 자산이 없어요</p>
+          <p className="text-sm text-gray-400">{emptyText}</p>
         ) : (
           <p className="text-sm text-gray-500">
-            {holdingCount}종목
-            <span className="mx-1.5 text-gray-300">·</span>
-            <span className={isPositive ? "text-rose-500" : "text-blue-500"}>
-              {formatPercent(returnRate)}
-            </span>
+            {holdingCount}
+            {countLabel}
+            {showValue && (
+              <>
+                <span className="mx-1.5 text-gray-300">·</span>
+                <span
+                  className={isPositive ? "text-rose-500" : "text-blue-500"}
+                >
+                  {formatPercent(returnRate)}
+                </span>
+              </>
+            )}
           </p>
         )}
       </div>
@@ -136,11 +144,15 @@ export function AssetTypeListItem({
       {/* 금액 또는 시작하기 */}
       {isEmpty ? (
         <span className="text-sm text-indigo-600 font-medium">시작하기</span>
-      ) : (
+      ) : showValue ? (
         <p className="text-lg font-semibold text-gray-900">
           {formatCurrency(totalValue)}
         </p>
-      )}
+      ) : activeActionText ? (
+        <span className="text-sm text-indigo-600 font-medium">
+          {activeActionText}
+        </span>
+      ) : null}
       <ChevronRight className="w-5 h-5 text-gray-400" />
     </Link>
   );
