@@ -2,10 +2,16 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { InfoIcon } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+import {
+  getLedgerMoneySourceLabel,
+  LedgerMoneySourceCombobox,
+  LedgerMoneySourcePickerPanel,
+  LedgerMoneySourceTrigger,
+} from "@/components/ledger/LedgerMoneySourceCombobox";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DatePickerInput } from "@/components/ui/date-picker";
@@ -30,10 +36,7 @@ import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
-  SelectLabel,
-  SelectSeparator,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -44,6 +47,7 @@ import { useUpdateLedgerEntry } from "@/hooks/use-ledger-entries";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { usePaymentMethods } from "@/hooks/use-payment-methods";
 import type { LedgerEntryWithDetails } from "@/lib/api/ledger";
+import { getLedgerMoneySourceValue } from "@/lib/ledger/money-source-options";
 import type { CategoryType } from "@/types";
 
 interface LedgerEntryEditDialogProps {
@@ -71,6 +75,7 @@ const editFormSchema = z.object({
 });
 
 type EditFormValues = z.infer<typeof editFormSchema>;
+type MobileEditView = "form" | "moneySourcePicker";
 
 export function LedgerEntryEditDialog({
   entry,
@@ -79,6 +84,7 @@ export function LedgerEntryEditDialog({
 }: LedgerEntryEditDialogProps) {
   const updateMutation = useUpdateLedgerEntry();
   const isDesktop = useMediaQuery("(min-width: 768px)");
+  const [mobileView, setMobileView] = useState<MobileEditView>("form");
 
   const categoryType =
     entry?.type === "transfer"
@@ -177,11 +183,10 @@ export function LedgerEntryEditDialog({
   const privacyLabel = entry.isShared ? "공용" : "개인";
 
   // 결제수단/계좌 통합 value
-  const paymentValue = watchPaymentMethodId
-    ? `pm:${watchPaymentMethodId}`
-    : watchAccountId
-      ? `acc:${watchAccountId}`
-      : "";
+  const paymentValue = getLedgerMoneySourceValue({
+    paymentMethodId: watchPaymentMethodId,
+    accountId: watchAccountId,
+  });
 
   const handlePaymentChange = (v: string) => {
     if (v.startsWith("pm:")) {
@@ -195,6 +200,29 @@ export function LedgerEntryEditDialog({
       setValue("accountId", undefined);
     }
   };
+
+  const handleMobileMoneySourceChange = (v: string) => {
+    handlePaymentChange(v);
+    setMobileView("form");
+  };
+
+  const handleDrawerOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen && mobileView !== "form") {
+      setMobileView("form");
+      return;
+    }
+    onOpenChange(nextOpen);
+  };
+
+  const moneySourceMode = entry.type === "expense" ? "expense" : "income";
+  const moneySourcePlaceholder = "선택 안함";
+  const moneySourceLabel = getLedgerMoneySourceLabel({
+    mode: moneySourceMode,
+    value: paymentValue,
+    paymentMethods,
+    accounts,
+    placeholder: moneySourcePlaceholder,
+  });
 
   const descriptionContent = (
     <div className="flex items-center gap-2">
@@ -328,53 +356,21 @@ export function LedgerEntryEditDialog({
 
         <div className="space-y-2">
           <Label>{entry.type === "expense" ? "결제 방법" : "입금 계좌"}</Label>
-          {entry.type === "expense" ? (
-            <Select value={paymentValue} onValueChange={handlePaymentChange}>
-              <SelectTrigger>
-                <SelectValue placeholder="선택 안함" />
-              </SelectTrigger>
-              <SelectContent>
-                {paymentMethods.length > 0 && (
-                  <SelectGroup>
-                    <SelectLabel>결제수단</SelectLabel>
-                    {paymentMethods.map((pm) => (
-                      <SelectItem key={pm.id} value={`pm:${pm.id}`}>
-                        {pm.name}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                )}
-                {paymentMethods.length > 0 && accounts.length > 0 && (
-                  <SelectSeparator />
-                )}
-                {accounts.length > 0 && (
-                  <SelectGroup>
-                    <SelectLabel>계좌</SelectLabel>
-                    {accounts.map((acc) => (
-                      <SelectItem key={acc.id} value={`acc:${acc.id}`}>
-                        {acc.name}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                )}
-              </SelectContent>
-            </Select>
+          {isDesktop ? (
+            <LedgerMoneySourceCombobox
+              mode={moneySourceMode}
+              value={paymentValue}
+              paymentMethods={paymentMethods}
+              accounts={accounts}
+              placeholder={moneySourcePlaceholder}
+              onValueChange={handlePaymentChange}
+            />
           ) : (
-            <Select
-              value={watchAccountId ?? ""}
-              onValueChange={(v) => setValue("accountId", v || undefined)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="선택 안함" />
-              </SelectTrigger>
-              <SelectContent>
-                {accounts.map((acc) => (
-                  <SelectItem key={acc.id} value={acc.id}>
-                    {acc.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <LedgerMoneySourceTrigger
+              label={moneySourceLabel}
+              placeholder={moneySourcePlaceholder}
+              onClick={() => setMobileView("moneySourcePicker")}
+            />
           )}
         </div>
       </div>
@@ -452,45 +448,66 @@ export function LedgerEntryEditDialog({
 
   // 모바일: Drawer (Bottom Sheet)
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
+    <Drawer open={open} onOpenChange={handleDrawerOpenChange}>
       <DrawerContent>
-        <DrawerHeader>
-          <DrawerTitle>기록 수정</DrawerTitle>
-          <DrawerDescription asChild>{descriptionContent}</DrawerDescription>
-        </DrawerHeader>
-
-        <div className="overflow-y-auto flex-1 px-4">
-          <form
-            id="ledger-entry-edit-form"
-            onSubmit={handleSubmit(onSubmit)}
-            className="space-y-4 pb-2"
-          >
-            {infoBanner}
-            {formFields}
-          </form>
-        </div>
-
-        <DrawerFooter>
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={isSubmitting}
-              className="flex-1"
-            >
-              취소
-            </Button>
-            <Button
-              type="submit"
-              form="ledger-entry-edit-form"
-              disabled={isSubmitting}
-              className="flex-1"
-            >
-              {isSubmitting ? "저장 중..." : "저장"}
-            </Button>
+        {mobileView === "moneySourcePicker" ? (
+          <div className="flex min-h-[70vh] flex-col pb-4">
+            <LedgerMoneySourcePickerPanel
+              mode={moneySourceMode}
+              value={paymentValue}
+              paymentMethods={paymentMethods}
+              accounts={accounts}
+              title={
+                entry.type === "expense" ? "결제 방법 선택" : "입금 계좌 선택"
+              }
+              searchPlaceholder="이름, 기관, 소유자 검색"
+              onBack={() => setMobileView("form")}
+              onValueChange={handleMobileMoneySourceChange}
+            />
           </div>
-        </DrawerFooter>
+        ) : (
+          <>
+            <DrawerHeader>
+              <DrawerTitle>기록 수정</DrawerTitle>
+              <DrawerDescription asChild>
+                {descriptionContent}
+              </DrawerDescription>
+            </DrawerHeader>
+
+            <div className="overflow-y-auto flex-1 px-4">
+              <form
+                id="ledger-entry-edit-form"
+                onSubmit={handleSubmit(onSubmit)}
+                className="space-y-4 pb-2"
+              >
+                {infoBanner}
+                {formFields}
+              </form>
+            </div>
+
+            <DrawerFooter>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => onOpenChange(false)}
+                  disabled={isSubmitting}
+                  className="flex-1"
+                >
+                  취소
+                </Button>
+                <Button
+                  type="submit"
+                  form="ledger-entry-edit-form"
+                  disabled={isSubmitting}
+                  className="flex-1"
+                >
+                  {isSubmitting ? "저장 중..." : "저장"}
+                </Button>
+              </div>
+            </DrawerFooter>
+          </>
+        )}
       </DrawerContent>
     </Drawer>
   );
