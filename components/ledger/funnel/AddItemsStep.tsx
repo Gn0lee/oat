@@ -5,6 +5,7 @@ import { format } from "date-fns";
 import { ArrowLeftIcon, PlusIcon, Trash2Icon } from "lucide-react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
+import { LedgerMoneySourceCombobox } from "@/components/ledger/LedgerMoneySourceCombobox";
 import { Button } from "@/components/ui/button";
 import { DatePickerInput } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
@@ -12,10 +13,7 @@ import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
-  SelectLabel,
-  SelectSeparator,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -24,6 +22,7 @@ import { useAccounts } from "@/hooks/use-accounts";
 import { useCategories } from "@/hooks/use-categories";
 import { usePaymentMethods } from "@/hooks/use-payment-methods";
 import type { LedgerItemFormData } from "@/lib/api/ledger";
+import { getLedgerMoneySourceValue } from "@/lib/ledger/money-source-options";
 import type { CategoryType } from "@/types";
 
 const itemSchema = z.object({
@@ -116,11 +115,10 @@ export function AddItemsStep({ type, onNext, onBack }: AddItemsStepProps) {
         {fields.map((field, index) => {
           const errors = form.formState.errors.items?.[index];
 
-          const paymentValue = form.watch(`items.${index}.paymentMethodId`)
-            ? `pm:${form.watch(`items.${index}.paymentMethodId`)}`
-            : form.watch(`items.${index}.accountId`)
-              ? `acc:${form.watch(`items.${index}.accountId`)}`
-              : "";
+          const paymentValue = getLedgerMoneySourceValue({
+            paymentMethodId: form.watch(`items.${index}.paymentMethodId`),
+            accountId: form.watch(`items.${index}.accountId`),
+          });
 
           const handlePaymentChange = (v: string) => {
             if (v.startsWith("pm:")) {
@@ -227,62 +225,14 @@ export function AddItemsStep({ type, onNext, onBack }: AddItemsStepProps) {
                   <Label className="text-sm text-gray-700">
                     {type === "expense" ? "결제 방법" : "입금 계좌"}
                   </Label>
-                  {type === "expense" ? (
-                    <Select
-                      value={paymentValue}
-                      onValueChange={handlePaymentChange}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="선택 안함" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {paymentMethods.length > 0 && (
-                          <SelectGroup>
-                            <SelectLabel>결제수단</SelectLabel>
-                            {paymentMethods.map((pm) => (
-                              <SelectItem key={pm.id} value={`pm:${pm.id}`}>
-                                {pm.name}
-                              </SelectItem>
-                            ))}
-                          </SelectGroup>
-                        )}
-                        {paymentMethods.length > 0 && accounts.length > 0 && (
-                          <SelectSeparator />
-                        )}
-                        {accounts.length > 0 && (
-                          <SelectGroup>
-                            <SelectLabel>계좌</SelectLabel>
-                            {accounts.map((acc) => (
-                              <SelectItem key={acc.id} value={`acc:${acc.id}`}>
-                                {acc.name}
-                              </SelectItem>
-                            ))}
-                          </SelectGroup>
-                        )}
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <Select
-                      value={form.watch(`items.${index}.accountId`) ?? ""}
-                      onValueChange={(v) =>
-                        form.setValue(
-                          `items.${index}.accountId`,
-                          v || undefined,
-                        )
-                      }
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="선택 안함" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {accounts.map((acc) => (
-                          <SelectItem key={acc.id} value={acc.id}>
-                            {acc.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
+                  <LedgerMoneySourceCombobox
+                    mode={type}
+                    value={paymentValue}
+                    paymentMethods={paymentMethods}
+                    accounts={accounts}
+                    placeholder="선택 안함"
+                    onValueChange={handlePaymentChange}
+                  />
                 </div>
               </div>
 

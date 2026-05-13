@@ -5,28 +5,15 @@ import { format } from "date-fns";
 import { ArrowLeftIcon } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { LedgerMoneySourceCombobox } from "@/components/ledger/LedgerMoneySourceCombobox";
 import { Button } from "@/components/ui/button";
 import { DatePickerInput } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectSeparator,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useAccounts } from "@/hooks/use-accounts";
 import { usePaymentMethods } from "@/hooks/use-payment-methods";
-import {
-  isTransferCapablePaymentMethod,
-  type TransferItemFormData,
-  type TransferLocation,
-} from "@/lib/api/ledger";
+import type { TransferItemFormData, TransferLocation } from "@/lib/api/ledger";
 
 const transferFormSchema = z
   .object({
@@ -61,9 +48,6 @@ function parseLocation(value: string): TransferLocation {
 export function AddTransferStep({ onNext, onBack }: AddTransferStepProps) {
   const { data: accounts = [] } = useAccounts();
   const { data: paymentMethods = [] } = usePaymentMethods();
-  const transferCapablePaymentMethods = paymentMethods.filter((pm) =>
-    isTransferCapablePaymentMethod(pm.type),
-  );
 
   const form = useForm<TransferFormValues>({
     resolver: zodResolver(transferFormSchema),
@@ -78,6 +62,7 @@ export function AddTransferStep({ onNext, onBack }: AddTransferStepProps) {
   });
 
   const fromValue = form.watch("fromValue");
+  const toValue = form.watch("toValue");
 
   const handleSubmit = form.handleSubmit((values) => {
     onNext({
@@ -91,42 +76,6 @@ export function AddTransferStep({ onNext, onBack }: AddTransferStepProps) {
   });
 
   const errors = form.formState.errors;
-
-  const renderLocationOptions = (excludeValue?: string) => (
-    <>
-      {accounts.length > 0 && (
-        <SelectGroup>
-          <SelectLabel>계좌</SelectLabel>
-          {accounts.map((account) => {
-            const value = `acc:${account.id}`;
-            if (value === excludeValue) return null;
-            return (
-              <SelectItem key={account.id} value={value}>
-                {account.name}
-              </SelectItem>
-            );
-          })}
-        </SelectGroup>
-      )}
-      {accounts.length > 0 && transferCapablePaymentMethods.length > 0 && (
-        <SelectSeparator />
-      )}
-      {transferCapablePaymentMethods.length > 0 && (
-        <SelectGroup>
-          <SelectLabel>선불/상품권/현금</SelectLabel>
-          {transferCapablePaymentMethods.map((paymentMethod) => {
-            const value = `pm:${paymentMethod.id}`;
-            if (value === excludeValue) return null;
-            return (
-              <SelectItem key={paymentMethod.id} value={value}>
-                {paymentMethod.name}
-              </SelectItem>
-            );
-          })}
-        </SelectGroup>
-      )}
-    </>
-  );
 
   return (
     <div className="space-y-6">
@@ -176,20 +125,21 @@ export function AddTransferStep({ onNext, onBack }: AddTransferStepProps) {
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1">
               <Label className="text-sm text-gray-700">출발지 *</Label>
-              <Select
+              <LedgerMoneySourceCombobox
+                mode="transfer"
                 value={form.watch("fromValue")}
+                paymentMethods={paymentMethods}
+                accounts={accounts}
+                includeClearOption={false}
+                excludedValues={toValue ? [toValue] : []}
+                placeholder="선택"
                 onValueChange={(value) => {
                   form.setValue("fromValue", value, { shouldValidate: true });
                   if (value === form.watch("toValue")) {
                     form.setValue("toValue", "", { shouldValidate: true });
                   }
                 }}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="선택" />
-                </SelectTrigger>
-                <SelectContent>{renderLocationOptions()}</SelectContent>
-              </Select>
+              />
               {errors.fromValue && (
                 <p className="text-xs text-red-500">
                   {errors.fromValue.message}
@@ -199,19 +149,18 @@ export function AddTransferStep({ onNext, onBack }: AddTransferStepProps) {
 
             <div className="space-y-1">
               <Label className="text-sm text-gray-700">도착지 *</Label>
-              <Select
+              <LedgerMoneySourceCombobox
+                mode="transfer"
                 value={form.watch("toValue")}
+                paymentMethods={paymentMethods}
+                accounts={accounts}
+                includeClearOption={false}
+                excludedValues={fromValue ? [fromValue] : []}
+                placeholder="선택"
                 onValueChange={(value) =>
                   form.setValue("toValue", value, { shouldValidate: true })
                 }
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="선택" />
-                </SelectTrigger>
-                <SelectContent>
-                  {renderLocationOptions(fromValue || undefined)}
-                </SelectContent>
-              </Select>
+              />
               {errors.toValue && (
                 <p className="text-xs text-red-500">{errors.toValue.message}</p>
               )}
