@@ -19,6 +19,7 @@ vi.mock("next/link", () => ({
       {children}
     </a>
   ),
+  useLinkStatus: vi.fn(() => ({ pending: false })),
 }));
 
 import { usePathname } from "next/navigation";

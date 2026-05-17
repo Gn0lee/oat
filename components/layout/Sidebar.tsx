@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { isNavItemActive, NAV_ITEMS } from "@/constants/nav-items";
 import { cn } from "@/lib/utils/cn";
+import { NavPendingIndicator } from "./NavPendingIndicator";
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -28,6 +29,7 @@ export function Sidebar() {
             >
               <Icon className="size-5" />
               <span>{item.label}</span>
+              <NavPendingIndicator className="ml-auto" />
             </Link>
           );
         })}
