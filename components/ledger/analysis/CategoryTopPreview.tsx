@@ -3,26 +3,30 @@ import type { CategoryStatItem } from "@/lib/api/ledger-stats";
 import { formatCurrency } from "@/lib/utils/format";
 
 interface CategoryTopPreviewProps {
+  emptyLabel?: string;
   items: CategoryStatItem[];
   total: number;
+  title?: string;
 }
 
-export function CategoryTopPreview({ items }: CategoryTopPreviewProps) {
+export function CategoryTopPreview({
+  emptyLabel = "이번 달 지출 내역이 없어요",
+  items,
+  title = "이번 달 주요 지출",
+}: CategoryTopPreviewProps) {
   const top3 = items.slice(0, 3);
 
   if (top3.length === 0) {
     return (
       <div className="bg-white rounded-2xl p-5 shadow-sm mb-6">
-        <p className="text-sm text-gray-500 text-center py-2">
-          이번 달 지출 내역이 없어요
-        </p>
+        <p className="text-sm text-gray-500 text-center py-2">{emptyLabel}</p>
       </div>
     );
   }
 
   return (
     <div className="bg-white rounded-2xl p-5 shadow-sm mb-6">
-      <p className="text-xs text-gray-500 mb-3">이번 달 주요 지출</p>
+      <p className="text-xs text-gray-500 mb-3">{title}</p>
       <div className="space-y-3">
         {top3.map((item) => (
           <div key={item.categoryId ?? "null"} className="space-y-1">

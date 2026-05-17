@@ -8,59 +8,22 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { PageHeader } from "@/components/layout";
+import { LedgerSummarySection } from "@/components/ledger/LedgerSummarySection";
 import { Button } from "@/components/ui/button";
-import { getUserHouseholdId } from "@/lib/api/invitation";
-import { getLedgerEntrySummary } from "@/lib/api/ledger";
 import { requireUser } from "@/lib/supabase/auth";
-import { createClient } from "@/lib/supabase/server";
-import { formatCurrency } from "@/lib/utils/format";
 
 export default async function LedgerPage() {
-  const user = await requireUser();
-  const supabase = await createClient();
-
-  const householdId = await getUserHouseholdId(supabase, user.id);
+  await requireUser();
 
   const now = new Date();
   const year = now.getFullYear();
   const month = now.getMonth() + 1;
 
-  const summary = householdId
-    ? await getLedgerEntrySummary(supabase, householdId, year, month)
-    : { totalIncome: 0, totalExpense: 0, balance: 0 };
-
   return (
     <>
       <PageHeader title="가계부" />
 
-      {/* 이번 달 요약 카드 */}
-      <div className="bg-white rounded-2xl p-6 shadow-sm mb-6">
-        <h2 className="text-sm text-gray-500 mb-4">{month}월 현금 흐름</h2>
-
-        <div className="space-y-4">
-          <div className="flex justify-between items-end">
-            <span className="text-gray-700">남은 금액</span>
-            <span className="text-3xl font-bold text-gray-900">
-              {formatCurrency(summary.balance)}
-            </span>
-          </div>
-
-          <div className="h-px bg-gray-100 w-full" />
-
-          <div className="flex justify-between items-center text-sm">
-            <span className="text-gray-500">수입</span>
-            <span className="font-medium text-gray-900">
-              {formatCurrency(summary.totalIncome)}
-            </span>
-          </div>
-          <div className="flex justify-between items-center text-sm">
-            <span className="text-gray-500">지출</span>
-            <span className="font-medium text-gray-900">
-              {formatCurrency(summary.totalExpense)}
-            </span>
-          </div>
-        </div>
-      </div>
+      <LedgerSummarySection year={year} month={month} />
 
       {/* 기능 진입점 목록 */}
       <div className="space-y-3">

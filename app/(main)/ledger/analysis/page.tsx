@@ -8,16 +8,9 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { PageHeader } from "@/components/layout";
-import { CategoryTopPreview } from "@/components/ledger/analysis/CategoryTopPreview";
+import { LedgerAnalysisOverview } from "@/components/ledger/analysis/LedgerAnalysisOverview";
 import { ScopeTabs } from "@/components/ledger/analysis/ScopeTabs";
-import { SummaryStatCard } from "@/components/ledger/analysis/SummaryStatCard";
-import { getUserHouseholdId } from "@/lib/api/invitation";
-import {
-  getLedgerStatsByCategory,
-  getLedgerStatsSummary,
-} from "@/lib/api/ledger-stats";
 import { requireUser } from "@/lib/supabase/auth";
-import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -83,30 +76,11 @@ export default async function LedgerAnalysisPage({
   const scope: "shared" | "personal" =
     rawScope === "personal" ? "personal" : "shared";
 
-  const user = await requireUser();
-  const supabase = await createClient();
-  const householdId = await getUserHouseholdId(supabase, user.id);
+  await requireUser();
 
   const now = new Date();
   const year = now.getFullYear();
   const month = now.getMonth() + 1;
-
-  const [summary, categoryData] = await Promise.all([
-    householdId
-      ? getLedgerStatsSummary(supabase, householdId, user.id, year, month)
-      : null,
-    householdId
-      ? getLedgerStatsByCategory(
-          supabase,
-          householdId,
-          user.id,
-          year,
-          month,
-          "expense",
-          scope,
-        )
-      : null,
-  ]);
 
   const visibleCards = NAV_CARDS.filter(
     (card) => !(card.sharedOnly && scope === "personal"),
@@ -118,22 +92,7 @@ export default async function LedgerAnalysisPage({
 
       <ScopeTabs scope={scope} />
 
-      {summary ? (
-        <SummaryStatCard summary={summary} scope={scope} />
-      ) : (
-        <div className="bg-white rounded-2xl p-6 shadow-sm mb-6">
-          <p className="text-sm text-gray-400 text-center">
-            가구 정보를 불러올 수 없어요
-          </p>
-        </div>
-      )}
-
-      {categoryData && categoryData.items.length > 0 && (
-        <CategoryTopPreview
-          items={categoryData.items}
-          total={categoryData.total}
-        />
-      )}
+      <LedgerAnalysisOverview year={year} month={month} scope={scope} />
 
       <div className="space-y-3">
         <h3 className="text-base font-semibold text-gray-900 px-1">
