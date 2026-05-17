@@ -45,6 +45,9 @@ describe("buildHomeSummary", () => {
     expect(result.portfolio).toEqual(portfolio);
     expect(result.year).toBe(2026);
     expect(result.month).toBe(4);
+    expect(result.userName).toBe("사용자");
+    expect(result.topCategories.items).toEqual([]);
+    expect(result.ledgerActivity.hasRecentOwnLedgerActivity).toBe(false);
   });
 
   it("가구가 없으면 기본값으로 홈 요약 데이터를 반환한다", () => {
@@ -56,5 +59,38 @@ describe("buildHomeSummary", () => {
     expect(result.cashFlow.savingsRate).toBe(0);
     expect(result.portfolio.totalValue).toBe(0);
     expect(result.portfolio.holdingCount).toBe(0);
+    expect(result.topCategories.total).toBe(0);
+    expect(result.ledgerActivity.lastOwnLedgerEntryCreatedAt).toBeNull();
+  });
+
+  it("사용자 이름, 상위 카테고리, 장부 활동을 포함해 홈 요약 데이터를 반환한다", () => {
+    const result = buildHomeSummary(
+      null,
+      null,
+      {
+        type: "expense",
+        scope: "shared",
+        total: 120_000,
+        items: [
+          {
+            categoryId: "food",
+            categoryName: "식비",
+            categoryIcon: "utensils",
+            amount: 120_000,
+            percentage: 100,
+            entryCount: 3,
+          },
+        ],
+      },
+      {
+        hasRecentOwnLedgerActivity: true,
+        lastOwnLedgerEntryCreatedAt: "2026-05-17T00:00:00.000Z",
+      },
+      "지호",
+    );
+
+    expect(result.userName).toBe("지호");
+    expect(result.topCategories.items).toHaveLength(1);
+    expect(result.ledgerActivity.hasRecentOwnLedgerActivity).toBe(true);
   });
 });

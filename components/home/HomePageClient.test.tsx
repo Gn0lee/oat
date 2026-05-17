@@ -1,0 +1,113 @@
+import { render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+import { useHomeSummary } from "@/hooks/use-home-summary";
+import { HomePageClient } from "./HomePageClient";
+
+vi.mock("next/link", () => ({
+  default: ({
+    children,
+    href,
+    ...props
+  }: {
+    children: React.ReactNode;
+    href: string;
+  }) => (
+    <a href={href} {...props}>
+      {children}
+    </a>
+  ),
+}));
+
+vi.mock("@/hooks/use-home-summary", () => ({
+  useHomeSummary: vi.fn(),
+}));
+
+describe("HomePageClient", () => {
+  it("홈 요약을 불러오는 동안 스켈레톤을 표시한다", () => {
+    vi.mocked(useHomeSummary).mockReturnValue({
+      data: undefined,
+      isLoading: true,
+      error: null,
+    } as ReturnType<typeof useHomeSummary>);
+
+    const { container } = render(<HomePageClient />);
+
+    expect(container.querySelectorAll("[data-slot='skeleton']").length).toBe(4);
+    expect(screen.getByText("더 자세히 보기")).toBeInTheDocument();
+  });
+
+  it("홈 요약 조회에 실패하면 에러 상태와 주요 진입점을 표시한다", () => {
+    vi.mocked(useHomeSummary).mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      error: new Error("failed"),
+    } as ReturnType<typeof useHomeSummary>);
+
+    render(<HomePageClient />);
+
+    expect(
+      screen.getByText("홈 데이터를 불러오지 못했습니다."),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /가계부/ })).toHaveAttribute(
+      "href",
+      "/ledger",
+    );
+  });
+
+  it("홈 요약 데이터로 현금흐름, 자산, 주요 지출, 가족 지출을 렌더링한다", () => {
+    vi.mocked(useHomeSummary).mockReturnValue({
+      data: {
+        year: 2026,
+        month: 5,
+        userName: "지호",
+        cashFlow: {
+          year: 2026,
+          month: 5,
+          totalIncome: 5_000_000,
+          totalSharedExpense: 2_800_000,
+          totalPersonalExpense: 1_000_000,
+          totalExpense: 3_800_000,
+          balance: 1_200_000,
+          savingsRate: 24,
+        },
+        portfolio: {
+          holdingCount: 4,
+          totalValue: 24_000_000,
+          totalInvested: 20_000_000,
+          returnRate: 20,
+        },
+        topCategories: {
+          type: "expense",
+          scope: "shared",
+          total: 120_000,
+          items: [
+            {
+              categoryId: "food",
+              categoryName: "식비",
+              categoryIcon: null,
+              amount: 120_000,
+              percentage: 100,
+              entryCount: 3,
+            },
+          ],
+        },
+        ledgerActivity: {
+          hasRecentOwnLedgerActivity: true,
+          lastOwnLedgerEntryCreatedAt: "2026-05-17T00:00:00.000Z",
+        },
+      },
+      isLoading: false,
+      error: null,
+    } as ReturnType<typeof useHomeSummary>);
+
+    render(<HomePageClient />);
+
+    expect(
+      screen.getByText("이번 달은 아직 ₩1,200,000 남았어요"),
+    ).toBeInTheDocument();
+    expect(screen.getByText("지금 우리집 자산은")).toBeInTheDocument();
+    expect(screen.getByText("식비")).toBeInTheDocument();
+    expect(screen.getByText("₩2,800,000")).toBeInTheDocument();
+    expect(screen.getByText("4종목 · 2,400만")).toBeInTheDocument();
+  });
+});

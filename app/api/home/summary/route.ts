@@ -2,7 +2,11 @@ import { NextResponse } from "next/server";
 import { APIError, toErrorResponse } from "@/lib/api/error";
 import { buildHomeSummary } from "@/lib/api/home-summary";
 import { getUserHouseholdId } from "@/lib/api/invitation";
-import { getLedgerStatsSummary } from "@/lib/api/ledger-stats";
+import { getOwnLedgerActivity } from "@/lib/api/ledger";
+import {
+  getLedgerStatsByCategory,
+  getLedgerStatsSummary,
+} from "@/lib/api/ledger-stats";
 import { getPortfolioSummary } from "@/lib/api/portfolio";
 import { createClient } from "@/lib/supabase/server";
 
@@ -33,14 +37,46 @@ export async function GET(request: Request) {
     const year = Number(searchParams.get("year") ?? now.getFullYear());
     const month = Number(searchParams.get("month") ?? now.getMonth() + 1);
 
-    const [cashFlow, portfolio] = await Promise.all([
-      householdId
-        ? getLedgerStatsSummary(supabase, householdId, user.id, year, month)
-        : null,
-      householdId ? getPortfolioSummary(supabase, householdId) : null,
-    ]);
+    const [cashFlow, portfolio, topCategories, ledgerActivity, profileResult] =
+      await Promise.all([
+        householdId
+          ? getLedgerStatsSummary(supabase, householdId, user.id, year, month)
+          : null,
+        householdId ? getPortfolioSummary(supabase, householdId) : null,
+        householdId
+          ? getLedgerStatsByCategory(
+              supabase,
+              householdId,
+              user.id,
+              year,
+              month,
+              "expense",
+              "shared",
+            )
+          : null,
+        householdId
+          ? getOwnLedgerActivity(supabase, householdId, user.id)
+          : null,
+        supabase.from("profiles").select("name").eq("id", user.id).single(),
+      ]);
 
-    const data = buildHomeSummary(cashFlow, portfolio);
+    const userName =
+      profileResult.data?.name ?? user.email?.split("@")[0] ?? "사용자";
+
+    const data = buildHomeSummary(
+      cashFlow,
+      portfolio,
+      topCategories,
+      householdId
+        ? {
+            hasRecentOwnLedgerActivity:
+              ledgerActivity?.hasRecentOwnLedgerActivity ?? false,
+            lastOwnLedgerEntryCreatedAt:
+              ledgerActivity?.lastOwnLedgerEntryCreatedAt ?? null,
+          }
+        : null,
+      userName,
+    );
 
     return NextResponse.json({ data });
   } catch (error) {

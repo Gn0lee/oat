@@ -11,6 +11,16 @@ export const queries = createQueryKeyStore({
     list: null,
   },
 
+  home: {
+    summary: (params?: { year?: number; month?: number }) => ({
+      queryKey: [params],
+    }),
+  },
+
+  assets: {
+    summary: null,
+  },
+
   paymentMethods: {
     all: null,
     list: null,
