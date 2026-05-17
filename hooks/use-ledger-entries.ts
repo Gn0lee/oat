@@ -1,7 +1,11 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { LedgerEntryWithDetails } from "@/lib/api/ledger";
+import { fetchApiData } from "@/lib/api/client";
+import type {
+  LedgerEntrySummary,
+  LedgerEntryWithDetails,
+} from "@/lib/api/ledger";
 import { queries } from "@/lib/queries/keys";
 import type {
   CreateLedgerEntryInput,
@@ -63,6 +67,21 @@ export function useLedgerEntries(params?: LedgerEntriesParams) {
   return useQuery({
     queryKey: queries.ledgerEntries.list(params).queryKey,
     queryFn: () => fetchLedgerEntries(params),
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
+// ============================================================================
+// 월간 수입/지출 요약 조회
+// ============================================================================
+
+export function useLedgerEntrySummary(year: number, month: number) {
+  return useQuery({
+    queryKey: queries.ledgerEntries.summary(year, month).queryKey,
+    queryFn: () =>
+      fetchApiData<LedgerEntrySummary>(
+        `/api/ledger-entries/summary?year=${year}&month=${month}`,
+      ),
     staleTime: 1000 * 60 * 5,
   });
 }

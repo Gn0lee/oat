@@ -23,13 +23,14 @@ export function SummaryStatCard({ summary, scope }: SummaryStatCardProps) {
   const balance = income - expense;
   const savingsRate = calcSavingsRate(income, expense);
 
-  const scopeLabel = scope === "personal" ? "내 개인" : "공용";
+  const title =
+    scope === "personal"
+      ? `${month}월 내 개인 지출`
+      : `${month}월 공용 현금 흐름`;
 
   return (
     <div className="bg-white rounded-2xl p-6 shadow-sm mb-6">
-      <h2 className="text-sm text-gray-500 mb-4">
-        {month}월 {scopeLabel} 현금 흐름
-      </h2>
+      <h2 className="text-sm text-gray-500 mb-4">{title}</h2>
 
       <div className="space-y-3">
         {scope !== "personal" && (
