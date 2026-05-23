@@ -162,6 +162,12 @@ export function StockSummarySection() {
             <span>{summary.missingPriceCount}종목 현재가 없음</span>
           </div>
         )}
+        {summary.stalePriceCount > 0 && (
+          <div className="flex items-center gap-1 mt-2 text-xs text-gray-500">
+            <AlertTriangle className="size-3" />
+            <span>{summary.stalePriceCount}종목 이전 가격 기준</span>
+          </div>
+        )}
       </div>
 
       {/* 보유 종목 수 카드 */}

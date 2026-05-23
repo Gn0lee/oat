@@ -130,6 +130,7 @@ export interface StockAnalysisSummary {
   returnRate: number;
   holdingCount: number;
   missingPriceCount: number;
+  stalePriceCount: number;
 }
 
 export interface StockHoldingWithReturn {

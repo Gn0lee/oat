@@ -46,6 +46,7 @@ export function DashboardSummarySection() {
         totalReturn={data?.totalReturn ?? 0}
         returnRate={data?.returnRate ?? 0}
         missingPriceCount={data?.missingPriceCount}
+        stalePriceCount={data?.stalePriceCount}
         isLoading={isLoading}
       />
     </div>
