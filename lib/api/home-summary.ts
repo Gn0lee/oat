@@ -2,14 +2,18 @@ import type {
   LedgerStatsByCategoryResult,
   LedgerStatsSummary,
 } from "./ledger-stats";
-import type { PortfolioSummary } from "./portfolio";
+
+export interface HomeAssetSummary {
+  holdingCount: number;
+  totalInvested: number;
+}
 
 export interface HomeSummary {
   year: number;
   month: number;
   userName: string;
   cashFlow: LedgerStatsSummary;
-  portfolio: PortfolioSummary;
+  assets: HomeAssetSummary;
   topCategories: LedgerStatsByCategoryResult;
   ledgerActivity: {
     hasRecentOwnLedgerActivity: boolean;
@@ -28,11 +32,9 @@ const DEFAULT_CASH_FLOW: LedgerStatsSummary = {
   savingsRate: 0,
 };
 
-const DEFAULT_PORTFOLIO: PortfolioSummary = {
+const DEFAULT_ASSETS: HomeAssetSummary = {
   holdingCount: 0,
-  totalValue: 0,
   totalInvested: 0,
-  returnRate: 0,
 };
 
 const DEFAULT_TOP_CATEGORIES: LedgerStatsByCategoryResult = {
@@ -54,20 +56,19 @@ export function calcSavingsRate(income: number, expense: number): number {
 
 export function buildHomeSummary(
   cashFlow: LedgerStatsSummary | null,
-  portfolio: PortfolioSummary | null,
+  assets: HomeAssetSummary | null,
   topCategories: LedgerStatsByCategoryResult | null = null,
   ledgerActivity: HomeSummary["ledgerActivity"] | null = null,
   userName = "사용자",
 ): HomeSummary {
   const cf = cashFlow ?? DEFAULT_CASH_FLOW;
-  const pt = portfolio ?? DEFAULT_PORTFOLIO;
 
   return {
     year: cf.year,
     month: cf.month,
     userName,
     cashFlow: cf,
-    portfolio: pt,
+    assets: assets ?? DEFAULT_ASSETS,
     topCategories: topCategories ?? DEFAULT_TOP_CATEGORIES,
     ledgerActivity: ledgerActivity ?? DEFAULT_LEDGER_ACTIVITY,
   };

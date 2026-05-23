@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { APIError, toErrorResponse } from "@/lib/api/error";
+import { getHoldings } from "@/lib/api/holdings";
 import { buildHomeSummary } from "@/lib/api/home-summary";
 import { getUserHouseholdId } from "@/lib/api/invitation";
 import { getOwnLedgerActivity } from "@/lib/api/ledger";
@@ -7,12 +8,28 @@ import {
   getLedgerStatsByCategory,
   getLedgerStatsSummary,
 } from "@/lib/api/ledger-stats";
-import { getPortfolioSummary } from "@/lib/api/portfolio";
 import { createClient } from "@/lib/supabase/server";
+
+async function getHomeAssetSummary(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  householdId: string,
+) {
+  const holdings = await getHoldings(supabase, householdId, {
+    pagination: { page: 1, pageSize: 1000 },
+  });
+
+  return {
+    holdingCount: holdings.total,
+    totalInvested: holdings.data.reduce(
+      (sum, holding) => sum + holding.totalInvested,
+      0,
+    ),
+  };
+}
 
 /**
  * GET /api/home/summary
- * 홈 화면 집계 데이터 - 현금흐름 요약 + 포트폴리오 요약
+ * 홈 화면 집계 데이터 - 현금흐름 요약 + 기록 기반 자산 요약
  *
  * Query params:
  *   ?year=2026&month=4  (없으면 당월)
@@ -37,12 +54,12 @@ export async function GET(request: Request) {
     const year = Number(searchParams.get("year") ?? now.getFullYear());
     const month = Number(searchParams.get("month") ?? now.getMonth() + 1);
 
-    const [cashFlow, portfolio, topCategories, ledgerActivity, profileResult] =
+    const [cashFlow, assets, topCategories, ledgerActivity, profileResult] =
       await Promise.all([
         householdId
           ? getLedgerStatsSummary(supabase, householdId, user.id, year, month)
           : null,
-        householdId ? getPortfolioSummary(supabase, householdId) : null,
+        householdId ? getHomeAssetSummary(supabase, householdId) : null,
         householdId
           ? getLedgerStatsByCategory(
               supabase,
@@ -65,7 +82,7 @@ export async function GET(request: Request) {
 
     const data = buildHomeSummary(
       cashFlow,
-      portfolio,
+      assets,
       topCategories,
       householdId
         ? {

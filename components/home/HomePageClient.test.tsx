@@ -70,11 +70,9 @@ describe("HomePageClient", () => {
           balance: 1_200_000,
           savingsRate: 24,
         },
-        portfolio: {
+        assets: {
           holdingCount: 4,
-          totalValue: 24_000_000,
           totalInvested: 20_000_000,
-          returnRate: 20,
         },
         topCategories: {
           type: "expense",
@@ -105,9 +103,12 @@ describe("HomePageClient", () => {
     expect(
       screen.getByText("이번 달은 아직 ₩1,200,000 남았어요"),
     ).toBeInTheDocument();
-    expect(screen.getByText("지금 우리집 자산은")).toBeInTheDocument();
+    expect(screen.getByText("투자원금")).toBeInTheDocument();
+    expect(screen.getByText("₩20,000,000")).toBeInTheDocument();
     expect(screen.getByText("식비")).toBeInTheDocument();
     expect(screen.getByText("₩2,800,000")).toBeInTheDocument();
-    expect(screen.getByText("4종목 · 2,400만")).toBeInTheDocument();
+    expect(screen.getByText("4종목 · 2,000만")).toBeInTheDocument();
+    expect(screen.queryByText("지금 우리집 자산은")).not.toBeInTheDocument();
+    expect(screen.queryByText(/수익률/)).not.toBeInTheDocument();
   });
 });
