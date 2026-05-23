@@ -28,7 +28,19 @@ export const queries = createQueryKeyStore({
 
   holdings: {
     all: null,
-    list: null,
+    list: (params?: {
+      filters?: {
+        ownerId?: string;
+        assetType?: string;
+        market?: string;
+        accountId?: string;
+        search?: string;
+      };
+      page?: number;
+      pageSize?: number;
+    }) => ({
+      queryKey: [params],
+    }),
     detail: (id: string) => ({ queryKey: [id] }),
   },
 

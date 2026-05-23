@@ -8,11 +8,9 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import type {
-  HoldingsFilters as Filters,
-  HoldingWithDetails,
-} from "@/lib/api/holdings";
-import type { PaginatedResult } from "@/lib/utils/query";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useHoldings } from "@/hooks/use-holdings";
+import type { HoldingsFilters as Filters } from "@/lib/api/holdings";
 import { HoldingsFilters } from "./HoldingsFilters";
 import { HoldingsTable } from "./HoldingsTable";
 
@@ -27,63 +25,76 @@ interface Account {
 }
 
 interface HoldingsListProps {
-  initialData: PaginatedResult<HoldingWithDetails>;
   members: Member[];
   accounts: Account[];
 }
 
-export function HoldingsList({
-  initialData,
-  members,
-  accounts,
-}: HoldingsListProps) {
-  const [data, setData] = useState(initialData);
+function HoldingsListSkeleton() {
+  return (
+    <div className="space-y-3">
+      <Skeleton className="h-10 rounded-xl bg-gray-200" />
+      <Skeleton className="h-64 rounded-xl bg-gray-200" />
+    </div>
+  );
+}
+
+export function HoldingsList({ members, accounts }: HoldingsListProps) {
   const [filters, setFilters] = useState<Filters>({});
   const [page, setPage] = useState(1);
-  const [isLoading, setIsLoading] = useState(false);
 
-  const fetchHoldings = async (newFilters: Filters, newPage: number) => {
-    setIsLoading(true);
-    try {
-      const params = new URLSearchParams();
-      if (newFilters.ownerId) params.set("ownerId", newFilters.ownerId);
-      if (newFilters.market) params.set("market", newFilters.market);
-      if (newFilters.accountId) params.set("accountId", newFilters.accountId);
-      if (newFilters.search) params.set("search", newFilters.search);
-      params.set("page", String(newPage));
-
-      const response = await fetch(`/api/holdings?${params.toString()}`);
-      if (!response.ok) throw new Error("Failed to fetch");
-      const result = await response.json();
-      setData(result);
-    } catch (error) {
-      console.error("Failed to fetch holdings:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const { data, isLoading, isFetching, error } = useHoldings({
+    filters,
+    page,
+    pageSize: 20,
+  });
 
   const handleFiltersChange = (newFilters: Filters) => {
     setFilters(newFilters);
     setPage(1);
-    fetchHoldings(newFilters, 1);
   };
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
-    fetchHoldings(filters, newPage);
   };
+
+  const filterControls = (
+    <HoldingsFilters
+      filters={filters}
+      onFiltersChange={handleFiltersChange}
+      members={members}
+      accounts={accounts}
+    />
+  );
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        {filterControls}
+        <HoldingsListSkeleton />
+      </div>
+    );
+  }
+
+  if (error || !data) {
+    return (
+      <div className="space-y-4">
+        {filterControls}
+        <div className="rounded-xl bg-white p-6 text-center shadow-sm">
+          <p className="text-sm text-gray-500">
+            보유 현황을 불러오지 못했습니다.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
-      <HoldingsFilters
-        filters={filters}
-        onFiltersChange={handleFiltersChange}
-        members={members}
-        accounts={accounts}
-      />
+      <p className="text-sm text-gray-500">총 {data.total}개 종목 보유 중</p>
 
-      <div className={isLoading ? "opacity-50 pointer-events-none" : ""}>
+      {filterControls}
+
+      <div className={isFetching ? "opacity-50 pointer-events-none" : ""}>
         <HoldingsTable data={data.data} />
       </div>
 
