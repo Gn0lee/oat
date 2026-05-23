@@ -234,6 +234,7 @@ export interface StockPriceResult {
   price: number;
   changeRate: number | null;
   fetchedAt: Date;
+  status: "fresh" | "stale";
 }
 
 /**
