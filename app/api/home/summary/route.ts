@@ -14,16 +14,32 @@ async function getHomeAssetSummary(
   supabase: Awaited<ReturnType<typeof createClient>>,
   householdId: string,
 ) {
-  const holdings = await getHoldings(supabase, householdId, {
-    pagination: { page: 1, pageSize: 1000 },
-  });
+  const pageSize = 1000;
+  let page = 1;
+  let holdingCount = 0;
+  let totalInvested = 0;
 
-  return {
-    holdingCount: holdings.total,
-    totalInvested: holdings.data.reduce(
+  while (true) {
+    const holdings = await getHoldings(supabase, householdId, {
+      pagination: { page, pageSize },
+    });
+
+    holdingCount = holdings.total;
+    totalInvested += holdings.data.reduce(
       (sum, holding) => sum + holding.totalInvested,
       0,
-    ),
+    );
+
+    if (page * pageSize >= holdings.total || holdings.data.length === 0) {
+      break;
+    }
+
+    page += 1;
+  }
+
+  return {
+    holdingCount,
+    totalInvested,
   };
 }
 

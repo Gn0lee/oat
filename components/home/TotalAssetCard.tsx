@@ -20,9 +20,6 @@ export function TotalAssetCard({
           <p className="text-3xl font-bold text-gray-900 mt-1">
             {formatCurrency(totalInvested, currency)}
           </p>
-          <p className="mt-2 text-sm text-gray-500">
-            현재 평가금액은 자산 화면에서 확인하세요
-          </p>
         </div>
         <Link
           href="/assets"
