@@ -4,6 +4,7 @@ import { getExchangeRateSafe } from "@/lib/api/exchange";
 import { getHoldings } from "@/lib/api/holdings";
 import { getUserHouseholdId } from "@/lib/api/invitation";
 import { getStockPrices } from "@/lib/api/stock-price";
+import { calculateHoldingValuation } from "@/lib/api/valuation";
 import { createClient } from "@/lib/supabase/server";
 import type {
   MarketType,
@@ -90,27 +91,23 @@ export async function GET() {
     // 각 종목별 현재가치 및 수익률 계산
     const holdingsWithValue: HoldingWithValue[] = holdings.map((h) => {
       const priceKey = `${h.market}:${h.ticker}`;
-      const priceData = stockPrices[priceKey];
-      const currentPrice = priceData?.price ?? null;
-
-      // 현재가가 없으면 평균 매수가를 대신 사용
-      const effectivePrice = currentPrice ?? h.avgPrice;
-      const rawCurrentValue = h.quantity * effectivePrice;
-      const rawTotalInvested = h.totalInvested;
-
-      // USD → KRW 환산
-      const isUSD = h.currency === "USD";
-      const currentValue = isUSD
-        ? rawCurrentValue * exchangeRate
-        : rawCurrentValue;
-      const totalInvested = isUSD
-        ? rawTotalInvested * exchangeRate
-        : rawTotalInvested;
+      const valuation = calculateHoldingValuation(
+        {
+          quantity: h.quantity,
+          avgPrice: h.avgPrice,
+          totalInvested: h.totalInvested,
+          currency: h.currency,
+        },
+        stockPrices[priceKey],
+        exchangeRate,
+      );
 
       // 수익률 계산
-      const returnAmount = currentValue - totalInvested;
+      const returnAmount = valuation.currentValue - valuation.investedAmount;
       const returnRate =
-        totalInvested > 0 ? (returnAmount / totalInvested) * 100 : 0;
+        valuation.investedAmount > 0
+          ? (returnAmount / valuation.investedAmount) * 100
+          : 0;
 
       return {
         ticker: h.ticker,
@@ -118,8 +115,8 @@ export async function GET() {
         market: h.market,
         quantity: h.quantity,
         riskLevel: h.riskLevel,
-        currentValue,
-        totalInvested,
+        currentValue: valuation.currentValue,
+        totalInvested: valuation.investedAmount,
         returnAmount,
         returnRate,
       };

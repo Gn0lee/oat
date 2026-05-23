@@ -27,12 +27,12 @@ describe("LedgerAnalysisOverview", () => {
       data: undefined,
       isLoading: true,
       error: null,
-    } as ReturnType<typeof useLedgerStatsSummary>);
+    } as unknown as ReturnType<typeof useLedgerStatsSummary>);
     vi.mocked(useLedgerStatsByCategory).mockReturnValue({
       data: undefined,
       isLoading: true,
       error: null,
-    } as ReturnType<typeof useLedgerStatsByCategory>);
+    } as unknown as ReturnType<typeof useLedgerStatsByCategory>);
 
     const { container } = render(
       <LedgerAnalysisOverview year={2026} month={5} scope="shared" />,
@@ -48,12 +48,12 @@ describe("LedgerAnalysisOverview", () => {
       data: summary,
       isLoading: false,
       error: null,
-    } as ReturnType<typeof useLedgerStatsSummary>);
+    } as unknown as ReturnType<typeof useLedgerStatsSummary>);
     vi.mocked(useLedgerStatsByCategory).mockReturnValue({
       data: { items: [], total: 0 },
       isLoading: false,
       error: null,
-    } as ReturnType<typeof useLedgerStatsByCategory>);
+    } as unknown as ReturnType<typeof useLedgerStatsByCategory>);
 
     render(<LedgerAnalysisOverview year={2026} month={5} scope="personal" />);
 
@@ -73,12 +73,12 @@ describe("LedgerAnalysisOverview", () => {
       data: undefined,
       isLoading: false,
       error,
-    } as ReturnType<typeof useLedgerStatsSummary>);
+    } as unknown as ReturnType<typeof useLedgerStatsSummary>);
     vi.mocked(useLedgerStatsByCategory).mockReturnValue({
       data: undefined,
       isLoading: false,
       error,
-    } as ReturnType<typeof useLedgerStatsByCategory>);
+    } as unknown as ReturnType<typeof useLedgerStatsByCategory>);
 
     render(<LedgerAnalysisOverview year={2026} month={5} scope="shared" />);
 

@@ -20,7 +20,7 @@ describe("calcSavingsRate", () => {
 });
 
 describe("buildHomeSummary", () => {
-  it("현금흐름과 포트폴리오를 합쳐서 홈 요약 데이터를 반환한다", () => {
+  it("현금흐름과 기록 기반 자산 요약을 합쳐서 홈 요약 데이터를 반환한다", () => {
     const cashFlow = {
       year: 2026,
       month: 4,
@@ -32,17 +32,15 @@ describe("buildHomeSummary", () => {
       savingsRate: 24,
     };
 
-    const portfolio = {
+    const assets = {
       holdingCount: 5,
-      totalValue: 125_430_000,
       totalInvested: 110_000_000,
-      returnRate: 14.03,
     };
 
-    const result = buildHomeSummary(cashFlow, portfolio);
+    const result = buildHomeSummary(cashFlow, assets);
 
     expect(result.cashFlow).toEqual(cashFlow);
-    expect(result.portfolio).toEqual(portfolio);
+    expect(result.assets).toEqual(assets);
     expect(result.year).toBe(2026);
     expect(result.month).toBe(4);
     expect(result.userName).toBe("사용자");
@@ -50,15 +48,15 @@ describe("buildHomeSummary", () => {
     expect(result.ledgerActivity.hasRecentOwnLedgerActivity).toBe(false);
   });
 
-  it("가구가 없으면 기본값으로 홈 요약 데이터를 반환한다", () => {
+  it("가구가 없으면 기록 기반 자산 요약 기본값을 반환한다", () => {
     const result = buildHomeSummary(null, null);
 
     expect(result.cashFlow.totalIncome).toBe(0);
     expect(result.cashFlow.totalExpense).toBe(0);
     expect(result.cashFlow.balance).toBe(0);
     expect(result.cashFlow.savingsRate).toBe(0);
-    expect(result.portfolio.totalValue).toBe(0);
-    expect(result.portfolio.holdingCount).toBe(0);
+    expect(result.assets.holdingCount).toBe(0);
+    expect(result.assets.totalInvested).toBe(0);
     expect(result.topCategories.total).toBe(0);
     expect(result.ledgerActivity.lastOwnLedgerEntryCreatedAt).toBeNull();
   });

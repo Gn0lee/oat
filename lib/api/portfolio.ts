@@ -3,6 +3,7 @@ import type { Database } from "@/types";
 import { getExchangeRateSafe } from "./exchange";
 import { getHoldings } from "./holdings";
 import { getStockPrices } from "./stock-price";
+import { calculateHoldingValuation } from "./valuation";
 
 /**
  * 포트폴리오 요약 정보
@@ -58,18 +59,19 @@ export async function getPortfolioSummary(
 
   for (const h of holdings) {
     const priceKey = `${h.market}:${h.ticker}`;
-    const priceData = stockPrices[priceKey];
-    const currentPrice = priceData?.price ?? h.avgPrice;
+    const valuation = calculateHoldingValuation(
+      {
+        quantity: h.quantity,
+        avgPrice: h.avgPrice,
+        totalInvested: h.totalInvested,
+        currency: h.currency,
+      },
+      stockPrices[priceKey],
+      exchangeRate,
+    );
 
-    const rawCurrentValue = h.quantity * currentPrice;
-    const rawInvestedAmount = h.totalInvested;
-
-    // USD → KRW 환산
-    const isUSD = h.currency === "USD";
-    totalValueKRW += isUSD ? rawCurrentValue * exchangeRate : rawCurrentValue;
-    totalInvestedKRW += isUSD
-      ? rawInvestedAmount * exchangeRate
-      : rawInvestedAmount;
+    totalValueKRW += valuation.currentValue;
+    totalInvestedKRW += valuation.investedAmount;
   }
 
   // 수익률 계산

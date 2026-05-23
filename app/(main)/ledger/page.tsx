@@ -9,7 +9,6 @@ import {
 import Link from "next/link";
 import { PageHeader } from "@/components/layout";
 import { LedgerSummarySection } from "@/components/ledger/LedgerSummarySection";
-import { Button } from "@/components/ui/button";
 import { requireUser } from "@/lib/supabase/auth";
 
 export default async function LedgerPage() {

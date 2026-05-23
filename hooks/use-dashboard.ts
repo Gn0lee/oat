@@ -6,6 +6,7 @@ import type { DashboardSummary } from "@/types";
 
 interface DashboardSummaryResponse extends DashboardSummary {
   missingPriceCount: number;
+  stalePriceCount: number;
   exchangeRate: number;
 }
 

@@ -4,6 +4,7 @@ import { getExchangeRateSafe } from "@/lib/api/exchange";
 import { getHoldings } from "@/lib/api/holdings";
 import { getUserHouseholdId } from "@/lib/api/invitation";
 import { getStockPrices } from "@/lib/api/stock-price";
+import { calculateHoldingValuation } from "@/lib/api/valuation";
 import { createClient } from "@/lib/supabase/server";
 import type {
   AssetClassSummary,
@@ -84,6 +85,7 @@ export async function GET() {
       return NextResponse.json({
         ...emptySummary,
         missingPriceCount: 0,
+        stalePriceCount: 0,
         exchangeRate,
       });
     }
@@ -100,28 +102,26 @@ export async function GET() {
 
     // 각 종목별 현재가치 계산
     let missingPriceCount = 0;
+    let stalePriceCount = 0;
     const holdingsWithValue: HoldingWithValue[] = holdings.map((h) => {
       const priceKey = `${h.market}:${h.ticker}`;
-      const priceData = stockPrices[priceKey];
-      const currentPrice = priceData?.price ?? null;
+      const valuation = calculateHoldingValuation(
+        {
+          quantity: h.quantity,
+          avgPrice: h.avgPrice,
+          totalInvested: h.totalInvested,
+          currency: h.currency,
+        },
+        stockPrices[priceKey],
+        exchangeRate,
+      );
 
-      if (currentPrice === null) {
+      if (valuation.isMissingPrice) {
         missingPriceCount++;
       }
-
-      // 현재가가 없으면 평균 매수가를 대신 사용
-      const effectivePrice = currentPrice ?? h.avgPrice;
-      const rawCurrentValue = h.quantity * effectivePrice;
-      const rawInvestedAmount = h.totalInvested;
-
-      // USD → KRW 환산
-      const isUSD = h.currency === "USD";
-      const currentValue = isUSD
-        ? rawCurrentValue * exchangeRate
-        : rawCurrentValue;
-      const investedAmountKRW = isUSD
-        ? rawInvestedAmount * exchangeRate
-        : rawInvestedAmount;
+      if (valuation.isStalePrice) {
+        stalePriceCount++;
+      }
 
       return {
         ticker: h.ticker,
@@ -134,9 +134,9 @@ export async function GET() {
         assetType: h.assetType,
         ownerId: h.owner.id,
         ownerName: h.owner.name,
-        currentPrice,
-        currentValue,
-        investedAmountKRW,
+        currentPrice: valuation.currentPrice,
+        currentValue: valuation.currentValue,
+        investedAmountKRW: valuation.investedAmount,
       };
     });
 
@@ -206,6 +206,7 @@ export async function GET() {
 
     const summary: DashboardSummary & {
       missingPriceCount: number;
+      stalePriceCount: number;
       exchangeRate: number;
     } = {
       totalValue,
@@ -215,6 +216,7 @@ export async function GET() {
       byMember,
       byAssetClass,
       missingPriceCount,
+      stalePriceCount,
       exchangeRate,
     };
 

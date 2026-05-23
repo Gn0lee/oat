@@ -4,6 +4,7 @@ import { getExchangeRateSafe } from "@/lib/api/exchange";
 import { getHoldings } from "@/lib/api/holdings";
 import { getUserHouseholdId } from "@/lib/api/invitation";
 import { getStockPrices } from "@/lib/api/stock-price";
+import { calculateHoldingValuation } from "@/lib/api/valuation";
 import { createClient } from "@/lib/supabase/server";
 import type {
   AccountBreakdown,
@@ -70,6 +71,7 @@ export async function GET() {
           returnRate: 0,
           holdingCount: 0,
           missingPriceCount: 0,
+          stalePriceCount: 0,
         },
         holdings: [],
         byTicker: [],
@@ -93,39 +95,39 @@ export async function GET() {
 
     // 각 종목별 현재가치 및 수익률 계산
     let missingPriceCount = 0;
+    let stalePriceCount = 0;
     let totalValueSum = 0;
     let totalInvestedSum = 0;
 
     const holdingsWithReturn: StockHoldingWithReturn[] = holdings.map((h) => {
       const priceKey = `${h.market}:${h.ticker}`;
-      const priceData = stockPrices[priceKey];
-      const currentPrice = priceData?.price ?? null;
+      const valuation = calculateHoldingValuation(
+        {
+          quantity: h.quantity,
+          avgPrice: h.avgPrice,
+          totalInvested: h.totalInvested,
+          currency: h.currency,
+        },
+        stockPrices[priceKey],
+        exchangeRate,
+      );
 
-      if (currentPrice === null) {
+      if (valuation.isMissingPrice) {
         missingPriceCount++;
       }
-
-      // 현재가가 없으면 평균 매수가를 대신 사용
-      const effectivePrice = currentPrice ?? h.avgPrice;
-      const rawCurrentValue = h.quantity * effectivePrice;
-      const rawInvestedAmount = h.totalInvested;
-
-      // USD → KRW 환산
-      const isUSD = h.currency === "USD";
-      const currentValue = isUSD
-        ? rawCurrentValue * exchangeRate
-        : rawCurrentValue;
-      const investedAmountKRW = isUSD
-        ? rawInvestedAmount * exchangeRate
-        : rawInvestedAmount;
+      if (valuation.isStalePrice) {
+        stalePriceCount++;
+      }
 
       // 수익 계산
-      const returnAmount = currentValue - investedAmountKRW;
+      const returnAmount = valuation.currentValue - valuation.investedAmount;
       const returnRate =
-        investedAmountKRW > 0 ? (returnAmount / investedAmountKRW) * 100 : 0;
+        valuation.investedAmount > 0
+          ? (returnAmount / valuation.investedAmount) * 100
+          : 0;
 
-      totalValueSum += currentValue;
-      totalInvestedSum += investedAmountKRW;
+      totalValueSum += valuation.currentValue;
+      totalInvestedSum += valuation.investedAmount;
 
       return {
         ticker: h.ticker,
@@ -134,9 +136,9 @@ export async function GET() {
         currency: h.currency,
         quantity: h.quantity,
         avgPrice: h.avgPrice,
-        currentPrice,
-        totalInvested: investedAmountKRW,
-        currentValue,
+        currentPrice: valuation.currentPrice,
+        totalInvested: valuation.investedAmount,
+        currentValue: valuation.currentValue,
         returnAmount,
         returnRate,
         allocationPercent: 0, // 나중에 계산
@@ -299,6 +301,7 @@ export async function GET() {
         returnRate: totalReturnRate,
         holdingCount: byTicker.length,
         missingPriceCount,
+        stalePriceCount,
       },
       holdings: holdingsWithReturn,
       byTicker,

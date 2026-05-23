@@ -29,6 +29,7 @@ interface TotalReturnCardProps {
   totalReturn: number;
   returnRate: number;
   missingPriceCount?: number;
+  stalePriceCount?: number;
   isLoading?: boolean;
 }
 
@@ -36,6 +37,7 @@ export function TotalReturnCard({
   totalReturn,
   returnRate,
   missingPriceCount = 0,
+  stalePriceCount = 0,
   isLoading,
 }: TotalReturnCardProps) {
   const messageIndex = useMemo(() => {
@@ -101,6 +103,12 @@ export function TotalReturnCard({
         <div className="flex items-center gap-1 mt-3 text-xs text-[#FF9F00]">
           <AlertTriangle className="size-3" />
           <span>{missingPriceCount}종목 현재가 없음</span>
+        </div>
+      )}
+      {stalePriceCount > 0 && (
+        <div className="flex items-center gap-1 mt-2 text-xs text-gray-500">
+          <AlertTriangle className="size-3" />
+          <span>{stalePriceCount}종목 이전 가격 기준</span>
         </div>
       )}
     </div>

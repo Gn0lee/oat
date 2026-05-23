@@ -33,11 +33,9 @@ export function HomePageClient() {
   const { data, isLoading, error } = useHomeSummary();
 
   const cashFlow = data?.cashFlow;
-  const portfolio = data?.portfolio ?? {
+  const assets = data?.assets ?? {
     holdingCount: 0,
-    totalValue: 0,
     totalInvested: 0,
-    returnRate: 0,
   };
   const ledgerActivity = data?.ledgerActivity ?? {
     hasRecentOwnLedgerActivity: false,
@@ -53,8 +51,8 @@ export function HomePageClient() {
     : "기록을 시작해보세요";
 
   const assetHint =
-    portfolio.holdingCount > 0
-      ? `${portfolio.holdingCount}종목 · ${formatCompactNumber(portfolio.totalValue)}`
+    assets.holdingCount > 0
+      ? `${assets.holdingCount}종목 · ${formatCompactNumber(assets.totalInvested)}`
       : "자산을 등록해보세요";
 
   const analysisHint = cashFlow?.totalExpense
@@ -84,10 +82,8 @@ export function HomePageClient() {
           />
 
           <TotalAssetCard
-            totalValue={portfolio.totalValue}
-            holdingCount={portfolio.holdingCount}
-            totalInvested={portfolio.totalInvested}
-            returnRate={portfolio.returnRate}
+            holdingCount={assets.holdingCount}
+            totalInvested={assets.totalInvested}
           />
 
           <HomeTopCategories items={data.topCategories.items} />

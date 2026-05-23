@@ -24,6 +24,12 @@ import type { Database, MarketType } from "@/types";
 
 // 캐시 버킷 단위: 1시간 (밀리초)
 const BUCKET_MS = 60 * 60 * 1000;
+const PRICE_REFRESH_TIMEOUT_MS = 2_000;
+
+type CachedPriceBuckets = {
+  fresh: Map<string, StockPriceResult>;
+  stale: Map<string, StockPriceResult>;
+};
 
 /**
  * 현재 시간의 버킷 번호 계산
@@ -54,9 +60,9 @@ function createStockKey(market: MarketType, code: string): string {
 async function getCachedPrices(
   supabase: SupabaseClient<Database>,
   stocks: StockQuery[],
-): Promise<Map<string, StockPriceResult>> {
+): Promise<CachedPriceBuckets> {
   if (stocks.length === 0) {
-    return new Map();
+    return { fresh: new Map(), stale: new Map() };
   }
 
   // 시장별로 분리하여 조회 (PostgREST의 복합 OR 조건 한계 우회)
@@ -97,25 +103,61 @@ async function getCachedPrices(
   ]);
   const data = [...krData, ...usData];
 
-  const result = new Map<string, StockPriceResult>();
+  const fresh = new Map<string, StockPriceResult>();
+  const stale = new Map<string, StockPriceResult>();
 
   for (const row of data) {
     const fetchedAt = new Date(row.fetched_at);
+    const key = createStockKey(row.market as MarketType, row.code);
+    const status: StockPriceResult["status"] = isCacheValid(fetchedAt)
+      ? "fresh"
+      : "stale";
+    const result: StockPriceResult = {
+      market: row.market as "KR" | "US",
+      code: row.code,
+      price: Number(row.price),
+      changeRate: row.change_rate !== null ? Number(row.change_rate) : null,
+      fetchedAt,
+      status,
+    };
 
-    // 캐시 유효성 검사
-    if (isCacheValid(fetchedAt)) {
-      const key = createStockKey(row.market as MarketType, row.code);
-      result.set(key, {
-        market: row.market as "KR" | "US",
-        code: row.code,
-        price: Number(row.price),
-        changeRate: row.change_rate !== null ? Number(row.change_rate) : null,
-        fetchedAt,
-      });
+    if (status === "fresh") {
+      fresh.set(key, result);
+    } else {
+      stale.set(key, result);
     }
   }
 
-  return result;
+  return { fresh, stale };
+}
+
+async function withRefreshTimeout<T>(promise: Promise<T>): Promise<T> {
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<never>((_, reject) => {
+        timeout = setTimeout(() => {
+          reject(new Error("Stock price refresh timed out"));
+        }, PRICE_REFRESH_TIMEOUT_MS);
+      }),
+    ]);
+  } finally {
+    if (timeout !== undefined) {
+      clearTimeout(timeout);
+    }
+  }
+}
+
+async function refreshPricesWithFallback(
+  promise: Promise<StockPriceResult[]>,
+): Promise<StockPriceResult[]> {
+  try {
+    return await withRefreshTimeout(promise);
+  } catch (error) {
+    console.error("Stock price refresh error:", error);
+    return [];
+  }
 }
 
 /**
@@ -187,6 +229,7 @@ async function fetchDomesticPrices(
           price: Number(item.inter2_prpr),
           changeRate: item.prdy_ctrt ? Number(item.prdy_ctrt) : null,
           fetchedAt: now,
+          status: "fresh",
         });
       }
     } catch (error) {
@@ -233,13 +276,15 @@ async function fetchOverseasPrices(
       const priceData = await getOverseasPrice(exchangeCode, stock.code);
 
       if (priceData?.last) {
-        return {
+        const result: StockPriceResult = {
           market: "US" as const,
           code: stock.code,
           price: Number(priceData.last),
           changeRate: priceData.rate ? Number(priceData.rate) : null,
           fetchedAt: now,
+          status: "fresh",
         };
+        return result;
       }
       return null;
     } catch (error) {
@@ -287,41 +332,51 @@ export async function getStockPrices(
     return {};
   }
 
-  // 1. 캐시에서 유효한 가격 조회
+  // 1. 캐시에서 fresh/stale 가격 조회
   const cachedPrices = await getCachedPrices(supabase, stocks);
 
-  // 2. 캐시에 없는 종목 필터링
-  const uncachedStocks = stocks.filter(
-    (s) => !cachedPrices.has(createStockKey(s.market, s.code)),
+  // 2. fresh 캐시에 없는 종목만 갱신 대상
+  const refreshStocks = stocks.filter(
+    (s) => !cachedPrices.fresh.has(createStockKey(s.market, s.code)),
   );
 
-  // 모든 종목이 캐시에 있으면 바로 반환
-  if (uncachedStocks.length === 0) {
-    return Object.fromEntries(cachedPrices);
+  // 모든 종목이 fresh 캐시에 있으면 바로 반환
+  if (refreshStocks.length === 0) {
+    return Object.fromEntries(cachedPrices.fresh);
   }
 
   // 3. 시장별로 분리
-  const domesticCodes = uncachedStocks
+  const domesticCodes = refreshStocks
     .filter((s) => s.market === "KR")
     .map((s) => s.code);
-  const overseasStocks = uncachedStocks.filter((s) => s.market === "US");
+  const overseasStocks = refreshStocks.filter((s) => s.market === "US");
 
-  // 4. API 호출 (병렬)
+  // 4. API 호출 (병렬, 제한 시간 적용)
   const [domesticPrices, overseasPrices] = await Promise.all([
-    fetchDomesticPrices(domesticCodes),
-    fetchOverseasPrices(supabase, overseasStocks),
+    refreshPricesWithFallback(fetchDomesticPrices(domesticCodes)),
+    refreshPricesWithFallback(fetchOverseasPrices(supabase, overseasStocks)),
   ]);
+  const newPrices = [...domesticPrices, ...overseasPrices];
 
   // 5. 새로 조회한 가격을 캐시에 저장
-  const newPrices = [...domesticPrices, ...overseasPrices];
   await upsertPrices(newPrices);
 
-  // 6. 결과 병합
-  const result: Record<string, StockPriceResult> =
-    Object.fromEntries(cachedPrices);
+  // 6. 결과 병합: fresh 캐시 + 갱신 성공값 + 갱신 실패 종목의 stale fallback
+  const result: Record<string, StockPriceResult> = Object.fromEntries(
+    cachedPrices.fresh,
+  );
   for (const price of newPrices) {
     const key = createStockKey(price.market, price.code);
     result[key] = price;
+  }
+  for (const stock of refreshStocks) {
+    const key = createStockKey(stock.market, stock.code);
+    if (result[key] === undefined) {
+      const stalePrice = cachedPrices.stale.get(key);
+      if (stalePrice !== undefined) {
+        result[key] = stalePrice;
+      }
+    }
   }
 
   return result;

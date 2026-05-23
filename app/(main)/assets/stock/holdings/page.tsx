@@ -4,7 +4,6 @@ import { HoldingsList } from "@/components/holdings/HoldingsList";
 import { PageHeader } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { getAccounts } from "@/lib/api/account";
-import { getHoldings } from "@/lib/api/holdings";
 import { getHouseholdWithMembers } from "@/lib/api/household";
 import { getUserHouseholdId } from "@/lib/api/invitation";
 import { requireUser } from "@/lib/supabase/auth";
@@ -34,11 +33,6 @@ export default async function HoldingsPage() {
   const accountsData = await getAccounts(supabase, householdId);
   const accounts = accountsData.map((a) => ({ id: a.id, name: a.name }));
 
-  // 초기 보유 현황 조회
-  const initialData = await getHoldings(supabase, householdId, {
-    pagination: { page: 1, pageSize: 20 },
-  });
-
   return (
     <>
       <PageHeader
@@ -54,17 +48,8 @@ export default async function HoldingsPage() {
         }
       />
 
-      {/* 보유 현황 요약 */}
-      <p className="text-sm text-gray-500">
-        총 {initialData.total}개 종목 보유 중
-      </p>
-
       {/* 보유 현황 목록 */}
-      <HoldingsList
-        initialData={initialData}
-        members={members}
-        accounts={accounts}
-      />
+      <HoldingsList members={members} accounts={accounts} />
     </>
   );
 }
