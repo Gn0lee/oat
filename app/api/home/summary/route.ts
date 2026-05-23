@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { APIError, toErrorResponse } from "@/lib/api/error";
+import { getExchangeRateSafe } from "@/lib/api/exchange";
 import { getHoldings } from "@/lib/api/holdings";
 import { buildHomeSummary } from "@/lib/api/home-summary";
 import { getUserHouseholdId } from "@/lib/api/invitation";
@@ -18,6 +19,8 @@ async function getHomeAssetSummary(
   let page = 1;
   let holdingCount = 0;
   let totalInvested = 0;
+  const exchangeRateResult = await getExchangeRateSafe(supabase, "USD", "KRW");
+  const exchangeRate = exchangeRateResult?.rate ?? 1300;
 
   while (true) {
     const holdings = await getHoldings(supabase, householdId, {
@@ -25,10 +28,14 @@ async function getHomeAssetSummary(
     });
 
     holdingCount = holdings.total;
-    totalInvested += holdings.data.reduce(
-      (sum, holding) => sum + holding.totalInvested,
-      0,
-    );
+    totalInvested += holdings.data.reduce((sum, holding) => {
+      const invested =
+        holding.currency === "USD"
+          ? holding.totalInvested * exchangeRate
+          : holding.totalInvested;
+
+      return sum + invested;
+    }, 0);
 
     if (page * pageSize >= holdings.total || holdings.data.length === 0) {
       break;
