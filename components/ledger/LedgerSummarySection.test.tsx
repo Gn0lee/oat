@@ -14,7 +14,7 @@ describe("LedgerSummarySection", () => {
       data: undefined,
       isLoading: true,
       error: null,
-    } as ReturnType<typeof useLedgerEntrySummary>);
+    } as unknown as ReturnType<typeof useLedgerEntrySummary>);
 
     const { container } = render(
       <LedgerSummarySection year={2026} month={5} />,
@@ -35,7 +35,7 @@ describe("LedgerSummarySection", () => {
         "가구 정보를 찾을 수 없습니다.",
         404,
       ),
-    } as ReturnType<typeof useLedgerEntrySummary>);
+    } as unknown as ReturnType<typeof useLedgerEntrySummary>);
 
     render(<LedgerSummarySection year={2026} month={5} />);
 
