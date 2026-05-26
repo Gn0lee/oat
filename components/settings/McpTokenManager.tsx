@@ -1,6 +1,14 @@
 "use client";
 
-import { Check, Copy, KeyRound, Loader2, Plus, RotateCcw } from "lucide-react";
+import {
+  Check,
+  Copy,
+  KeyRound,
+  Loader2,
+  Plus,
+  RotateCcw,
+  Terminal,
+} from "lucide-react";
 import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -63,8 +71,30 @@ export function McpTokenManager() {
   const [name, setName] = useState("Claude");
   const [createdToken, setCreatedToken] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [copiedGuide, setCopiedGuide] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isPending, startTransition] = useTransition();
+  const tokenForGuide = createdToken ?? "oat_mcp_xxx";
+  const claudeCodeCommand = `claude mcp add oat \\
+  --transport stdio \\
+  --env OAT_MCP_TOKEN=${tokenForGuide} \\
+  -- npx -y @oat-app/mcp-bridge`;
+  const codexConfig = `[mcp_servers.oat]
+command = "npx"
+args = ["-y", "@oat-app/mcp-bridge"]
+env = { OAT_MCP_TOKEN = "${tokenForGuide}" }`;
+  const claudeDesktopConfig = `{
+  "mcpServers": {
+    "oat": {
+      "command": "npx",
+      "args": ["-y", "@oat-app/mcp-bridge"],
+      "env": {
+        "OAT_MCP_TOKEN": "${tokenForGuide}"
+      }
+    }
+  }
+}`;
+  const previewOverride = `OAT_MCP_URL=https://YOUR_PREVIEW_DOMAIN/api/mcp`;
 
   useEffect(() => {
     let isMounted = true;
@@ -154,6 +184,12 @@ export function McpTokenManager() {
     toast.success("토큰을 복사했습니다.");
   };
 
+  const handleCopyGuide = async (key: string, value: string) => {
+    await navigator.clipboard.writeText(value);
+    setCopiedGuide(key);
+    toast.success("설정을 복사했습니다.");
+  };
+
   return (
     <div className="space-y-4">
       <Card>
@@ -212,6 +248,63 @@ export function McpTokenManager() {
               </p>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Terminal className="h-4 w-4" />
+            클라이언트 연결
+          </CardTitle>
+          <CardDescription>
+            @oat-app/mcp-bridge는 기본적으로 oat 상용 MCP endpoint에 연결합니다.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <ConnectionSnippet
+            title="Claude Code"
+            value={claudeCodeCommand}
+            copied={copiedGuide === "claude-code"}
+            onCopy={() => handleCopyGuide("claude-code", claudeCodeCommand)}
+          />
+          <ConnectionSnippet
+            title="Codex"
+            value={codexConfig}
+            copied={copiedGuide === "codex"}
+            onCopy={() => handleCopyGuide("codex", codexConfig)}
+          />
+          <ConnectionSnippet
+            title="Claude Desktop"
+            value={claudeDesktopConfig}
+            copied={copiedGuide === "claude-desktop"}
+            onCopy={() =>
+              handleCopyGuide("claude-desktop", claudeDesktopConfig)
+            }
+          />
+          <div className="rounded-lg border border-dashed p-3">
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <p className="text-sm font-medium text-gray-900">
+                Preview endpoint
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon-sm"
+                onClick={() => handleCopyGuide("preview", previewOverride)}
+                aria-label="Preview endpoint 설정 복사"
+              >
+                {copiedGuide === "preview" ? (
+                  <Check className="h-4 w-4" />
+                ) : (
+                  <Copy className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+            <code className="block break-all rounded bg-gray-50 p-2 text-xs text-gray-800">
+              {previewOverride}
+            </code>
+          </div>
         </CardContent>
       </Card>
 
@@ -276,6 +369,44 @@ export function McpTokenManager() {
           )}
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+interface ConnectionSnippetProps {
+  title: string;
+  value: string;
+  copied: boolean;
+  onCopy: () => void;
+}
+
+function ConnectionSnippet({
+  title,
+  value,
+  copied,
+  onCopy,
+}: ConnectionSnippetProps) {
+  return (
+    <div className="rounded-lg border p-3">
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <p className="text-sm font-medium text-gray-900">{title}</p>
+        <Button
+          type="button"
+          variant="outline"
+          size="icon-sm"
+          onClick={onCopy}
+          aria-label={`${title} MCP 설정 복사`}
+        >
+          {copied ? (
+            <Check className="h-4 w-4" />
+          ) : (
+            <Copy className="h-4 w-4" />
+          )}
+        </Button>
+      </div>
+      <pre className="max-h-64 overflow-x-auto rounded bg-gray-50 p-3 text-xs leading-relaxed text-gray-800">
+        <code>{value}</code>
+      </pre>
     </div>
   );
 }

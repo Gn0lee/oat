@@ -2,6 +2,7 @@
 
 # dependencies
 /node_modules
+/packages/*/node_modules/
 /.pnpm-store
 /.pnp
 .pnp.*
@@ -40,6 +41,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+/packages/*/dist/
 
 .mcp.json
 
