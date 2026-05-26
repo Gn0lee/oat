@@ -18,6 +18,11 @@
     "sync:holiday": "tsx scripts/sync-holiday.ts",
     "test": "vitest run",
     "test:watch": "vitest",
+    "mcp-bridge:build": "pnpm --filter @oat-app/mcp-bridge build",
+    "mcp-bridge:test": "pnpm --filter @oat-app/mcp-bridge test",
+    "mcp-bridge:pack": "pnpm --filter @oat-app/mcp-bridge pack --dry-run",
+    "mcp-bridge:prepublish": "pnpm mcp-bridge:build && pnpm mcp-bridge:test && pnpm mcp-bridge:pack",
+    "mcp-bridge:publish": "pnpm mcp-bridge:prepublish && pnpm --filter @oat-app/mcp-bridge publish --access public",
     "prepare": "husky"
   },
   "dependencies": {
