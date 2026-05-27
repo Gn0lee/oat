@@ -10,6 +10,7 @@
 - **react-hook-form + zod** - 폼 상태 및 검증
 - **react-error-boundary** - 선언적 에러 처리
 - **shadcn/ui + Tailwind** - UI 컴포넌트
+- **SSGOI** - 페이지/화면 단위 전환 기준 (`TRANSITIONS.md` 참고)
 
 ---
 
@@ -98,6 +99,8 @@ lib/queries/index.ts  # 모든 쿼리 정의
 ---
 
 ## 5. 라우팅 패턴
+
+페이지 전환, funnel step 전환, 모바일 full-screen selector는 `.claude/docs/TRANSITIONS.md`의 SSGOI 기준을 따릅니다.
 
 ### 자산 유형별 계층 구조
 

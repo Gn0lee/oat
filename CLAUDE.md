@@ -22,6 +22,7 @@
 | **DATABASE.md** | `.claude/docs/` | Supabase 스키마, RLS 정책 |
 | **CONVENTIONS.md** | `.claude/docs/` | 공통 컨벤션 |
 | **CONVENTIONS_FE.md** | `.claude/docs/` | 프론트엔드 패턴 |
+| **TRANSITIONS.md** | `.claude/docs/` | 화면 전환 UX, SSGOI 사용 기준 |
 | **CONVENTIONS_BE.md** | `.claude/docs/` | 백엔드/API 패턴 |
 | **API.md** | `.claude/docs/` | API 설계 원칙 |
 | **MCP.md** | `.claude/docs/` | MCP 서버 설계, 인증, tool 범위 |

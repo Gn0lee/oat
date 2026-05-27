@@ -22,6 +22,10 @@ vi.mock("next/link", () => ({
   useLinkStatus: vi.fn(() => ({ pending: false })),
 }));
 
+vi.mock("./NavPendingIndicator", () => ({
+  NavPendingIndicator: () => <span data-testid="nav-pending-indicator" />,
+}));
+
 import { usePathname } from "next/navigation";
 
 describe("Sidebar", () => {
@@ -72,5 +76,13 @@ describe("Sidebar", () => {
 
     const settingsLink = screen.getByText("설정").closest("a");
     expect(settingsLink?.className).toContain("bg-primary/10");
+  });
+
+  it("페이지 전환 피드백과 중복되는 pending spinner를 렌더링하지 않는다", () => {
+    render(<Sidebar />);
+
+    expect(
+      screen.queryByTestId("nav-pending-indicator"),
+    ).not.toBeInTheDocument();
   });
 });
