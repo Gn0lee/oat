@@ -297,6 +297,7 @@ export function PaymentMethodFormDialog({
           <Label htmlFor="pm-last-four">카드번호 끝 4자리</Label>
           <Input
             id="pm-last-four"
+            inputMode="numeric"
             placeholder="예: 1234"
             maxLength={4}
             {...register("lastFour")}
@@ -316,6 +317,7 @@ export function PaymentMethodFormDialog({
           <Input
             id="pm-payment-day"
             type="number"
+            inputMode="numeric"
             min={1}
             max={31}
             placeholder="예: 15"
@@ -336,6 +338,7 @@ export function PaymentMethodFormDialog({
           <Input
             id="pm-balance"
             type="number"
+            inputMode="numeric"
             min="0"
             placeholder="예: 30000"
             {...register("balanceStr")}

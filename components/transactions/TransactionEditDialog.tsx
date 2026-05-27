@@ -167,6 +167,7 @@ export function TransactionEditDialog({
         <Input
           id="quantity"
           type="number"
+          inputMode="numeric"
           step="any"
           min="0"
           {...register("quantity")}
@@ -184,6 +185,7 @@ export function TransactionEditDialog({
         <Input
           id="price"
           type="number"
+          inputMode="decimal"
           step="any"
           min="0"
           {...register("price")}
