@@ -50,5 +50,6 @@ tmp
 # local settings
 .vscode/
 .claude/settings.local.json
+.antigravitycli/
 
 CONTEXT.md

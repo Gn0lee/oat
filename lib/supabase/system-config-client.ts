@@ -23,13 +23,14 @@ export function getSystemConfigClient() {
 
   const url =
     process.env.SYSTEM_CONFIG_SUPABASE_URL ||
-    process.env.NEXT_PUBLIC_SUPABASE_URL;
+    process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    process.env.SUPABASE_URL;
   const key =
     process.env.SYSTEM_CONFIG_SECRET_KEY || process.env.SUPABASE_SECRET_KEY;
 
   if (!url || !key) {
     throw new Error(
-      "system_config 클라이언트: SYSTEM_CONFIG_SUPABASE_URL/SECRET_KEY 또는 기본 환경변수 필요",
+      "system_config 클라이언트: SYSTEM_CONFIG_SUPABASE_URL/SECRET_KEY 또는 기본 환경변수(SUPABASE_URL/SECRET_KEY) 필요",
     );
   }
 
