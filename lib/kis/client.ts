@@ -630,7 +630,7 @@ export async function getOverseasPriceFluct(
   // 해외주식 가격급등락 (HHDFS76260000)
   // 관측 결과: 1이 대비율상위(Gainers), 0이 대비율하위(Losers)
   url.searchParams.set("GUBN", direction === "up" ? "1" : "0");
-  url.searchParams.set("MIXN", timeRange); // N분전콤보값
+  url.searchParams.set("MINX", timeRange); // N분전콤보값
   url.searchParams.set("VOL_RANG", "0"); // 거래량조건
 
   const headers = await createHeaders("HHDFS76260000");
@@ -684,7 +684,7 @@ export async function getOverseasVolumeSurge(
   url.searchParams.set("KEYB", "");
   url.searchParams.set("AUTH", "");
   url.searchParams.set("EXCD", exchangeCode);
-  url.searchParams.set("MIXN", timeRange); // N분전콤보값
+  url.searchParams.set("MINX", timeRange); // N분전콤보값
   url.searchParams.set("VOL_RANG", "0"); // 거래량조건
 
   const headers = await createHeaders("HHDFS76270000");
@@ -734,9 +734,14 @@ export async function getOverseasNews(
   );
 
   url.searchParams.set("AUTH", "");
-  url.searchParams.set("EXCD", ""); // 전체 거래소
-  url.searchParams.set("SYMB", ""); // 전체 종목
-  url.searchParams.set("GUBN", ""); // 전체 뉴스
+  url.searchParams.set("INFO_GB", ""); // 뉴스구분 (빈값: 전체)
+  url.searchParams.set("CLASS_CD", ""); // 중분류 (빈값: 전체)
+  url.searchParams.set("NATION_CD", ""); // 국가코드 (빈값: 전체)
+  url.searchParams.set("EXCHANGE_CD", ""); // 거래소코드 (빈값: 전체)
+  url.searchParams.set("SYMB", ""); // 종목코드 (빈값: 전체)
+  url.searchParams.set("DATA_DT", ""); // 조회일자 (빈값: 전체)
+  url.searchParams.set("DATA_TM", ""); // 조회시간 (빈값: 전체)
+  url.searchParams.set("CTS", ""); // 다음키 (빈값: 첫 페이지)
 
   const headers = await createHeaders("HHPSTH60100C1");
 
