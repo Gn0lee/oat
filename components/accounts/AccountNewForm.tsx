@@ -225,6 +225,7 @@ function DetailForm({ category, onBack }: DetailFormProps) {
         <Label htmlFor="accountNumber">계좌번호</Label>
         <Input
           id="accountNumber"
+          inputMode="numeric"
           placeholder="예: 123-456-78901234"
           {...register("accountNumber")}
           aria-invalid={!!errors.accountNumber}
@@ -241,6 +242,7 @@ function DetailForm({ category, onBack }: DetailFormProps) {
         <Input
           id="balanceStr"
           type="number"
+          inputMode="numeric"
           min="0"
           placeholder="예: 1000000"
           {...register("balanceStr")}
