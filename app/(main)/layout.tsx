@@ -1,4 +1,10 @@
-import { BottomNav, Header, Sidebar } from "@/components/layout";
+import {
+  BottomNav,
+  Header,
+  PageTransition,
+  PageTransitionProvider,
+  Sidebar,
+} from "@/components/layout";
 
 export default function MainLayout({
   children,
@@ -10,10 +16,12 @@ export default function MainLayout({
       <Header />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar />
-        <div className="size-full overflow-y-scroll">
-          <main className="flex-1 p-4 pb-[calc(6rem+env(safe-area-inset-bottom))] lg:pb-4">
-            <div className="max-w-4xl mx-auto space-y-6">{children}</div>
-          </main>
+        <div className="size-full overflow-y-scroll overflow-x-clip relative z-0">
+          <PageTransitionProvider>
+            <PageTransition className="flex-1 p-4 pb-[calc(6rem+env(safe-area-inset-bottom))] lg:pb-4">
+              <div className="max-w-4xl mx-auto space-y-6">{children}</div>
+            </PageTransition>
+          </PageTransitionProvider>
         </div>
       </div>
       <BottomNav />
