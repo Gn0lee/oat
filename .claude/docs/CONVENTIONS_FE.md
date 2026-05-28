@@ -242,8 +242,7 @@ ServiceHeader는 pathname으로 다음 정보를 계산합니다.
 - `X`는 back이 아니라 Close Action입니다. 작업 흐름을 닫고 안정적인 상위 목적지로 이동합니다.
 - 모바일 ServiceHeader는 `PageTransition` 안에 둡니다. 앱 바가 본문과 함께 drill 전환되어야 하기 때문입니다.
 - PC ServiceHeader는 `PageTransition` 바깥의 content top bar에 둡니다. breadcrumb bar는 app chrome으로 유지하고 본문만 전환합니다.
-- 페이지 파일에서 `PageHeader`를 새로 추가하지 않습니다.
-- 기존 `PageHeader` 사용은 ServiceHeader 도입 과정에서 점진적으로 제거합니다.
+- 페이지 파일에서 `PageHeader`를 추가하지 않습니다. 화면 제목, back, close, breadcrumb는 ServiceHeader가 담당합니다.
 - 화면별 action 버튼은 헤더에 억지로 넣지 말고, 해당 콘텐츠 영역의 주요 액션 위치에 둡니다. 단, 모바일 앱 바의 Close Action처럼 탐색 의미가 있는 액션은 ServiceHeader에서 관리합니다.
 
 ### PageContainer

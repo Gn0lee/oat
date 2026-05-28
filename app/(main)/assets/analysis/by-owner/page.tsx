@@ -5,7 +5,6 @@ import {
   OwnerAssetList,
   OwnerSummaryCards,
 } from "@/components/dashboard/by-owner";
-import { PageHeader } from "@/components/layout/PageHeader";
 import { useOwnerAnalysis } from "@/hooks/use-owner-analysis";
 
 export default function ByOwnerAnalysisPage() {
@@ -15,12 +14,6 @@ export default function ByOwnerAnalysisPage() {
 
   return (
     <>
-      <PageHeader
-        title="소유자별 분석"
-        subtitle="가족 구성원별 자산 비중"
-        backHref="/assets/analysis"
-      />
-
       {/* 에러 상태 */}
       {error && (
         <div className="bg-white rounded-2xl p-6 shadow-sm">

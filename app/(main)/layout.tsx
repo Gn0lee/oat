@@ -1,8 +1,8 @@
 import {
   BottomNav,
-  Header,
   PageTransition,
   PageTransitionProvider,
+  ServiceHeader,
   Sidebar,
 } from "@/components/layout";
 
@@ -12,19 +12,22 @@ export default function MainLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="h-dvh flex flex-col bg-gray-50">
-      <Header />
-      <div className="flex flex-1 overflow-hidden">
-        <Sidebar />
+    <div className="h-dvh flex bg-gray-50">
+      <Sidebar />
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        <ServiceHeader variant="desktop" />
         <div className="size-full overflow-y-scroll overflow-x-clip relative z-0">
           <PageTransitionProvider>
-            <PageTransition className="flex-1 p-4 pb-[calc(6rem+env(safe-area-inset-bottom))] lg:pb-4">
-              <div className="max-w-4xl mx-auto space-y-6">{children}</div>
+            <PageTransition className="flex-1 pb-[calc(6rem+env(safe-area-inset-bottom))] lg:pb-4">
+              <ServiceHeader variant="mobile" />
+              <div className="p-4">
+                <div className="max-w-4xl mx-auto space-y-6">{children}</div>
+              </div>
             </PageTransition>
           </PageTransitionProvider>
         </div>
+        <BottomNav />
       </div>
-      <BottomNav />
     </div>
   );
 }

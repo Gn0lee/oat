@@ -7,7 +7,6 @@ import {
   Users,
 } from "lucide-react";
 import Link from "next/link";
-import { PageHeader } from "@/components/layout";
 import { LedgerAnalysisOverview } from "@/components/ledger/analysis/LedgerAnalysisOverview";
 import { ScopeTabs } from "@/components/ledger/analysis/ScopeTabs";
 import { requireUser } from "@/lib/supabase/auth";
@@ -88,8 +87,6 @@ export default async function LedgerAnalysisPage({
 
   return (
     <>
-      <PageHeader title="통계 대시보드" backHref="/ledger" />
-
       <ScopeTabs scope={scope} />
 
       <LedgerAnalysisOverview year={year} month={month} scope={scope} />

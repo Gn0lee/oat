@@ -9,8 +9,13 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="hidden lg:block w-56 shrink-0 bg-white border-r border-gray-200 overflow-y-auto">
-      <nav className="p-4 space-y-1">
+    <aside className="hidden lg:flex w-56 shrink-0 flex-col bg-white border-r border-gray-200">
+      <div className="h-14 shrink-0 px-4 flex items-center border-b border-gray-200">
+        <Link href="/home" className="inline-flex items-center">
+          <span className="text-xl font-bold text-primary">oat</span>
+        </Link>
+      </div>
+      <nav className="p-4 space-y-1 overflow-y-auto">
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
           const active = isNavItemActive(item, pathname);

@@ -7,7 +7,6 @@ import {
   Tags,
 } from "lucide-react";
 import Link from "next/link";
-import { PageHeader } from "@/components/layout";
 import { LedgerSummarySection } from "@/components/ledger/LedgerSummarySection";
 import { requireUser } from "@/lib/supabase/auth";
 
@@ -20,8 +19,6 @@ export default async function LedgerPage() {
 
   return (
     <>
-      <PageHeader title="가계부" />
-
       <LedgerSummarySection year={year} month={month} />
 
       {/* 기능 진입점 목록 */}

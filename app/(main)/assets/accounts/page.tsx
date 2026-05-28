@@ -1,24 +1,20 @@
 import { Plus } from "lucide-react";
 import Link from "next/link";
 import { AccountList } from "@/components/accounts";
-import { PageContainer, PageHeader } from "@/components/layout";
+import { PageContainer } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 
 export default function AccountsPage() {
   return (
     <PageContainer maxWidth="medium">
-      <PageHeader
-        title="계좌 관리"
-        backHref="/assets"
-        action={
+      <div className="flex justify-end">
+        <Button size="sm" asChild>
           <Link href="/assets/accounts/new">
-            <Button size="sm">
-              <Plus className="w-4 h-4 mr-1" />
-              계좌 추가
-            </Button>
+            <Plus className="w-4 h-4 mr-1" />
+            계좌 추가
           </Link>
-        }
-      />
+        </Button>
+      </div>
 
       <div className="space-y-8">
         <section>

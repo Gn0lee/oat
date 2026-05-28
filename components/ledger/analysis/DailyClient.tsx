@@ -3,7 +3,6 @@
 import { getDaysInMonth, startOfMonth } from "date-fns";
 import { useMemo, useState } from "react";
 import { Bar, BarChart, CartesianGrid, Cell, XAxis, YAxis } from "recharts";
-import { PageHeader } from "@/components/layout";
 import {
   ChartContainer,
   ChartTooltip,
@@ -77,11 +76,8 @@ export function DailyClient({ scope }: DailyClientProps) {
     [items],
   );
 
-  const backHref = `/ledger/analysis?scope=${scope}`;
-
   return (
     <div className="space-y-4">
-      <PageHeader title="일별 지출 현황" backHref={backHref} />
       <MonthSelector value={currentMonth} onChange={setCurrentMonth} />
 
       {/* 월 요약 스트립 */}

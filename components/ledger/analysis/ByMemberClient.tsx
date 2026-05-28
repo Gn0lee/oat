@@ -3,7 +3,6 @@
 import { startOfMonth } from "date-fns";
 import { useMemo, useState } from "react";
 import { Cell, Pie, PieChart } from "recharts";
-import { PageHeader } from "@/components/layout";
 import {
   ChartContainer,
   ChartTooltip,
@@ -54,7 +53,6 @@ export function ByMemberClient() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="구성원별 지출" backHref="/ledger/analysis" />
       <MonthSelector value={currentMonth} onChange={setCurrentMonth} />
 
       {/* 섹션 1: 구성원 요약 카드 */}

@@ -1,6 +1,5 @@
 import { Plus } from "lucide-react";
 import Link from "next/link";
-import { PageHeader } from "@/components/layout";
 import { TransactionList } from "@/components/transactions/TransactionList";
 import { Button } from "@/components/ui/button";
 import { getHouseholdWithMembers } from "@/lib/api/household";
@@ -30,18 +29,14 @@ export default async function TransactionsPage() {
 
   return (
     <>
-      <PageHeader
-        title="거래 내역"
-        backHref="/assets/stock"
-        action={
-          <Button asChild size="sm">
-            <Link href="/assets/stock/transactions/new">
-              <Plus className="w-4 h-4 mr-1" />
-              거래 추가
-            </Link>
-          </Button>
-        }
-      />
+      <div className="flex justify-end">
+        <Button asChild size="sm">
+          <Link href="/assets/stock/transactions/new">
+            <Plus className="w-4 h-4 mr-1" />
+            거래 추가
+          </Link>
+        </Button>
+      </div>
 
       {/* 거래 내역 목록 */}
       <TransactionList members={members} currentUserId={user.id} />
