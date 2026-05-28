@@ -14,14 +14,7 @@ describe("createPageTransitionConfig", () => {
     createPageTransitionConfig("desktop");
 
     expect(fade).toHaveBeenCalledWith({
-      paths: [
-        "/home",
-        "/ledger",
-        "/assets",
-        "/dashboard",
-        "/settings",
-        "/household",
-      ],
+      paths: ["/home", "/ledger", "/assets", "/settings", "/household"],
       options: {
         physics: {
           spring: {

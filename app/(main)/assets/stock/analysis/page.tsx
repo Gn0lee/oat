@@ -14,7 +14,7 @@ export default function StocksAnalysisPage() {
       <PageHeader
         title="주식 분석"
         subtitle="종목별 비중과 수익률"
-        backHref="/dashboard"
+        backHref="/assets/stock"
       />
       <StockSummarySection />
       <StockAllocationSection />

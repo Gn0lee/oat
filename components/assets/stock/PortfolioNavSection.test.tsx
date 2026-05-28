@@ -23,7 +23,7 @@ describe("PortfolioNavSection", () => {
 
     expect(screen.getByRole("link", { name: /주식 대시보드/ })).toHaveAttribute(
       "href",
-      "/dashboard/stocks",
+      "/assets/stock/analysis",
     );
   });
 });

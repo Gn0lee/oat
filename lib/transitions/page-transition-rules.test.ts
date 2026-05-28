@@ -58,6 +58,18 @@ describe("page transition rules", () => {
       exit: "/ledger",
       type: "parallax",
     });
+    expect(getPageTransitionRules("mobile")).toContainEqual({
+      kind: "drill",
+      enter: "/assets/*",
+      exit: "/assets",
+      type: "parallax",
+    });
+    expect(getPageTransitionRules("mobile")).toContainEqual({
+      kind: "drill",
+      enter: "/assets/analysis/*",
+      exit: "/assets/analysis",
+      type: "parallax",
+    });
     expect(getPageTransitionRules("mobile")).not.toContainEqual({
       kind: "drill",
       enter: "*",

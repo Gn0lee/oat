@@ -18,7 +18,7 @@ export default function ByOwnerAnalysisPage() {
       <PageHeader
         title="소유자별 분석"
         subtitle="가족 구성원별 자산 비중"
-        backHref="/dashboard"
+        backHref="/assets/analysis"
       />
 
       {/* 에러 상태 */}

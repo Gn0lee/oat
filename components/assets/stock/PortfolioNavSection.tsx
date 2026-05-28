@@ -24,7 +24,7 @@ const navItems = [
     icon: ChartPie,
     label: "주식 대시보드",
     description: "수익률과 비중을 자세히 분석해 보세요",
-    href: "/dashboard/stocks",
+    href: "/assets/stock/analysis",
     color: "text-purple-600",
     bgColor: "bg-purple-50",
   },

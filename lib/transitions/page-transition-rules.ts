@@ -35,7 +35,6 @@ const TOP_LEVEL_ROUTES = [
   "/home",
   "/ledger",
   "/assets",
-  "/dashboard",
   "/settings",
   "/household",
 ] as const;
@@ -79,8 +78,8 @@ export function getPageTransitionRules(
         },
         {
           kind: "drill",
-          enter: "/dashboard/*",
-          exit: "/dashboard",
+          enter: "/assets/analysis/*",
+          exit: "/assets/analysis",
           type: "parallax",
         },
         {

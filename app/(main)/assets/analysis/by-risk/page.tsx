@@ -83,7 +83,7 @@ export default function ByRiskAnalysisPage() {
       {/* 페이지 헤더 */}
       <div className="flex items-center gap-3">
         <Link
-          href="/dashboard"
+          href="/assets/analysis"
           className="p-2 -ml-2 rounded-lg hover:bg-gray-100 transition-colors"
         >
           <ArrowLeft className="w-5 h-5 text-gray-600" />
