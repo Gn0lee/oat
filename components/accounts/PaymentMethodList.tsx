@@ -1,6 +1,13 @@
 "use client";
 
-import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import {
+  CreditCard,
+  Link2,
+  MoreHorizontal,
+  Pencil,
+  Trash2,
+  UserRound,
+} from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,14 +16,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { useCurrentUserId } from "@/hooks/use-current-user";
 import { usePaymentMethods } from "@/hooks/use-payment-methods";
 import type { PaymentMethodWithDetails } from "@/lib/api/payment-method";
@@ -90,79 +89,71 @@ export function PaymentMethodList() {
 
   return (
     <>
-      <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="pl-5">결제수단명</TableHead>
-              <TableHead>소유자</TableHead>
-              <TableHead>유형</TableHead>
-              <TableHead>카드사/서비스</TableHead>
-              <TableHead>연결 계좌</TableHead>
-              <TableHead className="w-12 pr-5" />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {paymentMethods.map((method) => {
-              const isOwner = currentUserId === method.ownerId;
-              return (
-                <TableRow key={method.id}>
-                  <TableCell className="font-medium pl-5">
-                    <div className="flex items-center gap-2">
-                      {method.name}
-                      {method.lastFour && (
-                        <span className="text-xs text-gray-400">
-                          ···· {method.lastFour}
-                        </span>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-gray-600">
-                    {method.ownerName}
-                  </TableCell>
-                  <TableCell className="text-gray-600">
+      <div className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-100">
+        {paymentMethods.map((method) => {
+          const isOwner = currentUserId === method.ownerId;
+          return (
+            <article
+              key={method.id}
+              className="flex min-h-[96px] items-center gap-3 border-gray-100 border-t px-4 py-4 first:border-t-0 sm:px-5"
+            >
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-500">
+                <CreditCard className="size-5" />
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <div className="flex min-w-0 flex-wrap items-center gap-2">
+                  <h4 className="truncate font-semibold text-gray-900">
+                    {method.name}
+                  </h4>
+                  {method.lastFour && (
+                    <span className="text-gray-400 text-xs">
+                      {method.lastFour}
+                    </span>
+                  )}
+                </div>
+                <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-gray-500 text-sm">
+                  <span>
                     {PAYMENT_METHOD_TYPE_LABELS[method.type] || method.type}
-                  </TableCell>
-                  <TableCell className="text-gray-600">
-                    {method.issuer || "-"}
-                  </TableCell>
-                  <TableCell className="text-gray-600">
-                    {method.linkedAccountName || "-"}
-                  </TableCell>
-                  <TableCell className="pr-5">
-                    {isOwner && (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                          >
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">메뉴 열기</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleEdit(method)}>
-                            <Pencil className="h-4 w-4 mr-2" />
-                            수정
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="text-destructive focus:text-destructive"
-                            onClick={() => handleDelete(method)}
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            삭제
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    )}
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
+                  </span>
+                  <span className="inline-flex items-center gap-1">
+                    <UserRound className="size-4" />
+                    {method.ownerName}
+                  </span>
+                  <span>{method.issuer || "발급사 미입력"}</span>
+                  <span className="inline-flex items-center gap-1">
+                    <Link2 className="size-4" />
+                    {method.linkedAccountName || "연결 계좌 없음"}
+                  </span>
+                </div>
+              </div>
+
+              {isOwner && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="size-9">
+                      <MoreHorizontal className="size-4" />
+                      <span className="sr-only">메뉴 열기</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => handleEdit(method)}>
+                      <Pencil className="mr-2 size-4" />
+                      수정
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="text-destructive focus:text-destructive"
+                      onClick={() => handleDelete(method)}
+                    >
+                      <Trash2 className="mr-2 size-4" />
+                      삭제
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </article>
+          );
+        })}
       </div>
 
       <PaymentMethodFormDialog

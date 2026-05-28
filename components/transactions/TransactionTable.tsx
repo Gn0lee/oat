@@ -1,23 +1,15 @@
 "use client";
 
 import {
-  type ColumnDef,
-  flexRender,
-  getCoreRowModel,
-  getSortedRowModel,
-  type SortingState,
-  useReactTable,
-} from "@tanstack/react-table";
-import {
-  ArrowDown,
-  ArrowUp,
-  ArrowUpDown,
+  CalendarDays,
   MoreHorizontal,
   Pencil,
   Trash2,
+  TrendingDown,
+  TrendingUp,
+  UserRound,
 } from "lucide-react";
-import type React from "react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,17 +18,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import type { TransactionWithDetails } from "@/lib/api/transaction";
 import { cn } from "@/lib/utils/cn";
-import { formatCurrency, formatDateShort } from "@/lib/utils/format";
+import { formatCurrency, formatDate, formatDateISO } from "@/lib/utils/format";
 import { TransactionDeleteDialog } from "./TransactionDeleteDialog";
 import { TransactionEditDialog } from "./TransactionEditDialog";
 
@@ -45,152 +29,110 @@ interface TransactionTableProps {
   currentUserId: string;
 }
 
-// 정렬 버튼 헤더 컴포넌트
-function SortableHeader({
-  column,
-  children,
-}: {
-  column: {
-    getIsSorted: () => false | "asc" | "desc";
-    toggleSorting: (desc: boolean) => void;
-  };
-  children: React.ReactNode;
-}) {
-  const sorted = column.getIsSorted();
-  return (
-    <Button
-      variant="ghost"
-      onClick={() => column.toggleSorting(sorted === "asc")}
-      className="h-8 px-2 hover:bg-transparent"
-    >
-      {children}
-      {sorted === "asc" ? (
-        <ArrowUp className="ml-1 size-4" />
-      ) : sorted === "desc" ? (
-        <ArrowDown className="ml-1 size-4" />
-      ) : (
-        <ArrowUpDown className="ml-1 size-4 opacity-50" />
-      )}
-    </Button>
-  );
+interface TransactionDateGroup {
+  dateKey: string;
+  label: string;
+  transactions: TransactionWithDetails[];
 }
 
-// 기본 컬럼 정의 (액션 컬럼 제외)
-const baseColumns: ColumnDef<TransactionWithDetails>[] = [
-  {
-    accessorKey: "transactedAt",
-    header: ({ column }) => (
-      <SortableHeader column={column}>거래일</SortableHeader>
-    ),
-    cell: ({ row }) => (
-      <span className="text-gray-600">
-        {formatDateShort(row.original.transactedAt)}
-      </span>
-    ),
-  },
-  {
-    accessorKey: "stockName",
-    header: ({ column }) => (
-      <SortableHeader column={column}>종목</SortableHeader>
-    ),
-    cell: ({ row }) => (
-      <div>
-        <div className="font-medium">{row.original.stockName}</div>
-        <div className="text-xs text-gray-500">{row.original.ticker}</div>
-      </div>
-    ),
-  },
-  {
-    accessorKey: "type",
-    header: "유형",
-    cell: ({ row }) => (
-      <Badge variant={row.original.type === "buy" ? "default" : "secondary"}>
-        {row.original.type === "buy" ? "매수" : "매도"}
-      </Badge>
-    ),
-  },
-  {
-    id: "quantity",
-    accessorKey: "quantity",
-    header: "수량",
-    meta: { className: "hidden md:table-cell" },
-    cell: ({ row }) => (
-      <span className="tabular-nums">
-        {row.original.quantity.toLocaleString()}
-      </span>
-    ),
-  },
-  {
-    id: "price",
-    accessorKey: "price",
-    header: "단가",
-    meta: { className: "hidden md:table-cell" },
-    cell: ({ row }) => (
-      <span className="tabular-nums">
-        {formatCurrency(row.original.price, row.original.currency)}
-      </span>
-    ),
-  },
-  {
-    accessorKey: "totalAmount",
-    header: "금액",
-    cell: ({ row }) => (
-      <span className="tabular-nums font-medium">
-        {formatCurrency(row.original.totalAmount, row.original.currency)}
-      </span>
-    ),
-  },
-  {
-    id: "owner",
-    accessorKey: "owner",
-    header: "소유자",
-    cell: ({ row }) => row.original.owner.name,
-  },
-];
+function groupTransactionsByDate(
+  transactions: TransactionWithDetails[],
+): TransactionDateGroup[] {
+  const groups = new Map<string, TransactionWithDetails[]>();
 
-export function TransactionTable({
-  data,
+  for (const transaction of transactions) {
+    const dateKey = formatDateISO(transaction.transactedAt);
+    const group = groups.get(dateKey) ?? [];
+    group.push(transaction);
+    groups.set(dateKey, group);
+  }
+
+  return Array.from(groups.entries())
+    .sort(([a], [b]) => b.localeCompare(a))
+    .map(([dateKey, group]) => ({
+      dateKey,
+      label: formatDate(dateKey),
+      transactions: group.sort(
+        (a, b) =>
+          new Date(b.transactedAt).getTime() -
+          new Date(a.transactedAt).getTime(),
+      ),
+    }));
+}
+
+function TransactionItem({
+  transaction,
   currentUserId,
-}: TransactionTableProps) {
-  const [sorting, setSorting] = useState<SortingState>([
-    { id: "transactedAt", desc: true },
-  ]);
+  onEdit,
+  onDelete,
+}: {
+  transaction: TransactionWithDetails;
+  currentUserId: string;
+  onEdit: (transaction: TransactionWithDetails) => void;
+  onDelete: (transaction: TransactionWithDetails) => void;
+}) {
+  const isBuy = transaction.type === "buy";
+  const isOwner = transaction.owner.id === currentUserId;
+  const typeLabel = isBuy ? "매수" : "매도";
 
-  // 수정/삭제 다이얼로그 상태
-  const [editTransaction, setEditTransaction] =
-    useState<TransactionWithDetails | null>(null);
-  const [deleteTransaction, setDeleteTransaction] =
-    useState<TransactionWithDetails | null>(null);
+  return (
+    <article className="group flex min-h-[96px] items-center gap-3 border-gray-100 border-t px-4 py-4 first:border-t-0 sm:px-5">
+      <div
+        className={cn(
+          "flex size-10 shrink-0 items-center justify-center rounded-full",
+          isBuy ? "bg-red-50 text-red-500" : "bg-blue-50 text-blue-500",
+        )}
+        aria-hidden="true"
+      >
+        {isBuy ? (
+          <TrendingUp className="size-5" />
+        ) : (
+          <TrendingDown className="size-5" />
+        )}
+      </div>
 
-  // 액션 컬럼 추가
-  const columns: ColumnDef<TransactionWithDetails>[] = [
-    ...baseColumns,
-    {
-      id: "actions",
-      header: "",
-      meta: { className: "w-12" },
-      cell: ({ row }) => {
-        const transaction = row.original;
-        const isOwner = transaction.owner.id === currentUserId;
+      <div className="min-w-0 flex-1">
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
+          <p className="truncate font-semibold text-gray-900">
+            {transaction.stockName}
+          </p>
+          <Badge variant={isBuy ? "default" : "secondary"}>{typeLabel}</Badge>
+          <span className="text-gray-400 text-xs">{transaction.ticker}</span>
+        </div>
+        <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-gray-500 text-xs">
+          <span>{transaction.quantity.toLocaleString()}주</span>
+          <span>{formatCurrency(transaction.price, transaction.currency)}</span>
+          <span className="inline-flex items-center gap-1">
+            <UserRound className="size-3" />
+            {transaction.owner.name}
+          </span>
+          {transaction.memo && (
+            <span className="max-w-full truncate text-gray-400">
+              {transaction.memo}
+            </span>
+          )}
+        </div>
+      </div>
 
-        // 본인 거래가 아니면 액션 버튼 숨김
-        if (!isOwner) return null;
-
-        return (
+      <div className="flex shrink-0 items-center gap-1">
+        <p className="min-w-[92px] text-right font-semibold text-gray-900 tabular-nums">
+          {formatCurrency(transaction.totalAmount, transaction.currency)}
+        </p>
+        {isOwner && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="size-8">
+              <Button variant="ghost" size="icon" className="size-9">
                 <MoreHorizontal className="size-4" />
                 <span className="sr-only">메뉴 열기</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setEditTransaction(transaction)}>
+              <DropdownMenuItem onClick={() => onEdit(transaction)}>
                 <Pencil className="mr-2 size-4" />
                 수정
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={() => setDeleteTransaction(transaction)}
+                onClick={() => onDelete(transaction)}
                 className="text-destructive focus:text-destructive"
               >
                 <Trash2 className="mr-2 size-4" />
@@ -198,94 +140,71 @@ export function TransactionTable({
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-        );
-      },
-    },
-  ];
+        )}
+      </div>
+    </article>
+  );
+}
 
-  const table = useReactTable({
-    data,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    onSortingChange: setSorting,
-    state: {
-      sorting,
-    },
-  });
+export function TransactionTable({
+  data,
+  currentUserId,
+}: TransactionTableProps) {
+  const [editTransaction, setEditTransaction] =
+    useState<TransactionWithDetails | null>(null);
+  const [deleteTransaction, setDeleteTransaction] =
+    useState<TransactionWithDetails | null>(null);
+
+  const groups = useMemo(() => groupTransactionsByDate(data), [data]);
 
   return (
     <>
-      <div className="rounded-xl border bg-white overflow-x-auto">
-        <Table className="min-w-[640px]">
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id} className="bg-gray-50">
-                {headerGroup.headers.map((header) => {
-                  const meta = header.column.columnDef.meta as
-                    | { className?: string }
-                    | undefined;
-                  return (
-                    <TableHead
-                      key={header.id}
-                      className={cn("px-4 py-3", meta?.className)}
-                    >
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext(),
-                          )}
-                    </TableHead>
-                  );
-                })}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id}>
-                  {row.getVisibleCells().map((cell) => {
-                    const meta = cell.column.columnDef.meta as
-                      | { className?: string }
-                      | undefined;
-                    return (
-                      <TableCell
-                        key={cell.id}
-                        className={cn("px-4 py-3", meta?.className)}
-                      >
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext(),
-                        )}
-                      </TableCell>
-                    );
-                  })}
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
-                >
-                  거래 내역이 없습니다.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+      {groups.length > 0 ? (
+        <div className="space-y-4">
+          {groups.map((group) => (
+            <section
+              key={group.dateKey}
+              className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-100"
+            >
+              <div className="flex items-center justify-between gap-3 bg-gray-50/70 px-4 py-3 sm:px-5">
+                <div className="flex min-w-0 items-center gap-2">
+                  <CalendarDays className="size-4 shrink-0 text-gray-400" />
+                  <h3 className="truncate font-semibold text-gray-900 text-sm">
+                    {group.label}
+                  </h3>
+                </div>
+                <Badge variant="outline">{group.transactions.length}건</Badge>
+              </div>
+              <div>
+                {group.transactions.map((transaction) => (
+                  <TransactionItem
+                    key={transaction.id}
+                    transaction={transaction}
+                    currentUserId={currentUserId}
+                    onEdit={setEditTransaction}
+                    onDelete={setDeleteTransaction}
+                  />
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
+      ) : (
+        <div className="rounded-2xl bg-white px-6 py-12 text-center shadow-sm ring-1 ring-gray-100">
+          <CalendarDays className="mx-auto mb-3 size-8 text-gray-300" />
+          <p className="font-medium text-gray-700">거래 내역이 없습니다.</p>
+          <p className="mt-1 text-gray-400 text-sm">
+            필터를 바꾸거나 새 거래를 추가해보세요.
+          </p>
+        </div>
+      )}
 
-      {/* 수정 다이얼로그 */}
       <TransactionEditDialog
         transaction={editTransaction}
         open={!!editTransaction}
         onOpenChange={(open) => !open && setEditTransaction(null)}
       />
 
-      {/* 삭제 확인 다이얼로그 */}
       <TransactionDeleteDialog
         transaction={deleteTransaction}
         open={!!deleteTransaction}

@@ -1,8 +1,15 @@
 "use client";
 
-import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import {
+  Building2,
+  CreditCard,
+  MoreHorizontal,
+  Pencil,
+  Trash2,
+  UserRound,
+} from "lucide-react";
 import { useState } from "react";
-import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -10,14 +17,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { useAccounts } from "@/hooks/use-accounts";
 import { useCurrentUserId } from "@/hooks/use-current-user";
 import type { AccountWithOwner } from "@/lib/api/account";
@@ -54,7 +53,7 @@ interface AccountListProps {
   filter?: "bank" | "investment";
 }
 
-interface AccountTableProps {
+interface AccountCollectionProps {
   accounts: AccountWithOwner[];
   currentUserId: string | null;
   category?: "bank" | "investment";
@@ -62,78 +61,79 @@ interface AccountTableProps {
   onDelete: (account: AccountWithOwner) => void;
 }
 
-function AccountTable({
+function AccountCollection({
   accounts,
   currentUserId,
   category,
   onEdit,
   onDelete,
-}: AccountTableProps) {
+}: AccountCollectionProps) {
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead className="pl-5">계좌명</TableHead>
-          <TableHead>소유자</TableHead>
-          <TableHead>증권사/은행</TableHead>
-          <TableHead>계좌유형</TableHead>
-          <TableHead>계좌번호</TableHead>
-          <TableHead className="w-12 pr-5" />
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {accounts.map((account) => {
-          const isOwner = currentUserId === account.ownerId;
-          return (
-            <TableRow key={account.id}>
-              <TableCell className="font-medium pl-5">{account.name}</TableCell>
-              <TableCell className="text-gray-600">
-                {account.ownerName}
-              </TableCell>
-              <TableCell className="text-gray-600">
-                {account.broker || "-"}
-              </TableCell>
-              <TableCell className="text-gray-600">
-                {account.accountType
-                  ? ACCOUNT_TYPE_LABELS[account.accountType] ||
-                    account.accountType
-                  : "-"}
-              </TableCell>
-              <TableCell className="text-gray-600">
-                {account.accountNumber || "-"}
-              </TableCell>
-              <TableCell className="pr-5">
-                {isOwner && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <MoreHorizontal className="h-4 w-4" />
-                        <span className="sr-only">메뉴 열기</span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        onClick={() => onEdit(account, category)}
-                      >
-                        <Pencil className="h-4 w-4 mr-2" />
-                        수정
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        className="text-destructive focus:text-destructive"
-                        onClick={() => onDelete(account)}
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        삭제
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+    <div className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-100">
+      {accounts.map((account) => {
+        const isOwner = currentUserId === account.ownerId;
+        const accountTypeLabel = account.accountType
+          ? (ACCOUNT_TYPE_LABELS[account.accountType] ?? account.accountType)
+          : "-";
+
+        return (
+          <article
+            key={account.id}
+            className="flex min-h-[96px] items-center gap-3 border-gray-100 border-t px-4 py-4 first:border-t-0 sm:px-5"
+          >
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-500">
+              <CreditCard className="size-5" />
+            </div>
+
+            <div className="min-w-0 flex-1">
+              <div className="flex min-w-0 flex-wrap items-center gap-2">
+                <h4 className="truncate font-semibold text-gray-900">
+                  {account.name}
+                </h4>
+                <Badge variant="outline">{accountTypeLabel}</Badge>
+              </div>
+              <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-gray-500 text-sm">
+                <span className="inline-flex items-center gap-1">
+                  <UserRound className="size-4" />
+                  {account.ownerName}
+                </span>
+                <span className="inline-flex items-center gap-1">
+                  <Building2 className="size-4" />
+                  {account.broker || "기관 미입력"}
+                </span>
+                {account.accountNumber && (
+                  <span className="text-gray-400">{account.accountNumber}</span>
                 )}
-              </TableCell>
-            </TableRow>
-          );
-        })}
-      </TableBody>
-    </Table>
+              </div>
+            </div>
+
+            {isOwner && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="size-9">
+                    <MoreHorizontal className="size-4" />
+                    <span className="sr-only">메뉴 열기</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => onEdit(account, category)}>
+                    <Pencil className="mr-2 size-4" />
+                    수정
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="text-destructive focus:text-destructive"
+                    onClick={() => onDelete(account)}
+                  >
+                    <Trash2 className="mr-2 size-4" />
+                    삭제
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </article>
+        );
+      })}
+    </div>
   );
 }
 
@@ -193,7 +193,6 @@ export function AccountList({ filter }: AccountListProps) {
 
   const allAccounts = accounts ?? [];
 
-  // filter prop이 있으면 필터링만 (서브그룹핑 없음)
   if (filter) {
     const filtered = allAccounts.filter((account) => {
       if (filter === "bank") return isBankAccountType(account.accountType);
@@ -215,14 +214,12 @@ export function AccountList({ filter }: AccountListProps) {
 
     return (
       <>
-        <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-          <AccountTable
-            accounts={filtered}
-            currentUserId={currentUserId}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-          />
-        </div>
+        <AccountCollection
+          accounts={filtered}
+          currentUserId={currentUserId}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+        />
 
         <AccountFormDialog
           open={isFormOpen}
@@ -240,7 +237,6 @@ export function AccountList({ filter }: AccountListProps) {
     );
   }
 
-  // filter 없으면 bank/investment 서브그룹핑
   const bankAccounts = allAccounts.filter((a) =>
     isBankAccountType(a.accountType),
   );
@@ -268,15 +264,13 @@ export function AccountList({ filter }: AccountListProps) {
             <h3 className="text-sm font-medium text-gray-500 mb-2 px-1">
               은행 계좌
             </h3>
-            <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-              <AccountTable
-                accounts={bankAccounts}
-                currentUserId={currentUserId}
-                category="bank"
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-              />
-            </div>
+            <AccountCollection
+              accounts={bankAccounts}
+              currentUserId={currentUserId}
+              category="bank"
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
           </div>
         )}
 
@@ -285,15 +279,13 @@ export function AccountList({ filter }: AccountListProps) {
             <h3 className="text-sm font-medium text-gray-500 mb-2 px-1">
               투자 계좌
             </h3>
-            <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-              <AccountTable
-                accounts={investmentAccounts}
-                currentUserId={currentUserId}
-                category="investment"
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-              />
-            </div>
+            <AccountCollection
+              accounts={investmentAccounts}
+              currentUserId={currentUserId}
+              category="investment"
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
           </div>
         )}
       </div>

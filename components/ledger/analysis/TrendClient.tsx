@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/chart";
 import { useLedgerStatsTrend } from "@/hooks/use-ledger-stats";
 import type { StatsScope } from "@/lib/api/ledger-stats";
+import { cn } from "@/lib/utils/cn";
 import { formatCurrency } from "@/lib/utils/format";
 
 const chartConfig = {
@@ -25,6 +26,12 @@ const chartConfig = {
   totalIncome: { label: "수입", color: "#F04452" },
   savingsRate: { label: "저축률", color: "#4F46E5" },
 };
+
+function getSavingsRateClassName(savingsRate: number) {
+  if (savingsRate >= 20) return "text-green-600";
+  if (savingsRate >= 10) return "text-yellow-600";
+  return "text-red-500";
+}
 
 interface TrendClientProps {
   scope: StatsScope;
@@ -159,59 +166,65 @@ export function TrendClient({ scope }: TrendClientProps) {
         <p className="text-xs text-gray-400 mt-1">최근 6개월 기준</p>
       </div>
 
-      {/* Section 3: 월별 요약 테이블 */}
+      {/* Section 3: 월별 요약 목록 */}
       <div className="bg-white rounded-2xl p-5 shadow-sm">
         <h3 className="text-sm font-semibold text-gray-900 mb-4">월별 상세</h3>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-xs text-gray-400 border-b border-gray-100">
-                <th className="text-left pb-2 font-medium">월</th>
-                <th className="text-right pb-2 font-medium">수입</th>
-                <th className="text-right pb-2 font-medium">지출</th>
-                <th className="text-right pb-2 font-medium">저축률</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {chartData.map((row) => {
-                const isCurrent =
-                  row.year === currentYear && row.month === currentMonth;
-                return (
-                  <tr
-                    key={`${row.year}-${row.month}`}
-                    className={isCurrent ? "bg-primary/5" : ""}
-                  >
-                    <td
-                      className={`py-2.5 ${
-                        isCurrent
-                          ? "font-semibold text-primary"
-                          : "text-gray-700"
-                      }`}
+        <div className="space-y-3">
+          {chartData.map((row) => {
+            const isCurrent =
+              row.year === currentYear && row.month === currentMonth;
+            return (
+              <article
+                key={`${row.year}-${row.month}`}
+                className={cn(
+                  "rounded-2xl border border-gray-100 bg-gray-50/70 p-4",
+                  isCurrent && "border-primary/20 bg-primary/5",
+                )}
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p
+                      className={cn(
+                        "font-semibold text-gray-900",
+                        isCurrent && "text-primary",
+                      )}
                     >
                       {row.year}년 {row.label}
-                    </td>
-                    <td className="py-2.5 text-right text-red-500 font-medium">
-                      {formatCurrency(row.totalIncome)}
-                    </td>
-                    <td className="py-2.5 text-right text-gray-900">
-                      {formatCurrency(row.totalExpense)}
-                    </td>
-                    <td
-                      className={`py-2.5 text-right font-medium ${
-                        row.savingsRate >= 20
-                          ? "text-green-600"
-                          : row.savingsRate >= 10
-                            ? "text-yellow-600"
-                            : "text-red-500"
-                      }`}
+                    </p>
+                    {isCurrent && (
+                      <p className="mt-0.5 text-primary/70 text-xs">이번 달</p>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    <p className="text-gray-500 text-xs">저축률</p>
+                    <p
+                      className={cn(
+                        "font-bold tabular-nums",
+                        getSavingsRateClassName(row.savingsRate),
+                      )}
                     >
                       {row.savingsRate.toFixed(1)}%
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-4 grid grid-cols-2 gap-3">
+                  <div>
+                    <p className="text-gray-500 text-xs">수입</p>
+                    <p className="mt-1 font-semibold text-red-500 tabular-nums">
+                      {formatCurrency(row.totalIncome)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500 text-xs">지출</p>
+                    <p className="mt-1 font-semibold text-gray-900 tabular-nums">
+                      {formatCurrency(row.totalExpense)}
+                    </p>
+                  </div>
+                </div>
+              </article>
+            );
+          })}
         </div>
       </div>
     </div>
