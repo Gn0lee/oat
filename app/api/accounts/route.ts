@@ -112,7 +112,6 @@ export async function POST(request: Request) {
       accountType: input.accountType,
       category: input.category,
       balance: input.balance,
-      isDefault: input.isDefault,
       memo: input.memo,
     });
 

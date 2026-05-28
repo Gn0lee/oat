@@ -8,7 +8,6 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -43,7 +42,6 @@ const detailFormSchema = z.object({
     message: "계좌 유형을 선택해주세요.",
   }),
   balanceStr: z.string(),
-  isDefault: z.boolean(),
   memo: z.string().max(500, "메모는 500자 이내여야 합니다."),
 });
 
@@ -120,12 +118,9 @@ function DetailForm({ category, onBack }: DetailFormProps) {
       accountNumber: "",
       accountType: defaultAccountType,
       balanceStr: "",
-      isDefault: false,
       memo: "",
     },
   });
-
-  const watchIsDefault = watch("isDefault");
 
   const onSubmit = async (data: DetailFormData) => {
     const balance =
@@ -143,7 +138,6 @@ function DetailForm({ category, onBack }: DetailFormProps) {
         accountType: data.accountType,
         category,
         balance,
-        isDefault: data.isDefault,
         memo: data.memo || undefined,
       });
       toast.success(`${data.name} 계좌가 추가되었습니다.`);
@@ -253,17 +247,6 @@ function DetailForm({ category, onBack }: DetailFormProps) {
             {errors.balanceStr.message}
           </p>
         )}
-      </div>
-
-      <div className="flex items-center space-x-2">
-        <Checkbox
-          id="isDefault"
-          checked={watchIsDefault}
-          onCheckedChange={(checked) => setValue("isDefault", checked === true)}
-        />
-        <Label htmlFor="isDefault" className="font-normal cursor-pointer">
-          기본 계좌로 설정
-        </Label>
       </div>
 
       <div className="space-y-2">

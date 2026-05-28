@@ -6,7 +6,6 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -53,7 +52,6 @@ const bankAccountFormSchema = z.object({
   accountType: z.enum(BANK_ACCOUNT_TYPES, {
     message: "계좌 유형을 선택해주세요.",
   }),
-  isDefault: z.boolean(),
   memo: z.string().max(500, "메모는 500자 이내여야 합니다."),
 });
 
@@ -67,7 +65,6 @@ const investmentAccountFormSchema = z.object({
   accountType: z.enum(INVESTMENT_ACCOUNT_TYPES, {
     message: "계좌 유형을 선택해주세요.",
   }),
-  isDefault: z.boolean(),
   memo: z.string().max(500, "메모는 500자 이내여야 합니다."),
 });
 
@@ -133,12 +130,9 @@ export function AccountFormDialog({
       accountNumber: "",
       accountType: defaultAccountType as BankAccountType &
         InvestmentAccountType,
-      isDefault: false,
       memo: "",
     },
   });
-
-  const watchIsDefault = watch("isDefault");
 
   useEffect(() => {
     if (open) {
@@ -155,7 +149,6 @@ export function AccountFormDialog({
           broker: account.broker || "",
           accountNumber: account.accountNumber || "",
           accountType: resolvedType as BankAccountType & InvestmentAccountType,
-          isDefault: account.isDefault,
           memo: account.memo || "",
         });
       } else {
@@ -165,7 +158,6 @@ export function AccountFormDialog({
           accountNumber: "",
           accountType: defaultAccountType as BankAccountType &
             InvestmentAccountType,
-          isDefault: false,
           memo: "",
         });
       }
@@ -183,7 +175,6 @@ export function AccountFormDialog({
             accountNumber: data.accountNumber || null,
             accountType: data.accountType,
             category: isBank ? "bank" : "investment",
-            isDefault: data.isDefault,
             memo: data.memo || null,
           },
         });
@@ -202,7 +193,6 @@ export function AccountFormDialog({
             broker: data.broker,
             accountNumber: "",
             accountType: data.accountType,
-            isDefault: false,
             memo: "",
           });
         } else {
@@ -304,17 +294,6 @@ export function AccountFormDialog({
             {errors.accountNumber.message}
           </p>
         )}
-      </div>
-
-      <div className="flex items-center space-x-2">
-        <Checkbox
-          id="isDefault"
-          checked={watchIsDefault}
-          onCheckedChange={(checked) => setValue("isDefault", checked === true)}
-        />
-        <Label htmlFor="isDefault" className="font-normal cursor-pointer">
-          기본 계좌로 설정
-        </Label>
       </div>
 
       <div className="space-y-2">

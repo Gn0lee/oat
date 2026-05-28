@@ -97,7 +97,7 @@ export function TransactionFunnel({ defaultDate }: TransactionFunnelProps) {
 
   // 기본 계좌 찾기 (본인 계좌 중에서만)
   const myAccounts = accounts.filter((a) => a.ownerId === currentUserId);
-  const defaultAccount = myAccounts.find((a) => a.isDefault) ?? myAccounts[0];
+  const defaultAccount = myAccounts[0];
   const defaultAccountId = defaultAccount?.id;
 
   return (

@@ -106,7 +106,6 @@ export async function POST(request: Request) {
       lastFour: input.lastFour,
       paymentDay: input.paymentDay,
       balance: input.balance,
-      isDefault: input.isDefault,
       memo: input.memo,
     });
 
