@@ -7,18 +7,22 @@ export interface BreadcrumbItem {
 
 export interface ServiceRouteMeta {
   href: string;
+  pattern: string;
   label: string;
   mobileVariant: MobileHeaderVariant;
   parentHref?: string;
   closeHref?: string;
   breadcrumb: BreadcrumbItem[];
+  preserveSearchParams: string[];
 }
 
 interface ServiceRouteNode {
   href: string;
+  pattern?: string;
   label: string;
   mobile?: MobileHeaderVariant;
   closeHref?: string;
+  preserveSearchParams?: readonly string[];
   children?: readonly ServiceRouteNode[];
 }
 
@@ -57,14 +61,31 @@ export const SERVICE_ROUTE_TREE = [
         href: "/ledger/analysis",
         label: "통계",
         children: [
-          { href: "/ledger/analysis/trend", label: "월별 추이" },
-          { href: "/ledger/analysis/daily", label: "일별 지출 현황" },
-          { href: "/ledger/analysis/by-category", label: "카테고리별 지출" },
+          {
+            href: "/ledger/analysis/trend",
+            label: "월별 추이",
+            preserveSearchParams: ["scope"],
+          },
+          {
+            href: "/ledger/analysis/daily",
+            label: "일별 지출 현황",
+            preserveSearchParams: ["scope"],
+          },
+          {
+            href: "/ledger/analysis/by-category",
+            label: "카테고리별 지출",
+            preserveSearchParams: ["scope"],
+          },
           {
             href: "/ledger/analysis/by-payment-method",
             label: "결제수단별 지출",
+            preserveSearchParams: ["scope"],
           },
-          { href: "/ledger/analysis/by-member", label: "구성원별 지출" },
+          {
+            href: "/ledger/analysis/by-member",
+            label: "구성원별 지출",
+            preserveSearchParams: ["scope"],
+          },
         ],
       },
     ],
@@ -78,6 +99,11 @@ export const SERVICE_ROUTE_TREE = [
         href: "/assets/accounts",
         label: "계좌 관리",
         children: [
+          {
+            href: "/assets/accounts/[accountId]",
+            pattern: "/assets/accounts/[accountId]",
+            label: "계좌 상세",
+          },
           {
             href: "/assets/accounts/new",
             label: "계좌 추가",
@@ -149,11 +175,13 @@ function flattenServiceRoutes(
     const breadcrumb = [...ancestors, { href: route.href, label: route.label }];
     const meta: ServiceRouteMeta = {
       href: route.href,
+      pattern: route.pattern ?? route.href,
       label: route.label,
       mobileVariant: route.mobile ?? "child",
       parentHref: parent?.href,
       closeHref: route.closeHref,
       breadcrumb,
+      preserveSearchParams: [...(route.preserveSearchParams ?? [])],
     };
 
     return [
@@ -165,5 +193,32 @@ function flattenServiceRoutes(
 
 export function getServiceRouteMeta(pathname: string): ServiceRouteMeta | null {
   const normalizedPathname = normalizePathname(pathname);
-  return ROUTE_META.find((route) => route.href === normalizedPathname) ?? null;
+  return (
+    ROUTE_META.find((route) => matchesRoutePath(route, normalizedPathname)) ??
+    null
+  );
+}
+
+function matchesRoutePath(route: ServiceRouteMeta, pathname: string): boolean {
+  if (route.href === pathname) {
+    return true;
+  }
+
+  if (!route.pattern.includes("[")) {
+    return false;
+  }
+
+  const routeSegments = route.pattern.split("/").filter(Boolean);
+  const pathSegments = pathname.split("/").filter(Boolean);
+
+  if (routeSegments.length !== pathSegments.length) {
+    return false;
+  }
+
+  return routeSegments.every((segment, index) => {
+    if (segment.startsWith("[") && segment.endsWith("]")) {
+      return pathSegments[index].length > 0;
+    }
+    return segment === pathSegments[index];
+  });
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, ChevronRight, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -13,19 +13,21 @@ interface ServiceHeaderProps {
 
 export function ServiceHeader({ variant }: ServiceHeaderProps) {
   const pathname = usePathname();
-  const [scope, setScope] = useState<string | null>(null);
+  const [searchParams, setSearchParams] = useState<URLSearchParams | null>(
+    null,
+  );
   const meta = getServiceRouteMeta(pathname);
   const parentHref = getParentHref({
     parentHref: meta?.parentHref,
-    pathname,
-    scope,
+    preserveSearchParams: meta?.preserveSearchParams ?? [],
+    searchParams,
   });
 
   useEffect(() => {
     if (!pathname) {
       return;
     }
-    setScope(new URLSearchParams(window.location.search).get("scope"));
+    setSearchParams(new URLSearchParams(window.location.search));
   }, [pathname]);
 
   if (variant === "desktop") {
@@ -57,21 +59,21 @@ function MobileServiceHeader({
   }
 
   return (
-    <header className="h-14 px-2 grid grid-cols-[44px_1fr_44px] items-center lg:hidden">
+    <header className="relative h-14 px-1 flex items-center lg:hidden">
       <IconLink
         href={parentHref}
         label="이전 화면으로 이동"
-        className="justify-self-start"
+        className="shrink-0"
       >
-        <ArrowLeft className="size-5" />
+        <ChevronLeft className="size-6" />
       </IconLink>
-      <h1 className="min-w-0 text-center text-base font-semibold text-gray-900 truncate">
+      <h1 className="min-w-0 flex-1 truncate pr-12 text-base font-semibold text-gray-900">
         {meta.label}
       </h1>
       <IconLink
         href={meta.closeHref}
         label="작업 닫기"
-        className="justify-self-end"
+        className="absolute right-1"
       >
         <X className="size-5" />
       </IconLink>
@@ -81,19 +83,28 @@ function MobileServiceHeader({
 
 function getParentHref({
   parentHref,
-  pathname,
-  scope,
+  preserveSearchParams,
+  searchParams,
 }: {
   parentHref?: string;
-  pathname: string;
-  scope: string | null;
+  preserveSearchParams: string[];
+  searchParams: URLSearchParams | null;
 }) {
   if (!parentHref) {
     return undefined;
   }
 
-  if (scope && pathname.startsWith("/ledger/analysis/")) {
-    return `${parentHref}?scope=${scope}`;
+  const preservedParams = new URLSearchParams();
+  for (const key of preserveSearchParams) {
+    const value = searchParams?.get(key);
+    if (value) {
+      preservedParams.set(key, value);
+    }
+  }
+
+  const queryString = preservedParams.toString();
+  if (queryString) {
+    return `${parentHref}?${queryString}`;
   }
 
   return parentHref;

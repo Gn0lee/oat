@@ -1,6 +1,7 @@
 import { Plus } from "lucide-react";
 import Link from "next/link";
 import { HoldingsList } from "@/components/holdings/HoldingsList";
+import { PageActions } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { getAccounts } from "@/lib/api/account";
 import { getHouseholdWithMembers } from "@/lib/api/household";
@@ -34,14 +35,14 @@ export default async function HoldingsPage() {
 
   return (
     <>
-      <div className="flex justify-end">
+      <PageActions>
         <Button asChild size="sm">
           <Link href="/assets/stock/transactions/new">
             <Plus className="w-4 h-4 mr-1" />
             거래 추가
           </Link>
         </Button>
-      </div>
+      </PageActions>
 
       {/* 보유 현황 목록 */}
       <HoldingsList members={members} accounts={accounts} />

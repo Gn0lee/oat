@@ -49,6 +49,18 @@ describe("ServiceHeader", () => {
     );
   });
 
+  it("mobile child 화면 제목을 뒤로가기 버튼 옆에 왼쪽 정렬한다", () => {
+    navigationState.pathname = "/assets/stock/holdings";
+
+    render(<ServiceHeader variant="mobile" />);
+
+    expect(screen.getByRole("banner")).toHaveClass("flex");
+    expect(screen.getByText("보유 종목")).toHaveClass("flex-1");
+    expect(
+      screen.getByLabelText("이전 화면으로 이동").querySelector("svg"),
+    ).toHaveClass("lucide-chevron-left");
+  });
+
   it("mobile task 화면에는 Close Action을 렌더링한다", () => {
     navigationState.pathname = "/ledger/payment-methods/new";
 

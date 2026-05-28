@@ -41,4 +41,13 @@ describe("getServiceRouteMeta", () => {
       href: "/settings/mcp",
     });
   });
+
+  it("path parameter 패턴 route를 매칭한다", () => {
+    expect(getServiceRouteMeta("/assets/accounts/account-123")).toMatchObject({
+      href: "/assets/accounts/[accountId]",
+      pattern: "/assets/accounts/[accountId]",
+      label: "계좌 상세",
+      parentHref: "/assets/accounts",
+    });
+  });
 });
