@@ -41,7 +41,6 @@ const paymentMethod: PaymentMethodWithDetails = {
   paymentDay: 25,
   balance: null,
   balanceUpdatedAt: null,
-  isDefault: true,
   memo: null,
   createdAt: "2026-05-01T00:00:00.000Z",
   updatedAt: "2026-05-01T00:00:00.000Z",

@@ -298,7 +298,7 @@ async function listReferences(
       supabase
         .from("accounts")
         .select(
-          "id, owner_id, name, broker, account_type, category, balance, balance_updated_at, is_default",
+          "id, owner_id, name, broker, account_type, category, balance, balance_updated_at",
         )
         .eq("household_id", auth.householdId)
         .order("created_at", { ascending: false }),

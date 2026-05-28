@@ -25,7 +25,6 @@ export interface CreatePaymentMethodParams {
   lastFour?: string;
   paymentDay?: number;
   balance?: number | null;
-  isDefault?: boolean;
   memo?: string;
 }
 
@@ -37,7 +36,6 @@ export interface UpdatePaymentMethodParams {
   lastFour?: string | null;
   paymentDay?: number | null;
   balance?: number | null;
-  isDefault?: boolean;
   memo?: string | null;
 }
 
@@ -55,7 +53,6 @@ export interface PaymentMethodWithDetails {
   paymentDay: number | null;
   balance: number | null;
   balanceUpdatedAt: string | null;
-  isDefault: boolean;
   memo: string | null;
   createdAt: string;
   updatedAt: string;
@@ -117,7 +114,6 @@ export async function getPaymentMethods(
     paymentDay: pm.payment_day,
     balance: pm.balance,
     balanceUpdatedAt: pm.balance_updated_at,
-    isDefault: pm.is_default ?? false,
     memo: pm.memo,
     createdAt: pm.created_at,
     updatedAt: pm.updated_at,
@@ -138,7 +134,6 @@ export async function createPaymentMethod(
     lastFour,
     paymentDay,
     balance,
-    isDefault,
     memo,
   } = params;
 
@@ -177,15 +172,6 @@ export async function createPaymentMethod(
     }
   }
 
-  // isDefault가 true이면 동일 소유자의 다른 결제수단 is_default를 false로
-  if (isDefault) {
-    await supabase
-      .from("payment_methods")
-      .update({ is_default: false })
-      .eq("household_id", householdId)
-      .eq("owner_id", ownerId);
-  }
-
   const normalizedBalance = normalizePaymentMethodBalance(type, balance);
   const now = new Date().toISOString();
 
@@ -202,7 +188,6 @@ export async function createPaymentMethod(
       payment_day: paymentDay ?? null,
       balance: normalizedBalance,
       balance_updated_at: normalizedBalance !== null ? now : null,
-      is_default: isDefault ?? false,
       memo: memo || null,
     })
     .select()
@@ -286,16 +271,6 @@ export async function updatePaymentMethod(
     }
   }
 
-  // isDefault가 true이면 동일 소유자의 다른 결제수단 is_default를 false로
-  if (params.isDefault === true) {
-    await supabase
-      .from("payment_methods")
-      .update({ is_default: false })
-      .eq("household_id", existing.household_id)
-      .eq("owner_id", ownerId)
-      .neq("id", paymentMethodId);
-  }
-
   const nextType = params.type ?? existing.type;
   const nextBalance =
     params.balance !== undefined ? params.balance : existing.balance;
@@ -328,7 +303,6 @@ export async function updatePaymentMethod(
       ...(balanceUpdatedAt !== undefined && {
         balance_updated_at: balanceUpdatedAt,
       }),
-      ...(params.isDefault !== undefined && { is_default: params.isDefault }),
       ...(params.memo !== undefined && { memo: params.memo }),
       updated_at: new Date().toISOString(),
     })

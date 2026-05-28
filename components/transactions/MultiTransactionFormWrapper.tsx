@@ -51,9 +51,8 @@ export function MultiTransactionFormWrapper({
     );
   }
 
-  // 기본 계좌 또는 첫 번째 계좌 (본인 계좌 중에서만)
-  const defaultAccount = myAccounts.find((a) => a.isDefault);
-  const defaultAccountId = defaultAccount?.id ?? myAccounts[0].id;
+  // 첫 번째 계좌 (본인 계좌 중에서만)
+  const defaultAccountId = myAccounts[0].id;
 
   return (
     <MultiTransactionForm

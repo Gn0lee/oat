@@ -5,12 +5,10 @@ import { AccountList } from "./AccountList";
 
 const mocks = vi.hoisted(() => ({
   accounts: [] as AccountWithOwner[],
-  mutateAsync: vi.fn(),
 }));
 
 vi.mock("@/hooks/use-accounts", () => ({
   useAccounts: () => ({ data: mocks.accounts, isLoading: false, error: null }),
-  useUpdateAccount: () => ({ mutateAsync: mocks.mutateAsync }),
 }));
 
 vi.mock("@/hooks/use-current-user", () => ({
@@ -37,7 +35,6 @@ const account: AccountWithOwner = {
   category: "investment",
   balance: null,
   balanceUpdatedAt: null,
-  isDefault: true,
   memo: null,
   createdAt: "2026-05-01T00:00:00.000Z",
   updatedAt: "2026-05-01T00:00:00.000Z",

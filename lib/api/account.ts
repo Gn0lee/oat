@@ -11,7 +11,6 @@ export interface CreateAccountParams {
   accountType: AccountType;
   category?: AccountCategory;
   balance?: number;
-  isDefault?: boolean;
   memo?: string;
 }
 
@@ -22,7 +21,6 @@ export interface UpdateAccountParams {
   accountType?: AccountType;
   category?: AccountCategory | null;
   balance?: number | null;
-  isDefault?: boolean;
   memo?: string | null;
 }
 
@@ -38,7 +36,6 @@ export interface AccountWithOwner {
   category: AccountCategory | null;
   balance: number | null;
   balanceUpdatedAt: string | null;
-  isDefault: boolean;
   memo: string | null;
   createdAt: string;
   updatedAt: string;
@@ -83,7 +80,6 @@ export async function getAccounts(
     category: account.category,
     balance: account.balance,
     balanceUpdatedAt: account.balance_updated_at,
-    isDefault: account.is_default ?? false,
     memo: account.memo,
     createdAt: account.created_at,
     updatedAt: account.updated_at,
@@ -92,7 +88,6 @@ export async function getAccounts(
 
 /**
  * 계좌 생성
- * - is_default가 true이면 동일 소유자의 다른 계좌 is_default를 false로 변경
  */
 export async function createAccount(
   supabase: SupabaseClient<Database>,
@@ -107,7 +102,6 @@ export async function createAccount(
     accountType,
     category,
     balance,
-    isDefault,
     memo,
   } = params;
 
@@ -128,15 +122,6 @@ export async function createAccount(
     );
   }
 
-  // is_default가 true이면 동일 소유자의 다른 계좌 is_default를 false로
-  if (isDefault) {
-    await supabase
-      .from("accounts")
-      .update({ is_default: false })
-      .eq("household_id", householdId)
-      .eq("owner_id", ownerId);
-  }
-
   const { data, error } = await supabase
     .from("accounts")
     .insert({
@@ -149,7 +134,6 @@ export async function createAccount(
       category: category ?? null,
       balance: balance ?? null,
       balance_updated_at: balance != null ? new Date().toISOString() : null,
-      is_default: isDefault ?? false,
       memo: memo || null,
     })
     .select()
@@ -166,7 +150,6 @@ export async function createAccount(
 /**
  * 계좌 수정
  * - 소유권 확인 필수
- * - is_default가 true이면 동일 소유자의 다른 계좌 is_default를 false로 변경
  */
 export async function updateAccount(
   supabase: SupabaseClient<Database>,
@@ -212,16 +195,6 @@ export async function updateAccount(
     }
   }
 
-  // is_default가 true이면 동일 소유자의 다른 계좌 is_default를 false로
-  if (params.isDefault === true) {
-    await supabase
-      .from("accounts")
-      .update({ is_default: false })
-      .eq("household_id", existingAccount.household_id)
-      .eq("owner_id", ownerId)
-      .neq("id", accountId);
-  }
-
   const { data, error } = await supabase
     .from("accounts")
     .update({
@@ -238,7 +211,6 @@ export async function updateAccount(
         balance: params.balance,
         balance_updated_at: new Date().toISOString(),
       }),
-      ...(params.isDefault !== undefined && { is_default: params.isDefault }),
       ...(params.memo !== undefined && { memo: params.memo }),
       updated_at: new Date().toISOString(),
     })

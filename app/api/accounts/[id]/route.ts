@@ -50,7 +50,6 @@ export async function PATCH(request: Request, { params }: RouteParams) {
       accountType: input.accountType,
       category: input.category,
       balance: input.balance,
-      isDefault: input.isDefault,
       memo: input.memo,
     });
 

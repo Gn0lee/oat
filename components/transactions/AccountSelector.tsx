@@ -75,11 +75,6 @@ export function AccountSelector<T extends FieldValues & { accountId: string }>({
                     ({account.broker})
                   </span>
                 )}
-                {account.isDefault && (
-                  <span className="text-xs px-1.5 py-0.5 bg-blue-100 text-blue-600 rounded">
-                    기본
-                  </span>
-                )}
               </span>
             </SelectItem>
           ))}

@@ -9,7 +9,6 @@ import {
   UserRound,
 } from "lucide-react";
 import { useState } from "react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -107,11 +106,6 @@ export function PaymentMethodList() {
                   <h4 className="truncate font-semibold text-gray-900">
                     {method.name}
                   </h4>
-                  {method.isDefault && (
-                    <Badge variant="secondary" className="text-xs">
-                      기본
-                    </Badge>
-                  )}
                   {method.lastFour && (
                     <span className="text-gray-400 text-xs">
                       {method.lastFour}

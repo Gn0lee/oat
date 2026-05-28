@@ -6,7 +6,6 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -101,7 +100,6 @@ const paymentMethodFormSchema = z.object({
   balanceStr: z.string().refine((value) => value === "" || Number(value) >= 0, {
     message: "잔액은 0 이상이어야 합니다.",
   }),
-  isDefault: z.boolean(),
   memo: z.string().max(500, "메모는 500자 이내여야 합니다.").optional(),
 });
 
@@ -140,12 +138,10 @@ export function PaymentMethodFormDialog({
       lastFour: "",
       paymentDay: undefined,
       balanceStr: "",
-      isDefault: false,
       memo: "",
     },
   });
 
-  const watchIsDefault = watch("isDefault");
   const watchType = watch("type");
 
   const showCardFields =
@@ -165,7 +161,6 @@ export function PaymentMethodFormDialog({
           paymentDay: paymentMethod.paymentDay ?? undefined,
           balanceStr:
             paymentMethod.balance !== null ? String(paymentMethod.balance) : "",
-          isDefault: paymentMethod.isDefault,
           memo: paymentMethod.memo ?? "",
         });
       } else {
@@ -177,7 +172,6 @@ export function PaymentMethodFormDialog({
           lastFour: "",
           paymentDay: undefined,
           balanceStr: "",
-          isDefault: false,
           memo: "",
         });
       }
@@ -199,7 +193,6 @@ export function PaymentMethodFormDialog({
       paymentDay: Number.isNaN(data.paymentDay)
         ? undefined
         : (data.paymentDay as number | undefined),
-      isDefault: data.isDefault,
       memo: data.memo || undefined,
       ...(shouldSubmitBalance && { balance }),
     };
@@ -374,17 +367,6 @@ export function PaymentMethodFormDialog({
             ))}
           </SelectContent>
         </Select>
-      </div>
-
-      <div className="flex items-center space-x-2">
-        <Checkbox
-          id="pm-is-default"
-          checked={watchIsDefault}
-          onCheckedChange={(checked) => setValue("isDefault", checked === true)}
-        />
-        <Label htmlFor="pm-is-default" className="font-normal cursor-pointer">
-          기본 결제수단으로 설정
-        </Label>
       </div>
 
       <div className="space-y-2">

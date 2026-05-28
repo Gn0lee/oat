@@ -5,12 +5,10 @@ import {
   CreditCard,
   MoreHorizontal,
   Pencil,
-  Star,
   Trash2,
   UserRound,
 } from "lucide-react";
 import { useState } from "react";
-import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,7 +17,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useAccounts, useUpdateAccount } from "@/hooks/use-accounts";
+import { useAccounts } from "@/hooks/use-accounts";
 import { useCurrentUserId } from "@/hooks/use-current-user";
 import type { AccountWithOwner } from "@/lib/api/account";
 import { AccountDeleteDialog } from "./AccountDeleteDialog";
@@ -61,7 +59,6 @@ interface AccountCollectionProps {
   category?: "bank" | "investment";
   onEdit: (account: AccountWithOwner, category?: "bank" | "investment") => void;
   onDelete: (account: AccountWithOwner) => void;
-  onSetDefault: (account: AccountWithOwner) => void;
 }
 
 function AccountCollection({
@@ -70,7 +67,6 @@ function AccountCollection({
   category,
   onEdit,
   onDelete,
-  onSetDefault,
 }: AccountCollectionProps) {
   return (
     <div className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-100">
@@ -94,11 +90,6 @@ function AccountCollection({
                 <h4 className="truncate font-semibold text-gray-900">
                   {account.name}
                 </h4>
-                {account.isDefault && (
-                  <Badge variant="secondary" className="text-xs">
-                    기본
-                  </Badge>
-                )}
                 <Badge variant="outline">{accountTypeLabel}</Badge>
               </div>
               <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-gray-500 text-sm">
@@ -129,18 +120,6 @@ function AccountCollection({
                     <Pencil className="mr-2 size-4" />
                     수정
                   </DropdownMenuItem>
-                  {account.isDefault && (
-                    <DropdownMenuItem disabled>
-                      <Star className="mr-2 size-4" />
-                      기본 계좌
-                    </DropdownMenuItem>
-                  )}
-                  {!account.isDefault && (
-                    <DropdownMenuItem onClick={() => onSetDefault(account)}>
-                      <Star className="mr-2 size-4" />
-                      기본 계좌로 설정
-                    </DropdownMenuItem>
-                  )}
                   <DropdownMenuItem
                     className="text-destructive focus:text-destructive"
                     onClick={() => onDelete(account)}
@@ -161,7 +140,6 @@ function AccountCollection({
 export function AccountList({ filter }: AccountListProps) {
   const { data: accounts, isLoading, error } = useAccounts();
   const { userId: currentUserId } = useCurrentUserId();
-  const updateAccount = useUpdateAccount();
 
   const [editingAccount, setEditingAccount] = useState<AccountWithOwner | null>(
     null,
@@ -172,22 +150,6 @@ export function AccountList({ filter }: AccountListProps) {
   const [deletingAccount, setDeletingAccount] =
     useState<AccountWithOwner | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
-
-  const handleSetDefault = async (account: AccountWithOwner) => {
-    try {
-      await updateAccount.mutateAsync({
-        id: account.id,
-        data: { isDefault: true },
-      });
-      toast.success(`${account.name}을(를) 기본 계좌로 설정했습니다.`);
-    } catch (error) {
-      if (error instanceof Error) {
-        toast.error(error.message);
-      } else {
-        toast.error("기본 계좌 설정에 실패했습니다.");
-      }
-    }
-  };
 
   const handleEdit = (
     account: AccountWithOwner,
@@ -231,7 +193,6 @@ export function AccountList({ filter }: AccountListProps) {
 
   const allAccounts = accounts ?? [];
 
-  // filter prop이 있으면 필터링만 (서브그룹핑 없음)
   if (filter) {
     const filtered = allAccounts.filter((account) => {
       if (filter === "bank") return isBankAccountType(account.accountType);
@@ -253,15 +214,12 @@ export function AccountList({ filter }: AccountListProps) {
 
     return (
       <>
-        <div>
-          <AccountCollection
-            accounts={filtered}
-            currentUserId={currentUserId}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onSetDefault={handleSetDefault}
-          />
-        </div>
+        <AccountCollection
+          accounts={filtered}
+          currentUserId={currentUserId}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+        />
 
         <AccountFormDialog
           open={isFormOpen}
@@ -279,7 +237,6 @@ export function AccountList({ filter }: AccountListProps) {
     );
   }
 
-  // filter 없으면 bank/investment 서브그룹핑
   const bankAccounts = allAccounts.filter((a) =>
     isBankAccountType(a.accountType),
   );
@@ -307,16 +264,13 @@ export function AccountList({ filter }: AccountListProps) {
             <h3 className="text-sm font-medium text-gray-500 mb-2 px-1">
               은행 계좌
             </h3>
-            <div>
-              <AccountCollection
-                accounts={bankAccounts}
-                currentUserId={currentUserId}
-                category="bank"
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                onSetDefault={handleSetDefault}
-              />
-            </div>
+            <AccountCollection
+              accounts={bankAccounts}
+              currentUserId={currentUserId}
+              category="bank"
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
           </div>
         )}
 
@@ -325,16 +279,13 @@ export function AccountList({ filter }: AccountListProps) {
             <h3 className="text-sm font-medium text-gray-500 mb-2 px-1">
               투자 계좌
             </h3>
-            <div>
-              <AccountCollection
-                accounts={investmentAccounts}
-                currentUserId={currentUserId}
-                category="investment"
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                onSetDefault={handleSetDefault}
-              />
-            </div>
+            <AccountCollection
+              accounts={investmentAccounts}
+              currentUserId={currentUserId}
+              category="investment"
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
           </div>
         )}
       </div>

@@ -69,11 +69,6 @@ export function PaymentMethodDeleteDialog({
         <div className="rounded-md border p-4 space-y-2">
           <div className="flex items-center justify-between">
             <span className="font-medium">{paymentMethod.name}</span>
-            {paymentMethod.isDefault && (
-              <span className="text-xs bg-secondary text-secondary-foreground px-2 py-0.5 rounded">
-                기본
-              </span>
-            )}
           </div>
           <div className="text-sm text-muted-foreground space-y-1">
             <div className="flex justify-between">
