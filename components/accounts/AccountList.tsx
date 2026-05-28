@@ -1,9 +1,8 @@
 "use client";
 
-import { MoreHorizontal, Pencil, Star, Trash2 } from "lucide-react";
+import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -19,7 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useAccounts, useUpdateAccount } from "@/hooks/use-accounts";
+import { useAccounts } from "@/hooks/use-accounts";
 import { useCurrentUserId } from "@/hooks/use-current-user";
 import type { AccountWithOwner } from "@/lib/api/account";
 import { AccountDeleteDialog } from "./AccountDeleteDialog";
@@ -61,7 +60,6 @@ interface AccountTableProps {
   category?: "bank" | "investment";
   onEdit: (account: AccountWithOwner, category?: "bank" | "investment") => void;
   onDelete: (account: AccountWithOwner) => void;
-  onSetDefault: (account: AccountWithOwner) => void;
 }
 
 function AccountTable({
@@ -70,7 +68,6 @@ function AccountTable({
   category,
   onEdit,
   onDelete,
-  onSetDefault,
 }: AccountTableProps) {
   return (
     <Table>
@@ -89,16 +86,7 @@ function AccountTable({
           const isOwner = currentUserId === account.ownerId;
           return (
             <TableRow key={account.id}>
-              <TableCell className="font-medium pl-5">
-                <div className="flex items-center gap-2">
-                  {account.name}
-                  {account.isDefault && (
-                    <Badge variant="secondary" className="text-xs">
-                      기본
-                    </Badge>
-                  )}
-                </div>
-              </TableCell>
+              <TableCell className="font-medium pl-5">{account.name}</TableCell>
               <TableCell className="text-gray-600">
                 {account.ownerName}
               </TableCell>
@@ -130,12 +118,6 @@ function AccountTable({
                         <Pencil className="h-4 w-4 mr-2" />
                         수정
                       </DropdownMenuItem>
-                      {!account.isDefault && (
-                        <DropdownMenuItem onClick={() => onSetDefault(account)}>
-                          <Star className="h-4 w-4 mr-2" />
-                          기본 계좌로 설정
-                        </DropdownMenuItem>
-                      )}
                       <DropdownMenuItem
                         className="text-destructive focus:text-destructive"
                         onClick={() => onDelete(account)}
@@ -158,7 +140,6 @@ function AccountTable({
 export function AccountList({ filter }: AccountListProps) {
   const { data: accounts, isLoading, error } = useAccounts();
   const { userId: currentUserId } = useCurrentUserId();
-  const updateAccount = useUpdateAccount();
 
   const [editingAccount, setEditingAccount] = useState<AccountWithOwner | null>(
     null,
@@ -169,22 +150,6 @@ export function AccountList({ filter }: AccountListProps) {
   const [deletingAccount, setDeletingAccount] =
     useState<AccountWithOwner | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
-
-  const handleSetDefault = async (account: AccountWithOwner) => {
-    try {
-      await updateAccount.mutateAsync({
-        id: account.id,
-        data: { isDefault: true },
-      });
-      toast.success(`${account.name}을(를) 기본 계좌로 설정했습니다.`);
-    } catch (error) {
-      if (error instanceof Error) {
-        toast.error(error.message);
-      } else {
-        toast.error("기본 계좌 설정에 실패했습니다.");
-      }
-    }
-  };
 
   const handleEdit = (
     account: AccountWithOwner,
@@ -256,7 +221,6 @@ export function AccountList({ filter }: AccountListProps) {
             currentUserId={currentUserId}
             onEdit={handleEdit}
             onDelete={handleDelete}
-            onSetDefault={handleSetDefault}
           />
         </div>
 
@@ -311,7 +275,6 @@ export function AccountList({ filter }: AccountListProps) {
                 category="bank"
                 onEdit={handleEdit}
                 onDelete={handleDelete}
-                onSetDefault={handleSetDefault}
               />
             </div>
           </div>
@@ -329,7 +292,6 @@ export function AccountList({ filter }: AccountListProps) {
                 category="investment"
                 onEdit={handleEdit}
                 onDelete={handleDelete}
-                onSetDefault={handleSetDefault}
               />
             </div>
           </div>

@@ -92,17 +92,6 @@ describe("createPaymentMethodSchema", () => {
     });
     expect(result.success).toBe(false);
   });
-
-  it("isDefault 기본값은 false다", () => {
-    const result = createPaymentMethodSchema.safeParse({
-      name: "카드",
-      type: "debit_card",
-    });
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.data.isDefault).toBe(false);
-    }
-  });
 });
 
 describe("updatePaymentMethodSchema", () => {

@@ -2,7 +2,6 @@
 
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -111,11 +110,6 @@ export function PaymentMethodList() {
                   <TableCell className="font-medium pl-5">
                     <div className="flex items-center gap-2">
                       {method.name}
-                      {method.isDefault && (
-                        <Badge variant="secondary" className="text-xs">
-                          기본
-                        </Badge>
-                      )}
                       {method.lastFour && (
                         <span className="text-xs text-gray-400">
                           ···· {method.lastFour}

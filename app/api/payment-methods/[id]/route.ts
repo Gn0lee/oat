@@ -51,7 +51,6 @@ export async function PATCH(request: Request, { params }: RouteParams) {
       lastFour: input.lastFour,
       paymentDay: input.paymentDay,
       balance: input.balance,
-      isDefault: input.isDefault,
       memo: input.memo,
     });
 

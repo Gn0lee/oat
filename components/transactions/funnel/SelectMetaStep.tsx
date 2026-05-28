@@ -3,7 +3,6 @@
 import { ChevronRightIcon, PlusCircle } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DatePickerInput } from "@/components/ui/date-picker";
 import { Label } from "@/components/ui/label";
@@ -34,11 +33,8 @@ export function SelectMetaStep({
   isLoadingAccounts,
   onNext,
 }: SelectMetaStepProps) {
-  // 기본 계좌 찾기: defaultAccountId > isDefault=true > 첫 번째 계좌
   const getDefaultAccountId = () => {
     if (defaultAccountId) return defaultAccountId;
-    const defaultAccount = accounts.find((a) => a.isDefault);
-    if (defaultAccount) return defaultAccount.id;
     if (accounts.length > 0) return accounts[0].id;
     return "";
   };
@@ -88,14 +84,6 @@ export function SelectMetaStep({
                   <span className="flex items-center gap-2">
                     {account.name}
                     {account.broker && ` (${account.broker})`}
-                    {account.isDefault && (
-                      <Badge
-                        variant="secondary"
-                        className="text-xs px-1.5 py-0"
-                      >
-                        기본
-                      </Badge>
-                    )}
                   </span>
                 </SelectItem>
               ))}

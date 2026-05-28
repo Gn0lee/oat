@@ -68,11 +68,6 @@ export function AccountDeleteDialog({
         <div className="rounded-md border p-4 space-y-2">
           <div className="flex items-center justify-between">
             <span className="font-medium">{account.name}</span>
-            {account.isDefault && (
-              <span className="text-xs bg-secondary text-secondary-foreground px-2 py-0.5 rounded">
-                기본
-              </span>
-            )}
           </div>
           <div className="text-sm text-muted-foreground space-y-1">
             {account.broker && (

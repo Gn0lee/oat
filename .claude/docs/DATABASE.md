@@ -333,7 +333,6 @@ create table public.accounts (
   category account_category,         -- 계좌 범주 (bank/investment)
   balance numeric(18, 2),            -- 현재 잔액 (예수금 포함, 수동 입력)
   balance_updated_at timestamptz,    -- 잔액 마지막 수정일
-  is_default boolean default false,
   memo text,
   created_at timestamptz default now() not null,
   updated_at timestamptz default now() not null,
@@ -357,7 +356,6 @@ create index accounts_owner_id_idx on public.accounts(owner_id);
 | category | enum (nullable) | 계좌 범주 (bank/investment) |
 | balance | numeric (nullable) | 현재 잔액 — 증권 계좌는 예수금, 은행 계좌는 잔액 |
 | balance_updated_at | timestamptz (nullable) | 잔액 마지막 수정일 |
-| is_default | boolean | 기본 계좌 여부 |
 | memo | text (nullable) | 메모 |
 | created_at | timestamptz | 생성일 |
 | updated_at | timestamptz | 수정일 |
@@ -530,7 +528,6 @@ create table public.payment_methods (
   issuer text,
   last_four text,
   payment_day smallint check (payment_day is null or (payment_day between 1 and 31)),
-  is_default boolean default false,
   memo text,
   created_at timestamptz default now() not null,
   updated_at timestamptz default now() not null,
@@ -554,7 +551,6 @@ create index payment_methods_linked_account_id_idx on public.payment_methods(lin
 | issuer | text (nullable) | 카드사/서비스명 (삼성카드, 카카오 등) |
 | last_four | text (nullable) | 카드 끝 4자리 |
 | payment_day | smallint (nullable) | 신용카드 결제일 (1~31) |
-| is_default | boolean | 기본 결제수단 여부 |
 | memo | text (nullable) | 메모 |
 | created_at | timestamptz | 생성일 |
 | updated_at | timestamptz | 수정일 |

@@ -8,7 +8,6 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -74,7 +73,6 @@ const paymentMethodFormSchema = z.object({
   balanceStr: z.string().refine((value) => value === "" || Number(value) >= 0, {
     message: "잔액은 0 이상이어야 합니다.",
   }),
-  isDefault: z.boolean(),
   memo: z.string().max(500, "메모는 500자 이내여야 합니다.").optional(),
 });
 
@@ -139,12 +137,10 @@ function DetailForm({ type, onBack }: DetailFormProps) {
       lastFour: "",
       paymentDay: undefined,
       balanceStr: "",
-      isDefault: false,
       memo: "",
     },
   });
 
-  const watchIsDefault = watch("isDefault");
   const watchType = watch("type");
 
   const showCardFields =
@@ -166,7 +162,6 @@ function DetailForm({ type, onBack }: DetailFormProps) {
       paymentDay: Number.isNaN(data.paymentDay)
         ? undefined
         : (data.paymentDay as number | undefined),
-      isDefault: data.isDefault,
       memo: data.memo || undefined,
       ...(showAuxiliaryBalance && { balance }),
     };
@@ -303,17 +298,6 @@ function DetailForm({ type, onBack }: DetailFormProps) {
             ))}
           </SelectContent>
         </Select>
-      </div>
-
-      <div className="flex items-center space-x-2">
-        <Checkbox
-          id="pm-is-default"
-          checked={watchIsDefault}
-          onCheckedChange={(checked) => setValue("isDefault", checked === true)}
-        />
-        <Label htmlFor="pm-is-default" className="font-normal cursor-pointer">
-          기본 결제수단으로 설정
-        </Label>
       </div>
 
       <div className="space-y-2">
