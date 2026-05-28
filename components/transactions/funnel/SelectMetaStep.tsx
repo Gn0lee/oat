@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeftIcon, ChevronRightIcon, PlusCircle } from "lucide-react";
+import { ChevronLeftIcon, ChevronRightIcon, PlusCircle } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -62,20 +62,7 @@ export function SelectMetaStep({
 
   return (
     <div className="space-y-6">
-      {/* 헤더 */}
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={onBack}
-          className="p-2 -ml-2 hover:bg-gray-100 rounded-lg transition-colors"
-        >
-          <ArrowLeftIcon className="w-5 h-5 text-gray-600" />
-        </button>
-        <div>
-          <span className={`text-sm font-medium ${typeColor}`}>{typeText}</span>
-          <h2 className="text-xl font-bold text-gray-900">거래 정보 입력</h2>
-        </div>
-      </div>
+      <p className={typeColor}>{typeText} 거래 정보를 입력해주세요.</p>
 
       {/* 거래일 */}
       <div className="bg-white rounded-2xl shadow-sm p-5 space-y-3">
@@ -131,15 +118,25 @@ export function SelectMetaStep({
         )}
       </div>
 
-      {/* 다음 버튼 */}
-      <Button
-        onClick={handleNext}
-        disabled={!transactedAt || !accountId}
-        className="w-full h-14 rounded-xl text-base font-semibold"
-      >
-        종목 입력하기
-        <ChevronRightIcon className="w-5 h-5 ml-1" />
-      </Button>
+      <div className="grid grid-cols-[auto_1fr] gap-2">
+        <Button
+          type="button"
+          variant="ghost"
+          className="h-14 rounded-xl px-3"
+          onClick={onBack}
+        >
+          <ChevronLeftIcon className="size-4" />
+          이전
+        </Button>
+        <Button
+          onClick={handleNext}
+          disabled={!transactedAt || !accountId}
+          className="h-14 rounded-xl text-base font-semibold"
+        >
+          종목 입력하기
+          <ChevronRightIcon className="w-5 h-5 ml-1" />
+        </Button>
+      </div>
     </div>
   );
 }

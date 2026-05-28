@@ -1,29 +1,12 @@
 "use client";
 
-import { ArrowLeftIcon } from "lucide-react";
-import { useRouter } from "next/navigation";
-
 interface SelectTypeStepProps {
   onSelect: (type: "buy" | "sell") => void;
 }
 
 export function SelectTypeStep({ onSelect }: SelectTypeStepProps) {
-  const router = useRouter();
-
   return (
     <div className="space-y-6">
-      {/* 헤더 */}
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={() => router.push("/assets/stock/transactions")}
-          className="p-2 -ml-2 hover:bg-gray-100 rounded-lg transition-colors"
-        >
-          <ArrowLeftIcon className="w-5 h-5 text-gray-600" />
-        </button>
-        <h2 className="text-xl font-bold text-gray-900">거래 등록</h2>
-      </div>
-
       <p className="text-gray-500">어떤 거래를 등록하시겠어요?</p>
 
       <div className="space-y-3">

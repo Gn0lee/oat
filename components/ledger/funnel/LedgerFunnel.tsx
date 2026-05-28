@@ -90,7 +90,6 @@ export function LedgerFunnel() {
           onNext={(isShared) => {
             history.push("SelectType", () => ({ isShared }));
           }}
-          onBack={() => router.push("/ledger")}
         />
       )}
       SelectType={({ history }) => (

@@ -1,26 +1,14 @@
 "use client";
 
-import { ArrowLeftIcon, UserIcon, UsersIcon } from "lucide-react";
+import { UserIcon, UsersIcon } from "lucide-react";
 
 interface SelectPrivacyStepProps {
   onNext: (isShared: boolean) => void;
-  onBack: () => void;
 }
 
-export function SelectPrivacyStep({ onNext, onBack }: SelectPrivacyStepProps) {
+export function SelectPrivacyStep({ onNext }: SelectPrivacyStepProps) {
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={onBack}
-          className="p-2 -ml-2 hover:bg-gray-100 rounded-lg transition-colors"
-        >
-          <ArrowLeftIcon className="w-5 h-5 text-gray-600" />
-        </button>
-        <h2 className="text-xl font-bold text-gray-900">공개 범위 선택</h2>
-      </div>
-
       <p className="text-gray-500">이 내역을 누구와 공유할까요?</p>
 
       <div className="space-y-3">

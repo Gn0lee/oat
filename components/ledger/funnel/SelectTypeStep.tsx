@@ -1,8 +1,8 @@
 "use client";
 
 import {
-  ArrowLeftIcon,
   ArrowRightLeftIcon,
+  ChevronLeftIcon,
   TrendingDownIcon,
   TrendingUpIcon,
 } from "lucide-react";
@@ -15,17 +15,6 @@ interface SelectTypeStepProps {
 export function SelectTypeStep({ onSelect, onBack }: SelectTypeStepProps) {
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={onBack}
-          className="p-2 -ml-2 hover:bg-gray-100 rounded-lg transition-colors"
-        >
-          <ArrowLeftIcon className="w-5 h-5 text-gray-600" />
-        </button>
-        <h2 className="text-xl font-bold text-gray-900">기록 추가</h2>
-      </div>
-
       <p className="text-gray-500">어떤 내역을 기록하시겠어요?</p>
 
       <div className="space-y-3">
@@ -73,6 +62,15 @@ export function SelectTypeStep({ onSelect, onBack }: SelectTypeStepProps) {
           </div>
         </button>
       </div>
+
+      <button
+        type="button"
+        onClick={onBack}
+        className="inline-flex items-center gap-1 text-sm font-medium text-gray-500 transition-colors hover:text-gray-800"
+      >
+        <ChevronLeftIcon className="size-4" />
+        이전
+      </button>
     </div>
   );
 }

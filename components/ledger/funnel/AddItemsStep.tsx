@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
-import { ArrowLeftIcon, PlusIcon, Trash2Icon } from "lucide-react";
+import { ChevronLeftIcon, PlusIcon, Trash2Icon } from "lucide-react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 import { LedgerMoneySourceCombobox } from "@/components/ledger/LedgerMoneySourceCombobox";
@@ -98,18 +98,7 @@ export function AddItemsStep({ type, onNext, onBack }: AddItemsStepProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={onBack}
-          className="p-2 -ml-2 hover:bg-gray-100 rounded-lg transition-colors"
-        >
-          <ArrowLeftIcon className="w-5 h-5 text-gray-600" />
-        </button>
-        <h2 className="text-xl font-bold text-gray-900">
-          {typeLabel} 내역 입력
-        </h2>
-      </div>
+      <p className="text-gray-500">{typeLabel} 내역을 입력해주세요.</p>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {fields.map((field, index) => {
@@ -272,9 +261,20 @@ export function AddItemsStep({ type, onNext, onBack }: AddItemsStepProps) {
           </button>
         )}
 
-        <Button type="submit" className="w-full rounded-xl py-3">
-          다음
-        </Button>
+        <div className="grid grid-cols-[auto_1fr] gap-2">
+          <Button
+            type="button"
+            variant="ghost"
+            className="rounded-xl px-3"
+            onClick={onBack}
+          >
+            <ChevronLeftIcon className="size-4" />
+            이전
+          </Button>
+          <Button type="submit" className="rounded-xl py-3">
+            다음
+          </Button>
+        </div>
       </form>
     </div>
   );

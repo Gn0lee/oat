@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  ArrowLeftIcon,
+  ChevronLeftIcon,
   ChevronRightIcon,
   PackagePlusIcon,
   PlusIcon,
@@ -69,20 +69,7 @@ export function AddItemsStep({ type, onNext, onBack }: AddItemsStepProps) {
 
   return (
     <div className="space-y-4">
-      {/* 헤더 */}
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={onBack}
-          className="p-2 -ml-2 hover:bg-gray-100 rounded-lg transition-colors"
-        >
-          <ArrowLeftIcon className="w-5 h-5 text-gray-600" />
-        </button>
-        <div>
-          <span className={`text-sm font-medium ${typeColor}`}>{typeText}</span>
-          <h2 className="text-xl font-bold text-gray-900">종목 입력</h2>
-        </div>
-      </div>
+      <p className={typeColor}>{typeText}할 종목을 입력해주세요.</p>
 
       {/* 종목 행 목록 */}
       {fields.length === 0 ? (
@@ -136,14 +123,25 @@ export function AddItemsStep({ type, onNext, onBack }: AddItemsStepProps) {
 
       {/* 다음 버튼 */}
       {fields.length > 0 && (
-        <Button
-          onClick={handleNext}
-          disabled={validCount === 0}
-          className="w-full h-14 rounded-xl text-base font-semibold"
-        >
-          {validCount}건 확인하기
-          <ChevronRightIcon className="w-5 h-5 ml-1" />
-        </Button>
+        <div className="grid grid-cols-[auto_1fr] gap-2">
+          <Button
+            type="button"
+            variant="ghost"
+            className="h-14 rounded-xl px-3"
+            onClick={onBack}
+          >
+            <ChevronLeftIcon className="size-4" />
+            이전
+          </Button>
+          <Button
+            onClick={handleNext}
+            disabled={validCount === 0}
+            className="h-14 rounded-xl text-base font-semibold"
+          >
+            {validCount}건 확인하기
+            <ChevronRightIcon className="w-5 h-5 ml-1" />
+          </Button>
+        </div>
       )}
     </div>
   );

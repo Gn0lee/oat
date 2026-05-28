@@ -1,7 +1,7 @@
 "use client";
 
 import { format, parse } from "date-fns";
-import { ArrowLeftIcon, UserIcon, UsersIcon } from "lucide-react";
+import { ChevronLeftIcon, UserIcon, UsersIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAccounts } from "@/hooks/use-accounts";
 import { useCategories } from "@/hooks/use-categories";
@@ -69,17 +69,6 @@ export function ConfirmStep({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={onBack}
-          className="p-2 -ml-2 hover:bg-gray-100 rounded-lg transition-colors"
-        >
-          <ArrowLeftIcon className="w-5 h-5 text-gray-600" />
-        </button>
-        <h2 className="text-xl font-bold text-gray-900">최종 확인</h2>
-      </div>
-
       {/* 요약 헤더 */}
       <div className="bg-white rounded-2xl p-5 shadow-sm space-y-3">
         <div className="flex items-center justify-between">
@@ -168,13 +157,25 @@ export function ConfirmStep({
           })}
       </div>
 
-      <Button
-        onClick={onSubmit}
-        disabled={isSubmitting}
-        className="w-full rounded-xl py-3"
-      >
-        {isSubmitting ? "저장 중..." : `${itemCount}건 저장하기`}
-      </Button>
+      <div className="grid grid-cols-[auto_1fr] gap-2">
+        <Button
+          type="button"
+          variant="ghost"
+          className="rounded-xl px-3"
+          onClick={onBack}
+          disabled={isSubmitting}
+        >
+          <ChevronLeftIcon className="size-4" />
+          이전
+        </Button>
+        <Button
+          onClick={onSubmit}
+          disabled={isSubmitting}
+          className="rounded-xl py-3"
+        >
+          {isSubmitting ? "저장 중..." : `${itemCount}건 저장하기`}
+        </Button>
+      </div>
     </div>
   );
 }
