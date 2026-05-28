@@ -1,26 +1,9 @@
 "use client";
 
-import {
-  type ColumnDef,
-  flexRender,
-  getCoreRowModel,
-  getSortedRowModel,
-  type SortingState,
-  useReactTable,
-} from "@tanstack/react-table";
-import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
-import type React from "react";
-import { useState } from "react";
+import { ArrowDownUp, Building2, UserRound, WalletCards } from "lucide-react";
+import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { MARKET_LABELS } from "@/constants/enums";
 import type { HoldingWithDetails } from "@/lib/api/holdings";
 import { cn } from "@/lib/utils/cn";
@@ -30,180 +13,123 @@ interface HoldingsTableProps {
   data: HoldingWithDetails[];
 }
 
-// 정렬 버튼 헤더 컴포넌트
-function SortableHeader({
-  column,
-  children,
-}: {
-  column: {
-    getIsSorted: () => false | "asc" | "desc";
-    toggleSorting: (desc: boolean) => void;
-  };
-  children: React.ReactNode;
-}) {
-  const sorted = column.getIsSorted();
-  return (
-    <Button
-      variant="ghost"
-      onClick={() => column.toggleSorting(sorted === "asc")}
-      className="h-8 px-2 hover:bg-transparent"
-    >
-      {children}
-      {sorted === "asc" ? (
-        <ArrowUp className="ml-1 size-4" />
-      ) : sorted === "desc" ? (
-        <ArrowDown className="ml-1 size-4" />
-      ) : (
-        <ArrowUpDown className="ml-1 size-4 opacity-50" />
-      )}
-    </Button>
-  );
-}
+type HoldingsSortKey = "totalInvested" | "quantity" | "name";
 
-const columns: ColumnDef<HoldingWithDetails>[] = [
-  {
-    accessorKey: "name",
-    header: ({ column }) => (
-      <SortableHeader column={column}>종목</SortableHeader>
-    ),
-    cell: ({ row }) => (
-      <div>
-        <div className="font-medium">{row.original.name}</div>
-        <div className="text-xs text-gray-500">{row.original.ticker}</div>
-      </div>
-    ),
-  },
-  {
-    id: "owner",
-    accessorKey: "owner",
-    header: "소유자",
-    cell: ({ row }) => row.original.owner.name,
-  },
-  {
-    id: "account",
-    accessorKey: "account",
-    header: "계좌",
-    cell: ({ row }) => row.original.account.name ?? "-",
-  },
-  {
-    accessorKey: "quantity",
-    header: ({ column }) => (
-      <SortableHeader column={column}>수량</SortableHeader>
-    ),
-    cell: ({ row }) => (
-      <span className="tabular-nums">
-        {row.original.quantity.toLocaleString()}
-      </span>
-    ),
-  },
-  {
-    accessorKey: "avgPrice",
-    header: ({ column }) => (
-      <SortableHeader column={column}>평균 매수가</SortableHeader>
-    ),
-    cell: ({ row }) => (
-      <span className="tabular-nums">
-        {formatCurrency(row.original.avgPrice, row.original.currency)}
-      </span>
-    ),
-  },
-  {
-    accessorKey: "totalInvested",
-    header: ({ column }) => (
-      <SortableHeader column={column}>투자 금액</SortableHeader>
-    ),
-    cell: ({ row }) => (
-      <span className="tabular-nums font-medium">
-        {formatCurrency(row.original.totalInvested, row.original.currency)}
-      </span>
-    ),
-  },
-  {
-    id: "market",
-    accessorKey: "market",
-    header: "시장",
-    cell: ({ row }) => (
-      <Badge variant="outline">
-        {MARKET_LABELS[row.original.market] ?? row.original.market}
-      </Badge>
-    ),
-  },
+const SORT_OPTIONS: { key: HoldingsSortKey; label: string }[] = [
+  { key: "totalInvested", label: "투자금" },
+  { key: "quantity", label: "수량" },
+  { key: "name", label: "종목명" },
 ];
 
-export function HoldingsTable({ data }: HoldingsTableProps) {
-  const [sorting, setSorting] = useState<SortingState>([
-    { id: "totalInvested", desc: true },
-  ]);
-
-  const table = useReactTable({
-    data,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    onSortingChange: setSorting,
-    state: {
-      sorting,
-    },
+function sortHoldings(
+  holdings: HoldingWithDetails[],
+  sortKey: HoldingsSortKey,
+): HoldingWithDetails[] {
+  return [...holdings].sort((a, b) => {
+    if (sortKey === "name") {
+      return a.name.localeCompare(b.name, "ko-KR");
+    }
+    return b[sortKey] - a[sortKey];
   });
+}
+
+export function HoldingsTable({ data }: HoldingsTableProps) {
+  const [sortKey, setSortKey] = useState<HoldingsSortKey>("totalInvested");
+  const sortedHoldings = useMemo(
+    () => sortHoldings(data, sortKey),
+    [data, sortKey],
+  );
+
+  if (data.length === 0) {
+    return (
+      <div className="rounded-2xl bg-white px-6 py-12 text-center shadow-sm ring-1 ring-gray-100">
+        <WalletCards className="mx-auto mb-3 size-8 text-gray-300" />
+        <p className="font-medium text-gray-700">보유 종목이 없습니다.</p>
+        <p className="mt-1 text-gray-400 text-sm">
+          거래를 등록하면 보유 종목이 여기에 표시됩니다.
+        </p>
+      </div>
+    );
+  }
 
   return (
-    <div className="rounded-xl border bg-white overflow-x-auto">
-      <Table>
-        <TableHeader>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <TableRow key={headerGroup.id} className="bg-gray-50">
-              {headerGroup.headers.map((header) => {
-                const meta = header.column.columnDef.meta as
-                  | { className?: string }
-                  | undefined;
-                return (
-                  <TableHead
-                    key={header.id}
-                    className={cn("px-4 py-3", meta?.className)}
-                  >
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext(),
-                        )}
-                  </TableHead>
-                );
-              })}
-            </TableRow>
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-gray-500 text-sm">총 {data.length}개 종목</p>
+        <div className="flex items-center gap-1 rounded-full bg-gray-100 p-1">
+          {SORT_OPTIONS.map((option) => (
+            <Button
+              key={option.key}
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setSortKey(option.key)}
+              className={cn(
+                "h-8 rounded-full px-3 text-gray-500 text-xs",
+                sortKey === option.key && "bg-white text-gray-900 shadow-sm",
+              )}
+            >
+              {sortKey === option.key && <ArrowDownUp className="size-3" />}
+              {option.label}
+            </Button>
           ))}
-        </TableHeader>
-        <TableBody>
-          {table.getRowModel().rows.length ? (
-            table.getRowModel().rows.map((row) => (
-              <TableRow key={row.id}>
-                {row.getVisibleCells().map((cell) => {
-                  const meta = cell.column.columnDef.meta as
-                    | { className?: string }
-                    | undefined;
-                  return (
-                    <TableCell
-                      key={cell.id}
-                      className={cn("px-4 py-3", meta?.className)}
-                    >
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
-                    </TableCell>
-                  );
-                })}
-              </TableRow>
-            ))
-          ) : (
-            <TableRow>
-              <TableCell colSpan={columns.length} className="h-24 text-center">
-                보유 종목이 없습니다.
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+        {sortedHoldings.map((holding) => (
+          <article
+            key={`${holding.owner.id}:${holding.account.id ?? "none"}:${holding.ticker}`}
+            className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-100"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <div className="flex min-w-0 flex-wrap items-center gap-2">
+                  <h3 className="truncate font-semibold text-gray-900">
+                    {holding.name}
+                  </h3>
+                  <Badge variant="outline">
+                    {MARKET_LABELS[holding.market] ?? holding.market}
+                  </Badge>
+                </div>
+                <p className="mt-1 text-gray-400 text-xs">{holding.ticker}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-gray-500 text-xs">투자 금액</p>
+                <p className="font-bold text-gray-900 tabular-nums">
+                  {formatCurrency(holding.totalInvested, holding.currency)}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              <div className="rounded-xl bg-gray-50 p-3">
+                <p className="text-gray-500 text-xs">수량</p>
+                <p className="mt-1 font-semibold text-gray-900 tabular-nums">
+                  {holding.quantity.toLocaleString()}주
+                </p>
+              </div>
+              <div className="rounded-xl bg-gray-50 p-3">
+                <p className="text-gray-500 text-xs">평균 매수가</p>
+                <p className="mt-1 font-semibold text-gray-900 tabular-nums">
+                  {formatCurrency(holding.avgPrice, holding.currency)}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-gray-500 text-sm">
+              <span className="inline-flex items-center gap-1">
+                <UserRound className="size-4" />
+                {holding.owner.name}
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <Building2 className="size-4" />
+                {holding.account.name ?? "미지정 계좌"}
+              </span>
+            </div>
+          </article>
+        ))}
+      </div>
     </div>
   );
 }

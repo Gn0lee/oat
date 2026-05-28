@@ -11,6 +11,7 @@
 - **react-error-boundary** - 선언적 에러 처리
 - **shadcn/ui + Tailwind** - UI 컴포넌트
 - **SSGOI** - 페이지/화면 단위 전환 기준 (`TRANSITIONS.md` 참고)
+- **컬렉션 UI** - 테이블보다 카드, 리스트, 캘린더, 타임라인, 선택-상세 구조를 사용자 화면 기본값으로 검토
 
 ---
 
@@ -101,6 +102,25 @@ lib/queries/index.ts  # 모든 쿼리 정의
 ## 5. 라우팅 패턴
 
 페이지 전환, funnel step 전환, 모바일 full-screen selector는 `.claude/docs/TRANSITIONS.md`의 SSGOI 기준을 따릅니다.
+
+### 컬렉션 화면 구현 기준
+
+금융 기록이나 자산을 많이 보여주는 사용자-facing 화면은 테이블을 기본값으로 두지 않습니다. 먼저 데이터 성격에 맞는 컬렉션 UI를 설계하고, 필요한 경우에만 내부 구현 도구로 table primitive나 TanStack Table을 사용합니다.
+
+| 화면 유형 | 기본 구조 |
+|----------|----------|
+| 날짜 기반 기록 | 캘린더/날짜별 목록/타임라인 + 상세 또는 작업 화면 |
+| 보유 항목 | 리스트/카드 + 정렬/필터 control + 필요 시 선택-상세 |
+| 설정/관리 항목 | grouped compact list + item action |
+| 기간 요약 | metric list/timeline + 현재 기간 강조 |
+
+구현 원칙:
+- API 응답은 우선 그대로 사용하고, UI 계층에서 그룹핑/정렬/요약을 구성합니다.
+- 서버 API 변경은 데이터 양, 페이지네이션, 월 단위 조회 같은 성능 문제가 확인될 때 후속으로 검토합니다.
+- PC도 테이블을 기본값으로 두지 않습니다. 넓은 화면은 컬럼 추가보다 그룹핑, 비교, 선택-상세 영역에 사용합니다.
+- 모바일과 PC의 정보 구조는 공유하되, PC는 master-detail 레이아웃을 선택적으로 사용할 수 있습니다.
+- 카드나 리스트 item에 모든 필드를 나열하지 말고 대표값, 보조 정보, 액션으로 재구성합니다.
+- 정렬/필터는 table header에 숨기지 않고 상단 segmented control, select, filter button 등 명시적 control로 둡니다.
 
 ### 자산 유형별 계층 구조
 
