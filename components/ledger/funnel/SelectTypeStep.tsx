@@ -2,17 +2,15 @@
 
 import {
   ArrowRightLeftIcon,
-  ChevronLeftIcon,
   TrendingDownIcon,
   TrendingUpIcon,
 } from "lucide-react";
 
 interface SelectTypeStepProps {
   onSelect: (type: "expense" | "income" | "transfer") => void;
-  onBack: () => void;
 }
 
-export function SelectTypeStep({ onSelect, onBack }: SelectTypeStepProps) {
+export function SelectTypeStep({ onSelect }: SelectTypeStepProps) {
   return (
     <div className="space-y-6">
       <p className="text-gray-500">어떤 내역을 기록하시겠어요?</p>
@@ -62,15 +60,6 @@ export function SelectTypeStep({ onSelect, onBack }: SelectTypeStepProps) {
           </div>
         </button>
       </div>
-
-      <button
-        type="button"
-        onClick={onBack}
-        className="inline-flex items-center gap-1 text-sm font-medium text-gray-500 transition-colors hover:text-gray-800"
-      >
-        <ChevronLeftIcon className="size-4" />
-        이전
-      </button>
     </div>
   );
 }

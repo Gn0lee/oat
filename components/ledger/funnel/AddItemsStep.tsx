@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
-import { ChevronLeftIcon, PlusIcon, Trash2Icon } from "lucide-react";
+import { PlusIcon, Trash2Icon } from "lucide-react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 import { LedgerMoneySourceCombobox } from "@/components/ledger/LedgerMoneySourceCombobox";
@@ -44,12 +44,11 @@ type FormValues = z.infer<typeof formSchema>;
 interface AddItemsStepProps {
   type: "expense" | "income";
   onNext: (items: LedgerItemFormData[]) => void;
-  onBack: () => void;
 }
 
 const today = format(new Date(), "yyyy-MM-dd");
 
-export function AddItemsStep({ type, onNext, onBack }: AddItemsStepProps) {
+export function AddItemsStep({ type, onNext }: AddItemsStepProps) {
   const categoryType = type as CategoryType;
   const { data: categories = [], isLoading: isLoadingCategories } =
     useCategories(categoryType);
@@ -261,20 +260,9 @@ export function AddItemsStep({ type, onNext, onBack }: AddItemsStepProps) {
           </button>
         )}
 
-        <div className="grid grid-cols-[auto_1fr] gap-2">
-          <Button
-            type="button"
-            variant="ghost"
-            className="rounded-xl px-3"
-            onClick={onBack}
-          >
-            <ChevronLeftIcon className="size-4" />
-            이전
-          </Button>
-          <Button type="submit" className="rounded-xl py-3">
-            다음
-          </Button>
-        </div>
+        <Button type="submit" className="w-full rounded-xl py-3">
+          다음
+        </Button>
       </form>
     </div>
   );

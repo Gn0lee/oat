@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronLeftIcon, ChevronRightIcon, PlusCircle } from "lucide-react";
+import { ChevronRightIcon, PlusCircle } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -24,7 +24,6 @@ interface SelectMetaStepProps {
   accounts: AccountWithOwner[];
   isLoadingAccounts?: boolean;
   onNext: (meta: { transactedAt: string; accountId: string }) => void;
-  onBack: () => void;
 }
 
 export function SelectMetaStep({
@@ -34,7 +33,6 @@ export function SelectMetaStep({
   accounts,
   isLoadingAccounts,
   onNext,
-  onBack,
 }: SelectMetaStepProps) {
   // 기본 계좌 찾기: defaultAccountId > isDefault=true > 첫 번째 계좌
   const getDefaultAccountId = () => {
@@ -118,25 +116,14 @@ export function SelectMetaStep({
         )}
       </div>
 
-      <div className="grid grid-cols-[auto_1fr] gap-2">
-        <Button
-          type="button"
-          variant="ghost"
-          className="h-14 rounded-xl px-3"
-          onClick={onBack}
-        >
-          <ChevronLeftIcon className="size-4" />
-          이전
-        </Button>
-        <Button
-          onClick={handleNext}
-          disabled={!transactedAt || !accountId}
-          className="h-14 rounded-xl text-base font-semibold"
-        >
-          종목 입력하기
-          <ChevronRightIcon className="w-5 h-5 ml-1" />
-        </Button>
-      </div>
+      <Button
+        onClick={handleNext}
+        disabled={!transactedAt || !accountId}
+        className="w-full h-14 rounded-xl text-base font-semibold"
+      >
+        종목 입력하기
+        <ChevronRightIcon className="w-5 h-5 ml-1" />
+      </Button>
     </div>
   );
 }

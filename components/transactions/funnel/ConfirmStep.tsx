@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarIcon, ChevronLeftIcon, WalletIcon } from "lucide-react";
+import { CalendarIcon, WalletIcon } from "lucide-react";
 import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import type { AccountWithOwner } from "@/lib/api/account";
@@ -16,7 +16,6 @@ interface ConfirmStepProps {
   };
   accounts: AccountWithOwner[];
   onSubmit: () => void;
-  onBack: () => void;
   isSubmitting: boolean;
 }
 
@@ -24,7 +23,6 @@ export function ConfirmStep({
   context,
   accounts,
   onSubmit,
-  onBack,
   isSubmitting,
 }: ConfirmStepProps) {
   const typeText = context.type === "buy" ? "매수" : "매도";
@@ -131,27 +129,15 @@ export function ConfirmStep({
         )}
       </div>
 
-      <div className="grid grid-cols-[auto_1fr] gap-2">
-        <Button
-          type="button"
-          variant="ghost"
-          className="h-14 rounded-xl px-3"
-          onClick={onBack}
-          disabled={isSubmitting}
-        >
-          <ChevronLeftIcon className="size-4" />
-          이전
-        </Button>
-        <Button
-          onClick={onSubmit}
-          disabled={isSubmitting || validItems.length === 0}
-          className="h-14 rounded-xl text-base font-semibold"
-        >
-          {isSubmitting
-            ? "등록 중..."
-            : `${typeText} ${validItems.length}건 등록하기`}
-        </Button>
-      </div>
+      <Button
+        onClick={onSubmit}
+        disabled={isSubmitting || validItems.length === 0}
+        className="w-full h-14 rounded-xl text-base font-semibold"
+      >
+        {isSubmitting
+          ? "등록 중..."
+          : `${typeText} ${validItems.length}건 등록하기`}
+      </Button>
     </div>
   );
 }

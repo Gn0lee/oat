@@ -103,7 +103,6 @@ export function LedgerFunnel() {
               history.push("AddItems", (prev) => ({ ...prev, type }));
             }
           }}
-          onBack={() => history.back()}
         />
       )}
       AddItems={({ context, history }) => (
@@ -112,7 +111,6 @@ export function LedgerFunnel() {
           onNext={(items) => {
             history.push("Confirm", (prev) => ({ ...prev, items }));
           }}
-          onBack={() => history.back()}
         />
       )}
       AddTransfer={({ history }) => (
@@ -124,17 +122,15 @@ export function LedgerFunnel() {
               transferItem,
             }));
           }}
-          onBack={() => history.back()}
         />
       )}
-      Confirm={({ context, history }) => (
+      Confirm={({ context }) => (
         <ConfirmStep
           type={context.type}
           isShared={context.isShared}
           items={context.items}
           transferItem={context.transferItem}
           onSubmit={() => handleSubmit(context)}
-          onBack={() => history.back()}
           isSubmitting={createBatch.isPending || createSingle.isPending}
         />
       )}

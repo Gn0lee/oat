@@ -123,7 +123,6 @@ export function TransactionFunnel({ defaultDate }: TransactionFunnelProps) {
               accountId: meta.accountId,
             }));
           }}
-          onBack={() => history.back()}
         />
       )}
       AddItems={({ context, history }) => (
@@ -135,15 +134,13 @@ export function TransactionFunnel({ defaultDate }: TransactionFunnelProps) {
               items,
             }));
           }}
-          onBack={() => history.back()}
         />
       )}
-      Confirm={({ context, history }) => (
+      Confirm={({ context }) => (
         <ConfirmStep
           context={context}
           accounts={accounts}
           onSubmit={() => handleSubmit(context)}
-          onBack={() => history.back()}
           isSubmitting={createBatchTransactions.isPending}
         />
       )}

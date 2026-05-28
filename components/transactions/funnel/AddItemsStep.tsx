@@ -1,12 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  PackagePlusIcon,
-  PlusIcon,
-} from "lucide-react";
+import { ChevronRightIcon, PackagePlusIcon, PlusIcon } from "lucide-react";
 import { useFieldArray, useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 import { TransactionItemRow } from "@/components/transactions/TransactionItemRow";
@@ -29,10 +24,9 @@ type AddItemsFormData = z.infer<typeof addItemsFormSchema>;
 interface AddItemsStepProps {
   type: "buy" | "sell";
   onNext: (items: TransactionItemFormData[]) => void;
-  onBack: () => void;
 }
 
-export function AddItemsStep({ type, onNext, onBack }: AddItemsStepProps) {
+export function AddItemsStep({ type, onNext }: AddItemsStepProps) {
   const form = useForm<AddItemsFormData>({
     resolver: zodResolver(addItemsFormSchema),
     defaultValues: {
@@ -123,25 +117,14 @@ export function AddItemsStep({ type, onNext, onBack }: AddItemsStepProps) {
 
       {/* 다음 버튼 */}
       {fields.length > 0 && (
-        <div className="grid grid-cols-[auto_1fr] gap-2">
-          <Button
-            type="button"
-            variant="ghost"
-            className="h-14 rounded-xl px-3"
-            onClick={onBack}
-          >
-            <ChevronLeftIcon className="size-4" />
-            이전
-          </Button>
-          <Button
-            onClick={handleNext}
-            disabled={validCount === 0}
-            className="h-14 rounded-xl text-base font-semibold"
-          >
-            {validCount}건 확인하기
-            <ChevronRightIcon className="w-5 h-5 ml-1" />
-          </Button>
-        </div>
+        <Button
+          onClick={handleNext}
+          disabled={validCount === 0}
+          className="w-full h-14 rounded-xl text-base font-semibold"
+        >
+          {validCount}건 확인하기
+          <ChevronRightIcon className="w-5 h-5 ml-1" />
+        </Button>
       )}
     </div>
   );

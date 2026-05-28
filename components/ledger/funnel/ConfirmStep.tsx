@@ -1,7 +1,7 @@
 "use client";
 
 import { format, parse } from "date-fns";
-import { ChevronLeftIcon, UserIcon, UsersIcon } from "lucide-react";
+import { UserIcon, UsersIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAccounts } from "@/hooks/use-accounts";
 import { useCategories } from "@/hooks/use-categories";
@@ -19,7 +19,6 @@ interface ConfirmStepProps {
   items?: LedgerItemFormData[];
   transferItem?: TransferItemFormData;
   onSubmit: () => void;
-  onBack: () => void;
   isSubmitting: boolean;
 }
 
@@ -38,7 +37,6 @@ export function ConfirmStep({
   items = [],
   transferItem,
   onSubmit,
-  onBack,
   isSubmitting,
 }: ConfirmStepProps) {
   const categoryType = type === "transfer" ? undefined : (type as CategoryType);
@@ -157,25 +155,13 @@ export function ConfirmStep({
           })}
       </div>
 
-      <div className="grid grid-cols-[auto_1fr] gap-2">
-        <Button
-          type="button"
-          variant="ghost"
-          className="rounded-xl px-3"
-          onClick={onBack}
-          disabled={isSubmitting}
-        >
-          <ChevronLeftIcon className="size-4" />
-          이전
-        </Button>
-        <Button
-          onClick={onSubmit}
-          disabled={isSubmitting}
-          className="rounded-xl py-3"
-        >
-          {isSubmitting ? "저장 중..." : `${itemCount}건 저장하기`}
-        </Button>
-      </div>
+      <Button
+        onClick={onSubmit}
+        disabled={isSubmitting}
+        className="w-full rounded-xl py-3"
+      >
+        {isSubmitting ? "저장 중..." : `${itemCount}건 저장하기`}
+      </Button>
     </div>
   );
 }

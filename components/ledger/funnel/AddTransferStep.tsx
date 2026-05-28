@@ -2,7 +2,6 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
-import { ChevronLeftIcon } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { LedgerMoneySourceCombobox } from "@/components/ledger/LedgerMoneySourceCombobox";
@@ -33,7 +32,6 @@ type TransferFormValues = z.infer<typeof transferFormSchema>;
 
 interface AddTransferStepProps {
   onNext: (item: TransferItemFormData) => void;
-  onBack: () => void;
 }
 
 const today = format(new Date(), "yyyy-MM-dd");
@@ -189,20 +187,9 @@ export function AddTransferStep({ onNext, onBack }: AddTransferStepProps) {
           </p>
         </div>
 
-        <div className="grid grid-cols-[auto_1fr] gap-2">
-          <Button
-            type="button"
-            variant="ghost"
-            className="rounded-xl px-3"
-            onClick={onBack}
-          >
-            <ChevronLeftIcon className="size-4" />
-            이전
-          </Button>
-          <Button type="submit" className="rounded-xl py-3">
-            다음
-          </Button>
-        </div>
+        <Button type="submit" className="w-full rounded-xl py-3">
+          다음
+        </Button>
       </form>
     </div>
   );
