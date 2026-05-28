@@ -1,7 +1,7 @@
 "use client";
 
 import { format, parse } from "date-fns";
-import { ArrowLeftIcon, UserIcon, UsersIcon } from "lucide-react";
+import { UserIcon, UsersIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAccounts } from "@/hooks/use-accounts";
 import { useCategories } from "@/hooks/use-categories";
@@ -19,7 +19,6 @@ interface ConfirmStepProps {
   items?: LedgerItemFormData[];
   transferItem?: TransferItemFormData;
   onSubmit: () => void;
-  onBack: () => void;
   isSubmitting: boolean;
 }
 
@@ -38,7 +37,6 @@ export function ConfirmStep({
   items = [],
   transferItem,
   onSubmit,
-  onBack,
   isSubmitting,
 }: ConfirmStepProps) {
   const categoryType = type === "transfer" ? undefined : (type as CategoryType);
@@ -69,17 +67,6 @@ export function ConfirmStep({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={onBack}
-          className="p-2 -ml-2 hover:bg-gray-100 rounded-lg transition-colors"
-        >
-          <ArrowLeftIcon className="w-5 h-5 text-gray-600" />
-        </button>
-        <h2 className="text-xl font-bold text-gray-900">최종 확인</h2>
-      </div>
-
       {/* 요약 헤더 */}
       <div className="bg-white rounded-2xl p-5 shadow-sm space-y-3">
         <div className="flex items-center justify-between">

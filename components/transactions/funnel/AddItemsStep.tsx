@@ -1,12 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  ArrowLeftIcon,
-  ChevronRightIcon,
-  PackagePlusIcon,
-  PlusIcon,
-} from "lucide-react";
+import { ChevronRightIcon, PackagePlusIcon, PlusIcon } from "lucide-react";
 import { useFieldArray, useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 import { TransactionItemRow } from "@/components/transactions/TransactionItemRow";
@@ -29,10 +24,9 @@ type AddItemsFormData = z.infer<typeof addItemsFormSchema>;
 interface AddItemsStepProps {
   type: "buy" | "sell";
   onNext: (items: TransactionItemFormData[]) => void;
-  onBack: () => void;
 }
 
-export function AddItemsStep({ type, onNext, onBack }: AddItemsStepProps) {
+export function AddItemsStep({ type, onNext }: AddItemsStepProps) {
   const form = useForm<AddItemsFormData>({
     resolver: zodResolver(addItemsFormSchema),
     defaultValues: {
@@ -69,20 +63,7 @@ export function AddItemsStep({ type, onNext, onBack }: AddItemsStepProps) {
 
   return (
     <div className="space-y-4">
-      {/* 헤더 */}
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={onBack}
-          className="p-2 -ml-2 hover:bg-gray-100 rounded-lg transition-colors"
-        >
-          <ArrowLeftIcon className="w-5 h-5 text-gray-600" />
-        </button>
-        <div>
-          <span className={`text-sm font-medium ${typeColor}`}>{typeText}</span>
-          <h2 className="text-xl font-bold text-gray-900">종목 입력</h2>
-        </div>
-      </div>
+      <p className={typeColor}>{typeText}할 종목을 입력해주세요.</p>
 
       {/* 종목 행 목록 */}
       {fields.length === 0 ? (

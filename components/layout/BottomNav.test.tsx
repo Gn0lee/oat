@@ -75,16 +75,16 @@ describe("BottomNav", () => {
     expect(nav?.className).toContain("pb-[env(safe-area-inset-bottom)]");
   });
 
-  it("/dashboard 경로에서 자산 탭이 활성 상태이다", () => {
-    vi.mocked(usePathname).mockReturnValue("/dashboard");
+  it("/assets/analysis 경로에서 자산 탭이 활성 상태이다", () => {
+    vi.mocked(usePathname).mockReturnValue("/assets/analysis");
     render(<BottomNav />);
 
     const assetsLink = screen.getByText("자산").closest("a");
     expect(assetsLink?.className).toContain("text-primary");
   });
 
-  it("/dashboard/stocks 하위 경로에서도 자산 탭이 활성 상태이다", () => {
-    vi.mocked(usePathname).mockReturnValue("/dashboard/stocks");
+  it("/assets/stock/analysis 하위 경로에서도 자산 탭이 활성 상태이다", () => {
+    vi.mocked(usePathname).mockReturnValue("/assets/stock/analysis");
     render(<BottomNav />);
 
     const assetsLink = screen.getByText("자산").closest("a");

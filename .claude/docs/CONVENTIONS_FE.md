@@ -109,13 +109,19 @@ lib/queries/index.ts  # 모든 쿼리 정의
 ```
 app/(main)/
 ├── home/                          # /home - 홈 (총 자산 요약, 빠른 액션)
-├── dashboard/                     # /dashboard - 분석 (비중 차트, 수익률)
 ├── assets/                        # /assets - 자산 메인 (유형 선택 허브)
 │   ├── page.tsx                   # 자산 유형별 카드
+│   ├── analysis/                  # /assets/analysis - 전체 자산 분석
+│   │   ├── page.tsx               # 분석 허브
+│   │   ├── by-owner/              # /assets/analysis/by-owner
+│   │   ├── by-risk/               # /assets/analysis/by-risk
+│   │   └── by-asset-type/         # /assets/analysis/by-asset-type
 │   ├── total/
 │   │   └── holdings/
 │   │       └── page.tsx           # /assets/total/holdings - 전체 보유 현황
 │   └── stock/                     # 주식 자산
+│       ├── analysis/
+│       │   └── page.tsx           # /assets/stock/analysis - 주식 분석
 │       ├── holdings/
 │       │   └── page.tsx           # /assets/stock/holdings - 주식 보유 현황
 │       └── transactions/
@@ -142,83 +148,117 @@ assets/
 - `transactions/` - 거래/기록 내역
 - `transactions/new/` - 기록 추가
 
-### 대시보드 계층 구조
+### 자산 분석 계층 구조
 
-대시보드는 `/dashboard/[type]` 패턴으로 분석 유형별 계층 구조를 따릅니다.
+자산 분석은 독립 `/dashboard` 축을 만들지 않고 자산 도메인 내부에 둡니다. 전체 자산 분석은 `/assets/analysis`, 특정 자산 유형 분석은 `/assets/[type]/analysis` 패턴을 따릅니다.
 
 ```
 app/(main)/
-├── dashboard/                     # /dashboard - 대시보드 메인 (허브)
-│   ├── page.tsx                   # 총 자산/수익률 + 분석 유형 선택
-│   ├── stocks/
-│   │   └── page.tsx               # /dashboard/stocks - 주식 분석
-│   ├── cash/
-│   │   └── page.tsx               # /dashboard/cash - 현금 분석 (준비 중)
-│   ├── real-estate/
-│   │   └── page.tsx               # /dashboard/real-estate - 부동산 분석 (준비 중)
-│   ├── other/
-│   │   └── page.tsx               # /dashboard/other - 기타 분석 (준비 중)
-│   └── breakdown/
-│       └── page.tsx               # /dashboard/breakdown - 비중 분석 (탭 전환)
+├── assets/
+│   ├── analysis/
+│   │   ├── page.tsx               # /assets/analysis - 전체 자산 분석 허브
+│   │   ├── by-owner/
+│   │   │   └── page.tsx           # /assets/analysis/by-owner
+│   │   ├── by-risk/
+│   │   │   └── page.tsx           # /assets/analysis/by-risk
+│   │   └── by-asset-type/
+│   │       └── page.tsx           # /assets/analysis/by-asset-type
+│   └── stock/
+│       └── analysis/
+│           └── page.tsx           # /assets/stock/analysis
 ```
 
-비중 분석 페이지는 탭으로 소유자별/위험도별/자산군별 전환:
-- URL 쿼리 파라미터로 탭 상태 유지 (예: `/dashboard/breakdown?tab=owner`)
+준비 중인 자산 유형 분석은 `/assets/cash/analysis`, `/assets/real-estate/analysis`, `/assets/other/analysis`처럼 각 자산 유형 아래에 둡니다.
 
 ---
 
 ## 6. 페이지 레이아웃 컴포넌트
 
-### PageHeader
+### ServiceHeader
 
-페이지 상단 헤더를 표준화합니다. 모든 페이지에서 일관된 헤더 스타일을 사용하세요.
+서비스 헤더는 개별 페이지가 직접 선언하지 않고, layout에서 현재 route를 기준으로 렌더링합니다. 헤더 정보의 출처는 `constants/service-routes.ts`의 route metadata tree 하나로 모읍니다.
 
-```tsx
-import { PageHeader } from "@/components/layout";
+`constants/nav-items.ts`는 bottom/sidebar 1차 메뉴와 active 상태 계산만 담당합니다. 화면 label, parent, closeHref, breadcrumb 같은 서비스 헤더 정보는 `constants/service-routes.ts`로 분리합니다.
 
-// 기본 사용
-<PageHeader title="설정" />
-
-// 서브타이틀 추가
-<PageHeader title="대시보드" subtitle="안녕하세요, user@email.com님" />
-
-// 뒤로가기 버튼 추가
-<PageHeader title="가구 관리" subtitle="우리집" backHref="/dashboard" />
-
-// 우측 액션 영역 추가
-<PageHeader
-  title="내 자산"
-  action={
-    <Link href="/assets/stock/transactions/new">
-      <Button size="sm">자산 기록</Button>
-    </Link>
-  }
-/>
+```typescript
+const SERVICE_ROUTE_TREE = {
+  home: {
+    href: "/home",
+    label: "홈",
+    mobile: "topLevel",
+  },
+  ledger: {
+    href: "/ledger",
+    label: "가계부",
+    mobile: "topLevel",
+    children: {
+      new: {
+        href: "/ledger/new",
+        label: "내역 추가",
+        mobile: "task",
+        closeHref: "/ledger",
+      },
+    },
+  },
+  assets: {
+    href: "/assets",
+    label: "자산",
+    mobile: "topLevel",
+    children: {
+      stock: {
+        href: "/assets/stock",
+        label: "주식",
+        children: {
+          holdings: { href: "/assets/stock/holdings", label: "보유 종목" },
+          transactions: {
+            href: "/assets/stock/transactions",
+            label: "거래 내역",
+          },
+        },
+      },
+    },
+  },
+};
 ```
 
-| Props | 타입 | 필수 | 설명 |
-|-------|------|------|------|
-| title | string | O | 페이지 제목 |
-| subtitle | string | X | 부제목 (설명, 카운트 등) |
-| backHref | string | X | 뒤로가기 링크 URL |
-| action | ReactNode | X | 우측 액션 영역 (버튼 등) |
+ServiceHeader는 pathname으로 다음 정보를 계산합니다.
+
+| 값 | 설명 |
+|----|------|
+| label | 현재 화면의 표시명 |
+| mobileVariant | `topLevel`, `child`, `task` |
+| parentHref | child 화면의 뒤로가기 목적지 |
+| closeHref | task 화면의 Close Action 목적지 |
+| breadcrumb | PC 콘텐츠 top bar에 표시할 경로 |
+
+### 헤더 적용 규칙
+
+| 화면 | 모바일 | PC |
+|------|--------|----|
+| Top-level (`/home`, `/ledger`, `/assets`, `/settings`) | 로고형 Service Header, 본문 큰 제목 없음 | 사이드바 oat 로고, breadcrumb 생략 또는 최소화 |
+| Child | `뒤로가기 + 화면 제목`, 본문 큰 제목 없음 | 콘텐츠 top bar 좌측 breadcrumb |
+| Task | `뒤로가기 + 화면 제목 + 선택적 X`, 본문 큰 제목 없음 | 콘텐츠 top bar 좌측 breadcrumb |
+
+- `X`는 back이 아니라 Close Action입니다. 작업 흐름을 닫고 안정적인 상위 목적지로 이동합니다.
+- 모바일 ServiceHeader는 `PageTransition` 안에 둡니다. 앱 바가 본문과 함께 drill 전환되어야 하기 때문입니다.
+- PC ServiceHeader는 `PageTransition` 바깥의 content top bar에 둡니다. breadcrumb bar는 app chrome으로 유지하고 본문만 전환합니다.
+- 페이지 파일에서 `PageHeader`를 추가하지 않습니다. 화면 제목, back, close, breadcrumb는 ServiceHeader가 담당합니다.
+- 화면별 action 버튼은 헤더에 억지로 넣지 말고, 해당 콘텐츠 영역의 주요 액션 위치에 둡니다. 단, 모바일 앱 바의 Close Action처럼 탐색 의미가 있는 액션은 ServiceHeader에서 관리합니다.
 
 ### PageContainer
 
 페이지 컨테이너 너비를 표준화합니다. 좁은 폼이나 설정 페이지에 사용합니다.
 
 ```tsx
-import { PageContainer, PageHeader } from "@/components/layout";
+import { PageContainer } from "@/components/layout";
 
 // 좁은 너비 (설정, 폼 등) - max-w-lg
 <PageContainer maxWidth="narrow">
-  <PageHeader title="설정" />
   <SettingsMenu />
 </PageContainer>
 
 // 중간 너비 (가구 관리 등) - max-w-2xl
 <PageContainer maxWidth="medium">
-  <PageHeader title="가구 관리" backHref="/dashboard" />
   <HouseholdSettings />
 </PageContainer>
 
@@ -235,17 +275,17 @@ import { PageContainer, PageHeader } from "@/components/layout";
 
 ### 페이지별 적용 가이드
 
-| 페이지 | PageHeader | PageContainer |
-|--------|------------|---------------|
-| `/home` | title | default |
-| `/dashboard` | title + subtitle | default |
-| `/assets` | title + action | default |
-| `/settings` | title | narrow |
-| `/household` | title | medium |
-| `/assets/stock/holdings` | title | default |
-| `/assets/stock/transactions` | title | default |
-| `/assets/stock/transactions/new` | title + backHref | narrow |
-| `/assets/stock/settings` | title + subtitle | default |
+| 페이지 | ServiceHeader | PageContainer |
+|--------|---------------|---------------|
+| `/home` | topLevel | default |
+| `/ledger` | topLevel | default |
+| `/assets` | topLevel | default |
+| `/settings` | topLevel | narrow |
+| `/household` | child, parent `/settings` | medium |
+| `/assets/stock/holdings` | child, breadcrumb `자산 > 주식 > 보유 종목` | default |
+| `/assets/stock/transactions` | child, breadcrumb `자산 > 주식 > 거래 내역` | default |
+| `/assets/stock/transactions/new` | task, close `/assets/stock/transactions` | narrow |
+| `/assets/stock/settings` | child, breadcrumb `자산 > 주식 > 종목 설정` | default |
 
 ---
 
@@ -265,7 +305,7 @@ import { PageContainer, PageHeader } from "@/components/layout";
 | 위치 | 용도 |
 |------|------|
 | `components/ui/` | 공통 UI (shadcn/ui) |
-| `components/layout/` | 레이아웃 컴포넌트 (PageHeader, PageContainer 등) |
+| `components/layout/` | 레이아웃 컴포넌트 (ServiceHeader, PageContainer 등) |
 | `components/[feature]/` | 기능별 컴포넌트 |
 | `components/assets/common/` | 자산 공통 (유형 카드 등) |
 | `components/assets/stock/` | 주식 전용 컴포넌트 |

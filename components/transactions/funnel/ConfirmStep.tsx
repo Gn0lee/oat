@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeftIcon, CalendarIcon, WalletIcon } from "lucide-react";
+import { CalendarIcon, WalletIcon } from "lucide-react";
 import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import type { AccountWithOwner } from "@/lib/api/account";
@@ -16,7 +16,6 @@ interface ConfirmStepProps {
   };
   accounts: AccountWithOwner[];
   onSubmit: () => void;
-  onBack: () => void;
   isSubmitting: boolean;
 }
 
@@ -24,7 +23,6 @@ export function ConfirmStep({
   context,
   accounts,
   onSubmit,
-  onBack,
   isSubmitting,
 }: ConfirmStepProps) {
   const typeText = context.type === "buy" ? "매수" : "매도";
@@ -66,20 +64,7 @@ export function ConfirmStep({
 
   return (
     <div className="space-y-4">
-      {/* 헤더 */}
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={onBack}
-          className="p-2 -ml-2 hover:bg-gray-100 rounded-lg transition-colors"
-        >
-          <ArrowLeftIcon className="w-5 h-5 text-gray-600" />
-        </button>
-        <div>
-          <span className={`text-sm font-medium ${typeColor}`}>{typeText}</span>
-          <h2 className="text-xl font-bold text-gray-900">최종 확인</h2>
-        </div>
-      </div>
+      <p className={typeColor}>{typeText} 거래를 확인해주세요.</p>
 
       {/* 거래 요약 */}
       <div className={`rounded-2xl p-5 space-y-3 ${typeBgColor}`}>
@@ -144,7 +129,6 @@ export function ConfirmStep({
         )}
       </div>
 
-      {/* 등록 버튼 */}
       <Button
         onClick={onSubmit}
         disabled={isSubmitting || validItems.length === 0}

@@ -5,7 +5,6 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Check, ChevronDown, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Bar, BarChart, Cell, Pie, PieChart, XAxis, YAxis } from "recharts";
-import { PageHeader } from "@/components/layout";
 import { CategoryIcon } from "@/components/ledger/CategoryIcon";
 import { Button } from "@/components/ui/button";
 import {
@@ -139,11 +138,6 @@ export function ByCategoryClient({ scope }: ByCategoryClientProps) {
 
   return (
     <div className="space-y-4">
-      <PageHeader
-        title="카테고리 분석"
-        backHref={`/ledger/analysis?scope=${scope}`}
-      />
-
       <MonthSelector value={currentMonth} onChange={setCurrentMonth} />
 
       {/* Section 1: 도넛 차트 */}

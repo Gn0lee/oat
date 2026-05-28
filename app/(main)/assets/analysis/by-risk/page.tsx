@@ -1,7 +1,5 @@
 "use client";
 
-import { ArrowLeft } from "lucide-react";
-import Link from "next/link";
 import { useMemo } from "react";
 import { Cell, Pie, PieChart } from "recharts";
 import { RiskAssetList } from "@/components/dashboard/by-risk";
@@ -80,20 +78,6 @@ export default function ByRiskAnalysisPage() {
 
   return (
     <>
-      {/* 페이지 헤더 */}
-      <div className="flex items-center gap-3">
-        <Link
-          href="/dashboard"
-          className="p-2 -ml-2 rounded-lg hover:bg-gray-100 transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5 text-gray-600" />
-        </Link>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">위험도별 분석</h1>
-          <p className="text-sm text-gray-500">안전/중립/공격 자산 비중</p>
-        </div>
-      </div>
-
       {/* 로딩 상태 */}
       {isLoading && (
         <div className="space-y-4">

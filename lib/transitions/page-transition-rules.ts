@@ -35,7 +35,6 @@ const TOP_LEVEL_ROUTES = [
   "/home",
   "/ledger",
   "/assets",
-  "/dashboard",
   "/settings",
   "/household",
 ] as const;
@@ -73,14 +72,44 @@ export function getPageTransitionRules(
         },
         {
           kind: "drill",
+          enter: "/ledger/analysis/*",
+          exit: "/ledger/analysis",
+          type: "parallax",
+        },
+        {
+          kind: "drill",
+          enter: "/ledger/payment-methods/*",
+          exit: "/ledger/payment-methods",
+          type: "parallax",
+        },
+        {
+          kind: "drill",
           enter: "/assets/*",
           exit: "/assets",
           type: "parallax",
         },
         {
           kind: "drill",
-          enter: "/dashboard/*",
-          exit: "/dashboard",
+          enter: "/assets/accounts/*",
+          exit: "/assets/accounts",
+          type: "parallax",
+        },
+        {
+          kind: "drill",
+          enter: "/assets/analysis/*",
+          exit: "/assets/analysis",
+          type: "parallax",
+        },
+        {
+          kind: "drill",
+          enter: "/assets/stock/*",
+          exit: "/assets/stock",
+          type: "parallax",
+        },
+        {
+          kind: "drill",
+          enter: "/assets/stock/transactions/*",
+          exit: "/assets/stock/transactions",
           type: "parallax",
         },
         {

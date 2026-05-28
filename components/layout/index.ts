@@ -1,8 +1,8 @@
 export { BottomNav } from "./BottomNav";
-export { Header } from "./Header";
 export { NavPendingIndicator } from "./NavPendingIndicator";
+export { PageActions } from "./PageActions";
 export { PageContainer } from "./PageContainer";
-export { PageHeader } from "./PageHeader";
 export { PageTransition } from "./PageTransition";
 export { PageTransitionProvider } from "./PageTransitionProvider";
+export { ServiceHeader } from "./ServiceHeader";
 export { Sidebar } from "./Sidebar";

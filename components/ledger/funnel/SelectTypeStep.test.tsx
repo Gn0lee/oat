@@ -8,7 +8,7 @@ describe("SelectTypeStep", () => {
     const user = userEvent.setup();
     const onSelect = vi.fn();
 
-    render(<SelectTypeStep onSelect={onSelect} onBack={vi.fn()} />);
+    render(<SelectTypeStep onSelect={onSelect} />);
 
     await user.click(screen.getByRole("button", { name: /이체/ }));
 

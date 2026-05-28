@@ -1,6 +1,6 @@
 import { HouseholdMembersCard } from "@/components/household/HouseholdMembersCard";
 import { HouseholdSettings } from "@/components/household/HouseholdSettings";
-import { PageContainer, PageHeader } from "@/components/layout";
+import { PageContainer } from "@/components/layout";
 import { getHouseholdWithMembers } from "@/lib/api/household";
 import { requireUser } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
@@ -15,8 +15,6 @@ export default async function HouseholdPage() {
 
   return (
     <PageContainer maxWidth="medium">
-      <PageHeader title="가구 관리" backHref="/settings" />
-
       {household ? (
         <>
           <HouseholdSettings

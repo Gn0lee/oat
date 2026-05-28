@@ -12,25 +12,25 @@ const ANALYSIS_TYPES: Array<{
   {
     type: "stock",
     description: "종목별 비중과 수익률을 분석하세요",
-    href: "/dashboard/stocks",
+    href: "/assets/stock/analysis",
     disabled: false,
   },
   {
     type: "cash",
     description: "예금, 적금, CMA 등 분석",
-    href: "/dashboard/cash",
+    href: "/assets/cash/analysis",
     disabled: true,
   },
   {
     type: "real-estate",
     description: "부동산 자산 분석",
-    href: "/dashboard/real-estate",
+    href: "/assets/real-estate/analysis",
     disabled: true,
   },
   {
     type: "other",
     description: "금, 코인 등 기타 자산 분석",
-    href: "/dashboard/other",
+    href: "/assets/other/analysis",
     disabled: true,
   },
 ];

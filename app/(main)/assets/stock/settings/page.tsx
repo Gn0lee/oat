@@ -1,4 +1,3 @@
-import { PageHeader } from "@/components/layout";
 import { StockSettingsList } from "@/components/stock-settings/StockSettingsList";
 import { getUserHouseholdId } from "@/lib/api/invitation";
 import { getStockSettings } from "@/lib/api/stock-settings";
@@ -27,8 +26,6 @@ export default async function StockSettingsPage() {
 
   return (
     <>
-      <PageHeader title="종목 설정" backHref="/assets/stock" />
-
       {/* 종목 설정 목록 */}
       <StockSettingsList initialData={initialData} />
     </>

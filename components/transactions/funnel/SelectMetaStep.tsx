@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeftIcon, ChevronRightIcon, PlusCircle } from "lucide-react";
+import { ChevronRightIcon, PlusCircle } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -24,7 +24,6 @@ interface SelectMetaStepProps {
   accounts: AccountWithOwner[];
   isLoadingAccounts?: boolean;
   onNext: (meta: { transactedAt: string; accountId: string }) => void;
-  onBack: () => void;
 }
 
 export function SelectMetaStep({
@@ -34,7 +33,6 @@ export function SelectMetaStep({
   accounts,
   isLoadingAccounts,
   onNext,
-  onBack,
 }: SelectMetaStepProps) {
   // 기본 계좌 찾기: defaultAccountId > isDefault=true > 첫 번째 계좌
   const getDefaultAccountId = () => {
@@ -62,20 +60,7 @@ export function SelectMetaStep({
 
   return (
     <div className="space-y-6">
-      {/* 헤더 */}
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={onBack}
-          className="p-2 -ml-2 hover:bg-gray-100 rounded-lg transition-colors"
-        >
-          <ArrowLeftIcon className="w-5 h-5 text-gray-600" />
-        </button>
-        <div>
-          <span className={`text-sm font-medium ${typeColor}`}>{typeText}</span>
-          <h2 className="text-xl font-bold text-gray-900">거래 정보 입력</h2>
-        </div>
-      </div>
+      <p className={typeColor}>{typeText} 거래 정보를 입력해주세요.</p>
 
       {/* 거래일 */}
       <div className="bg-white rounded-2xl shadow-sm p-5 space-y-3">
@@ -131,7 +116,6 @@ export function SelectMetaStep({
         )}
       </div>
 
-      {/* 다음 버튼 */}
       <Button
         onClick={handleNext}
         disabled={!transactedAt || !accountId}

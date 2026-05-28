@@ -1,7 +1,5 @@
 "use client";
 
-import { ArrowLeft } from "lucide-react";
-import Link from "next/link";
 import { SummaryCard } from "@/components/dashboard";
 import { useDashboardSummary } from "@/hooks/use-dashboard";
 
@@ -40,22 +38,6 @@ export default function ByAssetTypeAnalysisPage() {
 
   return (
     <>
-      {/* 페이지 헤더 */}
-      <div className="flex items-center gap-3">
-        <Link
-          href="/dashboard"
-          className="p-2 -ml-2 rounded-lg hover:bg-gray-100 transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5 text-gray-600" />
-        </Link>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">자산군별 분석</h1>
-          <p className="text-sm text-gray-500">
-            주식, 채권, 현금 등 자산군 비중
-          </p>
-        </div>
-      </div>
-
       {/* 로딩 상태 */}
       {isLoading && (
         <div className="bg-white rounded-2xl p-5 shadow-sm">

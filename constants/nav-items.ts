@@ -5,7 +5,7 @@ export interface NavItem {
   href: string;
   label: string;
   icon: LucideIcon;
-  /** 이 탭을 활성화하는 추가 경로 접두사 (예: /dashboard -> 자산 탭) */
+  /** 이 탭을 활성화하는 추가 경로 접두사 */
   aliasPatterns?: string[];
 }
 
@@ -31,7 +31,6 @@ export const NAV_ITEMS: NavItem[] = [
     href: "/assets",
     label: "자산",
     icon: Briefcase,
-    aliasPatterns: ["/dashboard"],
   },
   {
     href: "/settings",

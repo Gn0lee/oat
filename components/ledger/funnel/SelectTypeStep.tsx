@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  ArrowLeftIcon,
   ArrowRightLeftIcon,
   TrendingDownIcon,
   TrendingUpIcon,
@@ -9,23 +8,11 @@ import {
 
 interface SelectTypeStepProps {
   onSelect: (type: "expense" | "income" | "transfer") => void;
-  onBack: () => void;
 }
 
-export function SelectTypeStep({ onSelect, onBack }: SelectTypeStepProps) {
+export function SelectTypeStep({ onSelect }: SelectTypeStepProps) {
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={onBack}
-          className="p-2 -ml-2 hover:bg-gray-100 rounded-lg transition-colors"
-        >
-          <ArrowLeftIcon className="w-5 h-5 text-gray-600" />
-        </button>
-        <h2 className="text-xl font-bold text-gray-900">기록 추가</h2>
-      </div>
-
       <p className="text-gray-500">어떤 내역을 기록하시겠어요?</p>
 
       <div className="space-y-3">

@@ -9,7 +9,6 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { PageHeader } from "@/components/layout";
 import {
   ChartContainer,
   ChartLegend,
@@ -61,11 +60,6 @@ export function TrendClient({ scope }: TrendClientProps) {
 
   return (
     <div className="space-y-4">
-      <PageHeader
-        title="월별 수입·지출"
-        backHref={`/ledger/analysis?scope=${scope}`}
-      />
-
       {/* Section 1: ComposedChart */}
       <div className="bg-white rounded-2xl p-5 shadow-sm">
         <h3 className="text-sm font-semibold text-gray-900 mb-4">

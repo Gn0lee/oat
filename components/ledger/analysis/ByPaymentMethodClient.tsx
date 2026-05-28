@@ -5,7 +5,6 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Banknote, CreditCard, Smartphone, Tag } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Cell, Pie, PieChart } from "recharts";
-import { PageHeader } from "@/components/layout";
 import {
   ChartContainer,
   ChartTooltip,
@@ -72,10 +71,6 @@ export function ByPaymentMethodClient({ scope }: ByPaymentMethodClientProps) {
 
   return (
     <div className="space-y-4">
-      <PageHeader
-        title="결제수단 분석"
-        backHref={`/ledger/analysis?scope=${scope}`}
-      />
       <MonthSelector value={currentMonth} onChange={setCurrentMonth} />
 
       {/* 섹션 1: 도넛 차트 */}
