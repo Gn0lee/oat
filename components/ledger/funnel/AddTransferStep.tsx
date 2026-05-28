@@ -43,7 +43,7 @@ function parseLocation(value: string): TransferLocation {
   return { kind: "paymentMethod", id: value.slice(3) };
 }
 
-export function AddTransferStep({ onNext, onBack }: AddTransferStepProps) {
+export function AddTransferStep({ onNext }: AddTransferStepProps) {
   const { data: accounts = [] } = useAccounts();
   const { data: paymentMethods = [] } = usePaymentMethods();
 
