@@ -2,9 +2,12 @@
 
 import { XIcon } from "lucide-react";
 import { useState } from "react";
-import { useFormContext, useWatch } from "react-hook-form";
+import { useFormContext } from "react-hook-form";
+import { AccountSelector } from "@/components/transactions/AccountSelector";
 import { TransactionItemRow } from "@/components/transactions/TransactionItemRow";
 import { Button } from "@/components/ui/button";
+import { DatePickerInput } from "@/components/ui/date-picker";
+import { Label } from "@/components/ui/label";
 import type { MultiTransactionFormData } from "@/schemas/multi-transaction-form";
 
 interface StockComposerFormStepProps {
@@ -31,18 +34,6 @@ export function StockComposerFormStep({
     }
   };
 
-  const items = useWatch({ control: form.control, name: "items" });
-  const canRemove = items.length > 1;
-
-  const handleRemove = () => {
-    const currentItems = form.getValues("items");
-    form.setValue(
-      "items",
-      currentItems.filter((_, i) => i !== index),
-    );
-    onBack();
-  };
-
   return (
     <>
       <Button
@@ -54,19 +45,45 @@ export function StockComposerFormStep({
       </Button>
 
       {/* Form Content */}
-      <div className="flex-1 overflow-y-auto p-4 pt-16">
-        <div className="bg-white rounded-2xl shadow-sm p-4">
-          <TransactionItemRow
-            index={index}
-            control={form.control}
-            onRemove={handleRemove}
-            canRemove={canRemove}
-          />
+      <div className="flex-1 overflow-y-auto px-4 pt-16 pb-4 space-y-4">
+        <TransactionItemRow index={index} control={form.control} />
+
+        <div className="pt-2 space-y-3">
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900">
+              거래일 및 계좌
+            </h3>
+            <p className="text-xs text-gray-500 mt-0.5">
+              이 거래 행에 적용할 거래일과 계좌를 변경할 수 있습니다.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label className="text-sm text-gray-700">거래일</Label>
+              <DatePickerInput
+                value={form.watch(`items.${index}.transactedAt`) ?? ""}
+                onChange={(v) =>
+                  form.setValue(`items.${index}.transactedAt`, v || "")
+                }
+                className="h-11 rounded-xl w-full"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <AccountSelector
+                control={form.control}
+                name={`items.${index}.accountId`}
+                variant="inline"
+                placeholder="계좌 선택"
+              />
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Action Button */}
-      <div className="p-4 border-t border-gray-100 bg-white shrink-0">
+      <div className="p-4 border-t border-gray-100 bg-white shrink-0 pb-[calc(1rem+env(safe-area-inset-bottom))]">
         <Button
           type="button"
           onClick={handleConfirm}

@@ -7,6 +7,11 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import {
+  LedgerCategoryCombobox,
+  LedgerCategoryPickerPanel,
+  LedgerCategoryTrigger,
+} from "@/components/ledger/LedgerCategoryCombobox";
+import {
   getLedgerMoneySourceLabel,
   LedgerMoneySourceCombobox,
   LedgerMoneySourcePickerPanel,
@@ -33,13 +38,6 @@ import {
 } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useAccounts } from "@/hooks/use-accounts";
 import { useCategories } from "@/hooks/use-categories";
@@ -75,7 +73,7 @@ const editFormSchema = z.object({
 });
 
 type EditFormValues = z.infer<typeof editFormSchema>;
-type MobileEditView = "form" | "moneySourcePicker";
+type MobileEditView = "form" | "moneySourcePicker" | "categoryPicker";
 
 export function LedgerEntryEditDialog({
   entry,
@@ -330,23 +328,25 @@ export function LedgerEntryEditDialog({
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-2">
           <Label>카테고리 *</Label>
-          <Select
-            value={watchCategoryId ?? ""}
-            onValueChange={(v) =>
-              setValue("categoryId", v, { shouldValidate: true })
-            }
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="선택" />
-            </SelectTrigger>
-            <SelectContent>
-              {categories.map((cat) => (
-                <SelectItem key={cat.id} value={cat.id}>
-                  {cat.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {isDesktop ? (
+            <LedgerCategoryCombobox
+              value={watchCategoryId ?? ""}
+              categories={categories}
+              placeholder="선택"
+              onValueChange={(v) =>
+                setValue("categoryId", v, { shouldValidate: true })
+              }
+            />
+          ) : (
+            <LedgerCategoryTrigger
+              label={
+                categories.find((cat) => cat.id === watchCategoryId)?.name ??
+                "선택"
+              }
+              placeholder="선택"
+              onClick={() => setMobileView("categoryPicker")}
+            />
+          )}
           {errors.categoryId && (
             <p className="text-sm text-destructive">
               {errors.categoryId.message}
@@ -465,6 +465,20 @@ export function LedgerEntryEditDialog({
               onValueChange={handleMobileMoneySourceChange}
             />
           </div>
+        ) : mobileView === "categoryPicker" ? (
+          <div className="flex min-h-[70vh] flex-col pb-4">
+            <LedgerCategoryPickerPanel
+              value={watchCategoryId ?? ""}
+              categories={categories}
+              title="카테고리 선택"
+              searchPlaceholder="카테고리 이름 검색"
+              onBack={() => setMobileView("form")}
+              onValueChange={(v) => {
+                setValue("categoryId", v, { shouldValidate: true });
+                setMobileView("form");
+              }}
+            />
+          </div>
         ) : (
           <>
             <DrawerHeader>
@@ -485,7 +499,7 @@ export function LedgerEntryEditDialog({
               </form>
             </div>
 
-            <DrawerFooter>
+            <DrawerFooter className="pb-[calc(1rem+env(safe-area-inset-bottom))]">
               <div className="flex gap-2">
                 <Button
                   type="button"

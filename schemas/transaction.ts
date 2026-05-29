@@ -84,6 +84,11 @@ export const batchTransactionItemSchema = z.object({
     .min(0, "가격은 0 이상이어야 합니다.")
     .max(999999999999, "가격이 너무 큽니다."),
   memo: z.string().max(500, "메모는 500자 이내여야 합니다.").optional(),
+  transactedAt: z
+    .string()
+    .datetime({ message: "유효한 날짜 형식이 아닙니다." })
+    .optional(),
+  accountId: z.string().uuid("유효한 계좌 ID가 아닙니다.").optional(),
   stock: z.object({
     name: z.string().min(1, "종목명은 필수입니다."),
     market: z.enum(["KR", "US", "OTHER"]),

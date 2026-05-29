@@ -7,6 +7,7 @@ import { useController, useWatch } from "react-hook-form";
 import { StockSearchDialog } from "@/components/stocks/StockSearchDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { formatCurrency } from "@/lib/utils/format";
 import type { TransactionItemFormData } from "@/schemas/multi-transaction-form";
 import type { CurrencyType, StockMaster } from "@/types";
@@ -17,15 +18,15 @@ type FormWithItems = FieldValues & { items: TransactionItemFormData[] };
 interface TransactionItemRowProps<T extends FormWithItems> {
   index: number;
   control: Control<T>;
-  onRemove: () => void;
-  canRemove: boolean;
+  onRemove?: () => void;
+  canRemove?: boolean;
 }
 
 export function TransactionItemRow<T extends FormWithItems>({
   index,
   control,
   onRemove,
-  canRemove,
+  canRemove = false,
 }: TransactionItemRowProps<T>) {
   const { field: stockField } = useController({
     control,
@@ -62,62 +63,60 @@ export function TransactionItemRow<T extends FormWithItems>({
   };
 
   return (
-    <div className="py-4 border-b border-gray-200 last:border-b-0">
-      {/* 1줄: 종목 + 삭제 */}
-      <div className="flex items-center gap-2 mb-3">
-        {/* 종목 검색 */}
-        <div className="flex-1">
-          <StockSearchDialog
-            value={
-              stockField.value
-                ? ({
-                    code: stockField.value.code,
-                    name: stockField.value.name,
-                    market: stockField.value.market,
-                    exchange: stockField.value.exchange,
-                  } as StockMaster)
-                : null
-            }
-            onSelect={handleStockSelect}
-            placeholder="종목 검색"
-          />
+    <div className="py-2 space-y-4">
+      {/* 1줄: 종목 */}
+      <div className="space-y-1">
+        <div className="flex items-center justify-between">
+          <Label className="text-sm text-gray-700">종목 *</Label>
+          {canRemove && onRemove && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={onRemove}
+              className="h-8 w-8 text-gray-400 hover:text-red-500 shrink-0"
+            >
+              <Trash2Icon className="h-4 w-4" />
+            </Button>
+          )}
         </div>
-
-        {/* 삭제 버튼 */}
-        {canRemove && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            onClick={onRemove}
-            className="h-9 w-9 text-gray-400 hover:text-red-500 shrink-0"
-          >
-            <Trash2Icon className="h-4 w-4" />
-          </Button>
-        )}
+        <StockSearchDialog
+          value={
+            stockField.value
+              ? ({
+                  code: stockField.value.code,
+                  name: stockField.value.name,
+                  market: stockField.value.market,
+                  exchange: stockField.value.exchange,
+                } as StockMaster)
+              : null
+          }
+          onSelect={handleStockSelect}
+          placeholder="종목 검색"
+        />
       </div>
 
       {/* 2줄: 수량 + 단가 */}
-      <div className="flex items-center gap-2">
-        <div className="flex items-center gap-1.5 flex-1 min-w-0">
-          <span className="text-xs text-gray-500 shrink-0">수량</span>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1">
+          <Label className="text-sm text-gray-700">수량 *</Label>
           <Input
             type="number"
             inputMode="numeric"
             placeholder="0"
-            className="h-9 text-right text-sm"
+            className="h-11 rounded-xl text-right text-sm"
             {...control.register(`items.${index}.quantity` as FieldPath<T>)}
           />
         </div>
-        <div className="flex items-center gap-1.5 flex-1 min-w-0">
-          <span className="text-xs text-gray-500 shrink-0">
-            {currency === "KRW" ? "단가" : "$"}
-          </span>
+        <div className="space-y-1">
+          <Label className="text-sm text-gray-700">
+            {currency === "KRW" ? "단가 *" : "단가 ($) *"}
+          </Label>
           <Input
             type="number"
             inputMode="decimal"
             placeholder="0"
-            className="h-9 text-right text-sm"
+            className="h-11 rounded-xl text-right text-sm"
             {...control.register(`items.${index}.price` as FieldPath<T>)}
           />
         </div>
