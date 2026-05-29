@@ -179,17 +179,19 @@ export function StockSearchDialog({
       variant="outline"
       disabled={disabled}
       onClick={() => setOpen(true)}
-      className="w-full justify-start font-normal"
+      className="w-full justify-start font-normal min-w-0"
     >
       {value ? (
-        <span className="flex items-center gap-2">
-          <span className="font-medium">{value.code}</span>
-          <span className="text-muted-foreground">{value.name}</span>
+        <span className="flex items-center gap-2 w-full min-w-0 text-left">
+          <span className="font-medium shrink-0">{value.code}</span>
+          <span className="text-muted-foreground truncate flex-1 min-w-0">
+            {value.name}
+          </span>
         </span>
       ) : (
-        <span className="flex items-center gap-2 text-muted-foreground">
-          <SearchIcon className="size-4" />
-          {placeholder}
+        <span className="flex items-center gap-2 text-muted-foreground w-full min-w-0 text-left">
+          <SearchIcon className="size-4 shrink-0" />
+          <span className="truncate flex-1 min-w-0">{placeholder}</span>
         </span>
       )}
     </Button>

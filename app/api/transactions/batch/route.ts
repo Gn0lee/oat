@@ -61,6 +61,8 @@ export async function POST(request: Request) {
         quantity: item.quantity,
         price: item.price,
         memo: item.memo,
+        transactedAt: item.transactedAt,
+        accountId: item.accountId,
         stock: {
           name: item.stock.name,
           market: item.stock.market,

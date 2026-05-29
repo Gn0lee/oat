@@ -16,6 +16,8 @@ export const transactionItemSchema = z.object({
   quantity: z.string(),
   price: z.string(),
   memo: z.string().optional(),
+  transactedAt: z.string().optional(),
+  accountId: z.string().optional(),
 });
 
 export type TransactionItemFormData = z.infer<typeof transactionItemSchema>;
@@ -47,4 +49,6 @@ export const DEFAULT_TRANSACTION_ITEM: TransactionItemFormData = {
   quantity: "",
   price: "",
   memo: "",
+  transactedAt: undefined,
+  accountId: undefined,
 };

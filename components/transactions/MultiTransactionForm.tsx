@@ -10,7 +10,6 @@ import { FormProvider, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { StockComposerFormStep } from "@/components/transactions/StockComposerFormStep";
 import { StockComposerListStep } from "@/components/transactions/StockComposerListStep";
-import { useMediaQuery } from "@/hooks/use-media-query";
 import { useCreateBatchTransactions } from "@/hooks/use-transaction";
 import {
   type MultiTransactionFormData,
@@ -63,19 +62,29 @@ export function MultiTransactionForm({
       type: data.type,
       transactedAt: new Date(data.transactedAt).toISOString(),
       accountId: data.accountId,
-      items: validItems.map((item) => ({
-        ticker: item.stock!.code,
-        quantity: Number(item.quantity),
-        price: Number(item.price) || 0,
-        memo: item.memo || undefined,
-        stock: {
-          name: item.stock!.name,
-          market: item.stock!.market,
-          currency:
-            item.stock!.market === "US" ? ("USD" as const) : ("KRW" as const),
-          assetType: "equity" as const,
-        },
-      })),
+      items: validItems.map((item) => {
+        const itemTransactedAt = item.transactedAt
+          ? item.transactedAt.includes("T")
+            ? item.transactedAt
+            : new Date(item.transactedAt).toISOString()
+          : new Date(data.transactedAt).toISOString();
+
+        return {
+          ticker: item.stock!.code,
+          quantity: Number(item.quantity),
+          price: Number(item.price) || 0,
+          memo: item.memo || undefined,
+          transactedAt: itemTransactedAt,
+          accountId: item.accountId || data.accountId,
+          stock: {
+            name: item.stock!.name,
+            market: item.stock!.market,
+            currency:
+              item.stock!.market === "US" ? ("USD" as const) : ("KRW" as const),
+            assetType: "equity" as const,
+          },
+        };
+      }),
     };
   };
 
@@ -122,7 +131,7 @@ export function MultiTransactionForm({
                 animate={{ y: 0 }}
                 exit={{ y: "100%" }}
                 transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                className="fixed inset-0 z-50 bg-white flex flex-col lg:left-56 lg:top-14 lg:right-0 lg:bottom-0"
+                className="fixed inset-0 z-50 bg-background flex flex-col lg:left-56 lg:top-14 lg:right-0 lg:bottom-0"
               >
                 <StockComposerFormStep
                   key={editIndex}

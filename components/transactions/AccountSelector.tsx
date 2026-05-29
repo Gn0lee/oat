@@ -1,39 +1,164 @@
 "use client";
 
-import { PlusCircle } from "lucide-react";
+import { CheckIcon, ChevronsUpDownIcon, PlusCircle } from "lucide-react";
 import Link from "next/link";
-import type { ReactNode } from "react";
+import type { ComponentPropsWithoutRef } from "react";
+import { forwardRef, useState } from "react";
 import type { Control, FieldValues, Path } from "react-hook-form";
 import { useController } from "react-hook-form";
 import { Button } from "@/components/ui/button";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 import { Label } from "@/components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { useAccounts } from "@/hooks/use-accounts";
+import { useMediaQuery } from "@/hooks/use-media-query";
+import { cn } from "@/lib/utils/cn";
 
 interface AccountSelectorProps<T extends FieldValues> {
   control: Control<T>;
   name?: Path<T>;
   variant?: "card" | "inline";
+  placeholder?: string;
+  allowClear?: boolean;
+  onChange?: (value: string) => void;
 }
 
-export function AccountSelector<T extends FieldValues & { accountId: string }>({
+interface AccountSelectorTriggerProps
+  extends ComponentPropsWithoutRef<typeof Button> {
+  label: string;
+  placeholder: string;
+  open?: boolean;
+}
+
+export const AccountSelectorTrigger = forwardRef<
+  HTMLButtonElement,
+  AccountSelectorTriggerProps
+>(function AccountSelectorTrigger(
+  { label, placeholder, open, className, ...props },
+  ref,
+) {
+  return (
+    <Button
+      ref={ref}
+      type="button"
+      variant="outline"
+      role="combobox"
+      aria-expanded={open}
+      className={cn(
+        "h-11 w-full justify-between px-3 font-normal rounded-xl",
+        className,
+      )}
+      {...props}
+    >
+      <span
+        className={cn(
+          "truncate",
+          label === placeholder && "text-muted-foreground",
+        )}
+      >
+        {label}
+      </span>
+      <ChevronsUpDownIcon className="ml-2 size-4 shrink-0 opacity-50" />
+    </Button>
+  );
+});
+
+function AccountCommandList({
+  accounts,
+  value,
+  allowClear,
+  onValueChange,
+}: {
+  // biome-ignore lint/suspicious/noExplicitAny: accounts type from useAccounts
+  accounts: any[];
+  value: string;
+  allowClear: boolean;
+  onValueChange: (value: string) => void;
+}) {
+  return (
+    <CommandList className="max-h-[320px]">
+      <CommandEmpty>검색 결과가 없습니다.</CommandEmpty>
+      <CommandGroup heading="계좌 선택">
+        {allowClear && (
+          <CommandItem
+            value="DEFAULT"
+            onSelect={() => onValueChange("DEFAULT")}
+            className="cursor-pointer py-2.5"
+          >
+            <CheckIcon
+              className={cn(
+                "size-4 mr-2",
+                value === "DEFAULT" || !value ? "opacity-100" : "opacity-0",
+              )}
+            />
+            <span className="font-medium text-gray-500">기본 계좌 사용</span>
+          </CommandItem>
+        )}
+        {accounts.map((account) => (
+          <CommandItem
+            key={account.id}
+            value={account.name}
+            onSelect={() => onValueChange(account.id)}
+            className="cursor-pointer py-2.5"
+          >
+            <CheckIcon
+              className={cn(
+                "size-4 mr-2",
+                value === account.id ? "opacity-100" : "opacity-0",
+              )}
+            />
+            <div className="flex flex-col flex-1 min-w-0">
+              <span className="truncate font-medium">{account.name}</span>
+              {account.broker && (
+                <span className="truncate text-xs text-muted-foreground">
+                  {account.broker}
+                </span>
+              )}
+            </div>
+          </CommandItem>
+        ))}
+      </CommandGroup>
+    </CommandList>
+  );
+}
+
+export function AccountSelector<T extends FieldValues>({
   control,
   name = "accountId" as Path<T>,
   variant = "card",
+  placeholder,
+  allowClear = false,
+  onChange,
 }: AccountSelectorProps<T>) {
-  const { data: accounts, isLoading } = useAccounts();
+  const { data: accounts = [], isLoading } = useAccounts();
   const { field } = useController({
     control,
     name,
   });
+  const isDesktop = useMediaQuery("(min-width: 768px)");
+  const [open, setOpen] = useState(false);
 
-  const wrap = (children: ReactNode) => {
+  const wrap = (
+    children: React.ComponentPropsWithoutRef<"div">["children"],
+  ) => {
     if (variant === "inline") {
       return <div className="space-y-2">{children}</div>;
     }
@@ -72,28 +197,87 @@ export function AccountSelector<T extends FieldValues & { accountId: string }>({
     );
   }
 
+  const selectedAccount = accounts.find((acc) => acc.id === field.value);
+  const triggerPlaceholder = placeholder ?? "계좌를 선택하세요";
+  const triggerLabel = selectedAccount
+    ? `${selectedAccount.name}${selectedAccount.broker ? ` (${selectedAccount.broker})` : ""}`
+    : allowClear && (field.value === "DEFAULT" || !field.value)
+      ? "기본 계좌 사용"
+      : triggerPlaceholder;
+
+  const handleSelect = (val: string) => {
+    const nextVal = val === "DEFAULT" ? undefined : val;
+    field.onChange(nextVal);
+    if (onChange) {
+      onChange(nextVal ?? "");
+    }
+    setOpen(false);
+  };
+
+  const desktopContent = (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <AccountSelectorTrigger
+          label={triggerLabel}
+          placeholder={triggerPlaceholder}
+          open={open}
+        />
+      </PopoverTrigger>
+      <PopoverContent
+        className="w-[var(--radix-popover-trigger-width)] p-0"
+        align="start"
+      >
+        <Command>
+          <CommandInput placeholder="계좌명, 증권사 검색" />
+          <AccountCommandList
+            accounts={accounts}
+            value={field.value ?? ""}
+            allowClear={allowClear}
+            onValueChange={handleSelect}
+          />
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+
+  const mobileContent = (
+    <>
+      <AccountSelectorTrigger
+        label={triggerLabel}
+        placeholder={triggerPlaceholder}
+        onClick={() => setOpen(true)}
+      />
+      <Drawer open={open} onOpenChange={setOpen}>
+        <DrawerContent className="h-[70vh] p-0 flex flex-col">
+          <DrawerHeader className="sr-only">
+            <DrawerTitle>계좌 선택</DrawerTitle>
+            <DrawerDescription>
+              거래 계좌를 선택하고 검색해보세요.
+            </DrawerDescription>
+          </DrawerHeader>
+          <div className="flex-1 min-h-0 px-4 pt-3 pb-6 flex flex-col">
+            <Command className="h-full rounded-xl border flex flex-col">
+              <CommandInput
+                placeholder="계좌명, 증권사 검색"
+                className="h-11"
+              />
+              <AccountCommandList
+                accounts={accounts}
+                value={field.value ?? ""}
+                allowClear={allowClear}
+                onValueChange={handleSelect}
+              />
+            </Command>
+          </div>
+        </DrawerContent>
+      </Drawer>
+    </>
+  );
+
   return wrap(
     <>
       <Label className="text-gray-700">거래 계좌</Label>
-      <Select value={field.value} onValueChange={field.onChange}>
-        <SelectTrigger className="h-11 rounded-xl w-full">
-          <SelectValue placeholder="계좌를 선택하세요" />
-        </SelectTrigger>
-        <SelectContent>
-          {accounts.map((account) => (
-            <SelectItem key={account.id} value={account.id}>
-              <span className="flex items-center gap-2">
-                {account.name}
-                {account.broker && (
-                  <span className="text-gray-400 text-xs">
-                    ({account.broker})
-                  </span>
-                )}
-              </span>
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      {isDesktop ? desktopContent : mobileContent}
     </>,
   );
 }

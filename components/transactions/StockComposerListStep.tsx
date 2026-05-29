@@ -52,7 +52,11 @@ export function StockComposerListStep({
 
   const handleAddItem = () => {
     const newIndex = fields.length;
-    append({ ...DEFAULT_TRANSACTION_ITEM });
+    append({
+      ...DEFAULT_TRANSACTION_ITEM,
+      transactedAt: watchTransactedAt,
+      accountId: form.getValues("accountId"),
+    });
     onEditItem(newIndex);
   };
 
@@ -63,7 +67,7 @@ export function StockComposerListStep({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
       <div className="bg-white rounded-2xl shadow-sm p-4 space-y-4">
         <TransactionTypeSelector control={form.control} variant="inline" />
 
@@ -85,6 +89,19 @@ export function StockComposerListStep({
           </div>
 
           <AccountSelector control={form.control} variant="inline" />
+        </div>
+
+        {/* 종목 추가 버튼 통합 */}
+        <div className="pt-2 border-t border-gray-50 flex justify-end">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleAddItem}
+            className="w-full sm:w-auto rounded-xl border-dashed h-11 px-6"
+          >
+            <PlusIcon className="h-4 w-4 mr-2" />
+            종목 추가
+          </Button>
         </div>
       </div>
 
@@ -177,16 +194,6 @@ export function StockComposerListStep({
               );
             })}
           </div>
-
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleAddItem}
-            className="w-full h-12 rounded-xl border-dashed"
-          >
-            <PlusIcon className="h-4 w-4 mr-2" />
-            종목 추가
-          </Button>
 
           {fields.length > 0 && (
             <TransactionSummary items={watchItems} type={watchType} />

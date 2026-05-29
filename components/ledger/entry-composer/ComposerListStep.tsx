@@ -75,13 +75,6 @@ export function ComposerListStep({
 
   const handleDefaultDateChange = (value: string) => {
     form.setValue("defaultDate", value, { shouldValidate: true });
-    if (mode === "daily") {
-      fields.forEach((_, index) => {
-        form.setValue(`items.${index}.transactedAt`, value, {
-          shouldValidate: true,
-        });
-      });
-    }
   };
 
   const getCategoryName = (type: "expense" | "income", categoryId: string) => {
@@ -96,8 +89,8 @@ export function ComposerListStep({
   };
 
   return (
-    <div className="space-y-5">
-      <div className="rounded-2xl bg-white p-4 shadow-sm">
+    <div className="space-y-5 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+      <div className="rounded-2xl bg-white p-4 shadow-sm space-y-4">
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-2">
             <div className="min-w-0 space-y-1">
@@ -151,6 +144,20 @@ export function ComposerListStep({
             />
           </div>
         </div>
+
+        {defaultType !== "transfer" && (
+          <div className="pt-2 border-t border-gray-50 flex justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleAddItem}
+              className="w-full sm:w-auto rounded-xl border-dashed h-11 px-6"
+            >
+              <PlusIcon className="size-4 mr-2" />
+              내역 추가
+            </Button>
+          </div>
+        )}
       </div>
 
       {defaultType === "transfer" ? (
@@ -239,16 +246,6 @@ export function ComposerListStep({
               );
             })}
           </div>
-
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleAddItem}
-            className="h-12 w-full rounded-xl border-dashed"
-          >
-            <PlusIcon className="size-4" />
-            내역 추가
-          </Button>
 
           <Button
             type="button"

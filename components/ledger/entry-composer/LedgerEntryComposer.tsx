@@ -13,7 +13,6 @@ import {
   useCreateBatchLedgerEntries,
   useCreateLedgerEntry,
 } from "@/hooks/use-ledger-entries";
-import { useMediaQuery } from "@/hooks/use-media-query";
 import {
   buildLedgerEntryPayload,
   buildTransferLedgerEntryPayload,
@@ -157,7 +156,7 @@ export function LedgerEntryComposer({
                 animate={{ y: 0 }}
                 exit={{ y: "100%" }}
                 transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                className="fixed inset-0 z-50 bg-white flex flex-col lg:left-56 lg:top-14 lg:right-0 lg:bottom-0"
+                className="fixed inset-0 z-50 bg-background flex flex-col lg:left-56 lg:top-14 lg:right-0 lg:bottom-0"
               >
                 <ComposerFormStep
                   key={editIndex}
