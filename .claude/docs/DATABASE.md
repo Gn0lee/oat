@@ -1139,7 +1139,7 @@ create policy "Users can manage household targets"
 
 **URL 구조와 DB 매핑**
 ```
-/assets/stock/transactions/new  → transactions 테이블 (주식)
+/assets/stock/transactions/new/full  → transactions 테이블 (주식)
 /assets/stock/holdings          → holdings View (asset_type = 'equity')
 /assets/total/holdings          → holdings View (전체)
 ```

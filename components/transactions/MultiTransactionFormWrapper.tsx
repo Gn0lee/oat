@@ -9,12 +9,15 @@ import { useCurrentUserId } from "@/hooks/use-current-user";
 
 interface MultiTransactionFormWrapperProps {
   defaultDate: string;
+  defaultAccountId?: string;
 }
 
 export function MultiTransactionFormWrapper({
   defaultDate,
+  defaultAccountId,
 }: MultiTransactionFormWrapperProps) {
-  const { userId: currentUserId } = useCurrentUserId();
+  const { userId: currentUserId, isLoading: isLoadingCurrentUser } =
+    useCurrentUserId();
   const { data: accounts, isLoading } = useAccounts();
 
   // 본인 계좌만 필터링
@@ -22,7 +25,7 @@ export function MultiTransactionFormWrapper({
     (a) => a.ownerId === currentUserId,
   );
 
-  if (isLoading) {
+  if (isLoading || isLoadingCurrentUser) {
     return (
       <div className="space-y-4">
         <div className="h-14 bg-gray-100 rounded-2xl animate-pulse" />
@@ -42,7 +45,7 @@ export function MultiTransactionFormWrapper({
         </p>
         <p className="text-gray-500 text-sm">먼저 계좌를 추가해주세요.</p>
         <Button asChild className="rounded-xl">
-          <Link href="/assets/stock/accounts">
+          <Link href="/assets/accounts/new?returnUrl=/assets/stock/transactions/new/full">
             <PlusCircle className="w-4 h-4 mr-2" />
             계좌 추가하기
           </Link>
@@ -51,13 +54,16 @@ export function MultiTransactionFormWrapper({
     );
   }
 
-  // 첫 번째 계좌 (본인 계좌 중에서만)
-  const defaultAccountId = myAccounts[0].id;
+  const selectedDefaultAccountId =
+    defaultAccountId &&
+    myAccounts.some((account) => account.id === defaultAccountId)
+      ? defaultAccountId
+      : myAccounts[0].id;
 
   return (
     <MultiTransactionForm
       defaultDate={defaultDate}
-      defaultAccountId={defaultAccountId}
+      defaultAccountId={selectedDefaultAccountId}
     />
   );
 }

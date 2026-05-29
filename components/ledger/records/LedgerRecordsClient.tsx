@@ -1,7 +1,7 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { addMonths, getYear, startOfMonth, subMonths } from "date-fns";
+import { addMonths, format, getYear, startOfMonth, subMonths } from "date-fns";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
@@ -226,7 +226,9 @@ export function LedgerRecordsClient() {
             onDelete={handleDelete}
           />
           <Button asChild className="w-full" size="icon-sm">
-            <Link href="/ledger/new">
+            <Link
+              href={`/ledger/records/new/daily?date=${format(selectedDate, "yyyy-MM-dd")}`}
+            >
               <Plus className="w-5 h-5" />
               가계부 등록
             </Link>

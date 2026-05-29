@@ -504,7 +504,7 @@ className="animate-fade-in"
 - API는 우선 기존 거래 목록 데이터를 사용하고, 데이터 양 문제가 확인될 때 월 단위 서버 필터를 검토함
 ```
 
-### 7.5 주식 거래 등록 (`/assets/stock/transactions/new`)
+### 7.5 주식 거래 등록 (`/assets/stock/transactions/new/full`)
 
 **역할**: 매수/매도 기록 입력
 

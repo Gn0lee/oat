@@ -95,7 +95,7 @@ export function SelectMetaStep({
               거래를 등록하려면 계좌가 필요합니다.
             </p>
             <Button asChild variant="outline" className="rounded-xl">
-              <Link href="/assets/stock/accounts">
+              <Link href="/assets/accounts/new?returnUrl=/assets/stock/transactions/new/full">
                 <PlusCircle className="w-4 h-4 mr-2" />
                 계좌 추가하기
               </Link>

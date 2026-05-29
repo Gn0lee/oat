@@ -105,7 +105,7 @@ export function StockSearchDialog({
       </div>
 
       {/* min-h-[300px]를 주어 높이 흔들림 방지 */}
-      <CommandList className="max-h-[60vh] min-h-[300px]">
+      <CommandList className="max-h-[70vh] min-h-[300px]">
         {/* 1. 최초 로딩 (데이터 없음) */}
         {showInitialLoading && (
           <div className="flex h-[300px] items-center justify-center">
@@ -219,7 +219,7 @@ export function StockSearchDialog({
     <>
       {triggerButton}
       <Drawer open={open} onOpenChange={handleOpenChange}>
-        <DrawerContent>
+        <DrawerContent className="h-[85vh] p-0 flex flex-col">
           <DrawerHeader className="sr-only">
             <DrawerTitle>종목 검색</DrawerTitle>
             <DrawerDescription>

@@ -9,7 +9,7 @@ export default function AssetsPage() {
     <>
       <PageActions>
         <Button size="sm" asChild>
-          <Link href="/assets/stock/transactions/new">
+          <Link href="/assets/stock/transactions/new/full">
             <Plus className="w-4 h-4 mr-1" />
             자산 기록
           </Link>

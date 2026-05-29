@@ -32,6 +32,46 @@ describe("getServiceRouteMeta", () => {
     });
   });
 
+  it("가계부 Entry Composer route를 task 화면으로 계산한다", () => {
+    expect(getServiceRouteMeta("/ledger/records/new/full")).toMatchObject({
+      label: "기록 추가",
+      mobileVariant: "task",
+      parentHref: "/ledger",
+      closeHref: "/ledger",
+    });
+
+    expect(
+      getServiceRouteMeta("/ledger/records/new/daily?date=2026-05-29"),
+    ).toMatchObject({
+      label: "하루 기록 추가",
+      mobileVariant: "task",
+      parentHref: "/ledger/records",
+      closeHref: "/ledger/records",
+    });
+  });
+
+  it("주식 거래 Entry Composer route를 task 화면으로 계산한다", () => {
+    expect(
+      getServiceRouteMeta("/assets/stock/transactions/new/full"),
+    ).toMatchObject({
+      label: "거래 등록",
+      mobileVariant: "task",
+      parentHref: "/assets/stock/transactions",
+      closeHref: "/assets/stock/transactions",
+    });
+
+    expect(
+      getServiceRouteMeta(
+        "/assets/stock/transactions/new/account?accountId=account-123",
+      ),
+    ).toMatchObject({
+      label: "계좌 거래 등록",
+      mobileVariant: "task",
+      parentHref: "/assets/stock/transactions",
+      closeHref: "/assets/stock/transactions",
+    });
+  });
+
   it("query string과 trailing slash를 무시한다", () => {
     expect(
       getServiceRouteMeta("/ledger/payment-methods/new?returnUrl=/ledger"),

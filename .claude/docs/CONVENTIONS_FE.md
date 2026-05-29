@@ -147,7 +147,8 @@ app/(main)/
 │       └── transactions/
 │           ├── page.tsx           # /assets/stock/transactions - 주식 거래 내역
 │           └── new/
-│               └── page.tsx       # /assets/stock/transactions/new - 주식 거래 등록
+│               ├── full/page.tsx  # /assets/stock/transactions/new/full
+│               └── account/page.tsx # /assets/stock/transactions/new/account
 └── settings/                      # /settings - 설정
 ```
 
@@ -166,7 +167,27 @@ assets/
 각 유형별로 동일한 하위 구조:
 - `holdings/` - 보유 현황
 - `transactions/` - 거래/기록 내역
-- `transactions/new/` - 기록 추가
+- `transactions/new/full/` - 맥락 없는 전체 기록 추가
+- `transactions/new/account/` - 특정 계좌 맥락의 기록 추가
+
+여러 기록을 한 번에 만드는 입력 화면은 route segment로 입력 모드를 드러냅니다.
+
+```
+ledger/
+└── records/
+    └── new/
+        ├── full/                 # /ledger/records/new/full
+        └── daily/                # /ledger/records/new/daily?date=YYYY-MM-DD
+
+assets/
+└── stock/
+    └── transactions/
+        └── new/
+            ├── full/             # /assets/stock/transactions/new/full
+            └── account/          # /assets/stock/transactions/new/account?accountId=...
+```
+
+기존 짧은 진입 경로는 필요한 동안 redirect로 유지합니다.
 
 ### 자산 분석 계층 구조
 
@@ -212,11 +233,11 @@ const SERVICE_ROUTE_TREE = {
     label: "가계부",
     mobile: "topLevel",
     children: {
-      new: {
-        href: "/ledger/new",
+      recordsNewFull: {
+        href: "/ledger/records/new/full",
         label: "내역 추가",
         mobile: "task",
-        closeHref: "/ledger",
+        closeHref: "/ledger/records",
       },
     },
   },
@@ -304,7 +325,7 @@ import { PageContainer } from "@/components/layout";
 | `/household` | child, parent `/settings` | medium |
 | `/assets/stock/holdings` | child, breadcrumb `자산 > 주식 > 보유 종목` | default |
 | `/assets/stock/transactions` | child, breadcrumb `자산 > 주식 > 거래 내역` | default |
-| `/assets/stock/transactions/new` | task, close `/assets/stock/transactions` | narrow |
+| `/assets/stock/transactions/new/full` | task, close `/assets/stock/transactions` | narrow |
 | `/assets/stock/settings` | child, breadcrumb `자산 > 주식 > 종목 설정` | default |
 
 ---

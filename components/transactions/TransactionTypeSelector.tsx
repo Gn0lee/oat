@@ -7,24 +7,29 @@ import { Label } from "@/components/ui/label";
 interface TransactionTypeSelectorProps<T extends FieldValues> {
   control: Control<T>;
   name?: Path<T>;
+  variant?: "card" | "inline";
 }
 
 export function TransactionTypeSelector<
   T extends FieldValues & { type: "buy" | "sell" },
->({ control, name = "type" as Path<T> }: TransactionTypeSelectorProps<T>) {
+>({
+  control,
+  name = "type" as Path<T>,
+  variant = "card",
+}: TransactionTypeSelectorProps<T>) {
   const { field } = useController({
     control,
     name,
   });
 
-  return (
-    <div className="bg-white rounded-2xl shadow-sm p-5 space-y-4">
+  const content = (
+    <>
       <Label className="text-gray-700">거래 유형</Label>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-2">
         <button
           type="button"
           onClick={() => field.onChange("buy")}
-          className={`h-12 rounded-xl font-medium transition-colors ${
+          className={`h-11 rounded-xl font-medium transition-colors ${
             field.value === "buy"
               ? "bg-[#F04452] text-white"
               : "bg-gray-100 text-gray-600 hover:bg-gray-200"
@@ -35,7 +40,7 @@ export function TransactionTypeSelector<
         <button
           type="button"
           onClick={() => field.onChange("sell")}
-          className={`h-12 rounded-xl font-medium transition-colors ${
+          className={`h-11 rounded-xl font-medium transition-colors ${
             field.value === "sell"
               ? "bg-[#3182F6] text-white"
               : "bg-gray-100 text-gray-600 hover:bg-gray-200"
@@ -44,6 +49,16 @@ export function TransactionTypeSelector<
           매도
         </button>
       </div>
+    </>
+  );
+
+  if (variant === "inline") {
+    return <div className="space-y-2">{content}</div>;
+  }
+
+  return (
+    <div className="bg-white rounded-2xl shadow-sm p-5 space-y-4">
+      {content}
     </div>
   );
 }
