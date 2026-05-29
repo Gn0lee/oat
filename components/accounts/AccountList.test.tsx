@@ -30,7 +30,7 @@ const account: AccountWithOwner = {
   ownerName: "진호",
   name: "NH ISA",
   broker: "NH투자증권",
-  accountNumber: "123-456",
+  lastFour: "1234",
   accountType: "isa",
   category: "investment",
   balance: null,
@@ -51,6 +51,6 @@ describe("AccountList", () => {
     expect(screen.getByText("NH ISA")).toBeInTheDocument();
     expect(screen.getByText("NH투자증권")).toBeInTheDocument();
     expect(screen.getByText("ISA")).toBeInTheDocument();
-    expect(screen.getByText("123-456")).toBeInTheDocument();
+    expect(screen.getByText("끝 1234")).toBeInTheDocument();
   });
 });

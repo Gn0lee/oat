@@ -328,7 +328,7 @@ create table public.accounts (
   owner_id uuid not null references public.profiles(id) on delete cascade,
   name text not null,
   broker text,
-  account_number text,
+  last_four text check (last_four is null or last_four ~ '^\d{4}$'),
   account_type account_type,
   category account_category,         -- 계좌 범주 (bank/investment)
   balance numeric(18, 2),            -- 현재 잔액 (예수금 포함, 수동 입력)
@@ -351,7 +351,7 @@ create index accounts_owner_id_idx on public.accounts(owner_id);
 | owner_id | uuid (FK) | 계좌 소유자 |
 | name | text | 계좌명 |
 | broker | text (nullable) | 증권사/은행명 |
-| account_number | text (nullable) | 계좌번호 |
+| last_four | text (nullable) | 계좌번호 뒤 4자리 |
 | account_type | enum (nullable) | 계좌 유형 |
 | category | enum (nullable) | 계좌 범주 (bank/investment) |
 | balance | numeric (nullable) | 현재 잔액 — 증권 계좌는 예수금, 은행 계좌는 잔액 |

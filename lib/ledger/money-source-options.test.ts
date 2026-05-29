@@ -11,7 +11,7 @@ const bankAccount: LedgerMoneySourceAccount = {
   name: "국민은행 생활비",
   ownerName: "진호",
   broker: "국민은행",
-  accountNumber: "111-222",
+  lastFour: "1222",
   accountType: "checking",
   category: "bank",
 };
@@ -21,7 +21,7 @@ const legacyBankAccount: LedgerMoneySourceAccount = {
   name: "신한 적금",
   ownerName: "진호",
   broker: "신한은행",
-  accountNumber: null,
+  lastFour: null,
   accountType: "savings",
   category: null,
 };
@@ -31,7 +31,7 @@ const investmentAccount: LedgerMoneySourceAccount = {
   name: "토스증권",
   ownerName: "수진",
   broker: "토스증권",
-  accountNumber: "333-444",
+  lastFour: "3444",
   accountType: "stock",
   category: "investment",
 };
@@ -41,7 +41,7 @@ const legacyInvestmentAccount: LedgerMoneySourceAccount = {
   name: "ISA 계좌",
   ownerName: "수진",
   broker: "미래에셋",
-  accountNumber: null,
+  lastFour: null,
   accountType: "isa",
   category: null,
 };
