@@ -36,8 +36,8 @@ describe("getServiceRouteMeta", () => {
     expect(getServiceRouteMeta("/ledger/records/new/full")).toMatchObject({
       label: "기록 추가",
       mobileVariant: "task",
-      parentHref: "/ledger/records",
-      closeHref: "/ledger/records",
+      parentHref: "/ledger",
+      closeHref: "/ledger",
     });
 
     expect(

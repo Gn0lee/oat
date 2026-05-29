@@ -38,15 +38,15 @@ export const SERVICE_ROUTE_TREE = [
     mobile: "topLevel",
     children: [
       {
+        href: "/ledger/records/new/full",
+        label: "기록 추가",
+        mobile: "task",
+        closeHref: "/ledger",
+      },
+      {
         href: "/ledger/records",
         label: "기록 조회",
         children: [
-          {
-            href: "/ledger/records/new/full",
-            label: "기록 추가",
-            mobile: "task",
-            closeHref: "/ledger/records",
-          },
           {
             href: "/ledger/records/new/daily",
             label: "하루 기록 추가",
