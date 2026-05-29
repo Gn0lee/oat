@@ -50,7 +50,7 @@ function MobileServiceHeader({
 
   if (meta.mobileVariant === "topLevel") {
     return (
-      <header className="h-14 px-4 flex items-center lg:hidden">
+      <header className="sticky top-0 z-50 bg-gray-50/80 backdrop-blur-md h-14 px-4 flex items-center lg:hidden">
         <Link href="/home" className="inline-flex items-center">
           <span className="text-xl font-bold text-primary">oat</span>
         </Link>
@@ -59,7 +59,7 @@ function MobileServiceHeader({
   }
 
   return (
-    <header className="relative h-14 px-1 flex items-center lg:hidden">
+    <header className="sticky top-0 z-50 bg-gray-50/80 backdrop-blur-md h-14 px-1 flex items-center lg:hidden">
       <IconLink
         href={parentHref}
         label="이전 화면으로 이동"
