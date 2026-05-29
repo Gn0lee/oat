@@ -7,7 +7,7 @@ export interface CreateAccountParams {
   ownerId: string;
   name: string;
   broker?: string;
-  accountNumber?: string;
+  lastFour?: string;
   accountType: AccountType;
   category?: AccountCategory;
   balance?: number;
@@ -17,7 +17,7 @@ export interface CreateAccountParams {
 export interface UpdateAccountParams {
   name?: string;
   broker?: string | null;
-  accountNumber?: string | null;
+  lastFour?: string | null;
   accountType?: AccountType;
   category?: AccountCategory | null;
   balance?: number | null;
@@ -31,7 +31,7 @@ export interface AccountWithOwner {
   ownerName: string;
   name: string;
   broker: string | null;
-  accountNumber: string | null;
+  lastFour: string | null;
   accountType: AccountType | null;
   category: AccountCategory | null;
   balance: number | null;
@@ -75,7 +75,7 @@ export async function getAccounts(
     ownerName: ownerMap.get(account.owner_id) ?? "알 수 없음",
     name: account.name,
     broker: account.broker,
-    accountNumber: account.account_number,
+    lastFour: account.last_four,
     accountType: account.account_type,
     category: account.category,
     balance: account.balance,
@@ -98,7 +98,7 @@ export async function createAccount(
     ownerId,
     name,
     broker,
-    accountNumber,
+    lastFour,
     accountType,
     category,
     balance,
@@ -129,7 +129,7 @@ export async function createAccount(
       owner_id: ownerId,
       name,
       broker: broker || null,
-      account_number: accountNumber || null,
+      last_four: lastFour || null,
       account_type: accountType,
       category: category ?? null,
       balance: balance ?? null,
@@ -200,8 +200,8 @@ export async function updateAccount(
     .update({
       ...(params.name !== undefined && { name: params.name }),
       ...(params.broker !== undefined && { broker: params.broker }),
-      ...(params.accountNumber !== undefined && {
-        account_number: params.accountNumber,
+      ...(params.lastFour !== undefined && {
+        last_four: params.lastFour,
       }),
       ...(params.accountType !== undefined && {
         account_type: params.accountType,

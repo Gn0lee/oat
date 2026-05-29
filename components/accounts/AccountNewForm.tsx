@@ -37,7 +37,7 @@ const detailFormSchema = z.object({
     .min(1, "계좌명은 필수입니다.")
     .max(50, "계좌명은 50자 이내여야 합니다."),
   broker: z.string().max(50, "증권사/은행명은 50자 이내여야 합니다."),
-  accountNumber: z.string().max(50, "계좌번호는 50자 이내여야 합니다."),
+  lastFour: z.string().regex(/^\d{0,4}$/, "숫자 4자리만 입력해주세요."),
   accountType: z.enum(ALL_ACCOUNT_TYPES, {
     message: "계좌 유형을 선택해주세요.",
   }),
@@ -115,7 +115,7 @@ function DetailForm({ category, onBack }: DetailFormProps) {
     defaultValues: {
       name: "",
       broker: "",
-      accountNumber: "",
+      lastFour: "",
       accountType: defaultAccountType,
       balanceStr: "",
       memo: "",
@@ -134,7 +134,7 @@ function DetailForm({ category, onBack }: DetailFormProps) {
       await createAccount.mutateAsync({
         name: data.name,
         broker: data.broker || undefined,
-        accountNumber: data.accountNumber || undefined,
+        lastFour: data.lastFour || undefined,
         accountType: data.accountType,
         category,
         balance,
@@ -216,18 +216,17 @@ function DetailForm({ category, onBack }: DetailFormProps) {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="accountNumber">계좌번호</Label>
+        <Label htmlFor="lastFour">계좌번호 뒤 4자리</Label>
         <Input
-          id="accountNumber"
+          id="lastFour"
           inputMode="numeric"
-          placeholder="예: 123-456-78901234"
-          {...register("accountNumber")}
-          aria-invalid={!!errors.accountNumber}
+          maxLength={4}
+          placeholder="예: 1234"
+          {...register("lastFour")}
+          aria-invalid={!!errors.lastFour}
         />
-        {errors.accountNumber && (
-          <p className="text-sm text-destructive">
-            {errors.accountNumber.message}
-          </p>
+        {errors.lastFour && (
+          <p className="text-sm text-destructive">{errors.lastFour.message}</p>
         )}
       </div>
 

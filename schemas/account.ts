@@ -22,9 +22,10 @@ export const createAccountSchema = z.object({
     .string()
     .max(50, "증권사/은행명은 50자 이내여야 합니다.")
     .optional(),
-  accountNumber: z
+  lastFour: z
     .string()
-    .max(50, "계좌번호는 50자 이내여야 합니다.")
+    .length(4, "계좌번호 뒤 4자리를 입력해주세요.")
+    .regex(/^\d{4}$/, "숫자 4자리만 입력해주세요.")
     .optional(),
   accountType: z.enum(accountTypeValues, {
     message: "계좌 유형을 선택해주세요.",
@@ -47,9 +48,10 @@ export const updateAccountSchema = z.object({
     .max(50, "증권사/은행명은 50자 이내여야 합니다.")
     .nullable()
     .optional(),
-  accountNumber: z
+  lastFour: z
     .string()
-    .max(50, "계좌번호는 50자 이내여야 합니다.")
+    .length(4, "계좌번호 뒤 4자리를 입력해주세요.")
+    .regex(/^\d{4}$/, "숫자 4자리만 입력해주세요.")
     .nullable()
     .optional(),
   accountType: z

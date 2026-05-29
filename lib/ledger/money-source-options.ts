@@ -17,7 +17,7 @@ export interface LedgerMoneySourceAccount {
   name: string;
   ownerName: string;
   broker: string | null;
-  accountNumber: string | null;
+  lastFour: string | null;
   accountType: AccountType | null;
   category: AccountCategory | null;
 }
@@ -119,7 +119,7 @@ function toAccountOption(
   const description = compactSearchText([
     account.broker,
     account.ownerName,
-    account.accountNumber,
+    account.lastFour ? `끝 ${account.lastFour}` : null,
   ]);
 
   return {
@@ -132,7 +132,7 @@ function toAccountOption(
       account.name,
       account.broker,
       account.ownerName,
-      account.accountNumber,
+      account.lastFour,
       groupLabel,
     ]),
   };

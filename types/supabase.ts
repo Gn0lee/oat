@@ -36,7 +36,6 @@ export type Database = {
     Tables: {
       accounts: {
         Row: {
-          account_number: string | null;
           account_type: Database["public"]["Enums"]["account_type"] | null;
           balance: number | null;
           balance_updated_at: string | null;
@@ -45,13 +44,13 @@ export type Database = {
           created_at: string;
           household_id: string;
           id: string;
+          last_four: string | null;
           memo: string | null;
           name: string;
           owner_id: string;
           updated_at: string;
         };
         Insert: {
-          account_number?: string | null;
           account_type?: Database["public"]["Enums"]["account_type"] | null;
           balance?: number | null;
           balance_updated_at?: string | null;
@@ -60,13 +59,13 @@ export type Database = {
           created_at?: string;
           household_id: string;
           id?: string;
+          last_four?: string | null;
           memo?: string | null;
           name: string;
           owner_id: string;
           updated_at?: string;
         };
         Update: {
-          account_number?: string | null;
           account_type?: Database["public"]["Enums"]["account_type"] | null;
           balance?: number | null;
           balance_updated_at?: string | null;
@@ -75,6 +74,7 @@ export type Database = {
           created_at?: string;
           household_id?: string;
           id?: string;
+          last_four?: string | null;
           memo?: string | null;
           name?: string;
           owner_id?: string;
