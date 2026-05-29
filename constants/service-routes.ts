@@ -38,12 +38,23 @@ export const SERVICE_ROUTE_TREE = [
     mobile: "topLevel",
     children: [
       {
-        href: "/ledger/new",
-        label: "기록 추가",
-        mobile: "task",
-        closeHref: "/ledger",
+        href: "/ledger/records",
+        label: "기록 조회",
+        children: [
+          {
+            href: "/ledger/records/new/full",
+            label: "기록 추가",
+            mobile: "task",
+            closeHref: "/ledger/records",
+          },
+          {
+            href: "/ledger/records/new/daily",
+            label: "하루 기록 추가",
+            mobile: "task",
+            closeHref: "/ledger/records",
+          },
+        ],
       },
-      { href: "/ledger/records", label: "기록 조회" },
       {
         href: "/ledger/payment-methods",
         label: "결제수단 관리",
@@ -131,8 +142,14 @@ export const SERVICE_ROUTE_TREE = [
             label: "거래 내역",
             children: [
               {
-                href: "/assets/stock/transactions/new",
+                href: "/assets/stock/transactions/new/full",
                 label: "거래 등록",
+                mobile: "task",
+                closeHref: "/assets/stock/transactions",
+              },
+              {
+                href: "/assets/stock/transactions/new/account",
+                label: "계좌 거래 등록",
                 mobile: "task",
                 closeHref: "/assets/stock/transactions",
               },

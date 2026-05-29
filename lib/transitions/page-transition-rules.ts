@@ -128,13 +128,17 @@ export function getPageTransitionRules(
     case "desktop":
       return [
         { kind: "fade", paths: TOP_LEVEL_ROUTES, speed: "fast" },
-        { kind: "fade", paths: ["/ledger", "/ledger/new"], speed: "fast" },
+        {
+          kind: "fade",
+          paths: ["/ledger", "/ledger/records/new/full"],
+          speed: "fast",
+        },
       ];
     case "reduced":
     case "initial":
       return [
         { kind: "fade", paths: TOP_LEVEL_ROUTES },
-        { kind: "fade", paths: ["/ledger", "/ledger/new"] },
+        { kind: "fade", paths: ["/ledger", "/ledger/records/new/full"] },
       ];
   }
 }

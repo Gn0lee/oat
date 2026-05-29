@@ -115,7 +115,7 @@ export function MyStockSection() {
         <div className="bg-white rounded-2xl p-6 shadow-sm text-center">
           <p className="text-gray-500">아직 보유 종목이 없어요</p>
           <Link
-            href="/assets/stock/transactions/new"
+            href="/assets/stock/transactions/new/full"
             className="inline-block mt-3 text-sm text-indigo-600 hover:text-indigo-700 font-medium"
           >
             첫 거래 기록하기 →

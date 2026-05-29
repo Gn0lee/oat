@@ -1,10 +1,5 @@
-import { PageContainer } from "@/components/layout";
-import { LedgerFunnel } from "@/components/ledger/funnel/LedgerFunnel";
+import { redirect } from "next/navigation";
 
 export default function LedgerNewPage() {
-  return (
-    <PageContainer maxWidth="narrow">
-      <LedgerFunnel />
-    </PageContainer>
-  );
+  redirect("/ledger/records/new/full");
 }

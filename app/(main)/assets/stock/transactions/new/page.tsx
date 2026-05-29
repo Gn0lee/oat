@@ -1,12 +1,5 @@
-import { PageContainer } from "@/components/layout";
-import { TransactionFunnel } from "@/components/transactions/funnel";
+import { redirect } from "next/navigation";
 
 export default function NewTransactionPage() {
-  const today = new Date().toISOString().split("T")[0];
-
-  return (
-    <PageContainer maxWidth="narrow">
-      <TransactionFunnel defaultDate={today} />
-    </PageContainer>
-  );
+  redirect("/assets/stock/transactions/new/full");
 }

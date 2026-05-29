@@ -26,7 +26,7 @@ export default async function LedgerPage() {
         <h3 className="text-lg font-semibold text-gray-900 mb-2 px-1">기능</h3>
 
         <Link
-          href="/ledger/new"
+          href="/ledger/records/new/full"
           className="flex items-center justify-between p-4 bg-white rounded-2xl shadow-sm hover:bg-gray-50 transition-colors"
         >
           <div className="flex items-center gap-3">

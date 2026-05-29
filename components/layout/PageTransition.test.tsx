@@ -32,7 +32,7 @@ describe("PageTransition", () => {
     );
     const ledgerBoundary = screen.getByText("가계부").parentElement;
 
-    vi.mocked(usePathname).mockReturnValue("/ledger/new");
+    vi.mocked(usePathname).mockReturnValue("/ledger/records/new/full");
     rerender(
       <PageTransition>
         <div>기록 추가</div>
@@ -40,7 +40,10 @@ describe("PageTransition", () => {
     );
 
     const newBoundary = screen.getByText("기록 추가").parentElement;
-    expect(newBoundary).toHaveAttribute("data-ssgoi-transition", "/ledger/new");
+    expect(newBoundary).toHaveAttribute(
+      "data-ssgoi-transition",
+      "/ledger/records/new/full",
+    );
     expect(newBoundary).not.toBe(ledgerBoundary);
   });
 });

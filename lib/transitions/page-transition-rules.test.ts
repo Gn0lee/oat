@@ -102,7 +102,7 @@ describe("page transition rules", () => {
     expect(rules.every((rule) => rule.kind === "fade")).toBe(true);
     expect(rules).toContainEqual({
       kind: "fade",
-      paths: ["/ledger", "/ledger/new"],
+      paths: ["/ledger", "/ledger/records/new/full"],
       speed: "fast",
     });
   });

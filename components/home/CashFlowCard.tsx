@@ -36,7 +36,7 @@ export function CashFlowCard({
             <>
               {" "}
               <Link
-                href="/ledger/new"
+                href="/ledger/records/new/full"
                 className="font-medium text-primary underline-offset-2 hover:underline"
               >
                 기록해보세요
@@ -95,7 +95,7 @@ export function CashFlowCard({
         <p className="mt-4 text-sm text-gray-500">
           최근 기록이 뜸해요. 오늘의 지출이나 수입을{" "}
           <Link
-            href="/ledger/new"
+            href="/ledger/records/new/full"
             className="font-medium text-primary underline-offset-2 hover:underline"
           >
             기록해보세요

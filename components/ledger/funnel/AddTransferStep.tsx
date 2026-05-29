@@ -32,6 +32,8 @@ type TransferFormValues = z.infer<typeof transferFormSchema>;
 
 interface AddTransferStepProps {
   onNext: (item: TransferItemFormData) => void;
+  defaultDate?: string;
+  submitLabel?: string;
 }
 
 const today = format(new Date(), "yyyy-MM-dd");
@@ -43,7 +45,11 @@ function parseLocation(value: string): TransferLocation {
   return { kind: "paymentMethod", id: value.slice(3) };
 }
 
-export function AddTransferStep({ onNext }: AddTransferStepProps) {
+export function AddTransferStep({
+  onNext,
+  defaultDate = today,
+  submitLabel = "다음",
+}: AddTransferStepProps) {
   const { data: accounts = [] } = useAccounts();
   const { data: paymentMethods = [] } = usePaymentMethods();
 
@@ -54,7 +60,7 @@ export function AddTransferStep({ onNext }: AddTransferStepProps) {
       title: "",
       fromValue: "",
       toValue: "",
-      transactedAt: today,
+      transactedAt: defaultDate,
       memo: "",
     },
   });
@@ -188,7 +194,7 @@ export function AddTransferStep({ onNext }: AddTransferStepProps) {
         </div>
 
         <Button type="submit" className="w-full rounded-xl py-3">
-          다음
+          {submitLabel}
         </Button>
       </form>
     </div>

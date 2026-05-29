@@ -40,7 +40,7 @@ describe("CashFlowCard", () => {
     ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "기록해보세요" })).toHaveAttribute(
       "href",
-      "/ledger/new",
+      "/ledger/records/new/full",
     );
   });
 
@@ -146,7 +146,7 @@ describe("CashFlowCard", () => {
     expect(screen.getByText(/최근 기록이 뜸해요/)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "기록해보세요" })).toHaveAttribute(
       "href",
-      "/ledger/new",
+      "/ledger/records/new/full",
     );
   });
 

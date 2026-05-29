@@ -37,7 +37,7 @@ export default async function HoldingsPage() {
     <>
       <PageActions>
         <Button asChild size="sm">
-          <Link href="/assets/stock/transactions/new">
+          <Link href="/assets/stock/transactions/new/full">
             <Plus className="w-4 h-4 mr-1" />
             거래 추가
           </Link>
