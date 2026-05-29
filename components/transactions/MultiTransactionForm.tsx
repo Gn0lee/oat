@@ -2,6 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { PackagePlusIcon, PlusIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useFieldArray, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import { AccountSelector } from "@/components/transactions/AccountSelector";
@@ -28,6 +29,7 @@ export function MultiTransactionForm({
   defaultDate,
   defaultAccountId,
 }: MultiTransactionFormProps) {
+  const router = useRouter();
   const createBatchTransactions = useCreateBatchTransactions();
 
   const form = useForm<MultiTransactionFormData>({
@@ -97,14 +99,7 @@ export function MultiTransactionForm({
       toast.success(
         `${validItems.length}건의 ${typeText} 거래가 등록되었습니다.`,
       );
-
-      // 폼 초기화
-      form.reset({
-        type: data.type,
-        transactedAt: defaultDate,
-        accountId: defaultAccountId,
-        items: [],
-      });
+      router.push("/assets/stock/transactions");
     } catch (error) {
       if (error instanceof Error) {
         toast.error(error.message);
@@ -122,28 +117,29 @@ export function MultiTransactionForm({
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-      {/* 거래 유형 선택 */}
-      <TransactionTypeSelector control={form.control} />
+      <div className="bg-white rounded-2xl shadow-sm p-4 space-y-4">
+        <TransactionTypeSelector control={form.control} variant="inline" />
 
-      {/* 거래일 */}
-      <div className="bg-white rounded-2xl shadow-sm p-5 space-y-4">
-        <Label className="text-gray-700">거래일</Label>
-        <DatePickerInput
-          value={watchTransactedAt ?? ""}
-          onChange={(v) =>
-            form.setValue("transactedAt", v, { shouldValidate: true })
-          }
-          className="h-12 rounded-xl"
-        />
-        {form.formState.errors.transactedAt && (
-          <p className="text-sm text-destructive">
-            {form.formState.errors.transactedAt.message}
-          </p>
-        )}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label className="text-gray-700">거래일</Label>
+            <DatePickerInput
+              value={watchTransactedAt ?? ""}
+              onChange={(v) =>
+                form.setValue("transactedAt", v, { shouldValidate: true })
+              }
+              className="h-11 rounded-xl"
+            />
+            {form.formState.errors.transactedAt && (
+              <p className="text-sm text-destructive">
+                {form.formState.errors.transactedAt.message}
+              </p>
+            )}
+          </div>
+
+          <AccountSelector control={form.control} variant="inline" />
+        </div>
       </div>
-
-      {/* 계좌 선택 */}
-      <AccountSelector control={form.control} />
 
       {/* 종목 행 목록 */}
       {fields.length === 0 ? (

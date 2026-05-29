@@ -2,6 +2,7 @@
 
 import { PlusCircle } from "lucide-react";
 import Link from "next/link";
+import type { ReactNode } from "react";
 import type { Control, FieldValues, Path } from "react-hook-form";
 import { useController } from "react-hook-form";
 import { Button } from "@/components/ui/button";
@@ -18,11 +19,13 @@ import { useAccounts } from "@/hooks/use-accounts";
 interface AccountSelectorProps<T extends FieldValues> {
   control: Control<T>;
   name?: Path<T>;
+  variant?: "card" | "inline";
 }
 
 export function AccountSelector<T extends FieldValues & { accountId: string }>({
   control,
   name = "accountId" as Path<T>,
+  variant = "card",
 }: AccountSelectorProps<T>) {
   const { data: accounts, isLoading } = useAccounts();
   const { field } = useController({
@@ -30,18 +33,29 @@ export function AccountSelector<T extends FieldValues & { accountId: string }>({
     name,
   });
 
-  if (isLoading) {
+  const wrap = (children: ReactNode) => {
+    if (variant === "inline") {
+      return <div className="space-y-2">{children}</div>;
+    }
     return (
       <div className="bg-white rounded-2xl shadow-sm p-5 space-y-4">
+        {children}
+      </div>
+    );
+  };
+
+  if (isLoading) {
+    return wrap(
+      <>
         <Label className="text-gray-700">거래 계좌</Label>
         <div className="h-12 bg-gray-100 rounded-xl animate-pulse" />
-      </div>
+      </>,
     );
   }
 
   if (!accounts || accounts.length === 0) {
-    return (
-      <div className="bg-white rounded-2xl shadow-sm p-5 space-y-4">
+    return wrap(
+      <>
         <Label className="text-gray-700">거래 계좌</Label>
         <div className="text-center py-4 space-y-3">
           <p className="text-gray-500 text-sm">
@@ -54,15 +68,15 @@ export function AccountSelector<T extends FieldValues & { accountId: string }>({
             </Link>
           </Button>
         </div>
-      </div>
+      </>,
     );
   }
 
-  return (
-    <div className="bg-white rounded-2xl shadow-sm p-5 space-y-4">
+  return wrap(
+    <>
       <Label className="text-gray-700">거래 계좌</Label>
       <Select value={field.value} onValueChange={field.onChange}>
-        <SelectTrigger className="h-12 rounded-xl w-full">
+        <SelectTrigger className="h-11 rounded-xl w-full">
           <SelectValue placeholder="계좌를 선택하세요" />
         </SelectTrigger>
         <SelectContent>
@@ -80,6 +94,6 @@ export function AccountSelector<T extends FieldValues & { accountId: string }>({
           ))}
         </SelectContent>
       </Select>
-    </div>
+    </>,
   );
 }

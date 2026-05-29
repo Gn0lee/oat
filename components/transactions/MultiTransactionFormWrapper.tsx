@@ -16,7 +16,8 @@ export function MultiTransactionFormWrapper({
   defaultDate,
   defaultAccountId,
 }: MultiTransactionFormWrapperProps) {
-  const { userId: currentUserId } = useCurrentUserId();
+  const { userId: currentUserId, isLoading: isLoadingCurrentUser } =
+    useCurrentUserId();
   const { data: accounts, isLoading } = useAccounts();
 
   // 본인 계좌만 필터링
@@ -24,7 +25,7 @@ export function MultiTransactionFormWrapper({
     (a) => a.ownerId === currentUserId,
   );
 
-  if (isLoading) {
+  if (isLoading || isLoadingCurrentUser) {
     return (
       <div className="space-y-4">
         <div className="h-14 bg-gray-100 rounded-2xl animate-pulse" />
