@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildEndpointStats,
   buildMcpMeta,
+  buildMoneyEndpoint,
   clampLedgerLimit,
   isLedgerEntryVisibleToMcp,
   MCP_TOOL_DEFINITIONS,
@@ -17,6 +19,21 @@ describe("MCP tool helpers", () => {
       "get_ledger_stats",
       "get_asset_snapshot",
     ]);
+  });
+
+  it("exposes ledger filters using the Money Endpoint model", () => {
+    const searchTool = MCP_TOOL_DEFINITIONS.find(
+      (tool) => tool.name === "search_ledger_entries",
+    );
+
+    expect(searchTool?.inputSchema.properties).toMatchObject({
+      types: { type: "array" },
+      categoryIds: { type: "array" },
+      endpointIds: { type: "array" },
+      endpointTypes: { type: "array" },
+      ownerIds: { type: "array" },
+      isShared: { type: "boolean" },
+    });
   });
 
   it("defaults the period to the current month and caps explicit ranges", () => {
@@ -84,5 +101,97 @@ describe("MCP tool helpers", () => {
         currentUserId: "me",
       }),
     ).toBe(true);
+  });
+
+  it("normalizes ledger source and destination to Money Endpoints", () => {
+    const maps = {
+      accounts: new Map([
+        ["account-1", { name: "신한 주거래", ownerName: "이진호" }],
+      ]),
+      paymentMethods: new Map([
+        ["pm-1", { name: "온누리", ownerName: "우니" }],
+      ]),
+    };
+
+    expect(
+      buildMoneyEndpoint(
+        {
+          type: "transfer",
+          from_account_id: "account-1",
+          from_payment_method_id: null,
+          to_account_id: null,
+          to_payment_method_id: "pm-1",
+        },
+        maps,
+        "source",
+      ),
+    ).toEqual({
+      endpointType: "account",
+      endpointId: "account-1",
+      endpointName: "신한 주거래",
+      ownerName: "이진호",
+    });
+
+    expect(
+      buildMoneyEndpoint(
+        {
+          type: "income",
+          from_account_id: null,
+          from_payment_method_id: null,
+          to_account_id: null,
+          to_payment_method_id: "pm-1",
+        },
+        maps,
+        "destination",
+      ),
+    ).toEqual({
+      endpointType: "paymentMethod",
+      endpointId: "pm-1",
+      endpointName: "온누리",
+      ownerName: "우니",
+    });
+  });
+
+  it("keeps endpoint flow totals split by ledger entry type", () => {
+    const aggregate = new Map([
+      [
+        "account:account-1",
+        {
+          amount: 1_500,
+          count: 2,
+          endpoint: {
+            endpointType: "account",
+            endpointId: "account-1",
+            endpointName: "신한 주거래",
+            ownerName: "이진호",
+          },
+          breakdownByType: {
+            expense: { amount: 1_000, entryCount: 1 },
+            income: { amount: 0, entryCount: 0 },
+            transfer: { amount: 500, entryCount: 1 },
+          },
+        },
+      ],
+    ]);
+
+    expect(buildEndpointStats(aggregate as never)).toEqual({
+      total: 1_500,
+      items: [
+        {
+          endpointType: "account",
+          endpointId: "account-1",
+          endpointName: "신한 주거래",
+          ownerName: "이진호",
+          amount: 1_500,
+          percentage: 100,
+          entryCount: 2,
+          breakdownByType: {
+            expense: { amount: 1_000, entryCount: 1 },
+            income: { amount: 0, entryCount: 0 },
+            transfer: { amount: 500, entryCount: 1 },
+          },
+        },
+      ],
+    });
   });
 });

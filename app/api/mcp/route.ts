@@ -35,6 +35,12 @@ function summarizeToolInput(
     limit: args.limit,
     includeHoldings: args.includeHoldings,
     includeAllocation: args.includeAllocation,
+    types: args.types,
+    categoryIds: args.categoryIds,
+    endpointIds: args.endpointIds,
+    endpointTypes: args.endpointTypes,
+    ownerIds: args.ownerIds,
+    isShared: args.isShared,
     hasQuery: typeof args.query === "string" && args.query.trim().length > 0,
   };
 }

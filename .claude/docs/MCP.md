@@ -277,13 +277,61 @@ AI가 다른 tool을 호출할 때 필요한 참조 데이터를 반환합니다
 
 ### 8.4 `search_ledger_entries`
 
-기간, 금액, 카테고리, 키워드 등으로 가계부 상세 내역을 조회합니다.
+기간, 타입, 카테고리, Money Endpoint, 사용자, 공유 여부, 키워드 등으로 가계부 상세 내역을 조회합니다.
+
+MCP 응답은 DB의 raw 방향 필드(`from_account_id`, `from_payment_method_id`, `to_account_id`, `to_payment_method_id`)를 직접 노출하지 않습니다. 대신 클라이언트가 바로 이해할 수 있도록 `source`와 `destination` Money Endpoint를 제공합니다.
+
+Money Endpoint:
+
+```json
+{
+  "endpointType": "account",
+  "endpointId": "uuid",
+  "endpointName": "신한 주거래",
+  "ownerName": "이진호"
+}
+```
+
+거래 타입별 endpoint 규칙:
+
+| 타입 | source | destination |
+|------|--------|-------------|
+| expense | 출금 endpoint | null |
+| income | null | 입금 endpoint |
+| transfer | 출금 endpoint | 입금 endpoint |
+
+입력:
+
+```ts
+{
+  from?: string;              // YYYY-MM-DD
+  to?: string;                // YYYY-MM-DD
+  query?: string;
+  types?: ("expense" | "income" | "transfer")[];
+  categoryIds?: string[];
+  endpointIds?: string[];
+  endpointTypes?: ("account" | "paymentMethod")[];
+  ownerIds?: string[];
+  isShared?: boolean;
+  limit?: number;
+}
+```
+
+반환 summary:
+
+```json
+{
+  "count": 100,
+  "limit": 100,
+  "hasMore": true
+}
+```
 
 제한:
 
 - 기본 기간은 이번 달
 - 한 번에 최대 100건
-- cursor 또는 page 기반 pagination
+- v0.1은 `hasMore`만 제공하고 cursor pagination은 보류
 - 파트너 개인 지출 상세 제외
 
 ### 8.5 `get_ledger_stats`
@@ -295,7 +343,25 @@ AI가 다른 tool을 호출할 때 필요한 참조 데이터를 반환합니다
 - 월별 추이
 - 카테고리별
 - 가구원별
-- 결제수단별
+- source Money Endpoint별
+- destination Money Endpoint별
+
+현금흐름 summary 규칙:
+
+- `totalIncome`, `totalExpense`, `balance`, `savingsRate`는 이체를 제외합니다.
+- 파트너 개인 지출은 상세 없이 합계만 포함합니다.
+
+Endpoint flow 규칙:
+
+- `bySource`는 지출 출금과 이체 출금을 포함합니다.
+- `byDestination`은 수입 입금과 이체 입금을 포함합니다.
+- 각 endpoint item은 `breakdownByType`으로 expense, income, transfer 금액과 건수를 분리합니다.
+
+Trend 규칙:
+
+- `trend.dataAvailableFrom`은 MCP 사용자가 관측 가능한 ledger 데이터가 시작되는 월의 1일입니다.
+- `recorded: false`인 월은 아직 기록이 없는 월이므로 금액/비율을 `null`로 반환합니다.
+- `recorded: true`인 월의 `0`은 실제 0원 활동을 의미합니다.
 
 제한:
 
@@ -322,6 +388,27 @@ AI가 다른 tool을 호출할 때 필요한 참조 데이터를 반환합니다
 - 소유자별 배분
 - 주식 보유 현황
 - 수익률 요약
+- valuation metadata
+
+자산 snapshot 규칙:
+
+- `get_asset_snapshot`과 `get_financial_overview`는 같은 portfolio snapshot 계산을 사용합니다.
+- `includeHoldings: false`는 holdings 상세만 숨기며, summary와 allocation은 항상 전체 holdings 기준입니다.
+- allocation은 summary와 같은 가격/환율 snapshot에서 계산합니다.
+- MCP holdings 응답은 오해 가능성이 큰 `firstTransactionAt`을 노출하지 않습니다. `lastTransactionAt`은 유지합니다.
+
+Valuation metadata:
+
+```json
+{
+  "valuationAt": "2026-05-30T00:00:00.000Z",
+  "exchangeRate": 1512.2428,
+  "exchangeRateUpdatedAt": "2026-05-30T00:00:00.000Z",
+  "priceFetchedAt": "2026-05-30T00:00:00.000Z",
+  "hasMissingPrices": false,
+  "hasStalePrices": true
+}
+```
 
 ---
 
