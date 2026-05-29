@@ -1,11 +1,13 @@
 -- 계좌번호 민감정보 정리 (Issue #308)
 -- 기존 account_number(전체 계좌번호)를 last_four(뒤 4자리)로 변환
 
--- 1. 기존 데이터를 뒤 4자리로 변환
+-- 1. 기존 데이터를 뒤 4자리로 변환 (숫자만 남기고, 4자리 미만은 0 패딩, 숫자가 전혀 없으면 NULL 처리)
 UPDATE public.accounts
-SET account_number = RIGHT(account_number, 4)
-WHERE account_number IS NOT NULL
-  AND length(account_number) > 4;
+SET account_number = CASE 
+  WHEN regexp_replace(account_number, '\D', '', 'g') = '' THEN NULL
+  ELSE LPAD(RIGHT(regexp_replace(account_number, '\D', '', 'g'), 4), 4, '0')
+END
+WHERE account_number IS NOT NULL;
 
 -- 2. 컬럼명 변경: account_number → last_four
 ALTER TABLE public.accounts RENAME COLUMN account_number TO last_four;
