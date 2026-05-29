@@ -85,10 +85,10 @@ export function AccountDeleteDialog({
                 </span>
               </div>
             )}
-            {account.accountNumber && (
+            {account.lastFour && (
               <div className="flex justify-between">
-                <span>계좌번호</span>
-                <span>{account.accountNumber}</span>
+                <span>계좌번호 뒤 4자리</span>
+                <span>{account.lastFour}</span>
               </div>
             )}
           </div>

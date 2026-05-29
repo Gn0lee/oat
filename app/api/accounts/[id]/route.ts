@@ -46,7 +46,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
     const account = await updateAccount(supabase, id, user.id, {
       name: input.name,
       broker: input.broker,
-      accountNumber: input.accountNumber,
+      lastFour: input.lastFour,
       accountType: input.accountType,
       category: input.category,
       balance: input.balance,

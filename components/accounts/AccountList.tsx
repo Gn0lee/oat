@@ -101,8 +101,8 @@ function AccountCollection({
                   <Building2 className="size-4" />
                   {account.broker || "기관 미입력"}
                 </span>
-                {account.accountNumber && (
-                  <span className="text-gray-400">{account.accountNumber}</span>
+                {account.lastFour && (
+                  <span className="text-gray-400">끝 {account.lastFour}</span>
                 )}
               </div>
             </div>

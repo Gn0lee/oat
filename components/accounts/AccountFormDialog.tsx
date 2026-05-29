@@ -48,7 +48,7 @@ const bankAccountFormSchema = z.object({
     .min(1, "계좌명은 필수입니다.")
     .max(50, "계좌명은 50자 이내여야 합니다."),
   broker: z.string().max(50, "증권사/은행명은 50자 이내여야 합니다."),
-  accountNumber: z.string().max(50, "계좌번호는 50자 이내여야 합니다."),
+  lastFour: z.string().regex(/^\d{0,4}$/, "숫자 4자리만 입력해주세요."),
   accountType: z.enum(BANK_ACCOUNT_TYPES, {
     message: "계좌 유형을 선택해주세요.",
   }),
@@ -61,7 +61,7 @@ const investmentAccountFormSchema = z.object({
     .min(1, "계좌명은 필수입니다.")
     .max(50, "계좌명은 50자 이내여야 합니다."),
   broker: z.string().max(50, "증권사/은행명은 50자 이내여야 합니다."),
-  accountNumber: z.string().max(50, "계좌번호는 50자 이내여야 합니다."),
+  lastFour: z.string().regex(/^\d{0,4}$/, "숫자 4자리만 입력해주세요."),
   accountType: z.enum(INVESTMENT_ACCOUNT_TYPES, {
     message: "계좌 유형을 선택해주세요.",
   }),
@@ -127,7 +127,7 @@ export function AccountFormDialog({
     defaultValues: {
       name: "",
       broker: "",
-      accountNumber: "",
+      lastFour: "",
       accountType: defaultAccountType as BankAccountType &
         InvestmentAccountType,
       memo: "",
@@ -147,7 +147,7 @@ export function AccountFormDialog({
         reset({
           name: account.name,
           broker: account.broker || "",
-          accountNumber: account.accountNumber || "",
+          lastFour: account.lastFour || "",
           accountType: resolvedType as BankAccountType & InvestmentAccountType,
           memo: account.memo || "",
         });
@@ -155,7 +155,7 @@ export function AccountFormDialog({
         reset({
           name: "",
           broker: "",
-          accountNumber: "",
+          lastFour: "",
           accountType: defaultAccountType as BankAccountType &
             InvestmentAccountType,
           memo: "",
@@ -172,7 +172,7 @@ export function AccountFormDialog({
           data: {
             name: data.name,
             broker: data.broker || null,
-            accountNumber: data.accountNumber || null,
+            lastFour: data.lastFour || null,
             accountType: data.accountType,
             category: isBank ? "bank" : "investment",
             memo: data.memo || null,
@@ -191,7 +191,7 @@ export function AccountFormDialog({
           reset({
             name: "",
             broker: data.broker,
-            accountNumber: "",
+            lastFour: "",
             accountType: data.accountType,
             memo: "",
           });
@@ -282,17 +282,17 @@ export function AccountFormDialog({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="accountNumber">계좌번호</Label>
+        <Label htmlFor="lastFour">계좌번호 뒤 4자리</Label>
         <Input
-          id="accountNumber"
-          placeholder="예: 123-456-78901234"
-          {...register("accountNumber")}
-          aria-invalid={!!errors.accountNumber}
+          id="lastFour"
+          inputMode="numeric"
+          maxLength={4}
+          placeholder="예: 1234"
+          {...register("lastFour")}
+          aria-invalid={!!errors.lastFour}
         />
-        {errors.accountNumber && (
-          <p className="text-sm text-destructive">
-            {errors.accountNumber.message}
-          </p>
+        {errors.lastFour && (
+          <p className="text-sm text-destructive">{errors.lastFour.message}</p>
         )}
       </div>
 
