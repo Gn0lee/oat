@@ -43,12 +43,16 @@ export async function GET(request: NextRequest) {
     const month = searchParams.get("month")
       ? Number(searchParams.get("month"))
       : now.getUTCMonth() + 1;
+    const scopeParam = searchParams.get("scope");
+    const scope = scopeParam === "personal" ? "personal" : "shared";
 
     const summary = await getLedgerEntrySummary(
       supabase,
       householdId,
       year,
       month,
+      scope,
+      user.id,
     );
 
     return NextResponse.json({ data: summary });

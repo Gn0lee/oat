@@ -1,4 +1,5 @@
 import type {
+  LedgerFlowSummary,
   LedgerStatsByCategoryResult,
   LedgerStatsSummary,
 } from "./ledger-stats";
@@ -21,15 +22,18 @@ export interface HomeSummary {
   };
 }
 
-const DEFAULT_CASH_FLOW: LedgerStatsSummary = {
-  year: 0,
-  month: 0,
+const DEFAULT_FLOW: LedgerFlowSummary = {
   totalIncome: 0,
-  totalSharedExpense: 0,
-  totalPersonalExpense: 0,
   totalExpense: 0,
   balance: 0,
   savingsRate: 0,
+};
+
+const DEFAULT_CASH_FLOW: LedgerStatsSummary = {
+  year: 0,
+  month: 0,
+  shared: DEFAULT_FLOW,
+  personal: DEFAULT_FLOW,
 };
 
 const DEFAULT_ASSETS: HomeAssetSummary = {

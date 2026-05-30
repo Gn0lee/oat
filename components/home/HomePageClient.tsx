@@ -1,11 +1,11 @@
 "use client";
 
 import { ChartPie, ReceiptText, Settings, Wallet } from "lucide-react";
+import { useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useHomeSummary } from "@/hooks/use-home-summary";
 import { formatCompactNumber, formatCurrency } from "@/lib/utils/format";
 import { CashFlowCard } from "./CashFlowCard";
-import { FamilyExpenseCard } from "./FamilyExpenseCard";
 import { FeatureCard } from "./FeatureCard";
 import { HomeTopCategories } from "./HomeTopCategories";
 import { TotalAssetCard } from "./TotalAssetCard";
@@ -31,8 +31,11 @@ function HomeErrorState() {
 
 export function HomePageClient() {
   const { data, isLoading, error } = useHomeSummary();
+  const [cashFlowIndex, setCashFlowIndex] = useState(0);
 
   const cashFlow = data?.cashFlow;
+  const sharedFlow = cashFlow?.shared;
+  const personalFlow = cashFlow?.personal;
   const assets = data?.assets ?? {
     holdingCount: 0,
     totalInvested: 0,
@@ -44,9 +47,9 @@ export function HomePageClient() {
 
   const month = data?.month || new Date().getMonth() + 1;
 
-  const ledgerHint = cashFlow
-    ? cashFlow.totalExpense > 0
-      ? `이번 달 지출 ${formatCurrency(cashFlow.totalExpense)}`
+  const ledgerHint = sharedFlow
+    ? sharedFlow.totalExpense > 0
+      ? `공용 지출 ${formatCurrency(sharedFlow.totalExpense)}`
       : "이번 달 기록이 없어요"
     : "기록을 시작해보세요";
 
@@ -55,9 +58,12 @@ export function HomePageClient() {
       ? `${assets.holdingCount}종목 · ${formatCompactNumber(assets.totalInvested)}`
       : "자산을 등록해보세요";
 
-  const analysisHint = cashFlow?.totalExpense
-    ? `저축률 ${cashFlow.savingsRate.toFixed(0)}%`
+  const analysisHint = sharedFlow?.totalExpense
+    ? `공용 저축률 ${sharedFlow.savingsRate.toFixed(0)}%`
     : "기록 후 분석이 가능해요";
+
+  const activeFlow = cashFlowIndex === 0 ? sharedFlow : personalFlow;
+  const activeTitle = cashFlowIndex === 0 ? "공용 현금흐름" : "내 현금흐름";
 
   return (
     <>
@@ -67,19 +73,38 @@ export function HomePageClient() {
         <HomeErrorState />
       ) : (
         <div className="space-y-4">
-          <CashFlowCard
-            totalIncome={cashFlow?.totalIncome ?? 0}
-            totalExpense={cashFlow?.totalExpense ?? 0}
-            balance={cashFlow?.balance ?? 0}
-            savingsRate={cashFlow?.savingsRate ?? 0}
-            month={month}
-            hasRecentOwnLedgerActivity={
-              ledgerActivity.hasRecentOwnLedgerActivity
-            }
-            lastOwnLedgerEntryCreatedAt={
-              ledgerActivity.lastOwnLedgerEntryCreatedAt
-            }
-          />
+          <div className="space-y-3">
+            <CashFlowCard
+              title={activeTitle}
+              totalIncome={activeFlow?.totalIncome ?? 0}
+              totalExpense={activeFlow?.totalExpense ?? 0}
+              balance={activeFlow?.balance ?? 0}
+              savingsRate={activeFlow?.savingsRate ?? 0}
+              month={month}
+              hasRecentOwnLedgerActivity={
+                ledgerActivity.hasRecentOwnLedgerActivity
+              }
+              lastOwnLedgerEntryCreatedAt={
+                ledgerActivity.lastOwnLedgerEntryCreatedAt
+              }
+            />
+
+            <div className="flex items-center justify-center gap-2">
+              {["공용", "내 개인"].map((label, index) => (
+                <button
+                  key={label}
+                  type="button"
+                  aria-label={`${label} 현금흐름 보기`}
+                  onClick={() => setCashFlowIndex(index)}
+                  className={`h-2.5 rounded-full transition-all ${
+                    cashFlowIndex === index
+                      ? "w-6 bg-primary"
+                      : "w-2.5 bg-gray-300"
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
 
           <TotalAssetCard
             holdingCount={assets.holdingCount}
@@ -87,11 +112,6 @@ export function HomePageClient() {
           />
 
           <HomeTopCategories items={data.topCategories.items} />
-
-          <FamilyExpenseCard
-            sharedExpense={cashFlow?.totalSharedExpense ?? 0}
-            personalExpense={cashFlow?.totalPersonalExpense ?? 0}
-          />
         </div>
       )}
 

@@ -54,7 +54,7 @@ describe("HomePageClient", () => {
     );
   });
 
-  it("홈 요약 데이터로 현금흐름, 자산, 주요 지출, 가족 지출을 렌더링한다", () => {
+  it("홈 요약 데이터로 공용 현금흐름, 자산, 주요 지출을 렌더링한다", () => {
     vi.mocked(useHomeSummary).mockReturnValue({
       data: {
         year: 2026,
@@ -63,12 +63,18 @@ describe("HomePageClient", () => {
         cashFlow: {
           year: 2026,
           month: 5,
-          totalIncome: 5_000_000,
-          totalSharedExpense: 2_800_000,
-          totalPersonalExpense: 1_000_000,
-          totalExpense: 3_800_000,
-          balance: 1_200_000,
-          savingsRate: 24,
+          shared: {
+            totalIncome: 5_000_000,
+            totalExpense: 2_800_000,
+            balance: 2_200_000,
+            savingsRate: 44,
+          },
+          personal: {
+            totalIncome: 1_000_000,
+            totalExpense: 400_000,
+            balance: 600_000,
+            savingsRate: 60,
+          },
         },
         assets: {
           holdingCount: 4,
@@ -96,12 +102,12 @@ describe("HomePageClient", () => {
       },
       isLoading: false,
       error: null,
-    } as ReturnType<typeof useHomeSummary>);
+    } as unknown as ReturnType<typeof useHomeSummary>);
 
     render(<HomePageClient />);
 
     expect(
-      screen.getByText("이번 달은 아직 ₩1,200,000 남았어요"),
+      screen.getByText("이번 달은 아직 ₩2,200,000 남았어요"),
     ).toBeInTheDocument();
     expect(screen.getByText("투자원금")).toBeInTheDocument();
     expect(screen.getByText("₩20,000,000")).toBeInTheDocument();
@@ -110,5 +116,6 @@ describe("HomePageClient", () => {
     expect(screen.getByText("4종목 · 2,000만")).toBeInTheDocument();
     expect(screen.queryByText("지금 우리집 자산은")).not.toBeInTheDocument();
     expect(screen.queryByText(/수익률/)).not.toBeInTheDocument();
+    expect(screen.queryByText("가족 지출")).not.toBeInTheDocument();
   });
 });

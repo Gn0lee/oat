@@ -17,7 +17,7 @@ describe("ledgerEntries 쿼리 키", () => {
   });
 
   it("summary 쿼리 키가 year/month를 포함한다", () => {
-    const key = queries.ledgerEntries.summary(2026, 4).queryKey;
+    const key = queries.ledgerEntries.summary(2026, 4, "shared").queryKey;
     expect(key).toBeDefined();
     expect(JSON.stringify(key)).toContain("2026");
     expect(JSON.stringify(key)).toContain("4");

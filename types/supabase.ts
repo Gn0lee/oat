@@ -957,13 +957,6 @@ export type Database = {
       };
     };
     Functions: {
-      get_private_entry_totals: {
-        Args: { hh_id: string; p_month: number; p_year: number };
-        Returns: {
-          owner_id: string;
-          total_amount: number;
-        }[];
-      };
       get_user_household_ids: { Args: never; Returns: string[] };
       is_admin: { Args: never; Returns: boolean };
       is_household_member: { Args: { hh_id: string }; Returns: boolean };

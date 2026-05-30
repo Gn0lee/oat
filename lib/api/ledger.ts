@@ -137,6 +137,8 @@ export interface GetLedgerEntriesOptions {
   year?: number;
   month?: number;
   date?: string;
+  scope?: "shared" | "personal";
+  userId?: string;
 }
 
 export interface CreateLedgerEntryParams {
@@ -243,6 +245,16 @@ export function calculateLedgerSummary(
   return { totalIncome, totalExpense, balance: totalIncome - totalExpense };
 }
 
+export function filterLedgerEntriesByScope<
+  T extends Pick<LedgerEntryWithDetails, "isShared" | "ownerId">,
+>(entries: T[], scope: "shared" | "personal", userId: string): T[] {
+  return entries.filter((entry) =>
+    scope === "shared"
+      ? entry.isShared
+      : !entry.isShared && entry.ownerId === userId,
+  );
+}
+
 function getDateRange(options: GetLedgerEntriesOptions): {
   from: string;
   to: string;
@@ -290,29 +302,36 @@ export async function getLedgerEntries(
   }
 
   const rows = data ?? [];
+  const scopedRows = rows.filter((row) => {
+    if (!options?.scope) return true;
+    if (options.scope === "shared") return row.is_shared;
+    return !row.is_shared && row.owner_id === options.userId;
+  });
 
-  if (rows.length === 0) {
+  if (scopedRows.length === 0) {
     return [];
   }
 
   // 관련 ID 수집
-  const ownerIds = [...new Set(rows.map((r) => r.owner_id))];
+  const ownerIds = [...new Set(scopedRows.map((r) => r.owner_id))];
   const categoryIds = [
-    ...new Set(rows.map((r) => r.category_id).filter(Boolean) as string[]),
+    ...new Set(
+      scopedRows.map((r) => r.category_id).filter(Boolean) as string[],
+    ),
   ];
   const accountIds = [
     ...new Set(
       [
-        ...rows.map((r) => r.from_account_id),
-        ...rows.map((r) => r.to_account_id),
+        ...scopedRows.map((r) => r.from_account_id),
+        ...scopedRows.map((r) => r.to_account_id),
       ].filter(Boolean) as string[],
     ),
   ];
   const paymentMethodIds = [
     ...new Set(
       [
-        ...rows.map((r) => r.from_payment_method_id),
-        ...rows.map((r) => r.to_payment_method_id),
+        ...scopedRows.map((r) => r.from_payment_method_id),
+        ...scopedRows.map((r) => r.to_payment_method_id),
       ].filter(Boolean) as string[],
     ),
   ];
@@ -352,7 +371,7 @@ export async function getLedgerEntries(
     (paymentMethods ?? []).map((pm) => [pm.id, pm.name]),
   );
 
-  return rows.map((r) => ({
+  return scopedRows.map((r) => ({
     id: r.id,
     householdId: r.household_id,
     ownerId: r.owner_id,
@@ -396,12 +415,14 @@ export async function getLedgerEntrySummary(
   householdId: string,
   year: number,
   month: number,
+  scope: "shared" | "personal" = "shared",
+  userId?: string,
 ): Promise<LedgerEntrySummary> {
   const { from, to } = getDateRange({ year, month });
 
   const { data, error } = await supabase
     .from("ledger_entries")
-    .select("type, amount")
+    .select("type, amount, is_shared, owner_id")
     .eq("household_id", householdId)
     .gte("transacted_at", from)
     .lte("transacted_at", to);
@@ -415,7 +436,13 @@ export async function getLedgerEntrySummary(
     );
   }
 
-  return calculateLedgerSummary(data ?? []);
+  const rows = (data ?? []).filter((row) =>
+    scope === "shared"
+      ? row.is_shared
+      : !row.is_shared && row.owner_id === userId,
+  );
+
+  return calculateLedgerSummary(rows);
 }
 
 export async function getOwnLedgerActivity(
