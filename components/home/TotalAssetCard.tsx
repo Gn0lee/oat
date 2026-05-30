@@ -13,21 +13,19 @@ export function TotalAssetCard({
   currency = "KRW",
 }: TotalAssetCardProps) {
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-sm">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <span className="text-sm text-gray-500">투자원금</span>
-          <p className="text-3xl font-bold text-gray-900 mt-1">
-            {formatCurrency(totalInvested, currency)}
-          </p>
-        </div>
-        <Link
-          href="/assets"
-          className="shrink-0 rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-white"
-        >
-          자산 보기
-        </Link>
+    <div className="bg-white rounded-2xl p-6 shadow-sm relative">
+      <div>
+        <span className="text-sm text-gray-500">투자원금</span>
+        <p className="text-3xl font-bold text-gray-900 mt-1 break-all">
+          {formatCurrency(totalInvested, currency)}
+        </p>
       </div>
+      <Link
+        href="/assets"
+        className="absolute top-6 right-6 rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-white"
+      >
+        자산 보기
+      </Link>
 
       <div className="mt-5 text-sm">
         <div className="rounded-xl bg-gray-50 p-3">

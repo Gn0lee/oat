@@ -27,7 +27,7 @@ export function CashFlowCard({
 
   if (totalIncome === 0 && totalExpense === 0) {
     return (
-      <div className="bg-white rounded-2xl p-6 shadow-sm">
+      <div className="bg-white rounded-2xl p-6 shadow-sm min-h-[14rem]">
         <p className="text-sm text-gray-500">
           {month}월 {title}
         </p>
@@ -59,7 +59,7 @@ export function CashFlowCard({
     : `이번 달은 ${formatCurrency(absoluteBalance)} 초과 지출 중이에요`;
 
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-sm">
+    <div className="bg-white rounded-2xl p-6 shadow-sm min-h-[14rem]">
       <p className="text-sm text-gray-500">
         {month}월 {title}
       </p>
