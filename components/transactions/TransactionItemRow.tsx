@@ -104,7 +104,7 @@ export function TransactionItemRow<T extends FormWithItems>({
             type="number"
             inputMode="numeric"
             placeholder="0"
-            className="h-11 rounded-xl text-right text-sm"
+            className="h-11 rounded-xl text-sm"
             {...control.register(`items.${index}.quantity` as FieldPath<T>)}
           />
         </div>
@@ -116,7 +116,7 @@ export function TransactionItemRow<T extends FormWithItems>({
             type="number"
             inputMode="decimal"
             placeholder="0"
-            className="h-11 rounded-xl text-right text-sm"
+            className="h-11 rounded-xl text-sm"
             {...control.register(`items.${index}.price` as FieldPath<T>)}
           />
         </div>

@@ -86,15 +86,17 @@ function AccountCommandList({
   value,
   allowClear,
   onValueChange,
+  className,
 }: {
   // biome-ignore lint/suspicious/noExplicitAny: accounts type from useAccounts
   accounts: any[];
   value: string;
   allowClear: boolean;
   onValueChange: (value: string) => void;
+  className?: string;
 }) {
   return (
-    <CommandList className="max-h-[320px]">
+    <CommandList className={cn("max-h-[320px]", className)}>
       <CommandEmpty>검색 결과가 없습니다.</CommandEmpty>
       <CommandGroup heading="계좌 선택">
         {allowClear && (
@@ -248,27 +250,26 @@ export function AccountSelector<T extends FieldValues>({
         onClick={() => setOpen(true)}
       />
       <Drawer open={open} onOpenChange={setOpen}>
-        <DrawerContent className="h-[70vh] p-0 flex flex-col">
+        <DrawerContent
+          className="h-[85dvh] max-h-[85dvh] p-0 flex flex-col data-[vaul-drawer-direction=bottom]:mt-0 data-[vaul-drawer-direction=bottom]:max-h-[85dvh]"
+          onOpenAutoFocus={(event) => event.preventDefault()}
+        >
           <DrawerHeader className="sr-only">
             <DrawerTitle>계좌 선택</DrawerTitle>
             <DrawerDescription>
               거래 계좌를 선택하고 검색해보세요.
             </DrawerDescription>
           </DrawerHeader>
-          <div className="flex-1 min-h-0 px-4 pt-3 pb-6 flex flex-col">
-            <Command className="h-full rounded-xl border flex flex-col">
-              <CommandInput
-                placeholder="계좌명, 증권사 검색"
-                className="h-11"
-              />
-              <AccountCommandList
-                accounts={accounts}
-                value={field.value ?? ""}
-                allowClear={allowClear}
-                onValueChange={handleSelect}
-              />
-            </Command>
-          </div>
+          <Command className="h-full">
+            <CommandInput placeholder="계좌명, 증권사 검색" />
+            <AccountCommandList
+              accounts={accounts}
+              value={field.value ?? ""}
+              allowClear={allowClear}
+              onValueChange={handleSelect}
+              className="max-h-none min-h-0 flex-1"
+            />
+          </Command>
         </DrawerContent>
       </Drawer>
     </>

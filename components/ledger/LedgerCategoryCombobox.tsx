@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeftIcon, CheckIcon, ChevronsUpDownIcon } from "lucide-react";
+import { CheckIcon, ChevronsUpDownIcon } from "lucide-react";
 import type { ComponentPropsWithoutRef } from "react";
 import { forwardRef, useState } from "react";
 import { CategoryIcon } from "@/components/ledger/CategoryIcon";
@@ -82,13 +82,15 @@ function CategoryCommandList({
   categories,
   value,
   onValueChange,
+  className,
 }: {
   categories: Category[];
   value: string;
   onValueChange: (value: string) => void;
+  className?: string;
 }) {
   return (
-    <CommandList className="max-h-[320px]">
+    <CommandList className={cn("max-h-[320px]", className)}>
       <CommandEmpty>검색 결과가 없습니다.</CommandEmpty>
       <CommandGroup heading="카테고리 선택">
         {categories.map((category) => (
@@ -162,38 +164,18 @@ export function LedgerCategoryCombobox({
 export function LedgerCategoryPickerPanel({
   value,
   categories,
-  title,
   searchPlaceholder,
-  onBack,
   onValueChange,
 }: LedgerCategoryPickerPanelProps) {
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      <div className="flex items-center gap-2 px-4 pb-3">
-        {onBack && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="size-9 shrink-0"
-            onClick={onBack}
-          >
-            <ArrowLeftIcon className="size-5" />
-            <span className="sr-only">돌아가기</span>
-          </Button>
-        )}
-        <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
-      </div>
-      <div className="min-h-0 flex-1 px-4">
-        <Command className="h-full rounded-xl border">
-          <CommandInput placeholder={searchPlaceholder} className="h-11" />
-          <CategoryCommandList
-            categories={categories}
-            value={value}
-            onValueChange={onValueChange}
-          />
-        </Command>
-      </div>
-    </div>
+    <Command className="h-full">
+      <CommandInput placeholder={searchPlaceholder} />
+      <CategoryCommandList
+        categories={categories}
+        value={value}
+        onValueChange={onValueChange}
+        className="max-h-none min-h-0 flex-1"
+      />
+    </Command>
   );
 }
