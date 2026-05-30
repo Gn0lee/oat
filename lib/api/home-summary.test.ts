@@ -24,12 +24,18 @@ describe("buildHomeSummary", () => {
     const cashFlow = {
       year: 2026,
       month: 4,
-      totalIncome: 5_000_000,
-      totalSharedExpense: 3_000_000,
-      totalPersonalExpense: 800_000,
-      totalExpense: 3_800_000,
-      balance: 1_200_000,
-      savingsRate: 24,
+      shared: {
+        totalIncome: 5_000_000,
+        totalExpense: 3_000_000,
+        balance: 2_000_000,
+        savingsRate: 40,
+      },
+      personal: {
+        totalIncome: 800_000,
+        totalExpense: 300_000,
+        balance: 500_000,
+        savingsRate: 62.5,
+      },
     };
 
     const assets = {
@@ -51,10 +57,12 @@ describe("buildHomeSummary", () => {
   it("가구가 없으면 기록 기반 자산 요약 기본값을 반환한다", () => {
     const result = buildHomeSummary(null, null);
 
-    expect(result.cashFlow.totalIncome).toBe(0);
-    expect(result.cashFlow.totalExpense).toBe(0);
-    expect(result.cashFlow.balance).toBe(0);
-    expect(result.cashFlow.savingsRate).toBe(0);
+    expect(result.cashFlow.shared.totalIncome).toBe(0);
+    expect(result.cashFlow.shared.totalExpense).toBe(0);
+    expect(result.cashFlow.shared.balance).toBe(0);
+    expect(result.cashFlow.shared.savingsRate).toBe(0);
+    expect(result.cashFlow.personal.totalIncome).toBe(0);
+    expect(result.cashFlow.personal.totalExpense).toBe(0);
     expect(result.assets.holdingCount).toBe(0);
     expect(result.assets.totalInvested).toBe(0);
     expect(result.topCategories.total).toBe(0);

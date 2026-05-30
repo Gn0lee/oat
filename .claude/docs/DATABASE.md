@@ -672,7 +672,7 @@ create table public.ledger_entries (
 | is_shared = true | 같은 가구 구성원 전체 |
 | is_shared = false | 기록한 본인(owner_id)만. 가구 `owner` 역할과 무관 |
 
-파트너에게 개인 지출 월 합계만 노출: `get_private_entry_totals(hh_id, year, month)` SECURITY DEFINER 함수 사용.
+파트너에게 개인 장부의 세부 내역과 합계는 노출하지 않습니다. 공용 장부와 개인 장부의 수입, 지출, 잔액, 저축률은 서로 합산하지 않습니다.
 
 ---
 

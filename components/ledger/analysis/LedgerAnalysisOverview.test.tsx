@@ -15,10 +15,18 @@ vi.mock("@/hooks/use-ledger-stats", () => ({
 const summary = {
   year: 2026,
   month: 5,
-  totalIncome: 4_000_000,
-  totalSharedExpense: 1_500_000,
-  totalPersonalExpense: 300_000,
-  totalTransfer: 0,
+  shared: {
+    totalIncome: 4_000_000,
+    totalExpense: 1_500_000,
+    balance: 2_500_000,
+    savingsRate: 62.5,
+  },
+  personal: {
+    totalIncome: 500_000,
+    totalExpense: 300_000,
+    balance: 200_000,
+    savingsRate: 40,
+  },
 };
 
 describe("LedgerAnalysisOverview", () => {
@@ -43,7 +51,7 @@ describe("LedgerAnalysisOverview", () => {
     ).toBeGreaterThan(0);
   });
 
-  it("개인 scope에서는 개인 지출 요약 문구를 사용한다", () => {
+  it("개인 scope에서는 내 현금흐름 요약 문구를 사용한다", () => {
     vi.mocked(useLedgerStatsSummary).mockReturnValue({
       data: summary,
       isLoading: false,
@@ -57,7 +65,7 @@ describe("LedgerAnalysisOverview", () => {
 
     render(<LedgerAnalysisOverview year={2026} month={5} scope="personal" />);
 
-    expect(screen.getByText("5월 내 개인 지출")).toBeInTheDocument();
+    expect(screen.getByText("5월 내 현금흐름")).toBeInTheDocument();
     expect(
       screen.getByText("이번 달 주요 개인 지출이 없어요"),
     ).toBeInTheDocument();

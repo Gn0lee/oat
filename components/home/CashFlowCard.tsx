@@ -2,6 +2,7 @@ import Link from "next/link";
 import { formatCurrency } from "@/lib/utils/format";
 
 interface CashFlowCardProps {
+  title?: string;
   totalIncome: number;
   totalExpense: number;
   balance: number;
@@ -12,6 +13,7 @@ interface CashFlowCardProps {
 }
 
 export function CashFlowCard({
+  title = "현금 흐름",
   totalIncome,
   totalExpense,
   balance,
@@ -25,8 +27,10 @@ export function CashFlowCard({
 
   if (totalIncome === 0 && totalExpense === 0) {
     return (
-      <div className="bg-white rounded-2xl p-6 shadow-sm">
-        <p className="text-sm text-gray-500">{month}월 현금 흐름</p>
+      <div className="bg-white rounded-2xl p-6 shadow-sm min-h-[14rem]">
+        <p className="text-sm text-gray-500">
+          {month}월 {title}
+        </p>
         <p className="mt-3 text-2xl font-bold text-gray-900">
           이번 달 흐름을 아직 알 수 없어요
         </p>
@@ -55,8 +59,10 @@ export function CashFlowCard({
     : `이번 달은 ${formatCurrency(absoluteBalance)} 초과 지출 중이에요`;
 
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-sm">
-      <p className="text-sm text-gray-500">{month}월 현금 흐름</p>
+    <div className="bg-white rounded-2xl p-6 shadow-sm min-h-[14rem]">
+      <p className="text-sm text-gray-500">
+        {month}월 {title}
+      </p>
       <p
         className={`mt-3 text-2xl font-bold leading-tight ${isPositive ? "text-gray-900" : "text-red-500"}`}
       >

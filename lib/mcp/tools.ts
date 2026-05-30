@@ -25,7 +25,8 @@ export const MCP_TOOL_DEFINITIONS = [
   },
   {
     name: "get_financial_overview",
-    description: "이번 달 현금흐름과 현재 자산/주식 요약을 함께 조회합니다.",
+    description:
+      "이번 달 공용/토큰 소유자 개인 현금흐름과 현재 자산/주식 요약을 함께 조회합니다. 두 현금흐름은 합산하지 않습니다.",
     inputSchema: {
       type: "object",
       properties: {
@@ -74,7 +75,7 @@ export const MCP_TOOL_DEFINITIONS = [
   {
     name: "get_ledger_stats",
     description:
-      "가계부 요약, 멤버별, 카테고리별, Money Endpoint별 집계를 조회합니다. 현금흐름 summary는 이체를 제외하고, endpoint flow는 이체를 포함합니다.",
+      "가계부 요약, 멤버별, 카테고리별, Money Endpoint별 집계를 조회합니다. 현금흐름 summary는 공용/토큰 소유자 개인 장부를 분리하고 이체를 제외합니다.",
     inputSchema: {
       type: "object",
       properties: {
@@ -231,8 +232,11 @@ export function buildMcpMeta({
     scope: scopes,
     privacy: {
       included: ["shared ledger details", "own private ledger details"],
-      aggregatedOnly: ["partner private expenses"],
-      excluded: ["partner private expense details"],
+      aggregatedOnly: [],
+      excluded: [
+        "partner private ledger details",
+        "partner private ledger totals",
+      ],
     },
     limits: {
       maxLedgerEntries: MAX_LEDGER_ENTRIES,
@@ -763,29 +767,16 @@ async function buildTrendStats(
     .gte("transacted_at", from)
     .lt("transacted_at", to)
     .or(`is_shared.eq.true,owner_id.eq.${auth.userId}`);
-  const [{ data: earliestVisibleRows }, { data: earliestPartnerPrivateRows }] =
-    await Promise.all([
-      supabase
-        .from("ledger_entries")
-        .select("transacted_at")
-        .eq("household_id", auth.householdId)
-        .or(`is_shared.eq.true,owner_id.eq.${auth.userId}`)
-        .order("transacted_at", { ascending: true })
-        .limit(1),
-      supabase
-        .from("ledger_entries")
-        .select("transacted_at")
-        .eq("household_id", auth.householdId)
-        .eq("type", "expense")
-        .eq("is_shared", false)
-        .neq("owner_id", auth.userId)
-        .order("transacted_at", { ascending: true })
-        .limit(1),
-    ]);
-  const earliestCandidates = [
-    earliestVisibleRows?.[0]?.transacted_at,
-    earliestPartnerPrivateRows?.[0]?.transacted_at,
-  ].filter((value): value is string => typeof value === "string");
+  const { data: earliestVisibleRows } = await supabase
+    .from("ledger_entries")
+    .select("transacted_at")
+    .eq("household_id", auth.householdId)
+    .or(`is_shared.eq.true,owner_id.eq.${auth.userId}`)
+    .order("transacted_at", { ascending: true })
+    .limit(1);
+  const earliestCandidates = [earliestVisibleRows?.[0]?.transacted_at].filter(
+    (value): value is string => typeof value === "string",
+  );
   const dataAvailableFrom =
     earliestCandidates.length > 0
       ? monthStartDateOnly(
@@ -795,9 +786,18 @@ async function buildTrendStats(
         )
       : null;
 
-  const monthMap = new Map<string, { income: number; expense: number }>();
+  const monthMap = new Map<
+    string,
+    {
+      shared: { income: number; expense: number };
+      personal: { income: number; expense: number };
+    }
+  >();
   for (const { year, month } of monthList) {
-    monthMap.set(`${year}-${month}`, { income: 0, expense: 0 });
+    monthMap.set(`${year}-${month}`, {
+      shared: { income: 0, expense: 0 },
+      personal: { income: 0, expense: 0 },
+    });
   }
 
   for (const row of rows ?? []) {
@@ -815,44 +815,45 @@ async function buildTrendStats(
     const key = monthKey(date);
     const existing = monthMap.get(key);
     if (!existing) continue;
-    if (row.type === "income") existing.income += row.amount;
-    if (row.type === "expense") existing.expense += row.amount;
-  }
-
-  for (const { year, month } of monthList) {
-    const { data: privateTotals } = await supabase.rpc(
-      "get_private_entry_totals",
-      { hh_id: auth.householdId, p_year: year, p_month: month },
-    );
-    const privateTotalRows = (privateTotals ?? []) as {
-      owner_id: string;
-      total_amount: number | null;
-    }[];
-    const partnerPersonalExpense = privateTotalRows
-      .filter((row) => row.owner_id !== auth.userId)
-      .reduce((sum, row) => sum + (row.total_amount ?? 0), 0);
-    const existing = monthMap.get(`${year}-${month}`);
-    if (existing) existing.expense += partnerPersonalExpense;
+    const target = row.is_shared ? existing.shared : existing.personal;
+    if (row.type === "income") target.income += row.amount;
+    if (row.type === "expense") target.expense += row.amount;
   }
 
   return {
     dataAvailableFrom,
     items: monthList.map(({ year, month }) => {
       const item = monthMap.get(`${year}-${month}`) ?? {
-        income: 0,
-        expense: 0,
+        shared: { income: 0, expense: 0 },
+        personal: { income: 0, expense: 0 },
       };
       const recorded = isSameOrAfterMonth(year, month, dataAvailableFrom);
+      const build = ({
+        income,
+        expense,
+      }: {
+        income: number;
+        expense: number;
+      }) =>
+        recorded
+          ? {
+              totalIncome: income,
+              totalExpense: expense,
+              balance: income - expense,
+              savingsRate: calcSavingsRate(income, expense),
+            }
+          : {
+              totalIncome: null,
+              totalExpense: null,
+              balance: null,
+              savingsRate: null,
+            };
       return {
         year,
         month,
         recorded,
-        totalIncome: recorded ? item.income : null,
-        totalExpense: recorded ? item.expense : null,
-        balance: recorded ? item.income - item.expense : null,
-        savingsRate: recorded
-          ? calcSavingsRate(item.income, item.expense)
-          : null,
+        shared: build(item.shared),
+        personal: build(item.personal),
       };
     }),
   };
@@ -876,7 +877,7 @@ async function getLedgerStats(
     to: toDateOnly(endOfUtcMonth(monthCursor)),
   });
   const { from, to } = periodToIsoRange(period);
-  const [members, { data: rows }, { data: privateTotals }] = await Promise.all([
+  const [members, { data: rows }] = await Promise.all([
     fetchMembers(supabase, auth.householdId),
     supabase
       .from("ledger_entries")
@@ -887,11 +888,6 @@ async function getLedgerStats(
       .gte("transacted_at", from)
       .lt("transacted_at", to)
       .or(`is_shared.eq.true,owner_id.eq.${auth.userId}`),
-    supabase.rpc("get_private_entry_totals", {
-      hh_id: auth.householdId,
-      p_year: year,
-      p_month: month,
-    }),
   ]);
 
   const visibleRows = (rows ?? []).filter((row) =>
@@ -901,17 +897,10 @@ async function getLedgerStats(
       currentUserId: auth.userId,
     }),
   );
-  const privateTotalRows = (privateTotals ?? []) as {
-    owner_id: string;
-    total_amount: number | null;
-  }[];
-  const partnerPersonalExpense = privateTotalRows
-    .filter((row) => row.owner_id !== auth.userId)
-    .reduce((sum, row) => sum + (row.total_amount ?? 0), 0);
-
-  let totalIncome = 0;
-  let totalSharedExpense = 0;
-  let myPersonalExpense = 0;
+  let sharedIncome = 0;
+  let sharedExpense = 0;
+  let personalIncome = 0;
+  let personalExpense = 0;
   const byMemberMap = new Map<
     string,
     { sharedExpense: number; sharedIncome: number; personalExpense: number }
@@ -941,17 +930,21 @@ async function getLedgerStats(
     const type = row.type as LedgerEntryType;
 
     if (row.type === "income") {
-      totalIncome += row.amount;
-      if (row.is_shared && memberStats) memberStats.sharedIncome += row.amount;
+      if (row.is_shared) {
+        sharedIncome += row.amount;
+        if (memberStats) memberStats.sharedIncome += row.amount;
+      } else if (row.owner_id === auth.userId) {
+        personalIncome += row.amount;
+      }
       incrementAggregate(incomeCategoryMap, row.category_id, row.amount);
     }
 
     if (row.type === "expense") {
       if (row.is_shared) {
-        totalSharedExpense += row.amount;
+        sharedExpense += row.amount;
         if (memberStats) memberStats.sharedExpense += row.amount;
       } else if (row.owner_id === auth.userId) {
-        myPersonalExpense += row.amount;
+        personalExpense += row.amount;
         if (memberStats) memberStats.personalExpense += row.amount;
       }
       incrementAggregate(expenseCategoryMap, row.category_id, row.amount);
@@ -980,23 +973,20 @@ async function getLedgerStats(
     }
   }
 
-  const totalPersonalExpense = myPersonalExpense + partnerPersonalExpense;
-  const totalExpense = totalSharedExpense + totalPersonalExpense;
+  const buildSummary = (income: number, expense: number) => ({
+    totalIncome: income,
+    totalExpense: expense,
+    balance: income - expense,
+    savingsRate: calcSavingsRate(income, expense),
+  });
   const summary = {
     year,
     month,
-    totalIncome,
-    totalSharedExpense,
-    totalPersonalExpense,
-    totalExpense,
-    balance: totalIncome - totalExpense,
-    savingsRate: calcSavingsRate(totalIncome, totalExpense),
+    description:
+      "shared and personal are separate ledger flows. Do not add them together. Partner private ledgers are excluded.",
+    shared: buildSummary(sharedIncome, sharedExpense),
+    personal: buildSummary(personalIncome, personalExpense),
   };
-
-  const privateMap = new Map<string, number>();
-  for (const row of privateTotalRows) {
-    privateMap.set(row.owner_id, row.total_amount ?? 0);
-  }
 
   const byMember = {
     members: members.map((member) => {
@@ -1012,9 +1002,7 @@ async function getLedgerStats(
         isCurrentUser,
         sharedExpense: stat.sharedExpense,
         sharedIncome: stat.sharedIncome,
-        personalExpense: isCurrentUser
-          ? stat.personalExpense
-          : (privateMap.get(member.id) ?? 0),
+        personalExpense: isCurrentUser ? stat.personalExpense : null,
         personalExpenseVisible: isCurrentUser,
       };
     }),

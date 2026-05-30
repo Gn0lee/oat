@@ -167,10 +167,10 @@
 | 정의 | 가구 공동 생활비 | 본인만의 지출 |
 | 예시 | 식비, 주거비, 공과금, 장보기 | 개인 취미, 용돈 사용 |
 | 세부 내역 (가게명, 금액, 카테고리) | 가구 구성원 전체 공개 | **기록한 본인만 조회** |
-| 월 합계 금액 | 가구 전체에 공개 | **가구 전체에 합산만 표시** ("개인 지출 ₩XXX" 형태) |
-| 월별 리포트/저축률 | 가구 합산에 포함 | **금액만 포함**, 세부 내역 비표시 |
+| 월 합계 금액 | 가구 전체에 공개 | **기록한 본인만 조회** |
+| 월별 리포트/저축률 | 공용 장부 기준으로 계산 | 내 개인 장부 기준으로 별도 계산 |
 
-> **개인 지출 설계 원칙**: "얼마를 썼는지"는 가구 흐름(저축률, 남은 금액) 계산에 반영하되, "무엇을 샀는지"는 본인만 확인할 수 있습니다.
+> **장부 분리 원칙**: 공용 장부와 내 개인 장부는 같은 구조의 별도 데이터셋입니다. 두 장부의 수입, 지출, 잔액, 저축률은 서로 합산하지 않습니다. 배우자/파트너의 개인 장부는 세부 내역과 합계 모두 내 화면에 노출하지 않습니다.
 
 #### 가계부 기록
 | ID | 기능 | 우선순위 | 설명 |
@@ -204,10 +204,14 @@
 
 > 이체 기록은 가구 전체에 공개(`is_shared = true`)로 기록하는 것을 권장합니다.
 
-#### 개인 지출 합계 노출 방식 (기술 설계)
+#### 개인 장부 노출 방식
 
 `is_shared = false`인 항목은 DB RLS로 기록한 본인(`owner_id = auth.uid()`)만 조회 가능합니다.
-파트너에게 월 합계만 보여주기 위해 `SECURITY DEFINER` DB 함수(`get_private_entry_totals`)를 사용합니다. 이 함수는 세부 내역(메모, 카테고리) 없이 owner별 합계 금액만 반환합니다.
+파트너에게 개인 장부의 세부 내역이나 월 합계를 노출하지 않습니다.
+
+#### 용돈 기록 방식
+
+용돈 지급은 공용 장부의 지출로 기록하고, 받은 용돈은 개인 장부의 수입으로 기록할 수 있습니다. 이후 용돈 사용은 개인 장부의 지출입니다. 공용 장부와 개인 장부를 합산하지 않으므로 용돈 지급과 용돈 사용이 이중 집계되지 않습니다.
 
 #### 지출 카테고리 (기본 제공, 가구별 커스텀 가능)
 | 카테고리 | 아이콘 (Lucide) | 예시 |
@@ -296,18 +300,17 @@
 
 | scope | 설명 |
 |-------|------|
-| `all` | 공용 + 본인 개인 (기본값, RLS 자동 적용) |
-| `shared` | 공용 항목만 (가구 전체 동일한 뷰) |
-| `personal` | 본인 개인 항목만 |
+| `shared` | 공용 장부 항목만 (가구 전체 동일한 뷰) |
+| `personal` | 로그인한 본인의 개인 장부 항목만 |
 
-> 파트너의 개인 지출 세부 내역은 RLS로 차단. 합산 금액만 `get_private_entry_totals()` SECURITY DEFINER 함수로 제공.
+> `shared`와 `personal`은 별도 데이터셋이며 서로 합산하지 않습니다. 파트너의 개인 장부는 세부 내역과 합계 모두 노출하지 않습니다.
 
 #### 화면 섹션 및 API
 
 | ID | 기능 | 우선순위 | scope 선택 | API |
 |----|------|----------|:---:|-----|
-| FLOW-01 | 가구 전체 월별 요약 | 🔴 필수 | - | `GET /api/ledger/stats/summary` |
-| FLOW-02 | 멤버별 공용/개인 지출 | 🔴 필수 | - | `GET /api/ledger/stats/by-member` |
+| FLOW-01 | 공용/내 개인 월별 요약 | 🔴 필수 | ✅ | `GET /api/ledger/stats/summary` |
+| FLOW-02 | 멤버별 공용 지출 | 🔴 필수 | - | `GET /api/ledger/stats/by-member` |
 | FLOW-03 | 카테고리별 지출 비율 | 🔴 필수 | ✅ | `GET /api/ledger/stats/by-category` |
 | FLOW-04 | 결제수단별 지출 | 🟡 권장 | ✅ | `GET /api/ledger/stats/by-payment-method` |
 | FLOW-05 | 저축률 표시 | 🟡 권장 | - | summary API에 포함 |
@@ -318,8 +321,8 @@
 
 | API | 주요 파라미터 | 응답 주요 필드 |
 |-----|-------------|--------------|
-| summary | `year`, `month` | `totalIncome`, `totalSharedExpense`, `totalPersonalExpense`, `savingsRate` |
-| by-member | `year`, `month` | `members[]{sharedExpense, personalExpense, personalExpenseVisible}` |
+| summary | `year`, `month` | `shared{totalIncome,totalExpense,balance,savingsRate}`, `personal{totalIncome,totalExpense,balance,savingsRate}` |
+| by-member | `year`, `month` | `members[]{sharedExpense}` |
 | by-category | `year`, `month`, `type`, `scope` | `items[]{categoryName, amount, percentage}` |
 | by-payment-method | `year`, `month`, `scope` | `items[]{paymentMethodName, amount, percentage}` |
 | trend | `months` (기본 6, 최대 12) | `items[]{year, month, totalExpense, savingsRate}` |
@@ -596,7 +599,7 @@
 | 인증 | 이메일/비밀번호 |
 | 데이터 접근 | RLS로 가구 단위 데이터 격리 |
 | **개인 지출 세부 내역** | RLS로 `owner_id = auth.uid()`인 경우만 조회 가능 (메모, 카테고리, 개별 금액). 가구 `owner` 역할과 무관 |
-| **개인 지출 합계** | `get_private_entry_totals` SECURITY DEFINER 함수로 월별 owner별 합계만 반환. 세부 내역 미포함 |
+| **개인 장부 합계** | 기록한 본인만 조회 가능. 파트너에게 합계도 노출하지 않음 |
 | **공용 지출** | `is_shared = true`. 같은 가구 구성원 전체 조회 가능 |
 | **이체 기록** | `is_shared = true` 권장. 가구 현금 흐름 계산에 포함 |
 | 통신 | HTTPS 필수 |

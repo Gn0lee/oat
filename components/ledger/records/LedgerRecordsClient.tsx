@@ -39,6 +39,7 @@ export function LedgerRecordsClient() {
     useState<LedgerEntryWithDetails | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [scope, setScope] = useState<"shared" | "personal">("shared");
 
   const queryClient = useQueryClient();
 
@@ -48,14 +49,17 @@ export function LedgerRecordsClient() {
   const { data: prevEntries = [] } = useLedgerEntries({
     year: prevMonth.getFullYear(),
     month: prevMonth.getMonth() + 1,
+    scope,
   });
   const { data: entries = [], isLoading } = useLedgerEntries({
     year: currentMonth.getFullYear(),
     month: currentMonth.getMonth() + 1,
+    scope,
   });
   const { data: nextEntries = [] } = useLedgerEntries({
     year: nextMonth.getFullYear(),
     month: nextMonth.getMonth() + 1,
+    scope,
   });
 
   const summary = useMemo(() => calculateLedgerSummary(entries), [entries]);
@@ -125,29 +129,52 @@ export function LedgerRecordsClient() {
   const summaryCard = isLoading ? (
     <Skeleton className="h-16 rounded-2xl mb-4" />
   ) : (
-    <div className="bg-white rounded-2xl p-4 shadow-sm mb-4 grid grid-cols-3 gap-2 text-center">
-      <div>
-        <p className="text-xs text-gray-500 mb-1">입금</p>
-        <p className="text-sm font-semibold text-red-500">
-          +{formatCurrency(summary.totalIncome)}
+    <div className="bg-white rounded-2xl p-4 shadow-sm mb-4">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <p className="text-sm font-medium text-gray-900">
+          {scope === "shared" ? "공용 기록" : "내 기록"}
         </p>
+        <div className="rounded-full bg-gray-100 p-0.5">
+          {(["shared", "personal"] as const).map((item) => (
+            <button
+              key={item}
+              type="button"
+              onClick={() => setScope(item)}
+              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                scope === item
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-500"
+              }`}
+            >
+              {item === "shared" ? "공용" : "개인"}
+            </button>
+          ))}
+        </div>
       </div>
-      <div>
-        <p className="text-xs text-gray-500 mb-1">지출</p>
-        <p className="text-sm font-semibold text-blue-500">
-          -{formatCurrency(summary.totalExpense)}
-        </p>
-      </div>
-      <div>
-        <p className="text-xs text-gray-500 mb-1">잔액</p>
-        <p
-          className={`text-sm font-semibold ${
-            summary.balance >= 0 ? "text-gray-900" : "text-blue-500"
-          }`}
-        >
-          {summary.balance >= 0 ? "+" : ""}
-          {formatCurrency(summary.balance)}
-        </p>
+      <div className="grid grid-cols-3 gap-2 text-center">
+        <div>
+          <p className="text-xs text-gray-500 mb-1">입금</p>
+          <p className="text-sm font-semibold text-red-500">
+            +{formatCurrency(summary.totalIncome)}
+          </p>
+        </div>
+        <div>
+          <p className="text-xs text-gray-500 mb-1">지출</p>
+          <p className="text-sm font-semibold text-blue-500">
+            -{formatCurrency(summary.totalExpense)}
+          </p>
+        </div>
+        <div>
+          <p className="text-xs text-gray-500 mb-1">잔액</p>
+          <p
+            className={`text-sm font-semibold ${
+              summary.balance >= 0 ? "text-gray-900" : "text-blue-500"
+            }`}
+          >
+            {summary.balance >= 0 ? "+" : ""}
+            {formatCurrency(summary.balance)}
+          </p>
+        </div>
       </div>
     </div>
   );

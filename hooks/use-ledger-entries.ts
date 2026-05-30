@@ -41,6 +41,7 @@ interface LedgerEntriesParams {
   year?: number;
   month?: number;
   date?: string;
+  scope?: "shared" | "personal";
 }
 
 async function fetchLedgerEntries(
@@ -50,6 +51,7 @@ async function fetchLedgerEntries(
   if (params?.year) searchParams.set("year", String(params.year));
   if (params?.month) searchParams.set("month", String(params.month));
   if (params?.date) searchParams.set("date", params.date);
+  if (params?.scope) searchParams.set("scope", params.scope);
 
   const url = `/api/ledger-entries${searchParams.toString() ? `?${searchParams}` : ""}`;
   const response = await fetch(url);
@@ -75,12 +77,16 @@ export function useLedgerEntries(params?: LedgerEntriesParams) {
 // 월간 수입/지출 요약 조회
 // ============================================================================
 
-export function useLedgerEntrySummary(year: number, month: number) {
+export function useLedgerEntrySummary(
+  year: number,
+  month: number,
+  scope: "shared" | "personal" = "shared",
+) {
   return useQuery({
-    queryKey: queries.ledgerEntries.summary(year, month).queryKey,
+    queryKey: queries.ledgerEntries.summary(year, month, scope).queryKey,
     queryFn: () =>
       fetchApiData<LedgerEntrySummary>(
-        `/api/ledger-entries/summary?year=${year}&month=${month}`,
+        `/api/ledger-entries/summary?year=${year}&month=${month}&scope=${scope}`,
       ),
     staleTime: 1000 * 60 * 5,
   });

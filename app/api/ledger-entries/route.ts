@@ -45,11 +45,18 @@ export async function GET(request: NextRequest) {
     const yearParam = searchParams.get("year");
     const monthParam = searchParams.get("month");
     const dateParam = searchParams.get("date");
+    const scopeParam = searchParams.get("scope");
+    const scope: "shared" | "personal" | undefined =
+      scopeParam === "personal" || scopeParam === "shared"
+        ? scopeParam
+        : undefined;
 
     const options = {
       year: yearParam ? Number(yearParam) : undefined,
       month: monthParam ? Number(monthParam) : undefined,
       date: dateParam ?? undefined,
+      scope,
+      userId: user.id,
     };
 
     const entries = await getLedgerEntries(supabase, householdId, options);

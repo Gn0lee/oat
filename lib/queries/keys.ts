@@ -98,10 +98,17 @@ export const queries = createQueryKeyStore({
 
   ledgerEntries: {
     all: null,
-    list: (params?: { year?: number; month?: number; date?: string }) => ({
+    list: (params?: {
+      year?: number;
+      month?: number;
+      date?: string;
+      scope?: "shared" | "personal";
+    }) => ({
       queryKey: [params],
     }),
-    summary: (year: number, month: number) => ({ queryKey: [year, month] }),
+    summary: (year: number, month: number, scope: "shared" | "personal") => ({
+      queryKey: [year, month, scope],
+    }),
   },
 
   household: {

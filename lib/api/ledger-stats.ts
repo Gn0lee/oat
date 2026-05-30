@@ -4,15 +4,18 @@ import type { Database } from "@/types";
 
 export type StatsScope = "all" | "shared" | "personal";
 
-export interface LedgerStatsSummary {
-  year: number;
-  month: number;
+export interface LedgerFlowSummary {
   totalIncome: number;
-  totalSharedExpense: number;
-  totalPersonalExpense: number;
   totalExpense: number;
   balance: number;
   savingsRate: number;
+}
+
+export interface LedgerStatsSummary {
+  year: number;
+  month: number;
+  shared: LedgerFlowSummary;
+  personal: LedgerFlowSummary;
 }
 
 export interface MemberStatItem {
@@ -21,7 +24,7 @@ export interface MemberStatItem {
   isCurrentUser: boolean;
   sharedExpense: number;
   sharedIncome: number;
-  personalExpense: number;
+  personalExpense: number | null;
   personalExpenseVisible: boolean;
 }
 
@@ -102,6 +105,15 @@ function calcSavingsRate(income: number, expense: number): number {
   return Math.round((balance / income) * 10000) / 100;
 }
 
+function buildFlowSummary(income: number, expense: number): LedgerFlowSummary {
+  return {
+    totalIncome: income,
+    totalExpense: expense,
+    balance: income - expense,
+    savingsRate: calcSavingsRate(income, expense),
+  };
+}
+
 export async function getLedgerStatsSummary(
   supabase: SupabaseClient<Database>,
   householdId: string,
@@ -126,46 +138,26 @@ export async function getLedgerStatsSummary(
 
   const rows = data ?? [];
 
-  let totalIncome = 0;
-  let totalSharedExpense = 0;
-  let myPersonalExpense = 0;
+  let sharedIncome = 0;
+  let sharedExpense = 0;
+  let personalIncome = 0;
+  let personalExpense = 0;
 
   for (const row of rows) {
-    if (row.type === "income") {
-      totalIncome += row.amount;
-    } else if (row.type === "expense") {
-      if (row.is_shared) {
-        totalSharedExpense += row.amount;
-      } else if (row.owner_id === userId) {
-        myPersonalExpense += row.amount;
-      }
+    if (row.is_shared) {
+      if (row.type === "income") sharedIncome += row.amount;
+      else if (row.type === "expense") sharedExpense += row.amount;
+    } else if (row.owner_id === userId) {
+      if (row.type === "income") personalIncome += row.amount;
+      else if (row.type === "expense") personalExpense += row.amount;
     }
   }
-
-  // 파트너 개인 지출 합산 (SECURITY DEFINER)
-  const { data: privateTotals } = await supabase.rpc(
-    "get_private_entry_totals",
-    { hh_id: householdId, p_year: year, p_month: month },
-  );
-
-  const partnerPersonalExpense = (privateTotals ?? [])
-    .filter((r) => r.owner_id !== userId)
-    .reduce((sum, r) => sum + (r.total_amount ?? 0), 0);
-
-  const totalPersonalExpense = myPersonalExpense + partnerPersonalExpense;
-  const totalExpense = totalSharedExpense + totalPersonalExpense;
-  const balance = totalIncome - totalExpense;
-  const savingsRate = calcSavingsRate(totalIncome, totalExpense);
 
   return {
     year,
     month,
-    totalIncome,
-    totalSharedExpense,
-    totalPersonalExpense,
-    totalExpense,
-    balance,
-    savingsRate,
+    shared: buildFlowSummary(sharedIncome, sharedExpense),
+    personal: buildFlowSummary(personalIncome, personalExpense),
   };
 }
 
@@ -232,17 +224,6 @@ export async function getLedgerStatsByMember(
     }
   }
 
-  // 파트너 개인 지출 합산 (SECURITY DEFINER)
-  const { data: privateTotals } = await supabase.rpc(
-    "get_private_entry_totals",
-    { hh_id: householdId, p_year: year, p_month: month },
-  );
-
-  const privateMap = new Map<string, number>();
-  for (const r of privateTotals ?? []) {
-    privateMap.set(r.owner_id, r.total_amount ?? 0);
-  }
-
   const result: MemberStatItem[] = memberList.map((member) => {
     const stat = statsMap.get(member.userId) ?? {
       sharedExpense: 0,
@@ -250,9 +231,7 @@ export async function getLedgerStatsByMember(
       personalExpense: 0,
     };
     const isCurrentUser = member.userId === userId;
-    const personalExpense = isCurrentUser
-      ? stat.personalExpense
-      : (privateMap.get(member.userId) ?? 0);
+    const personalExpense = isCurrentUser ? stat.personalExpense : null;
 
     return {
       memberId: member.userId,

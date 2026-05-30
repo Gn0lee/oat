@@ -69,8 +69,11 @@ describe("MCP tool helpers", () => {
       scope: ["read:ledger"],
       privacy: {
         included: ["shared ledger details", "own private ledger details"],
-        aggregatedOnly: ["partner private expenses"],
-        excluded: ["partner private expense details"],
+        aggregatedOnly: [],
+        excluded: [
+          "partner private ledger details",
+          "partner private ledger totals",
+        ],
       },
       limits: {
         maxLedgerEntries: 100,
