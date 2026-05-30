@@ -547,7 +547,6 @@ export function AccountSelector<T extends FieldValues>({
                   <div className="min-h-0 flex-1 overflow-y-auto p-4">
                     <InvestmentAccountInlineCreateForm
                       initialName={createInitialName}
-                      onBack={() => setMobileCreateOpen(false)}
                       onCreated={handleCreated}
                     />
                   </div>

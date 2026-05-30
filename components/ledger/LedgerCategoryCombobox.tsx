@@ -441,7 +441,6 @@ export function LedgerCategoryPickerPanel({
               <CategoryInlineCreateForm
                 initialName={createInitialName}
                 type={type}
-                onBack={handleBackToSelect}
                 onCreated={(category) => onValueChange(category.id)}
               />
             </div>

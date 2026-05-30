@@ -328,7 +328,7 @@ function PaymentMethodInlineCreateForm({
   type: PaymentMethodType;
   typeLabel: string;
   accounts: LedgerMoneySourceAccount[];
-  onBack: () => void;
+  onBack?: () => void;
   onCreated: (paymentMethod: PaymentMethod) => void;
 }) {
   const createPaymentMethod = useCreatePaymentMethod();
@@ -406,9 +406,11 @@ function PaymentMethodInlineCreateForm({
       </div>
       {error && <p className="text-sm text-destructive">{error}</p>}
       <DialogFooter className="gap-2">
-        <Button type="button" variant="ghost" onClick={onBack}>
-          이전
-        </Button>
+        {onBack && (
+          <Button type="button" variant="ghost" onClick={onBack}>
+            이전
+          </Button>
+        )}
         <Button type="submit" disabled={createPaymentMethod.isPending}>
           {createPaymentMethod.isPending ? "추가 중..." : "추가"}
         </Button>
@@ -808,11 +810,6 @@ export function LedgerMoneySourcePickerPanel({
                 <AccountInlineCreateForm
                   initialName={createInitialName}
                   category="bank"
-                  onBack={() =>
-                    mode === "expense"
-                      ? setTarget({ kind: "choose" })
-                      : setTarget(null)
-                  }
                   onCreated={(account) => onValueChange(`acc:${account.id}`)}
                 />
               )}
@@ -822,7 +819,6 @@ export function LedgerMoneySourcePickerPanel({
                   type={target.type}
                   typeLabel={target.label}
                   accounts={accounts}
-                  onBack={() => setTarget({ kind: "choose" })}
                   onCreated={(paymentMethod) =>
                     onValueChange(`pm:${paymentMethod.id}`)
                   }
