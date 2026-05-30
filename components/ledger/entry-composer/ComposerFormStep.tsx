@@ -106,7 +106,7 @@ export function ComposerFormStep({
       </Button>
 
       {/* Form Content */}
-      <div className="flex-1 overflow-y-auto px-4 pt-16 pb-4 space-y-4">
+      <div className="flex-1 overflow-y-auto px-4 pt-16 pb-[calc(1rem+env(safe-area-inset-bottom))] space-y-4">
         <div className="grid grid-cols-2 gap-2">
           <div className="min-w-0 space-y-1">
             <Label className="text-sm text-gray-700">유형</Label>
@@ -257,10 +257,6 @@ export function ComposerFormStep({
             {...form.register(`items.${index}.memo`)}
           />
         </div>
-      </div>
-
-      {/* Action Button */}
-      <div className="p-4 border-t border-gray-100 bg-white shrink-0 pb-[calc(1rem+env(safe-area-inset-bottom))]">
         <Button
           type="button"
           onClick={handleConfirm}
