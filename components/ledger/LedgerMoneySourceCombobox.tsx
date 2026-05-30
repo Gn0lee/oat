@@ -1,5 +1,6 @@
 "use client";
 
+import { motion, useReducedMotion } from "framer-motion";
 import {
   BanknoteIcon,
   CheckIcon,
@@ -639,6 +640,7 @@ export function LedgerMoneySourcePickerPanel({
 }: LedgerMoneySourcePickerPanelProps) {
   const [search, setSearch] = useState("");
   const [target, setTarget] = useState<MoneySourceCreateTarget | null>(null);
+  const shouldReduceMotion = useReducedMotion();
   const [createInitialName, setCreateInitialName] = useState("");
   const groups = useMoneySourceGroups({
     mode,
@@ -661,130 +663,176 @@ export function LedgerMoneySourcePickerPanel({
     setTarget(mode === "expense" ? { kind: "choose" } : { kind: "account" });
   };
 
-  if (target) {
-    const title =
-      target.kind === "choose"
-        ? "무엇을 추가할까요?"
-        : target.kind === "account"
-          ? mode === "income"
-            ? "새 입금 계좌"
-            : "새 계좌"
-          : `새 ${target.label}`;
+  const isExpense = mode === "expense";
 
-    return (
-      <div className="flex h-full flex-col">
-        <div className="flex h-14 shrink-0 items-center border-b px-2">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            aria-label="결제 방법 선택으로 돌아가기"
-            onClick={() => {
-              if (target.kind !== "choose" && mode === "expense") {
-                setTarget({ kind: "choose" });
-                return;
-              }
-              setTarget(null);
-            }}
-          >
-            <ChevronLeftIcon className="size-5" />
-          </Button>
-          <h2 className="text-base font-semibold">{title}</h2>
-        </div>
-        <div className="min-h-0 flex-1 overflow-y-auto p-4">
-          {target.kind === "choose" && (
-            <div className="grid gap-2">
-              {PAYMENT_METHOD_TYPE_OPTIONS.map((option) => {
-                const Icon = option.icon;
-                return (
-                  <Button
-                    key={option.value}
-                    type="button"
-                    variant="outline"
-                    className="h-12 justify-start"
-                    onClick={() =>
-                      setTarget({
-                        kind: "paymentMethod",
-                        type: option.value,
-                        label: option.label,
-                      })
-                    }
-                  >
-                    <Icon className="size-4" />
-                    {option.label}
-                  </Button>
-                );
-              })}
-              <Button
-                type="button"
-                variant="outline"
-                className="h-12 justify-start"
-                onClick={() => setTarget({ kind: "account" })}
-              >
-                <LandmarkIcon className="size-4" />
-                계좌
-              </Button>
-            </div>
-          )}
-          {target.kind === "account" && (
-            <AccountInlineCreateForm
-              initialName={createInitialName}
-              category="bank"
-              onBack={() =>
-                mode === "expense"
-                  ? setTarget({ kind: "choose" })
-                  : setTarget(null)
-              }
-              onCreated={(account) => onValueChange(`acc:${account.id}`)}
-            />
-          )}
-          {target.kind === "paymentMethod" && (
-            <PaymentMethodInlineCreateForm
-              initialName={createInitialName}
-              type={target.type}
-              typeLabel={target.label}
-              accounts={accounts}
-              onBack={() => setTarget({ kind: "choose" })}
-              onCreated={(paymentMethod) =>
-                onValueChange(`pm:${paymentMethod.id}`)
-              }
-            />
-          )}
-        </div>
-      </div>
-    );
-  }
+  const getTranslateX = () => {
+    if (!target) return "0%";
+    if (target.kind === "choose") return isExpense ? "-100%" : "0%";
+    return isExpense ? "-200%" : "-100%";
+  };
+
+  const formTitle =
+    target?.kind === "account"
+      ? mode === "income"
+        ? "새 입금 계좌"
+        : "새 계좌"
+      : target?.kind === "paymentMethod"
+        ? `새 ${target.label}`
+        : "";
 
   return (
-    <Command className="h-full">
-      <CommandInput
-        placeholder={searchPlaceholder}
-        value={search}
-        onValueChange={setSearch}
-        endAdornment={
-          createLabel ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="size-8 shrink-0"
-              aria-label={createLabel}
-              onClick={handleCreateClick}
-            >
-              <PlusIcon className="size-4" />
-            </Button>
-          ) : null
+    <div
+      className="flex-1 min-h-0 overflow-clip w-full h-full"
+      style={{ overflow: "clip" }}
+    >
+      <motion.div
+        animate={{ x: getTranslateX() }}
+        transition={
+          shouldReduceMotion
+            ? { duration: 0 }
+            : { type: "tween", ease: [0.32, 0.72, 0, 1], duration: 0.35 }
         }
-      />
-      <MoneySourceCommandList
-        groups={groups}
-        value={value}
-        createLabel={createLabel}
-        onCreate={handleCreateClick}
-        onValueChange={onValueChange}
-        className="max-h-none min-h-0 flex-1"
-      />
-    </Command>
+        className="flex h-full w-full"
+      >
+        {/* Select View */}
+        <div className="h-full w-full shrink-0 min-w-0">
+          <Command className="h-full">
+            <CommandInput
+              placeholder={searchPlaceholder}
+              value={search}
+              onValueChange={setSearch}
+              wrapperClassName="h-14 px-4"
+              endAdornment={
+                createLabel ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="size-8 shrink-0"
+                    aria-label={createLabel}
+                    onClick={handleCreateClick}
+                  >
+                    <PlusIcon className="size-4" />
+                  </Button>
+                ) : null
+              }
+            />
+            <MoneySourceCommandList
+              groups={groups}
+              value={value}
+              createLabel={createLabel}
+              onCreate={handleCreateClick}
+              onValueChange={onValueChange}
+              className="max-h-none min-h-0 flex-1"
+            />
+          </Command>
+        </div>
+
+        {/* Choose View (Expense Only) */}
+        {isExpense && (
+          <div className="h-full w-full shrink-0 min-w-0">
+            <div className="flex h-full flex-col">
+              <div className="flex h-14 shrink-0 items-center border-b px-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  aria-label="결제 방법 선택으로 돌아가기"
+                  onClick={() => setTarget(null)}
+                >
+                  <ChevronLeftIcon className="size-5" />
+                </Button>
+                <h2 className="text-base font-semibold">무엇을 추가할까요?</h2>
+              </div>
+              <div className="min-h-0 flex-1 overflow-y-auto p-4">
+                <div className="grid gap-2">
+                  {PAYMENT_METHOD_TYPE_OPTIONS.map((option) => {
+                    const Icon = option.icon;
+                    return (
+                      <Button
+                        key={option.value}
+                        type="button"
+                        variant="outline"
+                        className="h-12 justify-start gap-2"
+                        onClick={() =>
+                          setTarget({
+                            kind: "paymentMethod",
+                            type: option.value,
+                            label: option.label,
+                          })
+                        }
+                      >
+                        <Icon className="size-4" />
+                        {option.label}
+                      </Button>
+                    );
+                  })}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-12 justify-start gap-2"
+                    onClick={() => setTarget({ kind: "account" })}
+                  >
+                    <LandmarkIcon className="size-4" />
+                    계좌
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Form View */}
+        <div className="h-full w-full shrink-0 min-w-0">
+          <div className="flex h-full flex-col">
+            <div className="flex h-14 shrink-0 items-center border-b px-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label="결제 방법 선택으로 돌아가기"
+                onClick={() => {
+                  if (mode === "expense") {
+                    setTarget({ kind: "choose" });
+                  } else {
+                    setTarget(null);
+                  }
+                }}
+              >
+                <ChevronLeftIcon className="size-5" />
+              </Button>
+              <h2 className="text-base font-semibold">{formTitle}</h2>
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto p-4">
+              {target?.kind === "account" && (
+                <AccountInlineCreateForm
+                  initialName={createInitialName}
+                  category="bank"
+                  onBack={() =>
+                    mode === "expense"
+                      ? setTarget({ kind: "choose" })
+                      : setTarget(null)
+                  }
+                  onCreated={(account) => onValueChange(`acc:${account.id}`)}
+                />
+              )}
+              {target?.kind === "paymentMethod" && (
+                <PaymentMethodInlineCreateForm
+                  initialName={createInitialName}
+                  type={target.type}
+                  typeLabel={target.label}
+                  accounts={accounts}
+                  onBack={() => setTarget({ kind: "choose" })}
+                  onCreated={(paymentMethod) =>
+                    onValueChange(`pm:${paymentMethod.id}`)
+                  }
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    </div>
   );
 }
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { motion, useReducedMotion } from "framer-motion";
 import {
   CheckIcon,
   ChevronLeftIcon,
@@ -304,6 +305,7 @@ export function AccountSelector<T extends FieldValues>({
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [createInitialName, setCreateInitialName] = useState("");
   const [mobileCreateOpen, setMobileCreateOpen] = useState(false);
+  const shouldReduceMotion = useReducedMotion();
   const createQuery = search.trim();
   const createLabel = createQuery
     ? `"${createQuery}" 새 투자 계좌 추가`
@@ -366,6 +368,14 @@ export function AccountSelector<T extends FieldValues>({
     }
     setOpen(false);
     setMobileCreateOpen(false);
+  };
+
+  const handleOpenChange = (isOpen: boolean) => {
+    setOpen(isOpen);
+    if (!isOpen) {
+      setSearch("");
+      setMobileCreateOpen(false);
+    }
   };
 
   if (!accounts || accounts.length === 0) {
@@ -458,9 +468,12 @@ export function AccountSelector<T extends FieldValues>({
       <AccountSelectorTrigger
         label={triggerLabel}
         placeholder={triggerPlaceholder}
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          setMobileCreateOpen(false);
+          setOpen(true);
+        }}
       />
-      <Drawer open={open} onOpenChange={setOpen}>
+      <Drawer open={open} onOpenChange={handleOpenChange}>
         <DrawerContent
           className="h-[85dvh] max-h-[85dvh] p-0 flex flex-col data-[vaul-drawer-direction=bottom]:mt-0 data-[vaul-drawer-direction=bottom]:max-h-[85dvh]"
           onOpenAutoFocus={(event) => event.preventDefault()}
@@ -471,60 +484,77 @@ export function AccountSelector<T extends FieldValues>({
               거래 계좌를 선택하고 검색해보세요.
             </DrawerDescription>
           </DrawerHeader>
-          {mobileCreateOpen ? (
-            <div className="flex h-full flex-col">
-              <div className="flex h-14 shrink-0 items-center border-b px-2">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  aria-label="계좌 선택으로 돌아가기"
-                  onClick={() => setMobileCreateOpen(false)}
-                >
-                  <ChevronLeftIcon className="size-5" />
-                </Button>
-                <h2 className="text-base font-semibold">새 투자 계좌</h2>
+          <div
+            className="flex-1 min-h-0 overflow-clip w-full"
+            style={{ overflow: "clip" }}
+          >
+            <motion.div
+              animate={{ x: mobileCreateOpen ? "-100%" : "0%" }}
+              transition={
+                shouldReduceMotion
+                  ? { duration: 0 }
+                  : { type: "tween", ease: [0.32, 0.72, 0, 1], duration: 0.35 }
+              }
+              className="flex h-full w-full"
+            >
+              <div className="w-full h-full shrink-0 min-w-0">
+                <Command className="h-full">
+                  <CommandInput
+                    placeholder="계좌명, 증권사 검색"
+                    value={search}
+                    onValueChange={setSearch}
+                    wrapperClassName="h-14 px-4"
+                    endAdornment={
+                      createLabel ? (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="size-8 shrink-0"
+                          aria-label={createLabel}
+                          onClick={handleCreateClick}
+                        >
+                          <PlusIcon className="size-4" />
+                        </Button>
+                      ) : null
+                    }
+                  />
+                  <AccountCommandList
+                    accounts={accounts}
+                    value={field.value ?? ""}
+                    allowClear={allowClear}
+                    createLabel={createLabel}
+                    onCreate={handleCreateClick}
+                    onValueChange={handleSelect}
+                    className="max-h-none min-h-0 flex-1"
+                  />
+                </Command>
               </div>
-              <div className="min-h-0 flex-1 overflow-y-auto p-4">
-                <InvestmentAccountInlineCreateForm
-                  initialName={createInitialName}
-                  onBack={() => setMobileCreateOpen(false)}
-                  onCreated={handleCreated}
-                />
-              </div>
-            </div>
-          ) : (
-            <Command className="h-full">
-              <CommandInput
-                placeholder="계좌명, 증권사 검색"
-                value={search}
-                onValueChange={setSearch}
-                endAdornment={
-                  createLabel ? (
+              <div className="w-full h-full shrink-0 min-w-0">
+                <div className="flex h-full flex-col">
+                  <div className="flex h-14 shrink-0 items-center border-b px-2">
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="size-8 shrink-0"
-                      aria-label={createLabel}
-                      onClick={handleCreateClick}
+                      aria-label="계좌 선택으로 돌아가기"
+                      onClick={() => setMobileCreateOpen(false)}
                     >
-                      <PlusIcon className="size-4" />
+                      <ChevronLeftIcon className="size-5" />
                     </Button>
-                  ) : null
-                }
-              />
-              <AccountCommandList
-                accounts={accounts}
-                value={field.value ?? ""}
-                allowClear={allowClear}
-                createLabel={createLabel}
-                onCreate={handleCreateClick}
-                onValueChange={handleSelect}
-                className="max-h-none min-h-0 flex-1"
-              />
-            </Command>
-          )}
+                    <h2 className="text-base font-semibold">새 투자 계좌</h2>
+                  </div>
+                  <div className="min-h-0 flex-1 overflow-y-auto p-4">
+                    <InvestmentAccountInlineCreateForm
+                      initialName={createInitialName}
+                      onBack={() => setMobileCreateOpen(false)}
+                      onCreated={handleCreated}
+                    />
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
         </DrawerContent>
       </Drawer>
     </>

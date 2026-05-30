@@ -1,5 +1,6 @@
 "use client";
 
+import { motion, useReducedMotion } from "framer-motion";
 import {
   CheckIcon,
   ChevronLeftIcon,
@@ -359,38 +360,12 @@ export function LedgerCategoryPickerPanel({
 }: LedgerCategoryPickerPanelProps) {
   const [search, setSearch] = useState("");
   const [view, setView] = useState<"select" | "create">("select");
+  const shouldReduceMotion = useReducedMotion();
   const [createInitialName, setCreateInitialName] = useState("");
   const createQuery = search.trim();
   const createLabel = createQuery
     ? `"${createQuery}" 새 카테고리 추가`
     : undefined;
-
-  if (view === "create") {
-    return (
-      <div className="flex h-full flex-col">
-        <div className="flex h-14 shrink-0 items-center border-b px-2">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            aria-label="카테고리 선택으로 돌아가기"
-            onClick={() => setView("select")}
-          >
-            <ChevronLeftIcon className="size-5" />
-          </Button>
-          <h2 className="text-base font-semibold">새 카테고리</h2>
-        </div>
-        <div className="min-h-0 flex-1 overflow-y-auto p-4">
-          <CategoryInlineCreateForm
-            initialName={createInitialName}
-            type={type}
-            onBack={() => setView("select")}
-            onCreated={(category) => onValueChange(category.id)}
-          />
-        </div>
-      </div>
-    );
-  }
 
   const handleCreateClick = () => {
     if (!createQuery) return;
@@ -398,35 +373,81 @@ export function LedgerCategoryPickerPanel({
     setView("create");
   };
 
+  const handleBackToSelect = () => {
+    setView("select");
+  };
+
   return (
-    <Command className="h-full">
-      <CommandInput
-        placeholder={searchPlaceholder}
-        value={search}
-        onValueChange={setSearch}
-        endAdornment={
-          createLabel ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="size-8 shrink-0"
-              aria-label={createLabel}
-              onClick={handleCreateClick}
-            >
-              <PlusIcon className="size-4" />
-            </Button>
-          ) : null
+    <div
+      className="flex-1 min-h-0 overflow-clip w-full h-full"
+      style={{ overflow: "clip" }}
+    >
+      <motion.div
+        animate={{ x: view === "create" ? "-100%" : "0%" }}
+        transition={
+          shouldReduceMotion
+            ? { duration: 0 }
+            : { type: "tween", ease: [0.32, 0.72, 0, 1], duration: 0.35 }
         }
-      />
-      <CategoryCommandList
-        categories={categories}
-        value={value}
-        createLabel={createLabel}
-        onCreate={handleCreateClick}
-        onValueChange={onValueChange}
-        className="max-h-none min-h-0 flex-1"
-      />
-    </Command>
+        className="flex h-full w-full"
+      >
+        <div className="w-full h-full shrink-0 min-w-0">
+          <Command className="h-full">
+            <CommandInput
+              placeholder={searchPlaceholder}
+              value={search}
+              onValueChange={setSearch}
+              wrapperClassName="h-14 px-4"
+              endAdornment={
+                createLabel ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="size-8 shrink-0"
+                    aria-label={createLabel}
+                    onClick={handleCreateClick}
+                  >
+                    <PlusIcon className="size-4" />
+                  </Button>
+                ) : null
+              }
+            />
+            <CategoryCommandList
+              categories={categories}
+              value={value}
+              createLabel={createLabel}
+              onCreate={handleCreateClick}
+              onValueChange={onValueChange}
+              className="max-h-none min-h-0 flex-1"
+            />
+          </Command>
+        </div>
+        <div className="w-full h-full shrink-0 min-w-0">
+          <div className="flex h-full flex-col">
+            <div className="flex h-14 shrink-0 items-center border-b px-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label="카테고리 선택으로 돌아가기"
+                onClick={handleBackToSelect}
+              >
+                <ChevronLeftIcon className="size-5" />
+              </Button>
+              <h2 className="text-base font-semibold">새 카테고리</h2>
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto p-4">
+              <CategoryInlineCreateForm
+                initialName={createInitialName}
+                type={type}
+                onBack={handleBackToSelect}
+                onCreated={(category) => onValueChange(category.id)}
+              />
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    </div>
   );
 }
