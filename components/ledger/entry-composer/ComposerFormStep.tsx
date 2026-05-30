@@ -171,6 +171,7 @@ export function ComposerFormStep({
             <LedgerCategoryCombobox
               value={form.watch(`items.${index}.categoryId`)}
               categories={categories}
+              type={itemType}
               placeholder="선택"
               onValueChange={(value) =>
                 form.setValue(`items.${index}.categoryId`, value, {
@@ -281,6 +282,7 @@ export function ComposerFormStep({
               <LedgerCategoryPickerPanel
                 value={form.watch(`items.${index}.categoryId`)}
                 categories={categories}
+                type={itemType}
                 title="카테고리 선택"
                 searchPlaceholder="카테고리 이름 검색"
                 onBack={() => setMobileView("form")}
