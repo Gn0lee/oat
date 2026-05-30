@@ -146,7 +146,7 @@ export function LedgerRecordsClient() {
                   : "text-gray-500"
               }`}
             >
-              {item === "shared" ? "공용" : "내 개인"}
+              {item === "shared" ? "공용" : "개인"}
             </button>
           ))}
         </div>

@@ -130,7 +130,7 @@ export function HomePageClient() {
             </div>
 
             <div className="flex items-center justify-center gap-2">
-              {["공용", "내 개인"].map((label, index) => (
+              {["공용", "개인"].map((label, index) => (
                 <button
                   key={label}
                   type="button"
