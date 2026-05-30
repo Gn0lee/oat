@@ -1,9 +1,6 @@
 "use client";
 
-import { PlusCircle } from "lucide-react";
-import Link from "next/link";
 import { MultiTransactionForm } from "@/components/transactions/MultiTransactionForm";
-import { Button } from "@/components/ui/button";
 import { useAccounts } from "@/hooks/use-accounts";
 import { useCurrentUserId } from "@/hooks/use-current-user";
 
@@ -36,29 +33,11 @@ export function MultiTransactionFormWrapper({
     );
   }
 
-  // 본인 계좌가 없으면 계좌 추가 안내
-  if (myAccounts.length === 0) {
-    return (
-      <div className="bg-white rounded-2xl shadow-sm p-8 text-center space-y-4">
-        <p className="text-gray-700 font-medium">
-          거래를 등록하려면 계좌가 필요합니다.
-        </p>
-        <p className="text-gray-500 text-sm">먼저 계좌를 추가해주세요.</p>
-        <Button asChild className="rounded-xl">
-          <Link href="/assets/accounts/new?returnUrl=/assets/stock/transactions/new/full">
-            <PlusCircle className="w-4 h-4 mr-2" />
-            계좌 추가하기
-          </Link>
-        </Button>
-      </div>
-    );
-  }
-
   const selectedDefaultAccountId =
     defaultAccountId &&
     myAccounts.some((account) => account.id === defaultAccountId)
       ? defaultAccountId
-      : myAccounts[0].id;
+      : myAccounts[0]?.id;
 
   return (
     <MultiTransactionForm
