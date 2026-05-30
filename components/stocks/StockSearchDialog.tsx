@@ -221,7 +221,10 @@ export function StockSearchDialog({
     <>
       {triggerButton}
       <Drawer open={open} onOpenChange={handleOpenChange}>
-        <DrawerContent className="h-[85vh] p-0 flex flex-col">
+        <DrawerContent
+          className="h-[85dvh] max-h-[85dvh] p-0 flex flex-col data-[vaul-drawer-direction=bottom]:mt-0 data-[vaul-drawer-direction=bottom]:max-h-[85dvh]"
+          onOpenAutoFocus={(event) => event.preventDefault()}
+        >
           <DrawerHeader className="sr-only">
             <DrawerTitle>종목 검색</DrawerTitle>
             <DrawerDescription>

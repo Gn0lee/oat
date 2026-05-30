@@ -46,9 +46,7 @@ export function StockComposerFormStep({
 
       {/* Form Content */}
       <div className="flex-1 overflow-y-auto px-4 pt-16 pb-4 space-y-4">
-        <TransactionItemRow index={index} control={form.control} />
-
-        <div className="pt-2 space-y-3">
+        <div className="space-y-3">
           <div>
             <h3 className="text-sm font-semibold text-gray-900">
               거래일 및 계좌
@@ -80,6 +78,8 @@ export function StockComposerFormStep({
             </div>
           </div>
         </div>
+
+        <TransactionItemRow index={index} control={form.control} />
       </div>
 
       {/* Action Button */}

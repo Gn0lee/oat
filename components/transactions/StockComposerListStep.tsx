@@ -97,7 +97,7 @@ export function StockComposerListStep({
             type="button"
             variant="outline"
             onClick={handleAddItem}
-            className="w-full sm:w-auto rounded-xl border-dashed h-11 px-6"
+            className="w-full rounded-xl border-dashed h-11 px-6"
           >
             <PlusIcon className="h-4 w-4 mr-2" />
             종목 추가

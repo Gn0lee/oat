@@ -10,6 +10,8 @@ import { FormProvider, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { StockComposerFormStep } from "@/components/transactions/StockComposerFormStep";
 import { StockComposerListStep } from "@/components/transactions/StockComposerListStep";
+import { Drawer, DrawerContent } from "@/components/ui/drawer";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import { useCreateBatchTransactions } from "@/hooks/use-transaction";
 import {
   type MultiTransactionFormData,
@@ -28,6 +30,7 @@ export function MultiTransactionForm({
 }: MultiTransactionFormProps) {
   const router = useRouter();
   const createBatchTransactions = useCreateBatchTransactions();
+  const isDesktop = useMediaQuery("(min-width: 768px)");
 
   const form = useForm<MultiTransactionFormData>({
     resolver: zodResolver(multiTransactionFormSchema),
@@ -40,11 +43,27 @@ export function MultiTransactionForm({
   });
 
   const [editIndex, setEditIndex] = useQueryState("editIndex", parseAsInteger);
+  const [activeEditIndex, setActiveEditIndex] = useState<number | null>(null);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (editIndex !== null) {
+      setActiveEditIndex(editIndex);
+      return;
+    }
+
+    if (activeEditIndex === null) return;
+
+    const timeoutId = window.setTimeout(() => {
+      setActiveEditIndex(null);
+    }, 300);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [editIndex, activeEditIndex]);
 
   // 유효한 항목만 필터링 (종목 선택 + 수량 > 0)
   const getValidItems = (data: MultiTransactionFormData) => {
@@ -123,6 +142,7 @@ export function MultiTransactionForm({
       </div>
 
       {mounted &&
+        isDesktop &&
         createPortal(
           <AnimatePresence>
             {editIndex !== null && (
@@ -143,6 +163,29 @@ export function MultiTransactionForm({
           </AnimatePresence>,
           document.body,
         )}
+
+      {mounted && !isDesktop && (
+        <Drawer
+          open={editIndex !== null}
+          onOpenChange={(open) => {
+            if (!open) setEditIndex(null);
+          }}
+        >
+          {activeEditIndex !== null && (
+            <DrawerContent
+              className="h-[100dvh] max-h-[100dvh] rounded-none border-t-0 p-0 flex flex-col data-[vaul-drawer-direction=bottom]:mt-0 data-[vaul-drawer-direction=bottom]:max-h-[100dvh] data-[vaul-drawer-direction=bottom]:rounded-none data-[vaul-drawer-direction=bottom]:border-t-0"
+              showHandle={false}
+              onOpenAutoFocus={(event) => event.preventDefault()}
+            >
+              <StockComposerFormStep
+                key={activeEditIndex}
+                index={activeEditIndex}
+                onBack={() => setEditIndex(null)}
+              />
+            </DrawerContent>
+          )}
+        </Drawer>
+      )}
     </FormProvider>
   );
 }

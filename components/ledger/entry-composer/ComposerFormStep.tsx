@@ -16,6 +16,7 @@ import {
 } from "@/components/ledger/LedgerMoneySourceCombobox";
 import { Button } from "@/components/ui/button";
 import { DatePickerInput } from "@/components/ui/date-picker";
+import { Drawer, DrawerContent } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -94,46 +95,6 @@ export function ComposerFormStep({
     form.setValue(`items.${index}.accountId`, undefined);
   };
 
-  if (!isDesktop && mobileView === "moneySourcePicker") {
-    return (
-      <div className="flex min-h-[70vh] flex-col pb-4 pt-16 bg-white h-full">
-        <LedgerMoneySourcePickerPanel
-          mode={itemType}
-          value={moneySourceValue}
-          paymentMethods={paymentMethods}
-          accounts={accounts}
-          title={itemType === "expense" ? "결제 방법 선택" : "입금 계좌 선택"}
-          searchPlaceholder="이름, 기관, 소유자 검색"
-          onBack={() => setMobileView("form")}
-          onValueChange={(v) => {
-            handleMoneySourceChange(v);
-            setMobileView("form");
-          }}
-        />
-      </div>
-    );
-  }
-
-  if (!isDesktop && mobileView === "categoryPicker") {
-    return (
-      <div className="flex min-h-[70vh] flex-col pb-4 pt-16 bg-white h-full">
-        <LedgerCategoryPickerPanel
-          value={form.watch(`items.${index}.categoryId`)}
-          categories={categories}
-          title="카테고리 선택"
-          searchPlaceholder="카테고리 이름 검색"
-          onBack={() => setMobileView("form")}
-          onValueChange={(v) => {
-            form.setValue(`items.${index}.categoryId`, v, {
-              shouldValidate: true,
-            });
-            setMobileView("form");
-          }}
-        />
-      </div>
-    );
-  }
-
   return (
     <>
       <Button
@@ -189,6 +150,21 @@ export function ComposerFormStep({
             </Select>
           </div>
         </div>
+
+        {mode === "full" && (
+          <div className="space-y-1">
+            <Label className="text-sm text-gray-700">날짜</Label>
+            <DatePickerInput
+              value={form.watch(`items.${index}.transactedAt`)}
+              onChange={(value) =>
+                form.setValue(`items.${index}.transactedAt`, value, {
+                  shouldValidate: true,
+                })
+              }
+            />
+          </div>
+        )}
+
         <div className="space-y-1">
           <Label className="text-sm text-gray-700">카테고리 *</Label>
           {isDesktop ? (
@@ -218,34 +194,31 @@ export function ComposerFormStep({
           )}
         </div>
 
-        <div className="grid grid-cols-[1fr_112px] gap-2">
-          <div className="space-y-1">
-            <Label className="text-sm text-gray-700">내용 *</Label>
-            <Input
-              placeholder="예: 점심, 커피"
-              {...form.register(`items.${index}.title`)}
-            />
-            {errors?.title && (
-              <p className="text-xs text-red-500">{errors.title.message}</p>
-            )}
-          </div>
+        <div className="space-y-1">
+          <Label className="text-sm text-gray-700">내용 *</Label>
+          <Input
+            placeholder="예: 점심, 커피"
+            {...form.register(`items.${index}.title`)}
+          />
+          {errors?.title && (
+            <p className="text-xs text-red-500">{errors.title.message}</p>
+          )}
+        </div>
 
+        <div className="grid grid-cols-2 gap-2">
           <div className="space-y-1">
             <Label className="text-sm text-gray-700">금액 *</Label>
             <Input
               type="number"
               inputMode="numeric"
               placeholder="0"
-              className="text-right"
               {...form.register(`items.${index}.amount`)}
             />
             {errors?.amount && (
               <p className="text-xs text-red-500">{errors.amount.message}</p>
             )}
           </div>
-        </div>
 
-        <div className="grid grid-cols-1 gap-2">
           <div className="space-y-1">
             <Label className="text-sm text-gray-700">
               {itemType === "expense" ? "결제 방법" : "입금 계좌"}
@@ -275,20 +248,6 @@ export function ComposerFormStep({
           </div>
         </div>
 
-        {mode === "full" && (
-          <div className="space-y-1">
-            <Label className="text-sm text-gray-700">날짜</Label>
-            <DatePickerInput
-              value={form.watch(`items.${index}.transactedAt`)}
-              onChange={(value) =>
-                form.setValue(`items.${index}.transactedAt`, value, {
-                  shouldValidate: true,
-                })
-              }
-            />
-          </div>
-        )}
-
         <div className="space-y-1">
           <Label className="text-sm text-gray-700">메모</Label>
           <Textarea
@@ -310,6 +269,64 @@ export function ComposerFormStep({
           완료
         </Button>
       </div>
+
+      {!isDesktop && (
+        <>
+          <Drawer
+            open={mobileView === "categoryPicker"}
+            onOpenChange={(open) => {
+              if (!open) setMobileView("form");
+            }}
+          >
+            <DrawerContent
+              className="h-[85dvh] max-h-[85dvh] p-0 flex flex-col data-[vaul-drawer-direction=bottom]:mt-0 data-[vaul-drawer-direction=bottom]:max-h-[85dvh]"
+              onOpenAutoFocus={(event) => event.preventDefault()}
+            >
+              <LedgerCategoryPickerPanel
+                value={form.watch(`items.${index}.categoryId`)}
+                categories={categories}
+                title="카테고리 선택"
+                searchPlaceholder="카테고리 이름 검색"
+                onBack={() => setMobileView("form")}
+                onValueChange={(v) => {
+                  form.setValue(`items.${index}.categoryId`, v, {
+                    shouldValidate: true,
+                  });
+                  setMobileView("form");
+                }}
+              />
+            </DrawerContent>
+          </Drawer>
+
+          <Drawer
+            open={mobileView === "moneySourcePicker"}
+            onOpenChange={(open) => {
+              if (!open) setMobileView("form");
+            }}
+          >
+            <DrawerContent
+              className="h-[85dvh] max-h-[85dvh] p-0 flex flex-col data-[vaul-drawer-direction=bottom]:mt-0 data-[vaul-drawer-direction=bottom]:max-h-[85dvh]"
+              onOpenAutoFocus={(event) => event.preventDefault()}
+            >
+              <LedgerMoneySourcePickerPanel
+                mode={itemType}
+                value={moneySourceValue}
+                paymentMethods={paymentMethods}
+                accounts={accounts}
+                title={
+                  itemType === "expense" ? "결제 방법 선택" : "입금 계좌 선택"
+                }
+                searchPlaceholder="이름, 기관, 소유자 검색"
+                onBack={() => setMobileView("form")}
+                onValueChange={(v) => {
+                  handleMoneySourceChange(v);
+                  setMobileView("form");
+                }}
+              />
+            </DrawerContent>
+          </Drawer>
+        </>
+      )}
     </>
   );
 }
