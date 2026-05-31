@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { PageContainer } from "@/components/layout";
 import { LedgerEntryComposer } from "@/components/ledger/entry-composer/LedgerEntryComposer";
+import { formatKst, getKstToday } from "@/lib/date";
 
 interface DailyLedgerEntryPageProps {
   searchParams: Promise<{
@@ -12,7 +13,7 @@ function getDefaultDate(date?: string) {
   if (date && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
     return date;
   }
-  return new Date().toISOString().split("T")[0];
+  return getKstToday();
 }
 
 export default async function DailyLedgerEntryPage({

@@ -1,7 +1,6 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { format } from "date-fns";
 import { PlusIcon, Trash2Icon } from "lucide-react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
@@ -22,6 +21,7 @@ import { useAccounts } from "@/hooks/use-accounts";
 import { useCategories } from "@/hooks/use-categories";
 import { usePaymentMethods } from "@/hooks/use-payment-methods";
 import type { LedgerItemFormData } from "@/lib/api/ledger";
+import { formatKst, getKstToday } from "@/lib/date";
 import { getLedgerMoneySourceValue } from "@/lib/ledger/money-source-options";
 import type { CategoryType } from "@/types";
 
@@ -46,7 +46,7 @@ interface AddItemsStepProps {
   onNext: (items: LedgerItemFormData[]) => void;
 }
 
-const today = format(new Date(), "yyyy-MM-dd");
+const today = getKstToday();
 
 export function AddItemsStep({ type, onNext }: AddItemsStepProps) {
   const categoryType = type as CategoryType;

@@ -1,8 +1,7 @@
 "use client";
 
-import { format } from "date-fns";
-import { ko } from "date-fns/locale";
 import type { LedgerEntryWithDetails } from "@/lib/api/ledger";
+import { formatKst } from "@/lib/date";
 import { LedgerEntryRow } from "./LedgerEntryRow";
 
 interface LedgerDayEntryListProps {
@@ -18,7 +17,7 @@ export function LedgerDayEntryList({
   onEdit,
   onDelete,
 }: LedgerDayEntryListProps) {
-  const dateLabel = format(selectedDate, "M월 d일 (eee)", { locale: ko });
+  const dateLabel = formatKst(selectedDate, "M월 d일 (eee)");
 
   return (
     <div className="bg-white rounded-2xl shadow-sm mt-4 md:mt-0">

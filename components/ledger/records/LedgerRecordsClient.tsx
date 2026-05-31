@@ -1,7 +1,7 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { addMonths, format, getYear, startOfMonth, subMonths } from "date-fns";
+import { addMonths, getYear, startOfMonth, subMonths } from "date-fns";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -22,6 +22,7 @@ import {
   calculateLedgerSummary,
   type LedgerEntryWithDetails,
 } from "@/lib/api/ledger";
+import { formatKst, getKstToday, toKstDate } from "@/lib/date";
 import { queries } from "@/lib/queries/keys";
 import { formatCurrency, formatDateISO } from "@/lib/utils/format";
 import { LedgerCalendar } from "./LedgerCalendar";
@@ -40,8 +41,7 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const initial = useMemo(
-    () =>
-      new Date(`${initialDate ?? format(new Date(), "yyyy-MM-dd")}T00:00:00`),
+    () => toKstDate(initialDate ?? getKstToday()),
     [initialDate],
   );
   const [currentMonth, setCurrentMonth] = useState<Date>(() =>
@@ -270,7 +270,7 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
           />
           <Button asChild className="w-full" size="icon-sm">
             <Link
-              href={`/ledger/records/new/daily?date=${format(selectedDate, "yyyy-MM-dd")}`}
+              href={`/ledger/records/new/daily?date=${formatKst(selectedDate, "yyyy-MM-dd")}`}
             >
               <Plus className="w-5 h-5" />
               가계부 등록

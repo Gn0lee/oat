@@ -1,7 +1,7 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { addMonths, format, getYear, startOfMonth, subMonths } from "date-fns";
+import { addMonths, getYear, startOfMonth, subMonths } from "date-fns";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTransactions } from "@/hooks/use-transaction";
+import { formatKst, toKstDate } from "@/lib/date";
 import { queries } from "@/lib/queries/keys";
 import {
   buildStockRecordDailySummaries,
@@ -53,10 +54,7 @@ export function StockRecordsClient({
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
 
-  const initial = useMemo(
-    () => new Date(`${initialDate}T00:00:00`),
-    [initialDate],
-  );
+  const initial = useMemo(() => toKstDate(initialDate), [initialDate]);
   const [currentMonth, setCurrentMonth] = useState<Date>(() =>
     startOfMonth(initial),
   );
@@ -222,7 +220,7 @@ export function StockRecordsClient({
           />
           <Button asChild className="w-full" size="icon-sm">
             <Link
-              href={`/assets/stock/transactions/new/daily?date=${format(selectedDate, "yyyy-MM-dd")}`}
+              href={`/assets/stock/transactions/new/daily?date=${formatKst(selectedDate, "yyyy-MM-dd")}`}
             >
               <Plus className="h-5 w-5" />
               거래 등록

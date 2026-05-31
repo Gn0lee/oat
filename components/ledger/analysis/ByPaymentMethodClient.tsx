@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/chart";
 import { useLedgerStatsByPaymentMethod } from "@/hooks/use-ledger-stats";
 import type { StatsScope } from "@/lib/api/ledger-stats";
+import { getKstNow } from "@/lib/date";
 import { formatCurrency } from "@/lib/utils/format";
 import { LedgerStatsDetailDrawer } from "./LedgerStatsDetailDrawer";
 import { MonthSelector } from "./MonthSelector";
@@ -40,7 +41,7 @@ interface ByPaymentMethodClientProps {
 
 export function ByPaymentMethodClient({ scope }: ByPaymentMethodClientProps) {
   const [currentMonth, setCurrentMonth] = useState<Date>(() =>
-    startOfMonth(new Date()),
+    startOfMonth(getKstNow()),
   );
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [detail, setDetail] = useState<{

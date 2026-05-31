@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/select";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import type { TransactionFilters as Filters } from "@/lib/api/transaction";
+import { getKstNow } from "@/lib/date";
 import { formatDateISO } from "@/lib/utils/format";
 
 interface Member {
@@ -59,7 +60,7 @@ export function TransactionFilters({
 
   const handlePeriodChange = (value: string) => {
     setPeriod(value);
-    const now = new Date();
+    const now = getKstNow();
     let startDate: string | undefined;
     const endDate = formatDateISO(now);
 

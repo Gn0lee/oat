@@ -4,6 +4,7 @@ import { APIError, toErrorResponse } from "@/lib/api/error";
 import { getUserHouseholdId } from "@/lib/api/invitation";
 import type { StatsScope } from "@/lib/api/ledger-stats";
 import { getLedgerStatsByCategory } from "@/lib/api/ledger-stats";
+import { getKstNow } from "@/lib/date";
 import { createClient } from "@/lib/supabase/server";
 
 /**
@@ -38,7 +39,7 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = request.nextUrl;
-    const now = new Date();
+    const now = getKstNow();
     const year = Number(searchParams.get("year") ?? now.getFullYear());
     const month = Number(searchParams.get("month") ?? now.getMonth() + 1);
 

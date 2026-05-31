@@ -1,9 +1,10 @@
 import { Suspense } from "react";
 import { PageContainer } from "@/components/layout";
 import { MultiTransactionFormWrapper } from "@/components/transactions/MultiTransactionFormWrapper";
+import { formatKst, getKstToday } from "@/lib/date";
 
 export default function NewStockTransactionFullPage() {
-  const today = new Date().toISOString().split("T")[0];
+  const today = getKstToday();
 
   return (
     <PageContainer maxWidth="narrow">

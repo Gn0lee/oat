@@ -5,6 +5,7 @@ import { ChartPie, ReceiptText, Settings, Wallet } from "lucide-react";
 import { useRef, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useHomeSummary } from "@/hooks/use-home-summary";
+import { getKstNow } from "@/lib/date";
 import { formatCompactNumber, formatCurrency } from "@/lib/utils/format";
 import { CashFlowCard } from "./CashFlowCard";
 import { FeatureCard } from "./FeatureCard";
@@ -67,7 +68,7 @@ export function HomePageClient() {
     lastOwnLedgerEntryCreatedAt: null,
   };
 
-  const month = data?.month || new Date().getMonth() + 1;
+  const month = data?.month || getKstNow().getMonth() + 1;
 
   const ledgerHint = sharedFlow
     ? sharedFlow.totalExpense > 0

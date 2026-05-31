@@ -1,7 +1,6 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { format } from "date-fns";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { LedgerMoneySourceCombobox } from "@/components/ledger/LedgerMoneySourceCombobox";
@@ -13,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAccounts } from "@/hooks/use-accounts";
 import { usePaymentMethods } from "@/hooks/use-payment-methods";
 import type { TransferItemFormData, TransferLocation } from "@/lib/api/ledger";
+import { formatKst, getKstToday } from "@/lib/date";
 
 const transferFormSchema = z
   .object({
@@ -36,7 +36,7 @@ interface AddTransferStepProps {
   submitLabel?: string;
 }
 
-const today = format(new Date(), "yyyy-MM-dd");
+const today = getKstToday();
 
 function parseLocation(value: string): TransferLocation {
   if (value.startsWith("acc:")) {

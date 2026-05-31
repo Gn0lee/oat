@@ -1,4 +1,5 @@
 import { LedgerRecordsClient } from "@/components/ledger/records/LedgerRecordsClient";
+import { formatKst, getKstToday } from "@/lib/date";
 import { normalizeRecordDate } from "@/lib/stock-records/records";
 import { requireUser } from "@/lib/supabase/auth";
 
@@ -13,7 +14,7 @@ export default async function LedgerRecordsPage({
 }: LedgerRecordsPageProps) {
   await requireUser();
   const { date } = await searchParams;
-  const today = new Date().toISOString().split("T")[0];
+  const today = getKstToday();
 
   return <LedgerRecordsClient initialDate={normalizeRecordDate(date, today)} />;
 }

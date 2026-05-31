@@ -1,5 +1,6 @@
 import { PageContainer } from "@/components/layout";
 import { MultiTransactionFormWrapper } from "@/components/transactions/MultiTransactionFormWrapper";
+import { formatKst, getKstToday } from "@/lib/date";
 
 interface NewStockTransactionAccountPageProps {
   searchParams: Promise<{
@@ -11,7 +12,7 @@ export default async function NewStockTransactionAccountPage({
   searchParams,
 }: NewStockTransactionAccountPageProps) {
   const { accountId } = await searchParams;
-  const today = new Date().toISOString().split("T")[0];
+  const today = getKstToday();
 
   return (
     <PageContainer maxWidth="narrow">

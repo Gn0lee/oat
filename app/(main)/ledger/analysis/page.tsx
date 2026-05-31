@@ -9,6 +9,7 @@ import {
 import Link from "next/link";
 import { LedgerAnalysisOverview } from "@/components/ledger/analysis/LedgerAnalysisOverview";
 import { ScopeTabs } from "@/components/ledger/analysis/ScopeTabs";
+import { getKstNow } from "@/lib/date";
 import { requireUser } from "@/lib/supabase/auth";
 
 export const dynamic = "force-dynamic";
@@ -77,7 +78,7 @@ export default async function LedgerAnalysisPage({
 
   await requireUser();
 
-  const now = new Date();
+  const now = getKstNow();
   const year = now.getFullYear();
   const month = now.getMonth() + 1;
 

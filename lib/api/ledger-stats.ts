@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { APIError } from "@/lib/api/error";
 import type { LedgerEntryWithDetails } from "@/lib/api/ledger";
-import { getKstDayRange, getKstMonthRange } from "@/lib/utils/kst-date-range";
+import { getKstDayRange, getKstMonthRange } from "@/lib/date";
 import type { Database } from "@/types";
 
 export type StatsScope = "all" | "shared" | "personal";
