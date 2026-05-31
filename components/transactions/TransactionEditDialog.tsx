@@ -309,7 +309,7 @@ export function TransactionEditDialog({
           </form>
         </div>
 
-        <DrawerFooter>
+        <DrawerFooter className="pb-[max(env(safe-area-inset-bottom),1rem)]">
           <div className="flex gap-2">
             <Button
               type="button"

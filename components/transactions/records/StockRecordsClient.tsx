@@ -117,28 +117,38 @@ export function StockRecordsClient({
     }
   };
 
-  const goToPrevMonth = () =>
-    setCurrentMonth((month) => startOfMonth(subMonths(month, 1)));
-  const goToNextMonth = () =>
-    setCurrentMonth((month) => startOfMonth(addMonths(month, 1)));
+  const changeMonthAndUpdateDate = (newMonthStart: Date) => {
+    setCurrentMonth(newMonthStart);
 
-  const handleMonthChange = (month: Date) =>
-    setCurrentMonth(startOfMonth(month));
-
-  const handleYearChange = (year: string) => {
-    setCurrentMonth((month) => {
-      const next = new Date(month);
-      next.setFullYear(Number(year));
-      return startOfMonth(next);
+    setSelectedDate((prevSelectedDate) => {
+      const nextDate = new Date(newMonthStart);
+      nextDate.setDate(prevSelectedDate.getDate());
+      if (nextDate.getMonth() !== newMonthStart.getMonth()) {
+        nextDate.setDate(0);
+      }
+      queueMicrotask(() => updateSelectedDateParam(nextDate));
+      return nextDate;
     });
   };
 
+  const goToPrevMonth = () =>
+    changeMonthAndUpdateDate(startOfMonth(subMonths(currentMonth, 1)));
+  const goToNextMonth = () =>
+    changeMonthAndUpdateDate(startOfMonth(addMonths(currentMonth, 1)));
+
+  const handleMonthChange = (month: Date) =>
+    changeMonthAndUpdateDate(startOfMonth(month));
+
+  const handleYearChange = (year: string) => {
+    const next = new Date(currentMonth);
+    next.setFullYear(Number(year));
+    changeMonthAndUpdateDate(startOfMonth(next));
+  };
+
   const handleMonthSelect = (month: string) => {
-    setCurrentMonth((value) => {
-      const next = new Date(value);
-      next.setMonth(Number(month) - 1);
-      return startOfMonth(next);
-    });
+    const next = new Date(currentMonth);
+    next.setMonth(Number(month) - 1);
+    changeMonthAndUpdateDate(startOfMonth(next));
   };
 
   const handleRefresh = () => {
@@ -204,7 +214,7 @@ export function StockRecordsClient({
           )}
         </div>
 
-        <div className="flex flex-col gap-4">
+        <div className="flex min-w-0 flex-col gap-4">
           <StockRecordDayList
             selectedDate={selectedDateKey}
             transactions={dayTransactions}

@@ -13,6 +13,21 @@ export function formatCurrency(
 }
 
 /**
+ * 통화를 축약 형식으로 포맷 (예: $1.2M, ₩340만)
+ */
+export function formatCompactCurrency(
+  value: number,
+  currency: "KRW" | "USD" = "KRW",
+): string {
+  return new Intl.NumberFormat("ko-KR", {
+    style: "currency",
+    currency,
+    notation: "compact",
+    maximumFractionDigits: 2,
+  }).format(value);
+}
+
+/**
  * 숫자를 퍼센트 형식으로 포맷
  * 양수/0일 경우 '+'를 앞에 붙임 (예: +10.46%, +0.00%)
  * 음수일 경우 '-'를 앞에 붙임 (예: -5.20%)
