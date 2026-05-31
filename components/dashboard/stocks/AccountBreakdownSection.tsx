@@ -28,6 +28,10 @@ import {
 import { useStockAnalysis } from "@/hooks/use-stock-analysis";
 import { cn } from "@/lib/utils/cn";
 import { formatCurrency, formatPercent } from "@/lib/utils/format";
+import {
+  type StockAnalysisDetail,
+  StockAnalysisDetailDrawer,
+} from "./StockAnalysisDetailDrawer";
 
 const CHART_COLORS = [
   "#4F46E5",
@@ -45,6 +49,7 @@ export function AccountBreakdownSection() {
   const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>([]);
   const [hoveredAccountId, setHoveredAccountId] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
+  const [detail, setDetail] = useState<StockAnalysisDetail | null>(null);
 
   // 초기 선택: 모든 계좌를 기본으로 보여줌
   useEffect(() => {
@@ -327,6 +332,15 @@ export function AccountBreakdownSection() {
                 key={item.id}
                 onMouseEnter={() => setHoveredAccountId(item.id)}
                 onMouseLeave={() => setHoveredAccountId(null)}
+                onClick={() => {
+                  if (item.id !== "OTHER") {
+                    setDetail({
+                      kind: "account",
+                      accountId: item.id,
+                      title: `${item.name} 보유 종목`,
+                    });
+                  }
+                }}
                 className={cn(
                   "flex items-center justify-between p-2 rounded-xl transition-all cursor-pointer",
                   hoveredAccountId === item.id
@@ -396,6 +410,13 @@ export function AccountBreakdownSection() {
           background: #d1d5db;
         }
       `}</style>
+      <StockAnalysisDetailDrawer
+        open={!!detail}
+        detail={detail}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) setDetail(null);
+        }}
+      />
     </div>
   );
 }

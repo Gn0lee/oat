@@ -46,6 +46,8 @@ async function fetchTransactions(
   if (params.filters?.type) searchParams.set("type", params.filters.type);
   if (params.filters?.ownerId)
     searchParams.set("ownerId", params.filters.ownerId);
+  if (params.filters?.accountId)
+    searchParams.set("accountId", params.filters.accountId);
   if (params.filters?.ticker) searchParams.set("ticker", params.filters.ticker);
   if (params.filters?.search) searchParams.set("search", params.filters.search);
   if (params.filters?.startDate)

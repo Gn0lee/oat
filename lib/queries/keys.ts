@@ -50,6 +50,7 @@ export const queries = createQueryKeyStore({
       filters?: {
         type?: "buy" | "sell";
         ownerId?: string;
+        accountId?: string;
         ticker?: string;
         search?: string;
         startDate?: string;
@@ -151,5 +152,16 @@ export const queries = createQueryKeyStore({
     daily: (year: number, month: number, scope: StatsScope) => ({
       queryKey: [year, month, scope],
     }),
+    detail: (params?: {
+      kind?: string;
+      year?: number;
+      month?: number;
+      date?: string;
+      type?: string;
+      scope?: string;
+      categoryId?: string | null;
+      paymentMethodId?: string | null;
+      limit?: number;
+    }) => ({ queryKey: [params] }),
   },
 });

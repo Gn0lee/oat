@@ -1,5 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { APIError } from "@/lib/api/error";
+import type { LedgerEntryWithDetails } from "@/lib/api/ledger";
+import { getKstDayRange, getKstMonthRange } from "@/lib/utils/kst-date-range";
 import type { Database } from "@/types";
 
 export type StatsScope = "all" | "shared" | "personal";
@@ -94,9 +96,7 @@ function getMonthRange(
   year: number,
   month: number,
 ): { from: string; to: string } {
-  const from = new Date(year, month - 1, 1).toISOString();
-  const to = new Date(year, month, 1).toISOString();
-  return { from, to };
+  return getKstMonthRange(year, month);
 }
 
 function calcSavingsRate(income: number, expense: number): number {
@@ -555,4 +555,194 @@ export async function getLedgerStatsDaily(
     }));
 
   return { year, month, scope, items };
+}
+
+export type LedgerStatsDetailKind = "category" | "payment-method" | "daily";
+
+export interface LedgerStatsDetailParams {
+  kind: LedgerStatsDetailKind;
+  year?: number;
+  month?: number;
+  date?: string;
+  type?: "expense" | "income";
+  scope: StatsScope;
+  categoryId?: string | null;
+  paymentMethodId?: string | null;
+  limit?: number;
+}
+
+export interface LedgerStatsDetailResult {
+  totalCount: number;
+  items: LedgerEntryWithDetails[];
+  viewAllHref: string;
+}
+
+function appendParam(params: URLSearchParams, key: string, value?: string) {
+  if (value) params.set(key, value);
+}
+
+function buildLedgerStatsDetailViewAllHref(
+  params: LedgerStatsDetailParams,
+): string {
+  const searchParams = new URLSearchParams();
+  if (params.date) {
+    searchParams.set("date", params.date);
+  } else {
+    if (params.year) searchParams.set("year", String(params.year));
+    if (params.month) searchParams.set("month", String(params.month));
+  }
+  if (params.scope !== "all") searchParams.set("scope", params.scope);
+  appendParam(searchParams, "type", params.type);
+  appendParam(
+    searchParams,
+    "categoryId",
+    params.categoryId === null ? "__none__" : params.categoryId,
+  );
+  appendParam(
+    searchParams,
+    "paymentMethodId",
+    params.paymentMethodId === null ? "__none__" : params.paymentMethodId,
+  );
+  return `/ledger/records?${searchParams.toString()}`;
+}
+
+function mapLedgerStatsDetailRow(
+  row: Record<string, unknown>,
+): LedgerEntryWithDetails {
+  const owner = row.profiles as { name?: string } | null;
+  const category = row.categories as {
+    name?: string;
+    icon?: string | null;
+  } | null;
+  const fromAccount = row.from_account as { name?: string } | null;
+  const toAccount = row.to_account as { name?: string } | null;
+  const fromPaymentMethod = row.from_payment_method as { name?: string } | null;
+  const toPaymentMethod = row.to_payment_method as { name?: string } | null;
+
+  return {
+    id: String(row.id),
+    householdId: String(row.household_id),
+    ownerId: String(row.owner_id),
+    ownerName: owner?.name ?? "알 수 없음",
+    type: row.type as LedgerEntryWithDetails["type"],
+    amount: Number(row.amount),
+    title: (row.title as string | null) ?? null,
+    categoryId: (row.category_id as string | null) ?? null,
+    categoryName: category?.name ?? null,
+    categoryIcon: category?.icon ?? null,
+    fromAccountId: (row.from_account_id as string | null) ?? null,
+    fromAccountName: fromAccount?.name ?? null,
+    fromPaymentMethodId: (row.from_payment_method_id as string | null) ?? null,
+    fromPaymentMethodName: fromPaymentMethod?.name ?? null,
+    toAccountId: (row.to_account_id as string | null) ?? null,
+    toAccountName: toAccount?.name ?? null,
+    toPaymentMethodId: (row.to_payment_method_id as string | null) ?? null,
+    toPaymentMethodName: toPaymentMethod?.name ?? null,
+    isShared: Boolean(row.is_shared),
+    memo: (row.memo as string | null) ?? null,
+    transactedAt: String(row.transacted_at),
+    createdAt: String(row.created_at),
+    updatedAt: String(row.updated_at),
+  };
+}
+
+export async function getLedgerStatsDetail(
+  supabase: SupabaseClient<Database>,
+  householdId: string,
+  userId: string,
+  params: LedgerStatsDetailParams,
+): Promise<LedgerStatsDetailResult> {
+  const limit = params.limit ?? 20;
+  const range =
+    params.kind === "daily" && params.date
+      ? getKstDayRange(params.date)
+      : getKstMonthRange(
+          params.year ?? new Date().getFullYear(),
+          params.month ?? new Date().getMonth() + 1,
+        );
+
+  let query = supabase
+    .from("ledger_entries")
+    .select(
+      `
+      id,
+      household_id,
+      owner_id,
+      type,
+      amount,
+      transacted_at,
+      title,
+      category_id,
+      from_account_id,
+      from_payment_method_id,
+      to_account_id,
+      to_payment_method_id,
+      is_shared,
+      memo,
+      created_at,
+      updated_at,
+      profiles!ledger_entries_owner_id_fkey ( id, name ),
+      categories ( id, name, icon ),
+      from_account:accounts!ledger_entries_from_account_id_fkey ( id, name ),
+      to_account:accounts!ledger_entries_to_account_id_fkey ( id, name ),
+      from_payment_method:payment_methods!ledger_entries_from_payment_method_id_fkey ( id, name ),
+      to_payment_method:payment_methods!ledger_entries_to_payment_method_id_fkey ( id, name )
+    `,
+      { count: "exact" },
+    )
+    .eq("household_id", householdId)
+    .gte("transacted_at", range.from)
+    .lt("transacted_at", range.to);
+
+  if (params.scope === "shared") {
+    query = query.eq("is_shared", true);
+  } else if (params.scope === "personal") {
+    query = query.eq("is_shared", false).eq("owner_id", userId);
+  }
+
+  if (params.kind === "category") {
+    query = query.eq("type", params.type ?? "expense");
+    if (params.categoryId === "__none__" || params.categoryId === null) {
+      query = query.is("category_id", null);
+    } else if (params.categoryId) {
+      query = query.eq("category_id", params.categoryId);
+    }
+  }
+
+  if (params.kind === "payment-method") {
+    query = query.eq("type", "expense");
+    if (
+      params.paymentMethodId === "__none__" ||
+      params.paymentMethodId === null
+    ) {
+      query = query.is("from_payment_method_id", null);
+    } else if (params.paymentMethodId) {
+      query = query.eq("from_payment_method_id", params.paymentMethodId);
+    }
+  }
+
+  if (params.kind === "daily") {
+    query = query.eq("type", "expense");
+  }
+
+  const { data, error, count } = await query
+    .order("transacted_at", { ascending: false })
+    .order("created_at", { ascending: false })
+    .range(0, limit - 1);
+
+  if (error) {
+    throw new APIError(
+      "STATS_DETAIL_FETCH_ERROR",
+      "상세 내역 조회에 실패했습니다.",
+      500,
+    );
+  }
+
+  return {
+    totalCount: count ?? 0,
+    items: (data ?? []).map((row) =>
+      mapLedgerStatsDetailRow(row as Record<string, unknown>),
+    ),
+    viewAllHref: buildLedgerStatsDetailViewAllHref(params),
+  };
 }

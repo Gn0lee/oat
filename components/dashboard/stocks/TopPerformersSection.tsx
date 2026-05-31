@@ -1,20 +1,31 @@
 "use client";
 
 import { TrendingDown, Trophy } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useStockAnalysis } from "@/hooks/use-stock-analysis";
 import { cn } from "@/lib/utils/cn";
 import { formatCurrency, formatPercent } from "@/lib/utils/format";
 import type { AggregatedStockHolding, StockHoldingWithReturn } from "@/types";
+import {
+  type StockAnalysisDetail,
+  StockAnalysisDetailDrawer,
+} from "./StockAnalysisDetailDrawer";
 
 interface PerformerCardProps {
   title: string;
   icon: React.ReactNode;
   items: (StockHoldingWithReturn | AggregatedStockHolding)[];
   type: "gainer" | "loser";
+  onSelect: (item: StockHoldingWithReturn | AggregatedStockHolding) => void;
 }
 
-function PerformerCard({ title, icon, items, type }: PerformerCardProps) {
+function PerformerCard({
+  title,
+  icon,
+  items,
+  type,
+  onSelect,
+}: PerformerCardProps) {
   const isGainer = type === "gainer";
   const colorClass = isGainer ? "text-[#F04452]" : "text-[#3182F6]";
 
@@ -31,9 +42,11 @@ function PerformerCard({ title, icon, items, type }: PerformerCardProps) {
       ) : (
         <div className="space-y-3">
           {items.map((item, index) => (
-            <div
+            <button
+              type="button"
               key={item.ticker}
-              className="flex items-center justify-between gap-4"
+              onClick={() => onSelect(item)}
+              className="flex w-full items-center justify-between gap-4 rounded-xl text-left transition-colors hover:bg-gray-50"
             >
               <div className="flex items-center gap-3 min-w-0">
                 <span className="size-6 rounded-full bg-gray-100 flex items-center justify-center text-xs font-medium text-gray-600 shrink-0">
@@ -57,7 +70,7 @@ function PerformerCard({ title, icon, items, type }: PerformerCardProps) {
                   {formatCurrency(item.returnAmount, "KRW")}
                 </p>
               </div>
-            </div>
+            </button>
           ))}
         </div>
       )}
@@ -67,6 +80,7 @@ function PerformerCard({ title, icon, items, type }: PerformerCardProps) {
 
 export function TopPerformersSection() {
   const { data, isLoading } = useStockAnalysis();
+  const [detail, setDetail] = useState<StockAnalysisDetail | null>(null);
 
   const { gainers, losers } = useMemo(() => {
     if (!data || !data.byTicker || data.byTicker.length === 0) {
@@ -120,12 +134,33 @@ export function TopPerformersSection() {
         icon={<Trophy className="size-4 text-[#FF9F00]" />}
         items={gainers}
         type="gainer"
+        onSelect={(item) =>
+          setDetail({
+            kind: "ticker",
+            ticker: item.ticker,
+            title: `${item.name} 보유 항목`,
+          })
+        }
       />
       <PerformerCard
         title="손실 TOP 5"
         icon={<TrendingDown className="size-4 text-[#3182F6]" />}
         items={losers}
         type="loser"
+        onSelect={(item) =>
+          setDetail({
+            kind: "ticker",
+            ticker: item.ticker,
+            title: `${item.name} 보유 항목`,
+          })
+        }
+      />
+      <StockAnalysisDetailDrawer
+        open={!!detail}
+        detail={detail}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) setDetail(null);
+        }}
       />
     </div>
   );

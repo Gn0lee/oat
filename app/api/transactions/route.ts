@@ -44,6 +44,7 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const type = searchParams.get("type") as "buy" | "sell" | null;
     const ownerId = searchParams.get("ownerId");
+    const accountId = searchParams.get("accountId");
     const ticker = searchParams.get("ticker");
     const search = searchParams.get("search");
     const startDate = searchParams.get("startDate");
@@ -59,6 +60,7 @@ export async function GET(request: NextRequest) {
     const filters: TransactionFilters = {};
     if (type) filters.type = type;
     if (ownerId) filters.ownerId = ownerId;
+    if (accountId) filters.accountId = accountId;
     if (ticker) filters.ticker = ticker;
     if (search) filters.search = search;
     if (startDate) filters.startDate = startDate;

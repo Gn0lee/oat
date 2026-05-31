@@ -11,6 +11,7 @@ import {
 import { useLedgerStatsDaily } from "@/hooks/use-ledger-stats";
 import type { StatsScope } from "@/lib/api/ledger-stats";
 import { formatCurrency } from "@/lib/utils/format";
+import { LedgerStatsDetailDrawer } from "./LedgerStatsDetailDrawer";
 import { MonthSelector } from "./MonthSelector";
 
 const DAY_NAMES = ["일", "월", "화", "수", "목", "금", "토"];
@@ -22,6 +23,9 @@ interface DailyClientProps {
 export function DailyClient({ scope }: DailyClientProps) {
   const [currentMonth, setCurrentMonth] = useState<Date>(() =>
     startOfMonth(new Date()),
+  );
+  const [detail, setDetail] = useState<{ date: string; label: string } | null>(
+    null,
   );
 
   const year = currentMonth.getFullYear();
@@ -142,6 +146,15 @@ export function DailyClient({ scope }: DailyClientProps) {
                     key={entry.dateStr}
                     fill="#3182F6"
                     fillOpacity={entry.totalExpense > 0 ? 1 : 0.15}
+                    className={entry.totalExpense > 0 ? "cursor-pointer" : ""}
+                    onClick={() => {
+                      if (entry.totalExpense > 0) {
+                        setDetail({
+                          date: entry.dateStr,
+                          label: `${entry.label} 지출 기록`,
+                        });
+                      }
+                    }}
                   />
                 ))}
               </Bar>
@@ -201,6 +214,22 @@ export function DailyClient({ scope }: DailyClientProps) {
           )}
         </div>
       )}
+      <LedgerStatsDetailDrawer
+        open={!!detail}
+        title={detail?.label ?? ""}
+        params={
+          detail
+            ? {
+                kind: "daily",
+                date: detail.date,
+                scope,
+              }
+            : null
+        }
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) setDetail(null);
+        }}
+      />
     </div>
   );
 }

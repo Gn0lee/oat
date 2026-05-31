@@ -28,6 +28,10 @@ import {
 import { useStockAnalysis } from "@/hooks/use-stock-analysis";
 import { cn } from "@/lib/utils/cn";
 import { formatCurrency, formatPercent } from "@/lib/utils/format";
+import {
+  type StockAnalysisDetail,
+  StockAnalysisDetailDrawer,
+} from "./StockAnalysisDetailDrawer";
 
 const CHART_COLORS = [
   "#4F46E5",
@@ -47,6 +51,7 @@ export function StockAllocationSection() {
   const [selectedTickers, setSelectedTickers] = useState<string[]>([]);
   const [hoveredTicker, setHoveredTicker] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
+  const [detail, setDetail] = useState<StockAnalysisDetail | null>(null);
 
   // 초기 선택: 모든 종목을 기본으로 보여줌
   useEffect(() => {
@@ -326,6 +331,15 @@ export function StockAllocationSection() {
                       key={item.ticker}
                       onMouseEnter={() => setHoveredTicker(item.ticker)}
                       onMouseLeave={() => setHoveredTicker(null)}
+                      onClick={() => {
+                        if (!item.isOther) {
+                          setDetail({
+                            kind: "ticker",
+                            ticker: item.ticker,
+                            title: `${item.name} 보유 항목`,
+                          });
+                        }
+                      }}
                       className={cn(
                         "group flex items-center justify-between p-2.5 rounded-xl transition-all cursor-pointer",
                         isHovered
@@ -392,6 +406,13 @@ export function StockAllocationSection() {
           background: #d1d5db;
         }
       `}</style>
+      <StockAnalysisDetailDrawer
+        open={!!detail}
+        detail={detail}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) setDetail(null);
+        }}
+      />
     </div>
   );
 }

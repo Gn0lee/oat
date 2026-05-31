@@ -13,6 +13,7 @@ import {
 import { useLedgerStatsByPaymentMethod } from "@/hooks/use-ledger-stats";
 import type { StatsScope } from "@/lib/api/ledger-stats";
 import { formatCurrency } from "@/lib/utils/format";
+import { LedgerStatsDetailDrawer } from "./LedgerStatsDetailDrawer";
 import { MonthSelector } from "./MonthSelector";
 
 const CHART_COLORS = [
@@ -42,6 +43,10 @@ export function ByPaymentMethodClient({ scope }: ByPaymentMethodClientProps) {
     startOfMonth(new Date()),
   );
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [detail, setDetail] = useState<{
+    title: string;
+    paymentMethodId: string;
+  } | null>(null);
 
   const year = currentMonth.getFullYear();
   const month = currentMonth.getMonth() + 1;
@@ -178,28 +183,57 @@ export function ByPaymentMethodClient({ scope }: ByPaymentMethodClientProps) {
             {chartData.map((item) => (
               <li
                 key={item.paymentMethodId ?? "null"}
-                className="flex items-center gap-3 py-3 first:pt-0 last:pb-0"
+                className="py-1 first:pt-0 last:pb-0"
               >
-                <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center shrink-0 text-gray-500">
-                  <PaymentIcon type={item.paymentMethodType} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">
-                    {item.paymentMethodName}
-                  </p>
-                  <p className="text-xs text-gray-400">
-                    {item.entryCount}건 · 건당 평균{" "}
-                    {formatCurrency(item.avgPerEntry)}
-                  </p>
-                </div>
-                <span className="text-sm font-semibold text-gray-900 shrink-0">
-                  {formatCurrency(item.amount)}
-                </span>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setDetail({
+                      title: `${item.paymentMethodName} 기록`,
+                      paymentMethodId: item.paymentMethodId ?? "__none__",
+                    })
+                  }
+                  className="flex w-full items-center gap-3 rounded-xl py-2 text-left transition-colors hover:bg-gray-50"
+                >
+                  <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center shrink-0 text-gray-500">
+                    <PaymentIcon type={item.paymentMethodType} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">
+                      {item.paymentMethodName}
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      {item.entryCount}건 · 건당 평균{" "}
+                      {formatCurrency(item.avgPerEntry)}
+                    </p>
+                  </div>
+                  <span className="text-sm font-semibold text-gray-900 shrink-0">
+                    {formatCurrency(item.amount)}
+                  </span>
+                </button>
               </li>
             ))}
           </ul>
         </div>
       )}
+      <LedgerStatsDetailDrawer
+        open={!!detail}
+        title={detail?.title ?? ""}
+        params={
+          detail
+            ? {
+                kind: "payment-method",
+                year,
+                month,
+                scope,
+                paymentMethodId: detail.paymentMethodId,
+              }
+            : null
+        }
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) setDetail(null);
+        }}
+      />
     </div>
   );
 }
