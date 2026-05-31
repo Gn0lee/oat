@@ -30,6 +30,7 @@
 | **DESIGN.md** | `.claude/docs/` | UI/UX 원칙 |
 | **EXAMPLES.md** | `.claude/docs/` | 코드 예시 모음 |
 | **ENV.md** | `.claude/docs/` | 환경변수 설정 가이드 |
+| **NOTIFICATIONS.md** | `.claude/docs/` | 알림 기능 설계, 후보 이벤트, 구현 이슈 분해 |
 
 ### Skills (작업별 자동 활성화)
 
