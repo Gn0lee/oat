@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { PageContainer } from "@/components/layout";
 import { MultiTransactionFormWrapper } from "@/components/transactions/MultiTransactionFormWrapper";
+import { formatKst } from "@/lib/date";
 import { normalizeRecordDate } from "@/lib/stock-records/records";
 
 interface NewDailyStockTransactionPageProps {
@@ -13,7 +14,7 @@ export default async function NewDailyStockTransactionPage({
   searchParams,
 }: NewDailyStockTransactionPageProps) {
   const { date } = await searchParams;
-  const today = new Date().toISOString().split("T")[0];
+  const today = formatKst(new Date(), "yyyy-MM-dd");
 
   return (
     <PageContainer maxWidth="narrow">

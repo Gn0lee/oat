@@ -7,6 +7,7 @@ import {
   type LedgerStatsDetailKind,
   type StatsScope,
 } from "@/lib/api/ledger-stats";
+import { getKstNow } from "@/lib/date";
 import { createClient } from "@/lib/supabase/server";
 
 function parseScope(value: string | null): StatsScope {
@@ -54,7 +55,7 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = request.nextUrl;
-    const now = new Date();
+    const now = getKstNow();
     const kind = parseKind(searchParams.get("kind"));
     const typeParam = searchParams.get("type");
     const type =

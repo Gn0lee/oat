@@ -8,12 +8,13 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { LedgerSummarySection } from "@/components/ledger/LedgerSummarySection";
+import { getKstNow } from "@/lib/date";
 import { requireUser } from "@/lib/supabase/auth";
 
 export default async function LedgerPage() {
   await requireUser();
 
-  const now = new Date();
+  const now = getKstNow();
   const year = now.getFullYear();
   const month = now.getMonth() + 1;
 

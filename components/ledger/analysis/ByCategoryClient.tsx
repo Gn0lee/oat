@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/popover";
 import { useLedgerStatsByCategory } from "@/hooks/use-ledger-stats";
 import type { StatsScope } from "@/lib/api/ledger-stats";
+import { getKstNow } from "@/lib/date";
 import { formatCurrency } from "@/lib/utils/format";
 import { LedgerStatsDetailDrawer } from "./LedgerStatsDetailDrawer";
 import { MonthSelector } from "./MonthSelector";
@@ -47,7 +48,7 @@ interface ByCategoryClientProps {
 
 export function ByCategoryClient({ scope }: ByCategoryClientProps) {
   const [currentMonth, setCurrentMonth] = useState<Date>(() =>
-    startOfMonth(new Date()),
+    startOfMonth(getKstNow()),
   );
   const [entryType, setEntryType] = useState<"expense" | "income">("expense");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);

@@ -30,7 +30,7 @@ describe("HoldingsTable", () => {
     expect(screen.getByText("005930")).toBeInTheDocument();
     expect(screen.getByText("10주")).toBeInTheDocument();
     expect(screen.getByText("ISA")).toBeInTheDocument();
-    expect(screen.getByText("₩700,000")).toBeInTheDocument();
+    expect(screen.getByText("₩70만")).toBeInTheDocument();
   });
 
   it("shows an empty collection state", () => {

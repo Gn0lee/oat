@@ -9,6 +9,7 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import { useLedgerStatsByMember } from "@/hooks/use-ledger-stats";
+import { getKstNow } from "@/lib/date";
 import { formatCurrency } from "@/lib/utils/format";
 import { MonthSelector } from "./MonthSelector";
 
@@ -16,7 +17,7 @@ const MEMBER_COLORS = ["#4F46E5", "#F04452", "#3182F6", "#F59E0B", "#10B981"];
 
 export function ByMemberClient() {
   const [currentMonth, setCurrentMonth] = useState<Date>(() =>
-    startOfMonth(new Date()),
+    startOfMonth(getKstNow()),
   );
 
   const year = currentMonth.getFullYear();

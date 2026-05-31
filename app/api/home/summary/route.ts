@@ -9,6 +9,7 @@ import {
   getLedgerStatsByCategory,
   getLedgerStatsSummary,
 } from "@/lib/api/ledger-stats";
+import { getKstNow } from "@/lib/date";
 import { createClient } from "@/lib/supabase/server";
 
 async function getHomeAssetSummary(
@@ -73,7 +74,7 @@ export async function GET(request: Request) {
     const householdId = await getUserHouseholdId(supabase, user.id);
 
     const { searchParams } = new URL(request.url);
-    const now = new Date();
+    const now = getKstNow();
     const year = Number(searchParams.get("year") ?? now.getFullYear());
     const month = Number(searchParams.get("month") ?? now.getMonth() + 1);
 

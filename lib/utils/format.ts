@@ -1,3 +1,5 @@
+import { formatKst } from "@/lib/date";
+
 /**
  * 숫자를 통화 형식으로 포맷
  */
@@ -54,38 +56,21 @@ export function formatCompactNumber(value: number): string {
  * 날짜를 한국어 형식으로 포맷
  */
 export function formatDate(date: Date | string): string {
-  const d = typeof date === "string" ? new Date(date) : date;
-  return new Intl.DateTimeFormat("ko-KR", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  }).format(d);
+  return formatKst(date, "yyyy년 M월 d일");
 }
 
 /**
  * 날짜를 짧은 형식으로 포맷 (YYYY.MM.DD)
  */
 export function formatDateShort(date: Date | string): string {
-  const d = typeof date === "string" ? new Date(date) : date;
-  return new Intl.DateTimeFormat("ko-KR", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  })
-    .format(d)
-    .replace(/\. /g, ".")
-    .replace(/\.$/, "");
+  return formatKst(date, "yyyy.MM.dd");
 }
 
 /**
  * 날짜를 ISO 형식(YYYY-MM-DD)으로 포맷 (API용)
  */
 export function formatDateISO(date: Date | string): string {
-  const d = typeof date === "string" ? new Date(date) : date;
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+  return formatKst(date, "yyyy-MM-dd");
 }
 
 /**

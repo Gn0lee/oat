@@ -1,6 +1,5 @@
 "use client";
 
-import { format, parse } from "date-fns";
 import { UserIcon, UsersIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAccounts } from "@/hooks/use-accounts";
@@ -10,6 +9,7 @@ import type {
   LedgerItemFormData,
   TransferItemFormData,
 } from "@/lib/api/ledger";
+import { formatKst, toKstDate } from "@/lib/date";
 import { formatCurrency } from "@/lib/utils/format";
 import type { CategoryType } from "@/types";
 
@@ -24,8 +24,7 @@ interface ConfirmStepProps {
 
 function formatDate(dateStr: string): string {
   try {
-    const parsed = parse(dateStr, "yyyy-MM-dd", new Date());
-    return format(parsed, "M월 d일");
+    return formatKst(toKstDate(dateStr), "M월 d일");
   } catch {
     return dateStr;
   }

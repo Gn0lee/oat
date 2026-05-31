@@ -9,8 +9,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { getKstNow } from "@/lib/date";
 
-const CURRENT_YEAR = getYear(new Date());
+const CURRENT_YEAR = getYear(getKstNow());
 const YEAR_OPTIONS = Array.from({ length: 6 }, (_, i) => CURRENT_YEAR - 5 + i);
 const MONTH_OPTIONS = Array.from({ length: 12 }, (_, i) => i + 1);
 

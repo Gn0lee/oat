@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/dialog";
 import { useLedgerStatsTrend } from "@/hooks/use-ledger-stats";
 import type { StatsScope } from "@/lib/api/ledger-stats";
+import { getKstNow } from "@/lib/date";
 import { cn } from "@/lib/utils/cn";
 import { formatCurrency } from "@/lib/utils/format";
 
@@ -77,8 +78,8 @@ export function TrendClient({ scope }: TrendClientProps) {
     };
   }, [data]);
 
-  const currentYear = new Date().getFullYear();
-  const currentMonth = new Date().getMonth() + 1;
+  const currentYear = getKstNow().getFullYear();
+  const currentMonth = getKstNow().getMonth() + 1;
   const targetHref = navigationTarget
     ? `/ledger/records?year=${navigationTarget.year}&month=${navigationTarget.month}&scope=${scope}&type=${navigationTarget.type}`
     : "/ledger/records";

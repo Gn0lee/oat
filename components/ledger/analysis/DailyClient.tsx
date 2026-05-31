@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/chart";
 import { useLedgerStatsDaily } from "@/hooks/use-ledger-stats";
 import type { StatsScope } from "@/lib/api/ledger-stats";
+import { getKstNow } from "@/lib/date";
 import { formatCurrency } from "@/lib/utils/format";
 import { LedgerStatsDetailDrawer } from "./LedgerStatsDetailDrawer";
 import { MonthSelector } from "./MonthSelector";
@@ -22,7 +23,7 @@ interface DailyClientProps {
 
 export function DailyClient({ scope }: DailyClientProps) {
   const [currentMonth, setCurrentMonth] = useState<Date>(() =>
-    startOfMonth(new Date()),
+    startOfMonth(getKstNow()),
   );
   const [detail, setDetail] = useState<{ date: string; label: string } | null>(
     null,

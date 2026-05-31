@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { APIError, toErrorResponse } from "@/lib/api/error";
 import { getUserHouseholdId } from "@/lib/api/invitation";
 import { getLedgerEntrySummary } from "@/lib/api/ledger";
+import { getKstNow } from "@/lib/date";
 import { createClient } from "@/lib/supabase/server";
 
 /**
@@ -36,7 +37,7 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = request.nextUrl;
-    const now = new Date();
+    const now = getKstNow();
     const year = searchParams.get("year")
       ? Number(searchParams.get("year"))
       : now.getUTCFullYear();
