@@ -132,6 +132,7 @@ export async function createTransaction(
 export interface TransactionFilters {
   type?: TransactionType;
   ownerId?: string;
+  accountId?: string;
   ticker?: string;
   search?: string;
   startDate?: string;
@@ -224,6 +225,9 @@ export async function getTransactions(
   }
   if (filters?.ownerId) {
     query = query.eq("owner_id", filters.ownerId);
+  }
+  if (filters?.accountId) {
+    query = query.eq("account_id", filters.accountId);
   }
   if (filters?.ticker) {
     query = query.eq("ticker", filters.ticker);

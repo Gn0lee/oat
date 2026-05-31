@@ -17,6 +17,10 @@ import {
 } from "@/components/ui/select";
 import { useStockAnalysis } from "@/hooks/use-stock-analysis";
 import { formatCurrency } from "@/lib/utils/format";
+import {
+  type StockAnalysisDetail,
+  StockAnalysisDetailDrawer,
+} from "./StockAnalysisDetailDrawer";
 
 const CHART_COLORS = [
   "#4F46E5", // 인디고
@@ -30,6 +34,7 @@ const CHART_COLORS = [
 export function StockAccountDistributionSection() {
   const { data, isLoading } = useStockAnalysis();
   const [selectedTicker, setSelectedTicker] = useState<string>("");
+  const [detail, setDetail] = useState<StockAnalysisDetail | null>(null);
 
   // 종목 목록 (중복 제거, 종목명 기준 정렬)
   const stockOptions = useMemo(() => {
@@ -206,7 +211,19 @@ export function StockAccountDistributionSection() {
           {/* 범례 리스트 */}
           <div className="flex-1 space-y-3">
             {distributionData.map((item) => (
-              <div key={item.id} className="flex items-center justify-between">
+              <button
+                key={item.id}
+                type="button"
+                onClick={() =>
+                  setDetail({
+                    kind: "tickerAccount",
+                    ticker: selectedTicker,
+                    accountId: item.id,
+                    title: `${stockOptions.find((stock) => stock.ticker === selectedTicker)?.name ?? selectedTicker} · ${item.name}`,
+                  })
+                }
+                className="flex w-full items-center justify-between rounded-xl text-left transition-colors hover:bg-gray-50"
+              >
                 <div className="flex items-center gap-2">
                   <div
                     className="size-3 rounded-full"
@@ -236,7 +253,7 @@ export function StockAccountDistributionSection() {
                     </span>
                   </div>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         </div>
@@ -249,6 +266,13 @@ export function StockAccountDistributionSection() {
           종목을 선택하면 계좌별 분포를 확인할 수 있습니다.
         </p>
       )}
+      <StockAnalysisDetailDrawer
+        open={!!detail}
+        detail={detail}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) setDetail(null);
+        }}
+      />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
+import Link from "next/link";
+import { useMemo, useState } from "react";
 import {
   Bar,
   CartesianGrid,
@@ -9,6 +10,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { Button } from "@/components/ui/button";
 import {
   ChartContainer,
   ChartLegend,
@@ -16,6 +18,14 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useLedgerStatsTrend } from "@/hooks/use-ledger-stats";
 import type { StatsScope } from "@/lib/api/ledger-stats";
 import { cn } from "@/lib/utils/cn";
@@ -39,6 +49,11 @@ interface TrendClientProps {
 
 export function TrendClient({ scope }: TrendClientProps) {
   const { data, isLoading } = useLedgerStatsTrend(6, scope);
+  const [navigationTarget, setNavigationTarget] = useState<{
+    year: number;
+    month: number;
+    type: "income" | "expense";
+  } | null>(null);
 
   const chartData = useMemo(() => {
     return (data?.items ?? []).map((item) => ({
@@ -64,6 +79,10 @@ export function TrendClient({ scope }: TrendClientProps) {
 
   const currentYear = new Date().getFullYear();
   const currentMonth = new Date().getMonth() + 1;
+  const targetHref = navigationTarget
+    ? `/ledger/records?year=${navigationTarget.year}&month=${navigationTarget.month}&scope=${scope}&type=${navigationTarget.type}`
+    : "/ledger/records";
+  const targetTypeLabel = navigationTarget?.type === "income" ? "수입" : "지출";
 
   return (
     <div className="space-y-4">
@@ -107,12 +126,36 @@ export function TrendClient({ scope }: TrendClientProps) {
                   name="지출"
                   fill="#3182F6"
                   radius={[4, 4, 0, 0]}
+                  className="cursor-pointer"
+                  onClick={(row) => {
+                    const payload = row.payload as {
+                      year: number;
+                      month: number;
+                    };
+                    setNavigationTarget({
+                      year: payload.year,
+                      month: payload.month,
+                      type: "expense",
+                    });
+                  }}
                 />
                 <Bar
                   dataKey="totalIncome"
                   name="수입"
                   fill="#F04452"
                   radius={[4, 4, 0, 0]}
+                  className="cursor-pointer"
+                  onClick={(row) => {
+                    const payload = row.payload as {
+                      year: number;
+                      month: number;
+                    };
+                    setNavigationTarget({
+                      year: payload.year,
+                      month: payload.month,
+                      type: "income",
+                    });
+                  }}
                 />
               </ComposedChart>
             </ChartContainer>
@@ -209,24 +252,69 @@ export function TrendClient({ scope }: TrendClientProps) {
                 </div>
 
                 <div className="mt-4 grid grid-cols-2 gap-3">
-                  <div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setNavigationTarget({
+                        year: row.year,
+                        month: row.month,
+                        type: "income",
+                      })
+                    }
+                    className="rounded-xl text-left transition-colors hover:bg-white/70"
+                  >
                     <p className="text-gray-500 text-xs">수입</p>
                     <p className="mt-1 font-semibold text-red-500 tabular-nums">
                       {formatCurrency(row.totalIncome)}
                     </p>
-                  </div>
-                  <div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setNavigationTarget({
+                        year: row.year,
+                        month: row.month,
+                        type: "expense",
+                      })
+                    }
+                    className="rounded-xl text-left transition-colors hover:bg-white/70"
+                  >
                     <p className="text-gray-500 text-xs">지출</p>
                     <p className="mt-1 font-semibold text-gray-900 tabular-nums">
                       {formatCurrency(row.totalExpense)}
                     </p>
-                  </div>
+                  </button>
                 </div>
               </article>
             );
           })}
         </div>
       </div>
+      <Dialog
+        open={!!navigationTarget}
+        onOpenChange={(open) => {
+          if (!open) setNavigationTarget(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>기록 화면으로 이동할까요?</DialogTitle>
+            <DialogDescription>
+              {navigationTarget
+                ? `${navigationTarget.year}년 ${navigationTarget.month}월 ${targetTypeLabel} 기록을 확인합니다.`
+                : ""}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setNavigationTarget(null)}>
+              취소
+            </Button>
+            <Button asChild>
+              <Link href={targetHref}>이동하기</Link>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

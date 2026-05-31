@@ -7,6 +7,8 @@ import type {
   LedgerStatsByMemberResult,
   LedgerStatsByPaymentMethodResult,
   LedgerStatsDailyResult,
+  LedgerStatsDetailParams,
+  LedgerStatsDetailResult,
   LedgerStatsSummary,
   LedgerStatsTrendResult,
   StatsScope,
@@ -88,6 +90,35 @@ export function useLedgerStatsDaily(
       fetchApiData<LedgerStatsDailyResult>(
         `/api/ledger/stats/daily?year=${year}&month=${month}&scope=${scope}`,
       ),
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
+export function useLedgerStatsDetail(params: LedgerStatsDetailParams | null) {
+  return useQuery({
+    queryKey: queries.ledgerStats.detail(params ?? undefined).queryKey,
+    queryFn: () => {
+      if (!params) {
+        throw new Error("상세 조회 조건이 필요합니다.");
+      }
+      const searchParams = new URLSearchParams({
+        kind: params.kind,
+        scope: params.scope,
+      });
+      if (params.year) searchParams.set("year", String(params.year));
+      if (params.month) searchParams.set("month", String(params.month));
+      if (params.date) searchParams.set("date", params.date);
+      if (params.type) searchParams.set("type", params.type);
+      if (params.categoryId) searchParams.set("categoryId", params.categoryId);
+      if (params.paymentMethodId) {
+        searchParams.set("paymentMethodId", params.paymentMethodId);
+      }
+      if (params.limit) searchParams.set("limit", String(params.limit));
+      return fetchApiData<LedgerStatsDetailResult>(
+        `/api/ledger/stats/details?${searchParams.toString()}`,
+      );
+    },
+    enabled: !!params,
     staleTime: 1000 * 60 * 5,
   });
 }

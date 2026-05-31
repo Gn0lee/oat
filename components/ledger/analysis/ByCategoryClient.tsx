@@ -28,6 +28,7 @@ import {
 import { useLedgerStatsByCategory } from "@/hooks/use-ledger-stats";
 import type { StatsScope } from "@/lib/api/ledger-stats";
 import { formatCurrency } from "@/lib/utils/format";
+import { LedgerStatsDetailDrawer } from "./LedgerStatsDetailDrawer";
 import { MonthSelector } from "./MonthSelector";
 
 const CHART_COLORS = [
@@ -52,6 +53,10 @@ export function ByCategoryClient({ scope }: ByCategoryClientProps) {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
+  const [detail, setDetail] = useState<{
+    title: string;
+    categoryId: string;
+  } | null>(null);
 
   const year = currentMonth.getFullYear();
   const month = currentMonth.getMonth() + 1;
@@ -388,38 +393,70 @@ export function ByCategoryClient({ scope }: ByCategoryClientProps) {
                 key={item.categoryId ?? "null"}
                 className="flex items-center gap-3"
               >
-                <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
-                  <CategoryIcon
-                    iconName={item.categoryIcon}
-                    className="w-4 h-4 text-gray-600"
-                  />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex justify-between items-center text-sm mb-1">
-                    <span className="text-gray-700 truncate">
-                      {item.categoryName}
-                    </span>
-                    <span className="font-medium text-gray-900 shrink-0 ml-2">
-                      {formatCurrency(item.amount)}
-                    </span>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setDetail({
+                      title: `${item.categoryName} 기록`,
+                      categoryId: item.categoryId ?? "__none__",
+                    })
+                  }
+                  className="flex w-full items-center gap-3 rounded-xl text-left transition-colors hover:bg-gray-50"
+                >
+                  <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
+                    <CategoryIcon
+                      iconName={item.categoryIcon}
+                      className="w-4 h-4 text-gray-600"
+                    />
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-primary/60 rounded-full"
-                        style={{ width: `${Math.min(item.percentage, 100)}%` }}
-                      />
+                  <div className="flex-1 min-w-0 py-1">
+                    <div className="flex justify-between items-center text-sm mb-1">
+                      <span className="text-gray-700 truncate">
+                        {item.categoryName}
+                      </span>
+                      <span className="font-medium text-gray-900 shrink-0 ml-2">
+                        {formatCurrency(item.amount)}
+                      </span>
                     </div>
-                    <span className="text-xs text-gray-400 shrink-0">
-                      {item.entryCount}건
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-primary/60 rounded-full"
+                          style={{
+                            width: `${Math.min(item.percentage, 100)}%`,
+                          }}
+                        />
+                      </div>
+                      <span className="text-xs text-gray-400 shrink-0">
+                        {item.entryCount}건
+                      </span>
+                    </div>
                   </div>
-                </div>
+                </button>
               </li>
             ))}
           </ul>
         </div>
       )}
+      <LedgerStatsDetailDrawer
+        open={!!detail}
+        title={detail?.title ?? ""}
+        params={
+          detail
+            ? {
+                kind: "category",
+                year,
+                month,
+                type: entryType,
+                scope,
+                categoryId: detail.categoryId,
+              }
+            : null
+        }
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) setDetail(null);
+        }}
+      />
     </div>
   );
 }

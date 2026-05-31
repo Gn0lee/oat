@@ -59,6 +59,45 @@ app/api/
 
 > **Note**: 종목 검색/환율 조회는 API Route 없이 Supabase 직접 호출
 
+### 분석 상세 API
+
+분석 화면에서 `N건`이나 집계 항목의 원본 목록을 보여줄 때는 기존 목록 API를 무리하게 확장하지 않고, 분석 전용 상세 API를 둘 수 있습니다. 기존 목록 API가 캘린더, 편집, 페이지네이션 같은 화면 책임을 이미 갖고 있다면 분석 상세 API를 분리하는 편이 낫습니다.
+
+가계부 분석 상세는 다음 방향을 따릅니다.
+
+```txt
+GET /api/ledger/stats/details
+```
+
+지원 대상:
+- `kind=category`: 카테고리 상세 row drilldown
+- `kind=payment-method`: 결제수단 상세 row drilldown
+- `kind=daily`: 일별 지출 막대 drilldown
+
+응답 형태:
+
+```ts
+{
+  data: {
+    totalCount: number;
+    items: LedgerEntryWithDetails[];
+    viewAllHref: string;
+  };
+}
+```
+
+규칙:
+- 통계 API와 상세 API는 같은 기간 helper를 사용해야 합니다.
+- 월/일 경계는 KST 기준입니다.
+- DB 기간 필터는 `>= from AND < to`를 기본으로 합니다.
+- null 그룹은 `categoryId=__none__`, `paymentMethodId=__none__`처럼 명시 sentinel로 표현합니다.
+- 파트너의 개인 장부 상세는 노출하지 않습니다.
+
+주식 분석 상세는 계산 중복을 피하기 위해 기존 분석 API를 우선 재사용합니다.
+- `/api/dashboard/stocks`의 `holdings`, `byTicker`, `byAccount`를 drawer 데이터의 기준으로 사용합니다.
+- 거래 목록에는 `/api/transactions?pageSize=20`을 사용합니다.
+- 계좌 drilldown을 위해 `/api/transactions`는 `accountId` 필터를 지원해야 합니다.
+
 ### 기본 패턴
 
 ```typescript
