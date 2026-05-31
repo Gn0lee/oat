@@ -34,7 +34,7 @@ export function LedgerStatsDetailDrawer({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="max-h-[85dvh]">
+      <DrawerContent className="max-h-[85dvh] overflow-hidden">
         <DrawerHeader>
           <DrawerTitle>{title}</DrawerTitle>
           <DrawerDescription>
@@ -42,7 +42,7 @@ export function LedgerStatsDetailDrawer({
           </DrawerDescription>
         </DrawerHeader>
 
-        <div className="flex-1 overflow-y-auto px-4 pb-2">
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-2">
           {isLoading ? (
             <div className="space-y-3">
               {[1, 2, 3].map((item) => (

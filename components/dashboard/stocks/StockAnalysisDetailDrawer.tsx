@@ -66,7 +66,7 @@ export function StockAnalysisDetailDrawer({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="max-h-[85dvh]">
+      <DrawerContent className="max-h-[85dvh] overflow-hidden">
         <DrawerHeader>
           <DrawerTitle>{detail?.title ?? "상세"}</DrawerTitle>
           <DrawerDescription>
@@ -76,7 +76,7 @@ export function StockAnalysisDetailDrawer({
           </DrawerDescription>
         </DrawerHeader>
 
-        <div className="flex-1 space-y-5 overflow-y-auto px-4 pb-5">
+        <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-4 pb-5">
           <section>
             <h4 className="mb-2 font-semibold text-gray-900 text-sm">
               보유 항목
