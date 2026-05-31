@@ -4,10 +4,15 @@ import { ArrowDownUp, Building2, UserRound, WalletCards } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { MARKET_LABELS } from "@/constants/enums";
 import type { HoldingWithDetails } from "@/lib/api/holdings";
 import { cn } from "@/lib/utils/cn";
-import { formatCurrency } from "@/lib/utils/format";
+import { formatCompactCurrency, formatCurrency } from "@/lib/utils/format";
 
 interface HoldingsTableProps {
   data: HoldingWithDetails[];
@@ -80,51 +85,72 @@ export function HoldingsTable({ data }: HoldingsTableProps) {
         {sortedHoldings.map((holding) => (
           <article
             key={`${holding.owner.id}:${holding.account.id ?? "none"}:${holding.ticker}`}
-            className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-100"
+            className="flex flex-col gap-2 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-gray-100"
           >
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <div className="flex min-w-0 flex-wrap items-center gap-2">
-                  <h3 className="truncate font-semibold text-gray-900">
+            <div className="flex min-w-0 items-center justify-between gap-3">
+              <div className="flex min-w-0 flex-1 items-center gap-2">
+                <Badge
+                  variant="outline"
+                  className="shrink-0 px-1.5 py-0 text-[10px]"
+                >
+                  {MARKET_LABELS[holding.market] ?? holding.market}
+                </Badge>
+                <Popover>
+                  <PopoverTrigger className="cursor-pointer truncate text-left font-semibold text-gray-900 text-sm transition-colors hover:text-gray-600">
                     {holding.name}
-                  </h3>
-                  <Badge variant="outline">
-                    {MARKET_LABELS[holding.market] ?? holding.market}
-                  </Badge>
-                </div>
-                <p className="mt-1 text-gray-400 text-xs">{holding.ticker}</p>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    className="w-auto p-3 text-sm shadow-md"
+                    align="start"
+                  >
+                    <div className="mb-1 font-semibold text-gray-900">
+                      {holding.name}
+                    </div>
+                    <div className="flex flex-col gap-1 text-gray-500">
+                      <div>
+                        총 투자 금액:{" "}
+                        <span className="font-medium text-gray-900">
+                          {formatCurrency(
+                            holding.totalInvested,
+                            holding.currency,
+                          )}
+                        </span>
+                      </div>
+                      <div>
+                        평균 매수가:{" "}
+                        <span className="font-medium text-gray-900">
+                          {formatCurrency(holding.avgPrice, holding.currency)}
+                        </span>
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
               </div>
-              <div className="text-right">
-                <p className="text-gray-500 text-xs">투자 금액</p>
-                <p className="font-bold text-gray-900 tabular-nums">
-                  {formatCurrency(holding.totalInvested, holding.currency)}
-                </p>
+              <div className="shrink-0 font-medium text-gray-900 text-sm tabular-nums">
+                {formatCompactCurrency(holding.totalInvested, holding.currency)}
               </div>
             </div>
 
-            <div className="mt-5 grid grid-cols-2 gap-3">
-              <div className="rounded-xl bg-gray-50 p-3">
-                <p className="text-gray-500 text-xs">수량</p>
-                <p className="mt-1 font-semibold text-gray-900 tabular-nums">
-                  {holding.quantity.toLocaleString()}주
-                </p>
-              </div>
-              <div className="rounded-xl bg-gray-50 p-3">
-                <p className="text-gray-500 text-xs">평균 매수가</p>
-                <p className="mt-1 font-semibold text-gray-900 tabular-nums">
-                  {formatCurrency(holding.avgPrice, holding.currency)}
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-gray-500 text-sm">
-              <span className="inline-flex items-center gap-1">
-                <UserRound className="size-4" />
-                {holding.owner.name}
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-gray-500 text-xs">
+              <span className="font-medium text-gray-400">
+                {holding.ticker}
               </span>
-              <span className="inline-flex items-center gap-1">
-                <Building2 className="size-4" />
-                {holding.account.name ?? "미지정 계좌"}
+              <span>{holding.quantity.toLocaleString()}주</span>
+              <span>
+                평단 {formatCompactCurrency(holding.avgPrice, holding.currency)}
+              </span>
+            </div>
+
+            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-gray-400 text-xs">
+              <span className="inline-flex min-w-0 items-center gap-1">
+                <UserRound className="size-3 shrink-0" />
+                <span className="truncate">{holding.owner.name}</span>
+              </span>
+              <span className="inline-flex min-w-0 items-center gap-1">
+                <Building2 className="size-3 shrink-0" />
+                <span className="truncate">
+                  {holding.account.name ?? "미지정 계좌"}
+                </span>
               </span>
             </div>
           </article>

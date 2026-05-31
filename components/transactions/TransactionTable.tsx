@@ -2,12 +2,11 @@
 
 import {
   CalendarDays,
-  MoreHorizontal,
+  MoreVertical,
   Pencil,
   Trash2,
-  TrendingDown,
-  TrendingUp,
-  UserRound,
+  User,
+  Wallet,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -18,9 +17,19 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import type { TransactionWithDetails } from "@/lib/api/transaction";
 import { cn } from "@/lib/utils/cn";
-import { formatCurrency, formatDate, formatDateISO } from "@/lib/utils/format";
+import {
+  formatCompactCurrency,
+  formatCurrency,
+  formatDate,
+  formatDateISO,
+} from "@/lib/utils/format";
 import { TransactionDeleteDialog } from "./TransactionDeleteDialog";
 import { TransactionEditDialog } from "./TransactionEditDialog";
 
@@ -76,53 +85,17 @@ function TransactionItem({
   const typeLabel = isBuy ? "매수" : "매도";
 
   return (
-    <article className="group flex min-h-[96px] items-center gap-3 border-gray-100 border-t px-4 py-4 first:border-t-0 sm:px-5">
-      <div
-        className={cn(
-          "flex size-10 shrink-0 items-center justify-center rounded-full",
-          isBuy ? "bg-red-50 text-red-500" : "bg-blue-50 text-blue-500",
-        )}
-        aria-hidden="true"
-      >
-        {isBuy ? (
-          <TrendingUp className="size-5" />
-        ) : (
-          <TrendingDown className="size-5" />
-        )}
-      </div>
-
-      <div className="min-w-0 flex-1">
-        <div className="flex min-w-0 flex-wrap items-center gap-2">
-          <p className="truncate font-semibold text-gray-900">
-            {transaction.stockName}
-          </p>
-          <Badge variant={isBuy ? "default" : "secondary"}>{typeLabel}</Badge>
-          <span className="text-gray-400 text-xs">{transaction.ticker}</span>
-        </div>
-        <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-gray-500 text-xs">
-          <span>{transaction.quantity.toLocaleString()}주</span>
-          <span>{formatCurrency(transaction.price, transaction.currency)}</span>
-          <span className="inline-flex items-center gap-1">
-            <UserRound className="size-3" />
-            {transaction.owner.name}
-          </span>
-          {transaction.memo && (
-            <span className="max-w-full truncate text-gray-400">
-              {transaction.memo}
-            </span>
-          )}
-        </div>
-      </div>
-
-      <div className="flex shrink-0 items-center gap-1">
-        <p className="min-w-[92px] text-right font-semibold text-gray-900 tabular-nums">
-          {formatCurrency(transaction.totalAmount, transaction.currency)}
-        </p>
+    <article className="group relative flex min-h-[72px] flex-col justify-center border-gray-100 border-t px-4 py-3.5 first:border-t-0 sm:px-5">
+      <div className="absolute right-2 top-1/2 z-10 -translate-y-1/2">
         {isOwner && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="size-9">
-                <MoreHorizontal className="size-4" />
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-7 text-gray-400 hover:text-gray-600"
+              >
+                <MoreVertical className="size-4" />
                 <span className="sr-only">메뉴 열기</span>
               </Button>
             </DropdownMenuTrigger>
@@ -142,6 +115,60 @@ function TransactionItem({
           </DropdownMenu>
         )}
       </div>
+
+      <div className="flex min-w-0 flex-col gap-1 pr-6">
+        <div className="flex min-w-0 items-center justify-between gap-3">
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            <Badge
+              variant={isBuy ? "default" : "secondary"}
+              className="shrink-0 px-1.5 py-0 text-[10px]"
+            >
+              {typeLabel}
+            </Badge>
+            <Popover>
+              <PopoverTrigger className="cursor-pointer truncate text-left font-semibold text-gray-900 text-sm transition-colors hover:text-gray-600">
+                {transaction.stockName}
+              </PopoverTrigger>
+              <PopoverContent
+                className="w-auto p-3 text-sm shadow-md"
+                align="start"
+              >
+                <div className="mb-1 font-semibold text-gray-900">
+                  {transaction.stockName}
+                </div>
+                <div className="text-gray-500">
+                  총 거래금액:{" "}
+                  <span className="font-medium text-gray-900">
+                    {formatCurrency(
+                      transaction.price * transaction.quantity,
+                      transaction.currency,
+                    )}
+                  </span>
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
+          <div className="shrink-0 font-medium text-gray-900 text-sm">
+            {formatCompactCurrency(
+              transaction.price * transaction.quantity,
+              transaction.currency,
+            )}
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-gray-500 text-xs">
+          <span>{transaction.quantity.toLocaleString()}주</span>
+          <span className="inline-flex min-w-0 items-center gap-1">
+            <User className="size-3 shrink-0" />
+            <span className="truncate">{transaction.owner.name}</span>
+          </span>
+          <span className="inline-flex min-w-0 items-center gap-1">
+            <Wallet className="size-3 shrink-0" />
+            <span className="truncate">
+              {transaction.accountName ?? "계좌 없음"}
+            </span>
+          </span>
+        </div>
+      </div>
     </article>
   );
 }
@@ -152,8 +179,11 @@ export function TransactionTable({
 }: TransactionTableProps) {
   const [editTransaction, setEditTransaction] =
     useState<TransactionWithDetails | null>(null);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+
   const [deleteTransaction, setDeleteTransaction] =
     useState<TransactionWithDetails | null>(null);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
   const groups = useMemo(() => groupTransactionsByDate(data), [data]);
 
@@ -181,8 +211,14 @@ export function TransactionTable({
                     key={transaction.id}
                     transaction={transaction}
                     currentUserId={currentUserId}
-                    onEdit={setEditTransaction}
-                    onDelete={setDeleteTransaction}
+                    onEdit={(t) => {
+                      setEditTransaction(t);
+                      setIsEditOpen(true);
+                    }}
+                    onDelete={(t) => {
+                      setDeleteTransaction(t);
+                      setIsDeleteOpen(true);
+                    }}
                   />
                 ))}
               </div>
@@ -201,14 +237,14 @@ export function TransactionTable({
 
       <TransactionEditDialog
         transaction={editTransaction}
-        open={!!editTransaction}
-        onOpenChange={(open) => !open && setEditTransaction(null)}
+        open={isEditOpen}
+        onOpenChange={setIsEditOpen}
       />
 
       <TransactionDeleteDialog
         transaction={deleteTransaction}
-        open={!!deleteTransaction}
-        onOpenChange={(open) => !open && setDeleteTransaction(null)}
+        open={isDeleteOpen}
+        onOpenChange={setIsDeleteOpen}
       />
     </>
   );

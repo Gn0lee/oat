@@ -504,6 +504,7 @@ export function AccountSelector<T extends FieldValues>({
                     value={search}
                     onValueChange={setSearch}
                     wrapperClassName="h-14 px-4"
+                    autoFocus={false}
                     endAdornment={
                       createLabel ? (
                         <Button
