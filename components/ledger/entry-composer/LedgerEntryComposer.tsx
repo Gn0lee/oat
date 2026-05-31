@@ -128,7 +128,11 @@ export function LedgerEntryComposer({
       );
       const result = await createBatch.mutateAsync(entries);
       toast.success(`${result.count}건의 내역이 저장되었습니다.`);
-      router.push("/ledger/records");
+      router.push(
+        mode === "daily"
+          ? `/ledger/records?date=${values.defaultDate}`
+          : "/ledger/records",
+      );
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "저장에 실패했습니다.",
@@ -145,7 +149,11 @@ export function LedgerEntryComposer({
         buildTransferLedgerEntryPayload(defaultIsShared, transferItem),
       );
       toast.success("1건의 내역이 저장되었습니다.");
-      router.push("/ledger/records");
+      router.push(
+        mode === "daily"
+          ? `/ledger/records?date=${transferItem.transactedAt}`
+          : "/ledger/records",
+      );
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "저장에 실패했습니다.",

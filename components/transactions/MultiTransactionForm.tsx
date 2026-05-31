@@ -20,11 +20,13 @@ import {
 import type { CreateBatchTransactionInput } from "@/schemas/transaction";
 
 interface MultiTransactionFormProps {
+  mode?: "full" | "daily";
   defaultDate: string;
   defaultAccountId: string;
 }
 
 export function MultiTransactionForm({
+  mode = "full",
   defaultDate,
   defaultAccountId,
 }: MultiTransactionFormProps) {
@@ -121,7 +123,11 @@ export function MultiTransactionForm({
       toast.success(
         `${validItems.length}건의 ${typeText} 거래가 등록되었습니다.`,
       );
-      router.push("/assets/stock/transactions");
+      router.push(
+        mode === "daily"
+          ? `/assets/stock/records?date=${data.transactedAt}`
+          : "/assets/stock/transactions",
+      );
     } catch (error) {
       if (error instanceof Error) {
         toast.error(error.message);
@@ -135,6 +141,7 @@ export function MultiTransactionForm({
     <FormProvider {...form}>
       <div className="w-full h-full">
         <StockComposerListStep
+          mode={mode}
           onEditItem={(index) => setEditIndex(index)}
           onSubmit={(data) => onSubmit(data)}
           isSubmitting={createBatchTransactions.isPending}
@@ -156,6 +163,7 @@ export function MultiTransactionForm({
                 <StockComposerFormStep
                   key={editIndex}
                   index={editIndex}
+                  mode={mode}
                   onBack={() => setEditIndex(null)}
                 />
               </motion.div>
@@ -180,6 +188,7 @@ export function MultiTransactionForm({
               <StockComposerFormStep
                 key={activeEditIndex}
                 index={activeEditIndex}
+                mode={mode}
                 onBack={() => setEditIndex(null)}
               />
             </DrawerContent>

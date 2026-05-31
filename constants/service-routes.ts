@@ -46,6 +46,7 @@ export const SERVICE_ROUTE_TREE = [
       {
         href: "/ledger/records",
         label: "기록 조회",
+        preserveSearchParams: ["date"],
         children: [
           {
             href: "/ledger/records/new/daily",
@@ -137,6 +138,19 @@ export const SERVICE_ROUTE_TREE = [
         label: "주식",
         children: [
           { href: "/assets/stock/holdings", label: "보유 종목" },
+          {
+            href: "/assets/stock/records",
+            label: "일별 기록",
+            preserveSearchParams: ["date"],
+            children: [
+              {
+                href: "/assets/stock/transactions/new/daily",
+                label: "하루 거래 등록",
+                mobile: "task",
+                closeHref: "/assets/stock/records",
+              },
+            ],
+          },
           {
             href: "/assets/stock/transactions",
             label: "거래 내역",

@@ -50,6 +50,13 @@ describe("getServiceRouteMeta", () => {
     });
   });
 
+  it("가계부 기록 조회 route는 선택 날짜 query를 보존한다", () => {
+    expect(getServiceRouteMeta("/ledger/records")).toMatchObject({
+      label: "기록 조회",
+      preserveSearchParams: ["date"],
+    });
+  });
+
   it("주식 거래 Entry Composer route를 task 화면으로 계산한다", () => {
     expect(
       getServiceRouteMeta("/assets/stock/transactions/new/full"),
@@ -69,6 +76,33 @@ describe("getServiceRouteMeta", () => {
       mobileVariant: "task",
       parentHref: "/assets/stock/transactions",
       closeHref: "/assets/stock/transactions",
+    });
+
+    expect(
+      getServiceRouteMeta(
+        "/assets/stock/transactions/new/daily?date=2026-05-29",
+      ),
+    ).toMatchObject({
+      label: "하루 거래 등록",
+      mobileVariant: "task",
+      parentHref: "/assets/stock/records",
+      closeHref: "/assets/stock/records",
+    });
+  });
+
+  it("주식 일별 기록 route를 계산하고 선택 날짜 query를 보존한다", () => {
+    expect(
+      getServiceRouteMeta("/assets/stock/records?date=2026-05-29"),
+    ).toMatchObject({
+      label: "일별 기록",
+      mobileVariant: "child",
+      parentHref: "/assets/stock",
+      preserveSearchParams: ["date"],
+      breadcrumb: [
+        { href: "/assets", label: "자산" },
+        { href: "/assets/stock", label: "주식" },
+        { href: "/assets/stock/records", label: "일별 기록" },
+      ],
     });
   });
 

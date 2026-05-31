@@ -7,11 +7,13 @@ import { useCurrentUserId } from "@/hooks/use-current-user";
 interface MultiTransactionFormWrapperProps {
   defaultDate: string;
   defaultAccountId?: string;
+  mode?: "full" | "daily";
 }
 
 export function MultiTransactionFormWrapper({
   defaultDate,
   defaultAccountId,
+  mode = "full",
 }: MultiTransactionFormWrapperProps) {
   const { userId: currentUserId, isLoading: isLoadingCurrentUser } =
     useCurrentUserId();
@@ -41,6 +43,7 @@ export function MultiTransactionFormWrapper({
 
   return (
     <MultiTransactionForm
+      mode={mode}
       defaultDate={defaultDate}
       defaultAccountId={selectedDefaultAccountId}
     />

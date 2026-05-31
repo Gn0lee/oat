@@ -24,6 +24,7 @@ const transactions: TransactionWithDetails[] = [
     transactedAt: "2026-05-03T09:00:00.000Z",
     memo: null,
     accountId: "account-1",
+    accountName: "삼성증권",
     owner: {
       id: "user-1",
       name: "진호",
@@ -41,6 +42,7 @@ const transactions: TransactionWithDetails[] = [
     transactedAt: "2026-05-03T13:00:00.000Z",
     memo: "리밸런싱",
     accountId: "account-2",
+    accountName: "토스증권",
     owner: {
       id: "user-2",
       name: "배우자",
@@ -58,6 +60,7 @@ const transactions: TransactionWithDetails[] = [
     transactedAt: "2026-05-01T09:00:00.000Z",
     memo: null,
     accountId: "account-1",
+    accountName: "삼성증권",
     owner: {
       id: "user-1",
       name: "진호",
