@@ -37,6 +37,13 @@ export function getKstNow(): Date {
 }
 
 /**
+ * KST 기준의 오늘 날짜를 YYYY-MM-DD 형식의 문자열로 반환합니다.
+ */
+export function getKstToday(): string {
+  return formatKst(new Date());
+}
+
+/**
  * 서버에서 온 UTC 날짜를 KST 기준의 로컬 Date 객체로 변환합니다.
  * UI 컴포넌트(예: Calendar, DatePicker)에 전달할 때 사용합니다.
  */

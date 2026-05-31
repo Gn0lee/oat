@@ -21,7 +21,7 @@ import { useAccounts } from "@/hooks/use-accounts";
 import { useCategories } from "@/hooks/use-categories";
 import { usePaymentMethods } from "@/hooks/use-payment-methods";
 import type { LedgerItemFormData } from "@/lib/api/ledger";
-import { formatKst } from "@/lib/date";
+import { formatKst, getKstToday } from "@/lib/date";
 import { getLedgerMoneySourceValue } from "@/lib/ledger/money-source-options";
 import type { CategoryType } from "@/types";
 
@@ -46,7 +46,7 @@ interface AddItemsStepProps {
   onNext: (items: LedgerItemFormData[]) => void;
 }
 
-const today = formatKst(new Date(), "yyyy-MM-dd");
+const today = getKstToday();
 
 export function AddItemsStep({ type, onNext }: AddItemsStepProps) {
   const categoryType = type as CategoryType;

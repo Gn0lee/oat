@@ -1,10 +1,10 @@
 import { Suspense } from "react";
 import { PageContainer } from "@/components/layout";
 import { LedgerEntryComposer } from "@/components/ledger/entry-composer/LedgerEntryComposer";
-import { formatKst } from "@/lib/date";
+import { formatKst, getKstToday } from "@/lib/date";
 
 export default function FullLedgerEntryPage() {
-  const today = formatKst(new Date(), "yyyy-MM-dd");
+  const today = getKstToday();
 
   return (
     <PageContainer maxWidth="narrow">

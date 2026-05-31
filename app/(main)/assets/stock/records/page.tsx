@@ -1,5 +1,5 @@
 import { StockRecordsClient } from "@/components/transactions/records/StockRecordsClient";
-import { formatKst } from "@/lib/date";
+import { formatKst, getKstToday } from "@/lib/date";
 import { normalizeRecordDate } from "@/lib/stock-records/records";
 import { requireUser } from "@/lib/supabase/auth";
 
@@ -14,7 +14,7 @@ export default async function StockRecordsPage({
 }: StockRecordsPageProps) {
   const user = await requireUser();
   const { date } = await searchParams;
-  const today = formatKst(new Date(), "yyyy-MM-dd");
+  const today = getKstToday();
 
   return (
     <StockRecordsClient

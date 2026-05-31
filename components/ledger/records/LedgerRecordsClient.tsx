@@ -22,7 +22,7 @@ import {
   calculateLedgerSummary,
   type LedgerEntryWithDetails,
 } from "@/lib/api/ledger";
-import { formatKst, toKstDate } from "@/lib/date";
+import { formatKst, getKstToday, toKstDate } from "@/lib/date";
 import { queries } from "@/lib/queries/keys";
 import { formatCurrency, formatDateISO } from "@/lib/utils/format";
 import { LedgerCalendar } from "./LedgerCalendar";
@@ -41,7 +41,7 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const initial = useMemo(
-    () => toKstDate(initialDate ?? formatKst(new Date(), "yyyy-MM-dd")),
+    () => toKstDate(initialDate ?? getKstToday()),
     [initialDate],
   );
   const [currentMonth, setCurrentMonth] = useState<Date>(() =>

@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAccounts } from "@/hooks/use-accounts";
 import { usePaymentMethods } from "@/hooks/use-payment-methods";
 import type { TransferItemFormData, TransferLocation } from "@/lib/api/ledger";
-import { formatKst } from "@/lib/date";
+import { formatKst, getKstToday } from "@/lib/date";
 
 const transferFormSchema = z
   .object({
@@ -36,7 +36,7 @@ interface AddTransferStepProps {
   submitLabel?: string;
 }
 
-const today = formatKst(new Date(), "yyyy-MM-dd");
+const today = getKstToday();
 
 function parseLocation(value: string): TransferLocation {
   if (value.startsWith("acc:")) {
