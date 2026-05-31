@@ -26,4 +26,13 @@ describe("PortfolioNavSection", () => {
       "/assets/stock/analysis",
     );
   });
+
+  it("주식 일별 기록 진입점을 렌더링한다", () => {
+    render(<PortfolioNavSection />);
+
+    expect(screen.getByRole("link", { name: /일별 기록/ })).toHaveAttribute(
+      "href",
+      "/assets/stock/records",
+    );
+  });
 });

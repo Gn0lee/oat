@@ -163,6 +163,7 @@ export interface TransactionWithDetails {
   transactedAt: string;
   memo: string | null;
   accountId: string | null;
+  accountName: string | null;
   owner: {
     id: string;
     name: string;
@@ -282,6 +283,10 @@ export async function getTransactions(
     string,
     { name: string; currency: CurrencyType }
   >();
+  const accountIds = [
+    ...new Set((data ?? []).map((t) => t.account_id).filter(Boolean)),
+  ];
+  const accountMap = new Map<string, string>();
 
   if (tickers.length > 0) {
     const { data: stockSettings } = await supabase
@@ -292,6 +297,17 @@ export async function getTransactions(
 
     for (const s of stockSettings ?? []) {
       stockSettingsMap.set(s.ticker, { name: s.name, currency: s.currency });
+    }
+  }
+
+  if (accountIds.length > 0) {
+    const { data: accounts } = await supabase
+      .from("accounts")
+      .select("id, name")
+      .in("id", accountIds);
+
+    for (const account of accounts ?? []) {
+      accountMap.set(account.id, account.name);
     }
   }
 
@@ -312,6 +328,7 @@ export async function getTransactions(
       transactedAt: t.transacted_at,
       memo: t.memo,
       accountId: t.account_id,
+      accountName: t.account_id ? (accountMap.get(t.account_id) ?? null) : null,
       owner: {
         id: profile?.id ?? t.owner_id,
         name: profile?.name ?? "알 수 없음",

@@ -20,12 +20,14 @@ import type { MultiTransactionFormData } from "@/schemas/multi-transaction-form"
 import { DEFAULT_TRANSACTION_ITEM } from "@/schemas/multi-transaction-form";
 
 interface StockComposerListStepProps {
+  mode?: "full" | "daily";
   onEditItem: (index: number) => void;
   onSubmit: (data: MultiTransactionFormData) => void;
   isSubmitting: boolean;
 }
 
 export function StockComposerListStep({
+  mode = "full",
   onEditItem,
   onSubmit,
   isSubmitting,
@@ -73,7 +75,9 @@ export function StockComposerListStep({
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label className="text-gray-700">거래일</Label>
+            <Label className="text-gray-700">
+              {mode === "daily" ? "선택한 날짜" : "거래일"}
+            </Label>
             <DatePickerInput
               value={watchTransactedAt ?? ""}
               onChange={(v) =>

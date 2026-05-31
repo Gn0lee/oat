@@ -144,9 +144,12 @@ app/(main)/
 │       │   └── page.tsx           # /assets/stock/analysis - 주식 분석
 │       ├── holdings/
 │       │   └── page.tsx           # /assets/stock/holdings - 주식 보유 현황
+│       ├── records/
+│       │   └── page.tsx           # /assets/stock/records - 주식 일별 기록
 │       └── transactions/
 │           ├── page.tsx           # /assets/stock/transactions - 주식 거래 내역
 │           └── new/
+│               ├── daily/page.tsx # /assets/stock/transactions/new/daily?date=YYYY-MM-DD
 │               ├── full/page.tsx  # /assets/stock/transactions/new/full
 │               └── account/page.tsx # /assets/stock/transactions/new/account
 └── settings/                      # /settings - 설정
@@ -184,6 +187,7 @@ assets/
     └── transactions/
         └── new/
             ├── full/             # /assets/stock/transactions/new/full
+            ├── daily/            # /assets/stock/transactions/new/daily?date=YYYY-MM-DD
             └── account/          # /assets/stock/transactions/new/account?accountId=...
 ```
 

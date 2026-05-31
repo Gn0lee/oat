@@ -12,11 +12,13 @@ import type { MultiTransactionFormData } from "@/schemas/multi-transaction-form"
 
 interface StockComposerFormStepProps {
   index: number;
+  mode?: "full" | "daily";
   onBack: () => void;
 }
 
 export function StockComposerFormStep({
   index,
+  mode = "full",
   onBack,
 }: StockComposerFormStepProps) {
   const form = useFormContext<MultiTransactionFormData>();
@@ -57,16 +59,18 @@ export function StockComposerFormStep({
           </div>
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label className="text-sm text-gray-700">거래일</Label>
-              <DatePickerInput
-                value={form.watch(`items.${index}.transactedAt`) ?? ""}
-                onChange={(v) =>
-                  form.setValue(`items.${index}.transactedAt`, v || "")
-                }
-                className="h-11 rounded-xl w-full"
-              />
-            </div>
+            {mode === "full" && (
+              <div className="space-y-2">
+                <Label className="text-sm text-gray-700">거래일</Label>
+                <DatePickerInput
+                  value={form.watch(`items.${index}.transactedAt`) ?? ""}
+                  onChange={(v) =>
+                    form.setValue(`items.${index}.transactedAt`, v || "")
+                  }
+                  className="h-11 rounded-xl w-full"
+                />
+              </div>
+            )}
 
             <div className="space-y-2">
               <AccountSelector

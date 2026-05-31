@@ -1,6 +1,13 @@
 "use client";
 
-import { BarChart3, ChartPie, Receipt, Settings, Wallet } from "lucide-react";
+import {
+  BarChart3,
+  CalendarDays,
+  ChartPie,
+  Receipt,
+  Settings,
+  Wallet,
+} from "lucide-react";
 import { AnalysisCard } from "@/components/dashboard/AnalysisCard";
 
 const navItems = [
@@ -19,6 +26,14 @@ const navItems = [
     href: "/assets/stock/transactions",
     color: "text-green-600",
     bgColor: "bg-green-50",
+  },
+  {
+    icon: CalendarDays,
+    label: "일별 기록",
+    description: "날짜별 매수·매도 기록을 확인해 보세요",
+    href: "/assets/stock/records",
+    color: "text-orange-600",
+    bgColor: "bg-orange-50",
   },
   {
     icon: ChartPie,

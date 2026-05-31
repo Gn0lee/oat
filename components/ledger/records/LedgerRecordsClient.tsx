@@ -4,6 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { addMonths, format, getYear, startOfMonth, subMonths } from "date-fns";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import { LedgerEntryDeleteDialog } from "@/components/ledger/LedgerEntryDeleteDialog";
 import { LedgerEntryEditDialog } from "@/components/ledger/LedgerEntryEditDialog";
@@ -30,11 +31,23 @@ const CURRENT_YEAR = getYear(new Date());
 const YEAR_OPTIONS = Array.from({ length: 11 }, (_, i) => CURRENT_YEAR - 5 + i);
 const MONTH_OPTIONS = Array.from({ length: 12 }, (_, i) => i + 1);
 
-export function LedgerRecordsClient() {
-  const [currentMonth, setCurrentMonth] = useState<Date>(() =>
-    startOfMonth(new Date()),
+interface LedgerRecordsClientProps {
+  initialDate?: string;
+}
+
+export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const initial = useMemo(
+    () =>
+      new Date(`${initialDate ?? format(new Date(), "yyyy-MM-dd")}T00:00:00`),
+    [initialDate],
   );
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [currentMonth, setCurrentMonth] = useState<Date>(() =>
+    startOfMonth(initial),
+  );
+  const [selectedDate, setSelectedDate] = useState<Date>(initial);
   const [selectedEntry, setSelectedEntry] =
     useState<LedgerEntryWithDetails | null>(null);
   const [editOpen, setEditOpen] = useState(false);
@@ -117,6 +130,9 @@ export function LedgerRecordsClient() {
 
   const handleDateSelect = (date: Date) => {
     setSelectedDate(date);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("date", formatDateISO(date));
+    router.replace(`${pathname}?${params.toString()}`);
     // 선택된 날짜가 현재 표시 월과 다르면 월도 변경
     if (
       date.getFullYear() !== currentMonth.getFullYear() ||
@@ -237,7 +253,7 @@ export function LedgerRecordsClient() {
       </div>
 
       {/* md 이상: 캘린더(좌) + 목록(우) 2컬럼 / 모바일: 단일 컬럼 */}
-      <div className="md:grid md:grid-cols-[auto_1fr] md:gap-6 md:items-start">
+      <div className="grid gap-4 md:grid-cols-[auto_1fr] md:items-start md:gap-6">
         {/* 좌측: 요약 + 캘린더 */}
         <div className="md:w-[450px]">
           {summaryCard}
