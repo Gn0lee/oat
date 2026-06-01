@@ -1,0 +1,188 @@
+import { describe, expect, it, vi } from "vitest";
+import { APIError } from "./error";
+import {
+  assertCanCancelRecordChangeRequest,
+  assertCanResolveRecordChangeRequest,
+  buildRecordChangeRequestInsert,
+  getRecordChangeRequestListQuery,
+  validateRecordChangeRequestTarget,
+} from "./record-change-requests";
+
+const sharedLedgerEntry = {
+  id: "entry-1",
+  household_id: "household-1",
+  owner_id: "owner-1",
+  type: "expense",
+  amount: 12000,
+  title: "점심",
+  category_id: "category-1",
+  is_shared: true,
+  memo: "김밥",
+  transacted_at: "2026-06-01T00:00:00.000Z",
+  categories: { name: "식비", icon: "utensils" },
+  profiles: { name: "소유자" },
+};
+
+function createTargetSupabaseMock(row: unknown) {
+  const builder = {
+    select: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    single: vi.fn().mockResolvedValue({ data: row, error: null }),
+  };
+
+  return {
+    from: vi.fn(() => builder),
+    builder,
+  };
+}
+
+describe("validateRecordChangeRequestTarget", () => {
+  it("공용 가계부 기록의 대상 소유자와 스냅샷을 만든다", async () => {
+    const supabase = createTargetSupabaseMock(sharedLedgerEntry);
+
+    const result = await validateRecordChangeRequestTarget(
+      supabase as never,
+      "requester-1",
+      {
+        targetType: "ledger_entry",
+        targetId: "entry-1",
+      },
+    );
+
+    expect(result).toEqual({
+      householdId: "household-1",
+      targetOwnerId: "owner-1",
+      targetSnapshot: {
+        targetType: "ledger_entry",
+        ownerName: "소유자",
+        transactedAt: "2026-06-01T00:00:00.000Z",
+        title: "점심",
+        amount: 12000,
+        type: "expense",
+        categoryName: "식비",
+        isShared: true,
+      },
+    });
+  });
+
+  it("개인 가계부 기록은 요청 대상으로 거부한다", async () => {
+    const supabase = createTargetSupabaseMock({
+      ...sharedLedgerEntry,
+      is_shared: false,
+    });
+
+    await expect(
+      validateRecordChangeRequestTarget(supabase as never, "requester-1", {
+        targetType: "ledger_entry",
+        targetId: "entry-1",
+      }),
+    ).rejects.toMatchObject(
+      new APIError(
+        "RECORD_CHANGE_REQUEST_TARGET_INVALID",
+        "개인 가계부 기록은 요청 대상이 될 수 없습니다.",
+        400,
+      ),
+    );
+  });
+
+  it("대상 소유자는 본인 기록에 요청을 만들 수 없다", async () => {
+    const supabase = createTargetSupabaseMock(sharedLedgerEntry);
+
+    await expect(
+      validateRecordChangeRequestTarget(supabase as never, "owner-1", {
+        targetType: "ledger_entry",
+        targetId: "entry-1",
+      }),
+    ).rejects.toMatchObject(
+      new APIError(
+        "RECORD_CHANGE_REQUEST_SELF_TARGET",
+        "본인 기록에는 변경 요청을 만들 수 없습니다.",
+        400,
+      ),
+    );
+  });
+});
+
+describe("buildRecordChangeRequestInsert", () => {
+  it("request body의 owner 값 없이 서버 검증 결과로 insert payload를 만든다", () => {
+    const result = buildRecordChangeRequestInsert({
+      requesterId: "requester-1",
+      targetType: "ledger_entry",
+      targetId: "entry-1",
+      requestType: "update",
+      message: "금액 확인 부탁드립니다.",
+      proposedChanges: { amount: 13000 },
+      validatedTarget: {
+        householdId: "household-1",
+        targetOwnerId: "owner-1",
+        targetSnapshot: { title: "점심" },
+      },
+    });
+
+    expect(result).toMatchObject({
+      household_id: "household-1",
+      requester_id: "requester-1",
+      target_owner_id: "owner-1",
+      target_type: "ledger_entry",
+      target_id: "entry-1",
+      request_type: "update",
+      status: "pending",
+      message: "금액 확인 부탁드립니다.",
+      proposed_changes: { amount: 13000 },
+      target_snapshot: { title: "점심" },
+    });
+  });
+});
+
+describe("getRecordChangeRequestListQuery", () => {
+  it("received box는 target_owner_id로 필터링한다", () => {
+    const query = getRecordChangeRequestListQuery("user-1", {
+      box: "received",
+      status: "pending",
+    });
+
+    expect(query).toEqual({
+      ownerColumn: "target_owner_id",
+      ownerId: "user-1",
+      status: "pending",
+    });
+  });
+});
+
+describe("status action guards", () => {
+  const pendingRequest = {
+    id: "request-1",
+    requester_id: "requester-1",
+    target_owner_id: "owner-1",
+    status: "pending" as const,
+  };
+
+  it("요청자만 pending 요청을 취소할 수 있다", () => {
+    expect(() =>
+      assertCanCancelRecordChangeRequest(pendingRequest, "requester-1"),
+    ).not.toThrow();
+    expect(() =>
+      assertCanCancelRecordChangeRequest(pendingRequest, "owner-1"),
+    ).toThrow(APIError);
+  });
+
+  it("대상 소유자만 pending 요청을 처리할 수 있다", () => {
+    expect(() =>
+      assertCanResolveRecordChangeRequest(pendingRequest, "owner-1"),
+    ).not.toThrow();
+    expect(() =>
+      assertCanResolveRecordChangeRequest(pendingRequest, "requester-1"),
+    ).toThrow(APIError);
+  });
+
+  it("terminal 상태 요청은 취소하거나 처리할 수 없다", () => {
+    const approvedRequest = { ...pendingRequest, status: "approved" as const };
+
+    expect(() =>
+      assertCanCancelRecordChangeRequest(approvedRequest, "requester-1"),
+    ).toThrow(APIError);
+    expect(() =>
+      assertCanResolveRecordChangeRequest(approvedRequest, "owner-1"),
+    ).toThrow(APIError);
+  });
+});

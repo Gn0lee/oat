@@ -772,6 +772,82 @@ export type Database = {
         };
         Relationships: [];
       };
+      record_change_requests: {
+        Row: {
+          created_at: string;
+          household_id: string;
+          id: string;
+          message: string | null;
+          proposed_changes: Json;
+          request_type: Database["public"]["Enums"]["record_change_request_type"];
+          requester_id: string;
+          resolved_at: string | null;
+          response_message: string | null;
+          status: Database["public"]["Enums"]["record_change_request_status"];
+          target_id: string;
+          target_owner_id: string;
+          target_snapshot: Json;
+          target_type: Database["public"]["Enums"]["record_change_request_target_type"];
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          household_id: string;
+          id?: string;
+          message?: string | null;
+          proposed_changes?: Json;
+          request_type: Database["public"]["Enums"]["record_change_request_type"];
+          requester_id: string;
+          resolved_at?: string | null;
+          response_message?: string | null;
+          status?: Database["public"]["Enums"]["record_change_request_status"];
+          target_id: string;
+          target_owner_id: string;
+          target_snapshot?: Json;
+          target_type: Database["public"]["Enums"]["record_change_request_target_type"];
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          household_id?: string;
+          id?: string;
+          message?: string | null;
+          proposed_changes?: Json;
+          request_type?: Database["public"]["Enums"]["record_change_request_type"];
+          requester_id?: string;
+          resolved_at?: string | null;
+          response_message?: string | null;
+          status?: Database["public"]["Enums"]["record_change_request_status"];
+          target_id?: string;
+          target_owner_id?: string;
+          target_snapshot?: Json;
+          target_type?: Database["public"]["Enums"]["record_change_request_target_type"];
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "record_change_requests_household_id_fkey";
+            columns: ["household_id"];
+            isOneToOne: false;
+            referencedRelation: "households";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "record_change_requests_requester_id_fkey";
+            columns: ["requester_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "record_change_requests_target_owner_id_fkey";
+            columns: ["target_owner_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       stock_master: {
         Row: {
           choseong: string | null;
@@ -1156,6 +1232,13 @@ export type Database = {
         | "prepaid"
         | "gift_card"
         | "cash";
+      record_change_request_status:
+        | "pending"
+        | "approved"
+        | "rejected"
+        | "cancelled";
+      record_change_request_target_type: "ledger_entry" | "stock_transaction";
+      record_change_request_type: "update" | "delete";
       risk_level: "safe" | "moderate" | "aggressive";
       stock_type_category:
         | "stock"
@@ -1361,6 +1444,14 @@ export const Constants = {
         "gift_card",
         "cash",
       ],
+      record_change_request_status: [
+        "pending",
+        "approved",
+        "rejected",
+        "cancelled",
+      ],
+      record_change_request_target_type: ["ledger_entry", "stock_transaction"],
+      record_change_request_type: ["update", "delete"],
       risk_level: ["safe", "moderate", "aggressive"],
       stock_type_category: [
         "stock",
