@@ -1,11 +1,12 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { InfoIcon } from "lucide-react";
+import { InfoIcon, XIcon } from "lucide-react";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+import { AccountSelector } from "@/components/transactions/AccountSelector";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DatePickerInput } from "@/components/ui/date-picker";
@@ -80,12 +81,12 @@ export function TransactionEditDialog({
     reset,
     watch,
     setValue,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<EditFormValues>({
     resolver: zodResolver(editFormSchema),
   });
 
-  const watchAccountId = watch("accountId");
   const watchTransactedAt = watch("transactedAt");
 
   // transaction이 변경될 때 폼 값 초기화
@@ -99,7 +100,7 @@ export function TransactionEditDialog({
         quantity: String(transaction.quantity),
         price: String(transaction.price),
         transactedAt: formattedDate,
-        accountId: transaction.accountId ?? "__none__",
+        accountId: transaction.accountId ?? undefined,
         memo: transaction.memo ?? "",
       });
     }
@@ -112,9 +113,8 @@ export function TransactionEditDialog({
       // transactedAt을 ISO 형식으로 변환
       const transactedAtISO = new Date(data.transactedAt).toISOString();
 
-      // "__none__"은 계좌 없음을 의미
-      const accountId =
-        data.accountId === "__none__" ? null : data.accountId || null;
+      // 빈 값(계좌 없음) 처리
+      const accountId = data.accountId || null;
 
       await updateMutation.mutateAsync({
         id: transaction.id,
@@ -213,28 +213,13 @@ export function TransactionEditDialog({
       </div>
 
       {/* 계좌 */}
-      {accounts && accounts.length > 0 && (
-        <div className="space-y-2">
-          <Label htmlFor="accountId">거래 계좌</Label>
-          <Select
-            value={watchAccountId ?? "__none__"}
-            onValueChange={(value) => setValue("accountId", value)}
-          >
-            <SelectTrigger id="accountId">
-              <SelectValue placeholder="계좌를 선택하세요" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__none__">계좌 없음</SelectItem>
-              {accounts.map((account) => (
-                <SelectItem key={account.id} value={account.id}>
-                  {account.name}
-                  {account.broker && ` (${account.broker})`}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
+      <AccountSelector
+        control={control}
+        name="accountId"
+        variant="inline"
+        placeholder="계좌 선택"
+        allowClear={true}
+      />
 
       {/* 메모 */}
       <div className="space-y-2">
@@ -289,47 +274,57 @@ export function TransactionEditDialog({
     );
   }
 
-  // 모바일: Drawer (Bottom Sheet)
+  // 모바일: 전체 화면 Drawer
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent>
-        <DrawerHeader>
-          <DrawerTitle>거래 수정</DrawerTitle>
-          <DrawerDescription asChild>{descriptionContent}</DrawerDescription>
-        </DrawerHeader>
+      <DrawerContent
+        className="h-[100dvh] max-h-[100dvh] rounded-none border-t-0 p-0 flex flex-col data-[vaul-drawer-direction=bottom]:mt-0 data-[vaul-drawer-direction=bottom]:max-h-[100dvh] data-[vaul-drawer-direction=bottom]:rounded-none data-[vaul-drawer-direction=bottom]:border-t-0"
+        showHandle={false}
+        onOpenAutoFocus={(event) => event.preventDefault()}
+      >
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={() => onOpenChange(false)}
+          className="absolute right-2 top-2 z-10 inline-flex size-11 items-center justify-center rounded-full text-gray-700 transition-colors hover:bg-gray-100"
+        >
+          <XIcon className="size-5" />
+        </Button>
 
-        <div className="overflow-y-auto flex-1 px-4">
+        <div className="flex-1 overflow-y-auto px-4 pt-16 space-y-4">
+          <div className="space-y-1">
+            <h3 className="text-lg font-bold text-gray-900">거래 수정</h3>
+            <div className="text-sm text-gray-500">{descriptionContent}</div>
+          </div>
+
           <form
             id="transaction-edit-form"
             onSubmit={handleSubmit(onSubmit)}
-            className="space-y-4 pb-2"
+            className="space-y-4 pb-[calc(1rem+env(safe-area-inset-bottom))]"
           >
             {infoBanner}
             {formFields}
+
+            <div className="flex gap-2 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                disabled={isSubmitting}
+                className="flex-1 h-12 rounded-xl text-base font-semibold"
+              >
+                취소
+              </Button>
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="flex-1 h-12 rounded-xl text-base font-semibold"
+              >
+                {isSubmitting ? "저장 중..." : "저장"}
+              </Button>
+            </div>
           </form>
         </div>
-
-        <DrawerFooter className="pb-[max(env(safe-area-inset-bottom),1rem)]">
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={isSubmitting}
-              className="flex-1"
-            >
-              취소
-            </Button>
-            <Button
-              type="submit"
-              form="transaction-edit-form"
-              disabled={isSubmitting}
-              className="flex-1"
-            >
-              {isSubmitting ? "저장 중..." : "저장"}
-            </Button>
-          </div>
-        </DrawerFooter>
       </DrawerContent>
     </Drawer>
   );

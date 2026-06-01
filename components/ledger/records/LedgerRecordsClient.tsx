@@ -261,7 +261,7 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
         </div>
 
         {/* 우측(데스크탑) / 하단(모바일): 항목 목록 + 등록 버튼 */}
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 min-w-0">
           <LedgerDayEntryList
             selectedDate={selectedDate}
             entries={dayEntries}

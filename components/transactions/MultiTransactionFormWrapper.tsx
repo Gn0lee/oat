@@ -5,7 +5,7 @@ import { useAccounts } from "@/hooks/use-accounts";
 import { useCurrentUserId } from "@/hooks/use-current-user";
 
 interface MultiTransactionFormWrapperProps {
-  defaultDate: string;
+  defaultDate?: string;
   defaultAccountId?: string;
   mode?: "full" | "daily";
 }
