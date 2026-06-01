@@ -68,7 +68,7 @@ describe("StockRecordsClient", () => {
           totalPages: 1,
         },
         isLoading: false,
-      } as ReturnType<typeof useTransactions>)
+      } as unknown as ReturnType<typeof useTransactions>)
       .mockReturnValueOnce({
         data: {
           data: transactions,
@@ -78,7 +78,7 @@ describe("StockRecordsClient", () => {
           totalPages: 1,
         },
         isLoading: false,
-      } as ReturnType<typeof useTransactions>)
+      } as unknown as ReturnType<typeof useTransactions>)
       .mockReturnValueOnce({
         data: {
           data: [],
@@ -88,7 +88,7 @@ describe("StockRecordsClient", () => {
           totalPages: 1,
         },
         isLoading: false,
-      } as ReturnType<typeof useTransactions>);
+      } as unknown as ReturnType<typeof useTransactions>);
 
     const queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },

@@ -92,6 +92,13 @@ export const queries = createQueryKeyStore({
     holiday: null,
   },
 
+  notifications: {
+    all: null,
+    list: (params?: { limit?: number }) => ({ queryKey: [params] }),
+    unreadCount: null,
+    preferences: null,
+  },
+
   categories: {
     all: null,
     list: (type?: "expense" | "income") => ({ queryKey: [type] }),

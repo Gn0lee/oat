@@ -49,8 +49,8 @@ export function SettingsMenu() {
       <SettingsMenuItem
         icon={Bell}
         label="알림 설정"
+        description="앱 알림, Push 수신 여부 관리"
         href="/settings/notifications"
-        disabled
       />
 
       <SettingsMenuItem

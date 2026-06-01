@@ -7,6 +7,8 @@
 - 알림의 원장은 **User Notification**이다. 앱 안 알림함에 저장되고 읽음/미읽음, 이동 링크, 중복 방지, 수신자 범위를 가진다.
 - 푸시와 이메일은 **Notification Channel**이다. 현재 마일스톤은 앱 내 알림과 Push를 구현하고, 이메일은 향후 채널로 열어둔다.
 - 알림 수신 제어는 사용자별 **Notification Preference**로 관리한다. 가구 단위 전역 설정으로 두지 않는다.
+- 알림은 가구 단위 row가 아니라 수신자별 **User Notification** row로 저장한다. 같은 사건이 여러 명에게 전달되면 수신자 수만큼 row를 만든다.
+- 알림 이동은 raw URL이 아니라 **Notification Link Kind**와 params로 저장하고, 클라이언트가 앱 route로 해석한다.
 - 알림함과 알림 설정은 화면을 분리한다. 알림 아이콘은 알림함으로 이동하고, `/settings/notifications`는 수신 제어 전용 화면이다.
 - 개인 장부 내용은 알림에도 노출하지 않는다. 파트너에게 보낼 수 있는 알림은 공용 장부 또는 가구 전체에 이미 공개되는 데이터에 한정한다.
 - 1차 구현은 알림 인프라와 **Collaboration Notification**을 우선한다. 수정/삭제 요청은 협업 알림의 대표 사례이며, 리마인더/분석 임계치 알림은 이번 마일스톤에서 제외한다.
@@ -20,7 +22,10 @@
 | User Notification | 특정 사용자에게 저장되는 알림 메시지. 앱 안 알림함에서 조회하고 읽음 처리한다. |
 | Notification Channel | User Notification을 앱 밖으로 전달하는 경로. Push, 이메일 등이 가능하다. |
 | Notification Event | 알림을 만들 수 있는 도메인 사건. 예: 공용 지출 기록, 초대 수락. |
+| Notification Type | 알림 설정과 표시 그룹에 사용하는 도메인+액션 단위 키. 예: `ledger_record_changed`, `stock_transaction_changed`. |
+| Notification Link Kind | User Notification에 저장되는 제한된 이동 의도. 앱 route 문자열 대신 params와 함께 저장한다. |
 | Notification Preference | 사용자가 알림 종류별로 앱 내/Push 수신 여부를 조정하는 설정. |
+| Default Notification Preference | 사용자가 저장한 override가 없을 때 적용하는 제품 기본값. |
 | Collaboration Notification | 가구 구성원이 공유 재무 데이터를 함께 관리하기 위해 받는 알림. |
 | Record Change Request | 공용 기록의 비소유자가 소유자에게 수정 또는 삭제를 요청하는 협업 요청. |
 
@@ -119,21 +124,43 @@
 
 | 축 | 예시 | 원칙 |
 |----|------|------|
-| notification type | `record_change_request`, `request_result`, `invitation_accepted` | 알림 의미 단위. UI에서는 사람이 읽는 그룹명으로 노출한다. |
-| channel | `in_app`, `push`, 향후 `email` | 전달 경로. in_app은 기본값 on, push는 사용자 opt-in. |
+| notification type | `ledger_record_changed`, `stock_transaction_changed`, `invitation_accepted` | 도메인+액션 단위. UI에서는 사람이 읽는 그룹명으로 묶어 노출할 수 있다. |
+| channel | `in_app`, `push`, 향후 `email` | 전달 경로. 현재 저장 구조는 타입별 row에 채널별 boolean 컬럼을 둔다. |
 | enabled | true/false | 사용자별로 저장한다. |
+
+`notification_preferences`는 notification type별 1 row를 저장한다.
+
+```sql
+notification_preferences (
+  user_id uuid not null references profiles(id) on delete cascade,
+  type notification_type not null,
+  in_app_enabled boolean not null,
+  push_enabled boolean not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  primary key (user_id, type)
+)
+```
+
+저장된 row가 없으면 Default Notification Preference를 적용한다. 알림 종류가 늘어날 때 기존 사용자 전체에 preference row를 backfill하지 않는다.
 
 초기 기본값:
 
 | 알림 종류 | In-app | Push | 비고 |
 |----------|:------:|:----:|------|
-| 수정/삭제 요청 | on | opt-in | 상대방 조치가 필요한 요청형 |
-| 요청 처리 결과 | on | opt-in | 요청자 확인형 |
-| 공유 기록 수정/삭제 | on | opt-in | 함께 보던 데이터가 바뀌는 변경형 |
-| 새 공유 기록 추가 | off | opt-in | 노이즈 가능성이 높아 기본 off |
+| 가계부 수정/삭제 요청 | on | off | 상대방 조치가 필요한 요청형 |
+| 주식 거래 수정/삭제 요청 | on | off | 상대방 조치가 필요한 요청형 |
+| 가계부 요청 처리 결과 | on | off | 요청자 확인형 |
+| 주식 거래 요청 처리 결과 | on | off | 요청자 확인형 |
+| 가계부 기록 수정/삭제 | on | off | 함께 보던 데이터가 바뀌는 변경형 |
+| 주식 거래 수정/삭제 | on | off | 함께 보던 데이터가 바뀌는 변경형 |
+| 새 공용 가계부 기록 추가 | off | off | 노이즈 가능성이 높아 기본 off |
+| 새 주식 거래 추가 | off | off | 노이즈 가능성이 높아 기본 off |
 | 초대 수락 | on | off | 중요하지만 즉시성은 낮음 |
 
 Preference가 꺼져 있더라도 시스템이 요청 상태 자체를 잃으면 안 된다. 예를 들어 수정 요청은 `record_change_requests`에 저장되고, preference는 User Notification 생성/채널 전달만 제어한다.
+
+`in_app_enabled=false`이면 해당 User Notification row를 만들지 않는다. 나중에 사용자가 설정을 켜도 과거 알림이 알림함에 나타나지 않는다. `push_enabled=false`이면 Push 발송만 하지 않는다. Issue #342에서는 Push 토글을 저장하고 UI에 노출하지만 실제 Push 발송은 후속 이슈에서 구현한다.
 
 이번 마일스톤에서 제외:
 
@@ -141,6 +168,159 @@ Preference가 꺼져 있더라도 시스템이 요청 상태 자체를 잃으면
 - 조용한 시간
 - 이메일 채널 설정 UI
 - 알림 digest 또는 요약 발송
+
+### 3.2 User Notification 기반 구축 확정 설계 (#342)
+
+#### 저장 모델
+
+`notifications`는 가구 단위 알림이 아니라 수신자별 User Notification row를 저장한다. 같은 Notification Event가 여러 명에게 전달되어야 하면 수신자마다 row를 만든다.
+
+핵심 컬럼:
+
+```sql
+notifications (
+  id uuid primary key default gen_random_uuid(),
+  recipient_id uuid not null references profiles(id) on delete cascade,
+  household_id uuid null references households(id) on delete cascade,
+  type notification_type not null,
+  title text not null,
+  body text null,
+  link_kind notification_link_kind null,
+  link_params jsonb not null default '{}',
+  source_type text null,
+  source_id uuid null,
+  dedupe_key text null,
+  read_at timestamptz null,
+  created_at timestamptz not null default now(),
+  check (
+    (source_type is null and source_id is null)
+    or (source_type is not null and source_id is not null)
+  )
+)
+```
+
+RLS 기준은 `recipient_id = auth.uid()`이다. `household_id`는 필터링, 디버깅, 향후 다중 가구 지원을 위한 nullable context이며, 같은 가구 구성원이라는 이유로 다른 사람의 알림을 조회할 수 없어야 한다.
+
+알림 생성은 클라이언트가 직접 insert하지 않는다. 서버 helper가 admin client로 생성하고, RLS는 본인 조회와 본인 읽음 처리의 최소 방어선으로 둔다.
+
+#### Notification Type
+
+`notifications.type`과 `notification_preferences.type`은 같은 `notification_type` enum을 공유한다.
+
+초기 타입:
+
+```ts
+type NotificationType =
+  | 'ledger_record_change_request'
+  | 'stock_transaction_change_request'
+  | 'ledger_request_result'
+  | 'stock_transaction_request_result'
+  | 'ledger_record_changed'
+  | 'stock_transaction_changed'
+  | 'ledger_record_created'
+  | 'stock_transaction_created'
+  | 'invitation_accepted';
+```
+
+설정 UI에서는 필요하면 "협업 요청", "요청 처리 결과", "공유 기록 변경", "새 공유 기록 추가" 같은 섹션으로 그룹핑한다. 타입 자체는 장부/주식 도메인을 숨기지 않는다.
+
+#### Notification Link
+
+알림 이동은 raw URL을 저장하지 않는다. `link_kind`와 `link_params`를 저장하고, 클라이언트의 공용 route builder가 앱 route로 해석한다.
+
+초기 link kind:
+
+```ts
+type NotificationLinkKind =
+  | 'ledger_record_date'
+  | 'stock_record_date'
+  | 'record_change_request_detail'
+  | 'household_settings'
+  | 'notification_settings';
+```
+
+예시:
+
+| link_kind | link_params | route |
+|-----------|-------------|-------|
+| `ledger_record_date` | `{ "date": "2026-06-01" }` | `/ledger/records?date=2026-06-01` |
+| `stock_record_date` | `{ "date": "2026-06-01" }` | `/assets/stock/records?date=2026-06-01` |
+| `record_change_request_detail` | `{ "requestId": "..." }` | 후속 이슈의 요청 상세 화면 |
+| `household_settings` | `{}` | `/settings/household` |
+| `notification_settings` | `{}` | `/settings/notifications` |
+
+`notification_link_kind`는 DB enum으로 제한한다. `link_params` 형태는 DB에서 강하게 검증하지 않고, 클라이언트와 서버가 공유하는 Zod schema와 TypeScript discriminated union으로 검증한다. 공유 schema 모듈은 브라우저에서도 import할 수 있도록 Supabase server client나 `next/server`를 의존하지 않는다.
+
+#### Source and Dedupe
+
+`source_type`과 `source_id`는 이 알림이 어떤 도메인 객체에서 왔는지 추적하는 메타데이터다. `source_type`은 text로 두고 앱 코드에서 Zod로 현재 허용 값을 제한한다. `notification_type`과 `link_kind`처럼 UI/설정/라우팅에 직접 영향을 주는 값만 DB enum으로 잠근다.
+
+초기 source type 후보:
+
+```ts
+type NotificationSourceType =
+  | 'ledger_entry'
+  | 'stock_transaction'
+  | 'record_change_request'
+  | 'invitation';
+```
+
+`dedupe_key`는 같은 수신자에게 같은 사건의 알림이 중복 저장되는 것을 막는다.
+
+```sql
+create unique index notifications_recipient_dedupe_key_unique
+on public.notifications (recipient_id, dedupe_key)
+where dedupe_key is not null;
+```
+
+예시:
+
+- `invitation_accepted:{invitationId}`
+- `record_change_request_created:{requestId}`
+- `stock_transaction_batch_created:{batchId}`
+
+반복해서 발생할 수 있는 이벤트는 너무 넓은 key를 쓰지 않는다. 예를 들어 같은 장부 기록이 여러 번 수정될 수 있으면 이벤트 id나 수정 시각을 포함한다.
+
+#### Read State and APIs
+
+읽음 상태는 `read_at timestamptz null` 하나로 표현한다. `is_read` boolean은 두지 않는다.
+
+필수 API:
+
+```txt
+GET /api/notifications?limit=20&cursor=...
+GET /api/notifications/unread-count
+PATCH /api/notifications/[id]/read
+POST /api/notifications/read-all
+GET /api/notification-preferences
+PATCH /api/notification-preferences/[type]
+```
+
+알림 목록은 최신순 cursor pagination을 사용한다.
+
+```sql
+order by created_at desc, id desc
+```
+
+cursor는 `createdAt + id` 조합을 인코딩한다. 알림 삭제, 아카이브, 자동 만료, 보존 기간 정책은 Issue #342 범위에서 제외한다.
+
+`GET /api/notification-preferences`는 Default Notification Preference와 저장된 override를 서버에서 merge한 완성 목록을 반환한다. `PATCH /api/notification-preferences/[type]`는 단건 타입의 `inAppEnabled`, `pushEnabled`를 저장한다. 설정 토글은 낙관적 업데이트를 적용하고 실패 시 rollback한다.
+
+#### UI Behavior
+
+알림함은 `/notifications`, 알림 설정은 `/settings/notifications`로 분리한다.
+
+메인 UI에는 전역 bell 아이콘을 둔다.
+
+- 모바일 top-level header 우측: bell + unread badge
+- 데스크톱 header 우측: bell + unread badge
+- sidebar와 bottom nav에는 추가하지 않는다.
+
+미읽음 배지는 `GET /api/notifications/unread-count`를 사용한다. Issue #342에서는 Supabase Realtime 구독을 붙이지 않고, React Query 조회/무효화/focus refetch 수준으로 시작한다.
+
+알림 클릭 시 해당 알림을 낙관적으로 읽음 처리하고 즉시 이동한다. 읽음 처리 실패가 navigation을 막지는 않는다. 알림함에는 단건 읽음과 전체 읽음 액션을 제공한다.
+
+`/settings/notifications`의 Push 토글은 저장 가능하게 제공한다. 실제 Push 발송은 후속 이슈에서 구현하므로, UI에는 "Push 발송은 이후 지원" 수준의 짧은 보조 문구를 둔다.
 
 ### Slice 2. Collaboration Request 모델 구축 (#343)
 
@@ -198,4 +378,3 @@ Preference가 꺼져 있더라도 시스템이 요청 상태 자체를 잃으면
 1. 수정 요청이 구체적인 변경안을 포함해야 하는지, 아니면 사유/메시지만 보내고 소유자가 직접 수정해야 하는지.
 2. 삭제 요청 승인 시 시스템이 즉시 삭제할지, 소유자가 원본 화면에서 다시 삭제해야 하는지.
 3. 요청 상태를 pending/approved/rejected/cancelled로 충분히 볼지, expired도 둘지.
-4. Push를 Record Change Request에 기본 적용할지, 앱 내 알림만 기본으로 둘지.
