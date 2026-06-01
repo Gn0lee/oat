@@ -31,6 +31,7 @@ export const SERVICE_ROUTE_TREE = [
     href: "/home",
     label: "홈",
     mobile: "topLevel",
+    children: [{ href: "/notifications", label: "알림함" }],
   },
   {
     href: "/ledger",
@@ -183,6 +184,7 @@ export const SERVICE_ROUTE_TREE = [
     children: [
       { href: "/settings/household", label: "가구 관리" },
       { href: "/settings/mcp", label: "MCP 연결" },
+      { href: "/settings/notifications", label: "알림 설정" },
     ],
   },
 ] as const satisfies readonly ServiceRouteNode[];

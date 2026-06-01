@@ -568,6 +568,110 @@ export type Database = {
           },
         ];
       };
+      notification_preferences: {
+        Row: {
+          created_at: string;
+          in_app_enabled: boolean;
+          push_enabled: boolean;
+          type: Database["public"]["Enums"]["notification_type"];
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          in_app_enabled: boolean;
+          push_enabled: boolean;
+          type: Database["public"]["Enums"]["notification_type"];
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          in_app_enabled?: boolean;
+          push_enabled?: boolean;
+          type?: Database["public"]["Enums"]["notification_type"];
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "notification_preferences_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      notifications: {
+        Row: {
+          body: string | null;
+          created_at: string;
+          dedupe_key: string | null;
+          household_id: string | null;
+          id: string;
+          link_kind:
+            | Database["public"]["Enums"]["notification_link_kind"]
+            | null;
+          link_params: Json;
+          read_at: string | null;
+          recipient_id: string;
+          source_id: string | null;
+          source_type: string | null;
+          title: string;
+          type: Database["public"]["Enums"]["notification_type"];
+        };
+        Insert: {
+          body?: string | null;
+          created_at?: string;
+          dedupe_key?: string | null;
+          household_id?: string | null;
+          id?: string;
+          link_kind?:
+            | Database["public"]["Enums"]["notification_link_kind"]
+            | null;
+          link_params?: Json;
+          read_at?: string | null;
+          recipient_id: string;
+          source_id?: string | null;
+          source_type?: string | null;
+          title: string;
+          type: Database["public"]["Enums"]["notification_type"];
+        };
+        Update: {
+          body?: string | null;
+          created_at?: string;
+          dedupe_key?: string | null;
+          household_id?: string | null;
+          id?: string;
+          link_kind?:
+            | Database["public"]["Enums"]["notification_link_kind"]
+            | null;
+          link_params?: Json;
+          read_at?: string | null;
+          recipient_id?: string;
+          source_id?: string | null;
+          source_type?: string | null;
+          title?: string;
+          type?: Database["public"]["Enums"]["notification_type"];
+        };
+        Relationships: [
+          {
+            foreignKeyName: "notifications_household_id_fkey";
+            columns: ["household_id"];
+            isOneToOne: false;
+            referencedRelation: "households";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "notifications_recipient_id_fkey";
+            columns: ["recipient_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       payment_methods: {
         Row: {
           balance: number | null;
@@ -1030,6 +1134,22 @@ export type Database = {
       invitation_status: "pending" | "accepted" | "expired" | "cancelled";
       ledger_entry_type: "expense" | "income" | "transfer";
       market_type: "KR" | "US" | "OTHER";
+      notification_link_kind:
+        | "ledger_record_date"
+        | "stock_record_date"
+        | "record_change_request_detail"
+        | "household_settings"
+        | "notification_settings";
+      notification_type:
+        | "ledger_record_change_request"
+        | "stock_transaction_change_request"
+        | "ledger_request_result"
+        | "stock_transaction_request_result"
+        | "ledger_record_changed"
+        | "stock_transaction_changed"
+        | "ledger_record_created"
+        | "stock_transaction_created"
+        | "invitation_accepted";
       payment_method_type:
         | "credit_card"
         | "debit_card"
@@ -1216,6 +1336,24 @@ export const Constants = {
       invitation_status: ["pending", "accepted", "expired", "cancelled"],
       ledger_entry_type: ["expense", "income", "transfer"],
       market_type: ["KR", "US", "OTHER"],
+      notification_link_kind: [
+        "ledger_record_date",
+        "stock_record_date",
+        "record_change_request_detail",
+        "household_settings",
+        "notification_settings",
+      ],
+      notification_type: [
+        "ledger_record_change_request",
+        "stock_transaction_change_request",
+        "ledger_request_result",
+        "stock_transaction_request_result",
+        "ledger_record_changed",
+        "stock_transaction_changed",
+        "ledger_record_created",
+        "stock_transaction_created",
+        "invitation_accepted",
+      ],
       payment_method_type: [
         "credit_card",
         "debit_card",

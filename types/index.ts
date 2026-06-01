@@ -26,6 +26,8 @@ export type UserRole = Enums<"user_role">;
 export type AllocationCategory = Enums<"allocation_category">;
 export type LedgerEntryType = Enums<"ledger_entry_type">;
 export type CategoryType = Enums<"category_type">;
+export type NotificationType = Enums<"notification_type">;
+export type NotificationLinkKind = Enums<"notification_link_kind">;
 
 // 테이블 Row 타입 (편의를 위해)
 export type Account = Tables<"accounts">;
@@ -43,6 +45,8 @@ export type HoldingTag = Tables<"holding_tags">;
 export type TargetAllocation = Tables<"target_allocations">;
 export type McpToken = Tables<"mcp_tokens">;
 export type McpAuditLog = Tables<"mcp_audit_logs">;
+export type Notification = Tables<"notifications">;
+export type NotificationPreference = Tables<"notification_preferences">;
 
 // 가계부 테이블 타입
 export type LedgerEntry = Tables<"ledger_entries">;

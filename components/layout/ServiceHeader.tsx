@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { NotificationBell } from "@/components/notifications";
 import { getServiceRouteMeta } from "@/constants/service-routes";
 import { cn } from "@/lib/utils/cn";
 
@@ -50,10 +51,11 @@ function MobileServiceHeader({
 
   if (meta.mobileVariant === "topLevel") {
     return (
-      <header className="absolute inset-x-0 top-0 z-50 bg-gray-50/80 backdrop-blur-md h-14 px-4 flex items-center lg:hidden">
+      <header className="absolute inset-x-0 top-0 z-50 bg-gray-50/80 backdrop-blur-md h-14 px-4 flex items-center justify-between lg:hidden">
         <Link href="/home" className="inline-flex items-center">
           <span className="text-xl font-bold text-primary">oat</span>
         </Link>
+        <NotificationBell />
       </header>
     );
   }
@@ -116,7 +118,7 @@ function DesktopServiceHeader({
   meta: ReturnType<typeof getServiceRouteMeta>;
 }) {
   return (
-    <header className="hidden lg:flex h-14 shrink-0 items-center bg-white border-b border-gray-200 px-4">
+    <header className="hidden lg:flex h-14 shrink-0 items-center justify-between bg-white border-b border-gray-200 px-4">
       {meta && (
         <nav
           aria-label="Breadcrumb"
@@ -147,6 +149,7 @@ function DesktopServiceHeader({
           })}
         </nav>
       )}
+      <NotificationBell className="shrink-0" />
     </header>
   );
 }
