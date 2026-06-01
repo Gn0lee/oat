@@ -48,7 +48,33 @@ export function LedgerEntryRow({
   ].filter(Boolean);
 
   return (
-    <div className="flex items-center gap-3 py-3 border-b last:border-b-0">
+    <div className="group relative flex items-center gap-3 py-3 border-b last:border-b-0 pr-10">
+      {/* 메뉴 (Absolute) */}
+      <div className="absolute right-0 top-1/2 z-10 -translate-y-1/2">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-gray-400 hover:text-gray-600"
+            >
+              <MoreVertical className="w-4 h-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => onEdit(entry)}>
+              수정
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="text-destructive"
+              onClick={() => onDelete(entry)}
+            >
+              삭제
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
       {/* 카테고리 아이콘 */}
       <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-gray-100 flex items-center justify-center">
         <CategoryIcon
@@ -59,7 +85,7 @@ export function LedgerEntryRow({
 
       {/* 내용 */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1">
+        <div className="flex min-w-0 items-center gap-1">
           <span className="font-semibold text-gray-900 text-sm truncate">
             {entry.title ??
               entry.categoryName ??
@@ -76,30 +102,12 @@ export function LedgerEntryRow({
         )}
       </div>
 
-      {/* 금액 + 메뉴 */}
+      {/* 금액 */}
       <div className="flex items-center gap-1 flex-shrink-0">
         <span className={`text-sm font-semibold ${amountColor}`}>
           {amountSign}
           {formatCurrency(entry.amount)}
         </span>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <MoreVertical className="w-4 h-4 text-gray-400" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => onEdit(entry)}>
-              수정
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              className="text-destructive"
-              onClick={() => onDelete(entry)}
-            >
-              삭제
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
       </div>
     </div>
   );

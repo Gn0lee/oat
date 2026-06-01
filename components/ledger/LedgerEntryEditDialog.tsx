@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { InfoIcon } from "lucide-react";
+import { InfoIcon, XIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -269,19 +269,38 @@ export function LedgerEntryEditDialog({
 
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent>
-          <DrawerHeader>
-            <DrawerTitle>이체 기록</DrawerTitle>
-            <DrawerDescription asChild>{descriptionContent}</DrawerDescription>
-          </DrawerHeader>
+        <DrawerContent
+          className="h-[100dvh] max-h-[100dvh] rounded-none border-t-0 p-0 flex flex-col data-[vaul-drawer-direction=bottom]:mt-0 data-[vaul-drawer-direction=bottom]:max-h-[100dvh] data-[vaul-drawer-direction=bottom]:rounded-none data-[vaul-drawer-direction=bottom]:border-t-0"
+          showHandle={false}
+          onOpenAutoFocus={(event) => event.preventDefault()}
+        >
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => onOpenChange(false)}
+            className="absolute right-2 top-2 z-10 inline-flex size-11 items-center justify-center rounded-full text-gray-700 transition-colors hover:bg-gray-100"
+          >
+            <XIcon className="size-5" />
+          </Button>
 
-          <div className="px-4">{transferEditNotice}</div>
+          <div className="flex-1 overflow-y-auto px-4 pt-16 space-y-4">
+            <div className="space-y-1">
+              <h3 className="text-lg font-bold text-gray-900">이체 기록</h3>
+              <div className="text-sm text-gray-500">{descriptionContent}</div>
+            </div>
 
-          <DrawerFooter>
-            <Button type="button" onClick={() => onOpenChange(false)}>
-              확인
-            </Button>
-          </DrawerFooter>
+            <div className="py-2">{transferEditNotice}</div>
+
+            <div className="pt-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+              <Button
+                type="button"
+                onClick={() => onOpenChange(false)}
+                className="w-full h-12 rounded-xl text-base font-semibold"
+              >
+                확인
+              </Button>
+            </div>
+          </div>
         </DrawerContent>
       </Drawer>
     );
@@ -446,12 +465,100 @@ export function LedgerEntryEditDialog({
     );
   }
 
-  // 모바일: Drawer (Bottom Sheet)
+  // 모바일: 전체 화면 Drawer
   return (
-    <Drawer open={open} onOpenChange={handleDrawerOpenChange}>
-      <DrawerContent>
-        {mobileView === "moneySourcePicker" ? (
-          <div className="flex min-h-[70vh] flex-col pb-4">
+    <>
+      <Drawer open={open} onOpenChange={onOpenChange}>
+        <DrawerContent
+          className="h-[100dvh] max-h-[100dvh] rounded-none border-t-0 p-0 flex flex-col data-[vaul-drawer-direction=bottom]:mt-0 data-[vaul-drawer-direction=bottom]:max-h-[100dvh] data-[vaul-drawer-direction=bottom]:rounded-none data-[vaul-drawer-direction=bottom]:border-t-0"
+          showHandle={false}
+          onOpenAutoFocus={(event) => event.preventDefault()}
+        >
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => onOpenChange(false)}
+            className="absolute right-2 top-2 z-10 inline-flex size-11 items-center justify-center rounded-full text-gray-700 transition-colors hover:bg-gray-100"
+          >
+            <XIcon className="size-5" />
+          </Button>
+
+          <div className="flex-1 overflow-y-auto px-4 pt-16 space-y-4">
+            <div className="space-y-1">
+              <h3 className="text-lg font-bold text-gray-900">기록 수정</h3>
+              <div className="text-sm text-gray-500">{descriptionContent}</div>
+            </div>
+
+            <form
+              id="ledger-entry-edit-form"
+              onSubmit={handleSubmit(onSubmit)}
+              className="space-y-4 pb-[calc(1rem+env(safe-area-inset-bottom))]"
+            >
+              {infoBanner}
+              {formFields}
+
+              <div className="flex gap-2 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => onOpenChange(false)}
+                  disabled={isSubmitting}
+                  className="flex-1 h-12 rounded-xl text-base font-semibold"
+                >
+                  취소
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="flex-1 h-12 rounded-xl text-base font-semibold"
+                >
+                  {isSubmitting ? "저장 중..." : "저장"}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </DrawerContent>
+      </Drawer>
+
+      {/* 카테고리 선택 중첩 Drawer */}
+      <Drawer
+        open={open && mobileView === "categoryPicker"}
+        onOpenChange={(op) => {
+          if (!op) setMobileView("form");
+        }}
+      >
+        <DrawerContent
+          className="h-[85dvh] max-h-[85dvh] p-0 flex flex-col data-[vaul-drawer-direction=bottom]:mt-0 data-[vaul-drawer-direction=bottom]:max-h-[85dvh]"
+          onOpenAutoFocus={(event) => event.preventDefault()}
+        >
+          <div className="flex h-full flex-col pb-4">
+            <LedgerCategoryPickerPanel
+              value={watchCategoryId ?? ""}
+              categories={categories}
+              title="카테고리 선택"
+              searchPlaceholder="카테고리 이름 검색"
+              onBack={() => setMobileView("form")}
+              onValueChange={(v) => {
+                setValue("categoryId", v, { shouldValidate: true });
+                setMobileView("form");
+              }}
+            />
+          </div>
+        </DrawerContent>
+      </Drawer>
+
+      {/* 결제 방법 선택 중첩 Drawer */}
+      <Drawer
+        open={open && mobileView === "moneySourcePicker"}
+        onOpenChange={(op) => {
+          if (!op) setMobileView("form");
+        }}
+      >
+        <DrawerContent
+          className="h-[85dvh] max-h-[85dvh] p-0 flex flex-col data-[vaul-drawer-direction=bottom]:mt-0 data-[vaul-drawer-direction=bottom]:max-h-[85dvh]"
+          onOpenAutoFocus={(event) => event.preventDefault()}
+        >
+          <div className="flex h-full flex-col pb-4">
             <LedgerMoneySourcePickerPanel
               mode={moneySourceMode}
               value={paymentValue}
@@ -465,64 +572,8 @@ export function LedgerEntryEditDialog({
               onValueChange={handleMobileMoneySourceChange}
             />
           </div>
-        ) : mobileView === "categoryPicker" ? (
-          <div className="flex min-h-[70vh] flex-col pb-4">
-            <LedgerCategoryPickerPanel
-              value={watchCategoryId ?? ""}
-              categories={categories}
-              title="카테고리 선택"
-              searchPlaceholder="카테고리 이름 검색"
-              onBack={() => setMobileView("form")}
-              onValueChange={(v) => {
-                setValue("categoryId", v, { shouldValidate: true });
-                setMobileView("form");
-              }}
-            />
-          </div>
-        ) : (
-          <>
-            <DrawerHeader>
-              <DrawerTitle>기록 수정</DrawerTitle>
-              <DrawerDescription asChild>
-                {descriptionContent}
-              </DrawerDescription>
-            </DrawerHeader>
-
-            <div className="overflow-y-auto flex-1 px-4">
-              <form
-                id="ledger-entry-edit-form"
-                onSubmit={handleSubmit(onSubmit)}
-                className="space-y-4 pb-2"
-              >
-                {infoBanner}
-                {formFields}
-              </form>
-            </div>
-
-            <DrawerFooter className="pb-[calc(1rem+env(safe-area-inset-bottom))]">
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => onOpenChange(false)}
-                  disabled={isSubmitting}
-                  className="flex-1"
-                >
-                  취소
-                </Button>
-                <Button
-                  type="submit"
-                  form="ledger-entry-edit-form"
-                  disabled={isSubmitting}
-                  className="flex-1"
-                >
-                  {isSubmitting ? "저장 중..." : "저장"}
-                </Button>
-              </div>
-            </DrawerFooter>
-          </>
-        )}
-      </DrawerContent>
-    </Drawer>
+        </DrawerContent>
+      </Drawer>
+    </>
   );
 }

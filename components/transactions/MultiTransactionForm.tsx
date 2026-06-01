@@ -21,7 +21,7 @@ import type { CreateBatchTransactionInput } from "@/schemas/transaction";
 
 interface MultiTransactionFormProps {
   mode?: "full" | "daily";
-  defaultDate: string;
+  defaultDate?: string;
   defaultAccountId: string;
 }
 
@@ -38,7 +38,7 @@ export function MultiTransactionForm({
     resolver: zodResolver(multiTransactionFormSchema),
     defaultValues: {
       type: "buy",
-      transactedAt: defaultDate,
+      transactedAt: defaultDate ?? "",
       accountId: defaultAccountId,
       items: [],
     },
@@ -50,7 +50,12 @@ export function MultiTransactionForm({
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    if (!defaultDate) {
+      import("@/lib/date").then(({ getKstToday }) => {
+        form.setValue("transactedAt", getKstToday());
+      });
+    }
+  }, [defaultDate, form]);
 
   useEffect(() => {
     if (editIndex !== null) {

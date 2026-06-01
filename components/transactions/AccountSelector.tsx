@@ -176,10 +176,12 @@ function InvestmentAccountInlineCreateForm({
   initialName,
   onBack,
   onCreated,
+  shouldFocus = false,
 }: {
   initialName: string;
   onBack?: () => void;
   onCreated: (account: Account) => void;
+  shouldFocus?: boolean;
 }) {
   const createAccount = useCreateAccount();
   const [name, setName] = useState(initialName);
@@ -191,6 +193,15 @@ function InvestmentAccountInlineCreateForm({
     setBroker("");
     setError(null);
   }, [initialName]);
+
+  useEffect(() => {
+    if (shouldFocus) {
+      const timer = setTimeout(() => {
+        document.getElementById("inline-investment-account-name")?.focus();
+      }, 350);
+      return () => clearTimeout(timer);
+    }
+  }, [shouldFocus]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -228,7 +239,6 @@ function InvestmentAccountInlineCreateForm({
             setName(event.target.value);
             setError(null);
           }}
-          autoFocus
         />
       </div>
       <div className="space-y-2">
@@ -276,6 +286,7 @@ function InvestmentAccountCreateDialog({
         </DialogHeader>
         <InvestmentAccountInlineCreateForm
           initialName={initialName}
+          shouldFocus={open}
           onCreated={(account) => {
             onCreated(account);
             onOpenChange(false);
@@ -549,6 +560,7 @@ export function AccountSelector<T extends FieldValues>({
                     <InvestmentAccountInlineCreateForm
                       initialName={createInitialName}
                       onCreated={handleCreated}
+                      shouldFocus={mobileCreateOpen}
                     />
                   </div>
                 </div>

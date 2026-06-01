@@ -48,7 +48,7 @@ export type LedgerComposerItemValues = z.infer<typeof ledgerComposerItemSchema>;
 
 interface LedgerEntryComposerProps {
   mode: "full" | "daily";
-  defaultDate: string;
+  defaultDate?: string;
 }
 
 export function createDefaultItem({
@@ -86,9 +86,24 @@ export function LedgerEntryComposer({
   const [activeEditIndex, setActiveEditIndex] = useState<number | null>(null);
   const [mounted, setMounted] = useState(false);
 
+  const form = useForm<LedgerComposerFormValues>({
+    resolver: zodResolver(ledgerComposerSchema),
+    defaultValues: {
+      defaultType: "expense",
+      defaultIsShared: true,
+      defaultDate: defaultDate ?? "",
+      items: [],
+    },
+  });
+
   useEffect(() => {
     setMounted(true);
-  }, []);
+    if (!defaultDate) {
+      import("@/lib/date").then(({ getKstToday }) => {
+        form.setValue("defaultDate", getKstToday());
+      });
+    }
+  }, [defaultDate, form]);
 
   useEffect(() => {
     if (editIndex !== null) {
@@ -104,22 +119,6 @@ export function LedgerEntryComposer({
 
     return () => window.clearTimeout(timeoutId);
   }, [editIndex, activeEditIndex]);
-
-  const form = useForm<LedgerComposerFormValues>({
-    resolver: zodResolver(ledgerComposerSchema),
-    defaultValues: {
-      defaultType: "expense",
-      defaultIsShared: true,
-      defaultDate,
-      items: [
-        createDefaultItem({
-          type: "expense",
-          isShared: true,
-          date: defaultDate,
-        }),
-      ],
-    },
-  });
 
   const handleSubmit = async (values: LedgerComposerFormValues) => {
     try {
