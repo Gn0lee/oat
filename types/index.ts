@@ -47,6 +47,7 @@ export type McpToken = Tables<"mcp_tokens">;
 export type McpAuditLog = Tables<"mcp_audit_logs">;
 export type Notification = Tables<"notifications">;
 export type NotificationPreference = Tables<"notification_preferences">;
+export type RecordChangeRequest = Tables<"record_change_requests">;
 
 // 가계부 테이블 타입
 export type LedgerEntry = Tables<"ledger_entries">;
