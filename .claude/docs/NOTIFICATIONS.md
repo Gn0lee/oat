@@ -459,8 +459,104 @@ POST /api/record-change-requests/[id]/resolve
 
 - Type: AFK
 - Blocked by: Slice 1, Slice 2
-- 범위: 비소유자가 공용 ledger entry에 수정안 또는 삭제 사유를 보내고, 소유자가 알림에서 확인한다. 개인 장부는 제외.
-- 완료 기준: 요청 생성 시 기록 소유자에게 알림이 생성되고, 소유자는 요청 상세에서 승인/거절할 수 있다.
+- 범위: 비소유자가 공용 ledger entry에 수정안 또는 삭제 사유를 보내고, 소유자가 요청 상세에서 승인/거절한다. 개인 장부는 제외.
+- 완료 기준: 요청 생성 시 기록 소유자에게 알림이 생성되고, 승인 시 기존 소유자 권한 규칙과 잔액 동기화 규칙을 깨지 않고 원본 공용 가계부 기록에 반영된다.
+
+#### 확정 설계
+
+**용어와 대상**
+
+이 slice의 대상은 "공용 지출"이 아니라 **공용 가계부 기록**이다. `ledger_entries`는 지출, 수입, 이체를 모두 포함하므로 문서와 UI에서는 기록 전체를 가리킬 때 "지출"로 좁혀 말하지 않는다.
+
+대상 조건:
+
+- `target_type = 'ledger_entry'`
+- 대상 ledger entry가 존재해야 한다.
+- 대상은 `is_shared = true`여야 한다.
+- 요청자는 대상 소유자가 아니어야 한다.
+- 개인 가계부 기록은 요청 진입점도 노출하지 않고 서버에서도 거부한다.
+
+**메뉴 정책**
+
+가계부 기록 목록 메뉴는 현재 사용자와 기록 유형에 따라 분기한다.
+
+| 기록 상태 | 현재 사용자 | 메뉴 |
+|-----------|-------------|------|
+| 공용/개인 지출·수입 | 소유자 | 수정, 삭제 |
+| 공용/개인 이체 | 소유자 | 삭제 |
+| 공용 지출·수입 | 비소유자 | 수정 요청, 삭제 요청 |
+| 공용 이체 | 비소유자 | 삭제 요청 |
+| 개인 기록 | 비소유자 | 조회 불가, 메뉴 없음 |
+
+이체 기록은 기존 도메인 규칙처럼 삭제 후 재등록으로 다룬다. 비소유자의 수정 요청이 소유자 직접 수정보다 더 넓은 권한을 갖지 않아야 하므로, 이체 기록에는 수정 요청을 노출하지 않는다.
+
+**수정 요청**
+
+수정 요청 UI는 기존 가계부 수정 폼과 같은 필드를 현재 값으로 채워 보여주되, 제출 버튼은 "수정 요청 보내기"로 둔다. 사용자가 제출하면 원본과 비교해 변경된 필드만 `proposed_changes`에 저장한다. 요청 메시지는 선택 입력으로 받으며, 변경 사유나 설명으로 사용한다.
+
+허용 필드:
+
+- `amount`
+- `title`
+- `categoryId`
+- `fromAccountId`
+- `fromPaymentMethodId`
+- `toAccountId`
+- `toPaymentMethodId`
+- `transactedAt`
+- `memo`
+
+금지 필드:
+
+- `type`: 기존 수정 UI도 기록 유형 변경을 지원하지 않는다.
+- `isShared`: 공개범위 변경은 요청 대상이 아니다.
+- 이체 기록 수정 전체: 삭제 후 재등록 흐름을 따른다.
+
+`proposed_changes`가 비어 있으면 수정 요청을 만들지 않고 클라이언트에서 안내한다.
+
+**삭제 요청**
+
+삭제 요청 UI는 대상 기록 요약과 삭제 사유 입력을 보여준다. 삭제 사유는 `message`에 저장하고 `proposed_changes`는 빈 object로 둔다. 삭제 요청 승인 시 기존 `deleteLedgerEntryWithBalanceSync` 흐름을 사용해 원본 기록을 hard delete하고 잔액 영향을 되돌린다. 삭제 후에도 요청 상세는 `target_snapshot`으로 요청 당시 기록을 보여준다.
+
+**pending 중복 정책**
+
+같은 요청자는 같은 대상 기록에 pending 요청을 하나만 가질 수 있다. 수정 요청과 삭제 요청을 동시에 pending으로 둘 수 없다. 서버는 중복 생성 시 `RECORD_CHANGE_REQUEST_ALREADY_PENDING` 409를 반환하고, UI는 toast로 "이미 대기 중인 변경 요청이 있습니다."를 보여주는 MVP로 시작한다. 목록에서 pending 여부를 선제 조회해 버튼을 비활성화하는 개선은 후속 범위로 둔다.
+
+DB 제약은 #344 추가 마이그레이션에서 기존 `request_type` 포함 pending unique index를 `request_type` 없는 `(requester_id, target_type, target_id)` partial unique index로 조정한다.
+
+**요청 상세 화면**
+
+알림 링크의 canonical route는 `/notifications/requests/[id]`이다. `record_change_request_detail` link kind가 이미 이 경로로 해석된다.
+
+화면 동작:
+
+- 요청자와 대상 소유자는 요청 상세를 볼 수 있다.
+- 제3의 가구 구성원은 요청 상세를 볼 수 없다.
+- 소유자는 pending 요청에 승인/거절 버튼을 본다.
+- 요청자는 pending 요청에 취소 버튼을 본다.
+- terminal 상태(`approved`, `rejected`, `cancelled`)는 읽기 전용이다.
+- 수정 요청은 변경된 필드만 "현재 값 → 요청 값" 비교로 보여준다.
+- 삭제 요청은 대상 기록 요약과 삭제 사유를 보여준다.
+- 대상 기록이 이미 삭제된 경우 `target_snapshot`으로 요청 당시 정보를 보여주고, 승인은 비활성화하며 거절만 허용한다.
+
+요청 생성 이후 대상 기록이 직접 수정되었을 수 있다. #344에서는 optimistic locking을 도입하지 않고, 현재 기록이 존재하면 현재 값에 요청 변경안을 적용한다. 화면에는 요청 당시 스냅샷과 현재 값이 다를 수 있음을 짧게 안내한다.
+
+**승인/거절 처리**
+
+`approved`는 승인 의사표시가 아니라 원본 반영 완료 상태다. 승인 반영이 실패하면 요청 상태를 `approved`로 바꾸지 않는다.
+
+승인 규칙:
+
+- `update`: 허용된 `proposed_changes` 필드만 `updateLedgerEntryWithBalanceSync`로 적용한다.
+- `delete`: `deleteLedgerEntryWithBalanceSync`로 hard delete한다.
+- `transfer update`: 생성 단계와 승인 단계 모두에서 거부한다.
+- 대상 기록 없음: 승인 거부, 거절은 허용.
+
+소유자는 요청안을 수정해서 승인할 수 없다. 요청안이 틀렸다면 소유자가 직접 기록을 수정하고 요청은 거절한다.
+
+**알림 경계**
+
+#344는 요청 생성 시 대상 소유자에게 `ledger_record_change_request` User Notification을 생성한다. 승인/거절/취소 결과 알림은 #348에서 처리한다.
 
 ### Slice 4. 공용 장부 변경 알림 (#345)
 
