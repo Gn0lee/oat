@@ -28,6 +28,38 @@ export type RecordChangeRequestStatus = z.infer<
 
 const jsonObjectSchema = z.record(z.string(), z.unknown());
 
+export const ledgerRecordUpdateProposedChangesSchema = z
+  .object({
+    amount: z.number().positive("금액은 0보다 커야 합니다.").optional(),
+    title: z
+      .string()
+      .max(100, "내용은 100자 이내여야 합니다.")
+      .nullable()
+      .optional(),
+    categoryId: z.uuid().nullable().optional(),
+    fromAccountId: z.uuid().nullable().optional(),
+    fromPaymentMethodId: z.uuid().nullable().optional(),
+    toAccountId: z.uuid().nullable().optional(),
+    toPaymentMethodId: z.uuid().nullable().optional(),
+    transactedAt: z
+      .string()
+      .datetime("올바른 날짜 형식이 아닙니다.")
+      .optional(),
+    memo: z
+      .string()
+      .max(500, "메모는 500자 이내여야 합니다.")
+      .nullable()
+      .optional(),
+  })
+  .strict()
+  .refine((value) => Object.keys(value).length > 0, {
+    message: "변경할 항목을 하나 이상 입력해주세요.",
+  });
+
+export type LedgerRecordUpdateProposedChanges = z.infer<
+  typeof ledgerRecordUpdateProposedChangesSchema
+>;
+
 export const createRecordChangeRequestSchema = z.object({
   targetType: recordChangeRequestTargetTypeSchema,
   targetId: z.uuid("유효한 대상 ID가 아닙니다."),

@@ -1,12 +1,26 @@
 import { describe, expect, it, vi } from "vitest";
+import {
+  deleteLedgerEntryWithBalanceSync,
+  updateLedgerEntryWithBalanceSync,
+} from "@/lib/api/ledger";
+import type { RecordChangeRequest } from "@/types";
 import { APIError } from "./error";
 import {
+  applyApprovedRecordChangeRequest,
   assertCanCancelRecordChangeRequest,
   assertCanResolveRecordChangeRequest,
   buildRecordChangeRequestInsert,
   getRecordChangeRequestListQuery,
+  validateLedgerRecordChangeRequestInput,
   validateRecordChangeRequestTarget,
 } from "./record-change-requests";
+
+vi.mock("@/lib/api/ledger", () => ({
+  deleteLedgerEntryWithBalanceSync: vi.fn().mockResolvedValue(undefined),
+  updateLedgerEntryWithBalanceSync: vi
+    .fn()
+    .mockResolvedValue({ id: "entry-1" }),
+}));
 
 const sharedLedgerEntry = {
   id: "entry-1",
@@ -46,6 +60,7 @@ describe("validateRecordChangeRequestTarget", () => {
       {
         targetType: "ledger_entry",
         targetId: "entry-1",
+        requestType: "delete",
       },
     );
 
@@ -75,6 +90,7 @@ describe("validateRecordChangeRequestTarget", () => {
       validateRecordChangeRequestTarget(supabase as never, "requester-1", {
         targetType: "ledger_entry",
         targetId: "entry-1",
+        requestType: "delete",
       }),
     ).rejects.toMatchObject(
       new APIError(
@@ -92,6 +108,7 @@ describe("validateRecordChangeRequestTarget", () => {
       validateRecordChangeRequestTarget(supabase as never, "owner-1", {
         targetType: "ledger_entry",
         targetId: "entry-1",
+        requestType: "delete",
       }),
     ).rejects.toMatchObject(
       new APIError(
@@ -100,6 +117,62 @@ describe("validateRecordChangeRequestTarget", () => {
         400,
       ),
     );
+  });
+
+  it("이체 가계부 기록은 수정 요청 대상으로 거부한다", async () => {
+    const supabase = createTargetSupabaseMock({
+      ...sharedLedgerEntry,
+      type: "transfer",
+    });
+
+    await expect(
+      validateRecordChangeRequestTarget(supabase as never, "requester-1", {
+        targetType: "ledger_entry",
+        targetId: "entry-1",
+        requestType: "update",
+      } as never),
+    ).rejects.toMatchObject(
+      new APIError(
+        "RECORD_CHANGE_REQUEST_TARGET_INVALID",
+        "이체 기록은 삭제 요청만 보낼 수 있습니다.",
+        400,
+      ),
+    );
+  });
+});
+
+describe("validateLedgerRecordChangeRequestInput", () => {
+  it("가계부 수정 요청에서 허용되지 않은 변경 필드를 거부한다", () => {
+    expect(() =>
+      validateLedgerRecordChangeRequestInput({
+        targetType: "ledger_entry",
+        targetId: "00000000-0000-4000-8000-000000000001",
+        requestType: "update",
+        proposedChanges: { type: "income" },
+      }),
+    ).toThrow(APIError);
+  });
+
+  it("가계부 수정 요청에서 빈 변경안을 거부한다", () => {
+    expect(() =>
+      validateLedgerRecordChangeRequestInput({
+        targetType: "ledger_entry",
+        targetId: "00000000-0000-4000-8000-000000000001",
+        requestType: "update",
+        proposedChanges: {},
+      }),
+    ).toThrow(APIError);
+  });
+
+  it("가계부 삭제 요청은 변경안 없이 허용한다", () => {
+    expect(() =>
+      validateLedgerRecordChangeRequestInput({
+        targetType: "ledger_entry",
+        targetId: "00000000-0000-4000-8000-000000000001",
+        requestType: "delete",
+        proposedChanges: {},
+      }),
+    ).not.toThrow();
   });
 });
 
@@ -184,5 +257,45 @@ describe("status action guards", () => {
     expect(() =>
       assertCanResolveRecordChangeRequest(approvedRequest, "owner-1"),
     ).toThrow(APIError);
+  });
+});
+
+describe("applyApprovedRecordChangeRequest", () => {
+  const baseRequest = {
+    id: "request-1",
+    requester_id: "requester-1",
+    target_owner_id: "owner-1",
+    target_type: "ledger_entry",
+    target_id: "entry-1",
+    request_type: "update",
+    proposed_changes: { amount: 10000, title: "팀 점심" },
+  } as unknown as RecordChangeRequest;
+
+  it("가계부 수정 요청 승인 시 소유자 권한으로 변경안을 적용한다", async () => {
+    await applyApprovedRecordChangeRequest({} as never, baseRequest);
+
+    expect(updateLedgerEntryWithBalanceSync).toHaveBeenCalledWith(
+      {},
+      "entry-1",
+      "owner-1",
+      {
+        amount: 10000,
+        title: "팀 점심",
+      },
+    );
+  });
+
+  it("가계부 삭제 요청 승인 시 소유자 권한으로 삭제한다", async () => {
+    await applyApprovedRecordChangeRequest({} as never, {
+      ...baseRequest,
+      request_type: "delete",
+      proposed_changes: {},
+    });
+
+    expect(deleteLedgerEntryWithBalanceSync).toHaveBeenCalledWith(
+      {},
+      "entry-1",
+      "owner-1",
+    );
   });
 });

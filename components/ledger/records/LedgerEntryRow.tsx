@@ -14,17 +14,27 @@ import { formatCurrency } from "@/lib/utils/format";
 
 interface LedgerEntryRowProps {
   entry: LedgerEntryWithDetails;
+  currentUserId?: string | null;
   onEdit: (entry: LedgerEntryWithDetails) => void;
   onDelete: (entry: LedgerEntryWithDetails) => void;
+  onRequestUpdate?: (entry: LedgerEntryWithDetails) => void;
+  onRequestDelete?: (entry: LedgerEntryWithDetails) => void;
 }
 
 export function LedgerEntryRow({
   entry,
+  currentUserId,
   onEdit,
   onDelete,
+  onRequestUpdate,
+  onRequestDelete,
 }: LedgerEntryRowProps) {
   const isIncome = entry.type === "income";
   const isTransfer = entry.type === "transfer";
+  const isOwner = Boolean(currentUserId && entry.ownerId === currentUserId);
+  const canUpdate = !isTransfer;
+  const canRequest = Boolean(currentUserId && !isOwner && entry.isShared);
+  const hasActions = isOwner || canRequest;
   const amountSign = isTransfer ? "" : isIncome ? "+" : "-";
   const amountColor = isTransfer
     ? "text-gray-900"
@@ -49,31 +59,53 @@ export function LedgerEntryRow({
 
   return (
     <div className="group relative flex items-center gap-3 py-3 border-b last:border-b-0 pr-10">
-      {/* 메뉴 (Absolute) */}
-      <div className="absolute right-0 top-1/2 z-10 -translate-y-1/2">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-gray-400 hover:text-gray-600"
-            >
-              <MoreVertical className="w-4 h-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => onEdit(entry)}>
-              수정
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              className="text-destructive"
-              onClick={() => onDelete(entry)}
-            >
-              삭제
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+      {hasActions && (
+        <div className="absolute right-0 top-1/2 z-10 -translate-y-1/2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="기록 작업"
+                className="h-8 w-8 text-gray-400 hover:text-gray-600"
+              >
+                <MoreVertical className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {isOwner ? (
+                <>
+                  {canUpdate && (
+                    <DropdownMenuItem onClick={() => onEdit(entry)}>
+                      수정
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem
+                    className="text-destructive"
+                    onClick={() => onDelete(entry)}
+                  >
+                    삭제
+                  </DropdownMenuItem>
+                </>
+              ) : (
+                <>
+                  {canUpdate && (
+                    <DropdownMenuItem onClick={() => onRequestUpdate?.(entry)}>
+                      수정 요청
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem
+                    className="text-destructive"
+                    onClick={() => onRequestDelete?.(entry)}
+                  >
+                    삭제 요청
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      )}
 
       {/* 카테고리 아이콘 */}
       <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-gray-100 flex items-center justify-center">

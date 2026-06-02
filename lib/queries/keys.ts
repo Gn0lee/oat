@@ -99,6 +99,14 @@ export const queries = createQueryKeyStore({
     preferences: null,
   },
 
+  recordChangeRequests: {
+    all: null,
+    detail: (id: string) => ({ queryKey: [id] }),
+    list: (params?: { box?: "received" | "sent"; status?: string }) => ({
+      queryKey: [params],
+    }),
+  },
+
   categories: {
     all: null,
     list: (type?: "expense" | "income") => ({ queryKey: [type] }),
