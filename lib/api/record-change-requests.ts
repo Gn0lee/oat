@@ -1,11 +1,16 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { APIError } from "@/lib/api/error";
+import {
+  deleteLedgerEntryWithBalanceSync,
+  updateLedgerEntryWithBalanceSync,
+} from "@/lib/api/ledger";
 import { createUserNotification } from "@/lib/api/notifications";
 import type {
   CreateRecordChangeRequestInput,
   ListRecordChangeRequestsInput,
   ResolveRecordChangeRequestInput,
 } from "@/schemas/record-change-request";
+import { ledgerRecordUpdateProposedChangesSchema } from "@/schemas/record-change-request";
 import type { Database, Json, RecordChangeRequest } from "@/types";
 
 export interface ValidatedRecordChangeRequestTarget {
@@ -53,6 +58,15 @@ type RequestActionRow = Pick<
   "id" | "requester_id" | "target_owner_id" | "status"
 >;
 
+type ApprovableRecordChangeRequest = Pick<
+  RecordChangeRequest,
+  | "target_owner_id"
+  | "target_type"
+  | "target_id"
+  | "request_type"
+  | "proposed_changes"
+>;
+
 function toJsonObject(value: Record<string, unknown>): Json {
   return value as unknown as Json;
 }
@@ -88,7 +102,10 @@ export function getRecordChangeRequestListQuery(
 export async function validateRecordChangeRequestTarget(
   supabase: SupabaseClient<Database>,
   requesterId: string,
-  input: Pick<CreateRecordChangeRequestInput, "targetType" | "targetId">,
+  input: Pick<
+    CreateRecordChangeRequestInput,
+    "targetType" | "targetId" | "requestType"
+  >,
 ): Promise<ValidatedRecordChangeRequestTarget> {
   if (input.targetType === "ledger_entry") {
     const { data, error } = await supabase
@@ -132,6 +149,14 @@ export async function validateRecordChangeRequestTarget(
       throw new APIError(
         "RECORD_CHANGE_REQUEST_TARGET_INVALID",
         "개인 가계부 기록은 요청 대상이 될 수 없습니다.",
+        400,
+      );
+    }
+
+    if (row.type === "transfer" && input.requestType === "update") {
+      throw new APIError(
+        "RECORD_CHANGE_REQUEST_TARGET_INVALID",
+        "이체 기록은 삭제 요청만 보낼 수 있습니다.",
         400,
       );
     }
@@ -203,11 +228,33 @@ export async function validateRecordChangeRequestTarget(
   };
 }
 
+export function validateLedgerRecordChangeRequestInput(
+  input: CreateRecordChangeRequestInput,
+) {
+  if (input.targetType !== "ledger_entry" || input.requestType !== "update") {
+    return;
+  }
+
+  const result = ledgerRecordUpdateProposedChangesSchema.safeParse(
+    input.proposedChanges,
+  );
+
+  if (!result.success) {
+    throw new APIError(
+      "RECORD_CHANGE_REQUEST_PROPOSED_CHANGES_INVALID",
+      result.error.issues[0]?.message ?? "유효하지 않은 수정 요청입니다.",
+      400,
+    );
+  }
+}
+
 export async function createRecordChangeRequest(
   supabase: SupabaseClient<Database>,
   requesterId: string,
   input: CreateRecordChangeRequestInput,
 ): Promise<RecordChangeRequest> {
+  validateLedgerRecordChangeRequestInput(input);
+
   const validatedTarget = await validateRecordChangeRequestTarget(
     supabase,
     requesterId,
@@ -344,7 +391,32 @@ export function assertCanResolveRecordChangeRequest(
   }
 }
 
-async function applyApprovedRecordChangeRequest(): Promise<void> {
+export async function applyApprovedRecordChangeRequest(
+  supabase: SupabaseClient<Database>,
+  request: ApprovableRecordChangeRequest,
+): Promise<void> {
+  if (request.target_type === "ledger_entry") {
+    if (request.request_type === "delete") {
+      await deleteLedgerEntryWithBalanceSync(
+        supabase,
+        request.target_id,
+        request.target_owner_id,
+      );
+      return;
+    }
+
+    const proposedChanges = ledgerRecordUpdateProposedChangesSchema.parse(
+      request.proposed_changes,
+    );
+    await updateLedgerEntryWithBalanceSync(
+      supabase,
+      request.target_id,
+      request.target_owner_id,
+      proposedChanges,
+    );
+    return;
+  }
+
   throw new APIError(
     "RECORD_CHANGE_REQUEST_APPLY_NOT_IMPLEMENTED",
     "요청 승인 반영은 대상 도메인 구현에서 처리해야 합니다.",
@@ -388,7 +460,7 @@ export async function resolveRecordChangeRequest(
   assertCanResolveRecordChangeRequest(request, userId);
 
   if (input.decision === "approved") {
-    await applyApprovedRecordChangeRequest();
+    await applyApprovedRecordChangeRequest(supabase, request);
   }
 
   const now = new Date().toISOString();

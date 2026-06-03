@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
+import { LedgerEntryChangeRequestDialog } from "@/components/ledger/LedgerEntryChangeRequestDialog";
 import { LedgerEntryDeleteDialog } from "@/components/ledger/LedgerEntryDeleteDialog";
 import { LedgerEntryEditDialog } from "@/components/ledger/LedgerEntryEditDialog";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useCurrentUserId } from "@/hooks/use-current-user";
 import { useLedgerEntries } from "@/hooks/use-ledger-entries";
 import {
   calculateLedgerSummary,
@@ -52,7 +54,10 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
     useState<LedgerEntryWithDetails | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [requestOpen, setRequestOpen] = useState(false);
+  const [requestMode, setRequestMode] = useState<"update" | "delete">("update");
   const [scope, setScope] = useState<"shared" | "personal">("shared");
+  const { userId: currentUserId } = useCurrentUserId();
 
   const queryClient = useQueryClient();
 
@@ -98,6 +103,18 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
   const handleDelete = (entry: LedgerEntryWithDetails) => {
     setSelectedEntry(entry);
     setDeleteOpen(true);
+  };
+
+  const handleRequestUpdate = (entry: LedgerEntryWithDetails) => {
+    setSelectedEntry(entry);
+    setRequestMode("update");
+    setRequestOpen(true);
+  };
+
+  const handleRequestDelete = (entry: LedgerEntryWithDetails) => {
+    setSelectedEntry(entry);
+    setRequestMode("delete");
+    setRequestOpen(true);
   };
 
   const goToPrevMonth = () =>
@@ -265,8 +282,11 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
           <LedgerDayEntryList
             selectedDate={selectedDate}
             entries={dayEntries}
+            currentUserId={currentUserId}
             onEdit={handleEdit}
             onDelete={handleDelete}
+            onRequestUpdate={handleRequestUpdate}
+            onRequestDelete={handleRequestDelete}
           />
           <Button asChild className="w-full" size="icon-sm">
             <Link
@@ -289,6 +309,12 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
         entry={selectedEntry}
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
+      />
+      <LedgerEntryChangeRequestDialog
+        entry={selectedEntry}
+        mode={requestMode}
+        open={requestOpen}
+        onOpenChange={setRequestOpen}
       />
     </div>
   );

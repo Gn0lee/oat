@@ -676,6 +676,105 @@ create table public.ledger_entries (
 
 ---
 
+## 협업 요청 테이블
+
+### record_change_requests (공유 기록 변경 요청)
+
+공용 가계부 기록 또는 주식 거래 기록의 비소유자가 대상 소유자에게 수정 또는 삭제를 요청하는 원장. User Notification은 이 테이블에서 파생되는 수신자별 메시지이며, 알림 설정이 꺼져도 요청 row는 생성된다.
+
+```sql
+create type record_change_request_target_type as enum (
+  'ledger_entry',
+  'stock_transaction'
+);
+
+create type record_change_request_type as enum (
+  'update',
+  'delete'
+);
+
+create type record_change_request_status as enum (
+  'pending',
+  'approved',
+  'rejected',
+  'cancelled'
+);
+
+create table public.record_change_requests (
+  id uuid primary key default gen_random_uuid(),
+  household_id uuid not null references public.households(id) on delete cascade,
+  requester_id uuid not null references public.profiles(id) on delete cascade,
+  target_owner_id uuid not null references public.profiles(id) on delete cascade,
+  target_type record_change_request_target_type not null,
+  target_id uuid not null,
+  request_type record_change_request_type not null,
+  status record_change_request_status not null default 'pending',
+  message text,
+  proposed_changes jsonb not null default '{}'::jsonb,
+  target_snapshot jsonb not null default '{}'::jsonb,
+  response_message text,
+  resolved_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+```
+
+`target_id`는 polymorphic reference이므로 DB FK로 강제하지 않고 서버 validator가 `target_type`별로 검증한다. `target_owner_id`는 요청 body에서 받지 않고 대상 기록에서 서버가 복사한다.
+
+**상태 의미**
+
+| 상태 | 의미 |
+|------|------|
+| pending | 소유자가 아직 처리하지 않은 요청 |
+| approved | 요청된 변경이 원본 기록에 반영 완료됨 |
+| rejected | 소유자가 요청을 거절함 |
+| cancelled | 요청자가 pending 요청을 취소함 |
+
+`approved`, `rejected`, `cancelled`는 terminal 상태다.
+
+**제약과 인덱스**
+
+```sql
+alter table public.record_change_requests
+  add constraint record_change_requests_non_owner_check
+    check (requester_id <> target_owner_id),
+  add constraint record_change_requests_proposed_changes_object_check
+    check (jsonb_typeof(proposed_changes) = 'object'),
+  add constraint record_change_requests_target_snapshot_object_check
+    check (jsonb_typeof(target_snapshot) = 'object');
+
+create index record_change_requests_requester_created_at_idx
+  on public.record_change_requests(requester_id, created_at desc, id desc);
+
+create index record_change_requests_target_owner_created_at_idx
+  on public.record_change_requests(target_owner_id, created_at desc, id desc);
+
+create index record_change_requests_target_idx
+  on public.record_change_requests(target_type, target_id);
+
+create unique index record_change_requests_pending_unique
+  on public.record_change_requests(requester_id, target_type, target_id)
+  where status = 'pending';
+```
+
+같은 요청자는 같은 대상 기록에 pending 요청을 하나만 가질 수 있다. 수정 요청과 삭제 요청을 동시에 pending으로 둘 수 없다.
+
+**RLS 정책 요약**
+
+| 작업 | 허용 범위 |
+|------|-----------|
+| SELECT | 요청자 또는 대상 소유자 |
+| INSERT | `requester_id = auth.uid()` |
+| UPDATE | 요청자 또는 대상 소유자. 서버 로직이 상태 전이 권한을 추가 검증 |
+
+공용 가계부 기록 요청의 추가 규칙:
+
+- 개인 가계부 기록(`is_shared = false`)은 요청 대상이 될 수 없다.
+- 이체 기록은 삭제 요청만 가능하다.
+- 수정 요청은 기존 가계부 수정 규칙과 같은 필드 범위만 허용하며, `type`과 `is_shared`는 바꿀 수 없다.
+
+---
+
 ## 시스템 테이블 (GitHub Actions 동기화)
 
 > GitHub Actions에서 service_role_key로 쓰기 접근.

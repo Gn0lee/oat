@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   createRecordChangeRequestSchema,
+  ledgerRecordUpdateProposedChangesSchema,
   listRecordChangeRequestsSchema,
   resolveRecordChangeRequestSchema,
 } from "./record-change-request";
@@ -41,6 +42,35 @@ describe("createRecordChangeRequestSchema", () => {
       requestType: "update",
       proposedChanges: {},
     });
+
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("ledgerRecordUpdateProposedChangesSchema", () => {
+  it("가계부 수정 요청에 허용된 변경 필드를 파싱한다", () => {
+    const result = ledgerRecordUpdateProposedChangesSchema.safeParse({
+      amount: 10000,
+      title: "팀 점심",
+      categoryId: uuid,
+      transactedAt: "2026-06-02T00:00:00.000Z",
+      memo: "김밥천국",
+    });
+
+    expect(result.success).toBe(true);
+  });
+
+  it("가계부 수정 요청에서 유형과 공개범위 변경은 거부한다", () => {
+    const result = ledgerRecordUpdateProposedChangesSchema.safeParse({
+      type: "income",
+      isShared: false,
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("가계부 수정 요청은 변경 필드가 하나 이상 있어야 한다", () => {
+    const result = ledgerRecordUpdateProposedChangesSchema.safeParse({});
 
     expect(result.success).toBe(false);
   });
