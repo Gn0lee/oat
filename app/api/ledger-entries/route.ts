@@ -6,6 +6,7 @@ import {
   createLedgerEntryWithBalanceSync,
   getLedgerEntries,
 } from "@/lib/api/ledger";
+import { notifyLedgerEntryCreated } from "@/lib/api/ledger-notifications";
 import { createClient } from "@/lib/supabase/server";
 import { createLedgerEntrySchema } from "@/schemas/ledger-entry";
 
@@ -134,6 +135,12 @@ export async function POST(request: Request) {
       toPaymentMethodId: input.toPaymentMethodId,
       isShared: input.isShared,
       memo: input.memo,
+    });
+
+    await notifyLedgerEntryCreated(supabase, {
+      actorId: user.id,
+      householdId,
+      entry,
     });
 
     return NextResponse.json({ data: entry }, { status: 201 });

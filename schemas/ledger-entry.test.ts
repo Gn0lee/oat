@@ -154,6 +154,11 @@ describe("updateLedgerEntrySchema", () => {
     expect(result.success).toBe(false);
   });
 
+  it("공개범위 변경은 수정 API에서 거부한다", () => {
+    const result = updateLedgerEntrySchema.safeParse({ isShared: false });
+    expect(result.success).toBe(false);
+  });
+
   it("memo가 500자를 초과하면 실패한다", () => {
     const result = updateLedgerEntrySchema.safeParse({
       memo: "a".repeat(501),

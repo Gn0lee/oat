@@ -167,7 +167,6 @@ export interface UpdateLedgerEntryParams {
   fromPaymentMethodId?: string | null;
   toAccountId?: string | null;
   toPaymentMethodId?: string | null;
-  isShared?: boolean;
   memo?: string | null;
 }
 
@@ -823,7 +822,6 @@ export async function updateLedgerEntry(
       ...(params.toPaymentMethodId !== undefined && {
         to_payment_method_id: params.toPaymentMethodId,
       }),
-      ...(params.isShared !== undefined && { is_shared: params.isShared }),
       ...(params.memo !== undefined && { memo: params.memo }),
       updated_at: new Date().toISOString(),
     })
