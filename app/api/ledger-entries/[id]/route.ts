@@ -4,6 +4,10 @@ import {
   deleteLedgerEntryWithBalanceSync,
   updateLedgerEntryWithBalanceSync,
 } from "@/lib/api/ledger";
+import {
+  notifyLedgerEntryDeleted,
+  notifyLedgerEntryUpdated,
+} from "@/lib/api/ledger-notifications";
 import { createClient } from "@/lib/supabase/server";
 import { updateLedgerEntrySchema } from "@/schemas/ledger-entry";
 
@@ -43,6 +47,12 @@ export async function PATCH(request: Request, { params }: RouteParams) {
 
     const input = result.data;
 
+    const { data: previousEntry } = await supabase
+      .from("ledger_entries")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
+
     const entry = await updateLedgerEntryWithBalanceSync(
       supabase,
       id,
@@ -57,10 +67,17 @@ export async function PATCH(request: Request, { params }: RouteParams) {
         fromPaymentMethodId: input.fromPaymentMethodId,
         toAccountId: input.toAccountId,
         toPaymentMethodId: input.toPaymentMethodId,
-        isShared: input.isShared,
         memo: input.memo,
       },
     );
+
+    if (previousEntry) {
+      await notifyLedgerEntryUpdated(supabase, {
+        actorId: user.id,
+        previousEntry,
+        updatedEntry: entry,
+      });
+    }
 
     return NextResponse.json({ data: entry });
   } catch (error) {
@@ -98,7 +115,20 @@ export async function DELETE(_request: Request, { params }: RouteParams) {
       throw new APIError("AUTH_UNAUTHORIZED", "로그인이 필요합니다.", 401);
     }
 
+    const { data: existingEntry } = await supabase
+      .from("ledger_entries")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
+
     await deleteLedgerEntryWithBalanceSync(supabase, id, user.id);
+
+    if (existingEntry) {
+      await notifyLedgerEntryDeleted(supabase, {
+        actorId: user.id,
+        entry: existingEntry,
+      });
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

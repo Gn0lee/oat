@@ -78,7 +78,7 @@ export const updateLedgerEntrySchema = z.object({
   fromPaymentMethodId: z.string().uuid().nullable().optional(),
   toAccountId: z.string().uuid().nullable().optional(),
   toPaymentMethodId: z.string().uuid().nullable().optional(),
-  isShared: z.boolean().optional(),
+  isShared: z.never({ message: "공개범위는 수정할 수 없습니다." }).optional(),
   memo: z
     .string()
     .max(500, "메모는 500자 이내여야 합니다.")

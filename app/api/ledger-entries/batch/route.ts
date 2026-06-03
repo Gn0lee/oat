@@ -3,6 +3,7 @@ import { z } from "zod";
 import { APIError, toErrorResponse } from "@/lib/api/error";
 import { getUserHouseholdId } from "@/lib/api/invitation";
 import { createLedgerEntryWithBalanceSync } from "@/lib/api/ledger";
+import { notifyBatchLedgerEntriesCreated } from "@/lib/api/ledger-notifications";
 import { createClient } from "@/lib/supabase/server";
 import { createLedgerEntrySchema } from "@/schemas/ledger-entry";
 
@@ -68,6 +69,12 @@ export async function POST(request: Request) {
       });
       created.push(ledgerEntry);
     }
+
+    await notifyBatchLedgerEntriesCreated(supabase, {
+      actorId: user.id,
+      householdId,
+      entries: created,
+    });
 
     return NextResponse.json(
       { data: created, count: created.length },
