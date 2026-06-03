@@ -95,16 +95,20 @@ export function LedgerEntryChangeRequestDialog({
   const moneySourceOptions = useMemo(
     () => [
       { value: "none", label: "선택 안함" },
-      ...paymentMethods.map((item) => ({
-        value: `pm:${item.id}`,
-        label: item.name,
-      })),
-      ...accounts.map((item) => ({
-        value: `acc:${item.id}`,
-        label: item.name,
-      })),
+      ...paymentMethods
+        .filter((item) => item.ownerId === entry?.ownerId)
+        .map((item) => ({
+          value: `pm:${item.id}`,
+          label: item.name,
+        })),
+      ...accounts
+        .filter((item) => item.ownerId === entry?.ownerId)
+        .map((item) => ({
+          value: `acc:${item.id}`,
+          label: item.name,
+        })),
     ],
-    [accounts, paymentMethods],
+    [accounts, paymentMethods, entry?.ownerId],
   );
 
   if (!entry || !values) return null;
@@ -136,6 +140,11 @@ export function LedgerEntryChangeRequestDialog({
           proposedChanges,
         });
       } else {
+        if (!message.trim()) {
+          toast.error("삭제 사유를 입력해주세요.");
+          return;
+        }
+
         await createMutation.mutateAsync({
           targetType: "ledger_entry",
           targetId: entry.id,

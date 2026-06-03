@@ -21,6 +21,7 @@ import { DEFAULT_TRANSACTION_ITEM } from "@/schemas/multi-transaction-form";
 
 interface StockComposerListStepProps {
   mode?: "full" | "daily";
+  ownerId: string;
   onEditItem: (index: number) => void;
   onSubmit: (data: MultiTransactionFormData) => void;
   isSubmitting: boolean;
@@ -28,6 +29,7 @@ interface StockComposerListStepProps {
 
 export function StockComposerListStep({
   mode = "full",
+  ownerId,
   onEditItem,
   onSubmit,
   isSubmitting,
@@ -92,7 +94,11 @@ export function StockComposerListStep({
             )}
           </div>
 
-          <AccountSelector control={form.control} variant="inline" />
+          <AccountSelector
+            control={form.control}
+            variant="inline"
+            ownerId={ownerId}
+          />
         </div>
 
         {/* 종목 추가 버튼 통합 */}

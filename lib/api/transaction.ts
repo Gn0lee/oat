@@ -57,6 +57,13 @@ export async function createTransaction(
     stock,
   } = params;
 
+  await assertTransactionAccountOwnership(
+    supabase,
+    householdId,
+    ownerId,
+    accountId,
+  );
+
   // 1. household_stock_settings UPSERT (첫 거래 시 자동 생성)
   // risk_level은 null로 저장 → asset_type 기반 기본값 사용 (Application 레벨)
   const { error: settingsError } = await supabase
@@ -351,6 +358,38 @@ export interface UpdateTransactionParams {
   accountId?: string | null;
 }
 
+export async function assertTransactionAccountOwnership(
+  supabase: SupabaseClient<Database>,
+  householdId: string,
+  ownerId: string,
+  accountId: string | null | undefined,
+): Promise<void> {
+  if (!accountId) return;
+
+  const { data, error } = await supabase
+    .from("accounts")
+    .select("id, household_id, owner_id")
+    .eq("id", accountId)
+    .eq("household_id", householdId)
+    .single();
+
+  if (error || !data) {
+    throw new APIError(
+      "TRANSACTION_ACCOUNT_NOT_FOUND",
+      "거래에 사용할 계좌를 찾을 수 없습니다.",
+      404,
+    );
+  }
+
+  if (data.owner_id !== ownerId) {
+    throw new APIError(
+      "TRANSACTION_ACCOUNT_FORBIDDEN",
+      "본인의 계좌만 거래에 사용할 수 있습니다.",
+      403,
+    );
+  }
+}
+
 /**
  * 단일 거래 조회
  */
@@ -401,14 +440,20 @@ export async function updateTransaction(
     throw new APIError("FORBIDDEN", "본인의 거래만 수정할 수 있습니다.", 403);
   }
 
+  const targetAccountId =
+    params.accountId !== undefined
+      ? params.accountId
+      : existingTransaction.account_id;
+  await assertTransactionAccountOwnership(
+    supabase,
+    householdId,
+    userId,
+    targetAccountId,
+  );
+
   // 3. 매도 거래 수정 시 해당 계좌의 보유 수량 재검증
   if (existingTransaction.type === "sell" && params.quantity !== undefined) {
     // 계좌가 변경되는 경우 새 계좌의 보유 수량 확인, 아니면 기존 계좌
-    const targetAccountId =
-      params.accountId !== undefined
-        ? params.accountId
-        : existingTransaction.account_id;
-
     if (targetAccountId) {
       const currentQuantity = await getHoldingQuantity(
         supabase,
@@ -537,6 +582,22 @@ export async function createBatchTransactions(
   params: CreateBatchTransactionsParams,
 ): Promise<Transaction[]> {
   const { householdId, ownerId, type, transactedAt, accountId, items } = params;
+
+  const accountIds = [
+    ...new Set(
+      [accountId, ...items.map((item) => item.accountId)].filter(
+        Boolean,
+      ) as string[],
+    ),
+  ];
+  for (const targetAccountId of accountIds) {
+    await assertTransactionAccountOwnership(
+      supabase,
+      householdId,
+      ownerId,
+      targetAccountId,
+    );
+  }
 
   // 1. 종목별 stock_settings UPSERT (중복 제거)
   const uniqueTickersMap = new Map<string, BatchTransactionItem>();

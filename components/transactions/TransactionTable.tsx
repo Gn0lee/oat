@@ -23,7 +23,6 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import type { TransactionWithDetails } from "@/lib/api/transaction";
-import { cn } from "@/lib/utils/cn";
 import {
   formatCompactCurrency,
   formatCurrency,

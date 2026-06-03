@@ -367,6 +367,10 @@ create index accounts_owner_id_idx on public.accounts(owner_id);
 | bank | checking, savings, deposit |
 | investment | stock, cma, isa, pension |
 
+**소유권 규칙**
+
+계좌는 가구 구성원이 조회할 수 있지만, 새 주식 거래나 가계부 기록에 입력값으로 선택할 때는 기록 소유자의 계좌만 사용할 수 있다. 기존 기록 표시를 위해 가구 전체 계좌 이름을 해석하는 것은 허용한다.
+
 ---
 
 ### 7. transactions (거래 기록)
@@ -407,6 +411,10 @@ create index transactions_transacted_at_idx on public.transactions(transacted_at
 | memo | text (nullable) | 메모 |
 | transacted_at | timestamptz | 실제 거래일 |
 | created_at | timestamptz | 기록 생성일 |
+
+**소유권 규칙**
+
+`transactions.owner_id`는 거래 기록 소유자이며, 새 생성/수정 시 `account_id`는 같은 소유자의 계좌여야 한다. 기존 mismatch 데이터는 자동 마이그레이션하지 않는다. Record Change Request 승인도 이 규칙을 따른다.
 
 ---
 
@@ -555,6 +563,10 @@ create index payment_methods_linked_account_id_idx on public.payment_methods(lin
 | created_at | timestamptz | 생성일 |
 | updated_at | timestamptz | 수정일 |
 
+**소유권 규칙**
+
+결제수단은 가구 구성원이 조회할 수 있지만, 새 가계부 기록에 입력값으로 선택할 때는 기록 소유자의 결제수단만 사용할 수 있다. 기존 기록 표시를 위해 가구 전체 결제수단 이름을 해석하는 것은 허용한다.
+
 ---
 
 ### 12. target_allocations (목표 비중)
@@ -665,6 +677,10 @@ create table public.ledger_entries (
 | 이체 결제수단→계좌 (페이 출금) | | ✓ | ✓ | |
 | 이체 결제수단→결제수단 | | ✓ | | ✓ |
 
+**Financial Source 소유권 규칙**
+
+`ledger_entries.owner_id`는 기록 소유자이며, 새 생성/수정 시 `from_*`/`to_*`에 들어가는 계좌와 결제수단은 기록 소유자의 것이어야 한다. `is_shared = true`는 조회 범위만 뜻하며, 다른 구성원의 계좌나 결제수단을 사용할 권한을 뜻하지 않는다. 기존 mismatch 데이터는 자동 마이그레이션하지 않는다.
+
 **RLS 정책 요약**
 
 | 조건 | SELECT 가능 범위 |
@@ -720,6 +736,10 @@ create table public.record_change_requests (
 ```
 
 `target_id`는 polymorphic reference이므로 DB FK로 강제하지 않고 서버 validator가 `target_type`별로 검증한다. `target_owner_id`는 요청 body에서 받지 않고 대상 기록에서 서버가 복사한다.
+
+요청 승인 시 대상 원본 기록이 `target_snapshot`과 일치하지 않으면 `approved`로 전이하지 않는다. 승인은 요청된 변경이 현재 원본에 안전하게 반영된 뒤에만 완료된다.
+
+Record Change Request의 `proposed_changes`에 계좌 또는 결제수단 변경안이 포함될 경우, 해당 Financial Source는 대상 기록 소유자의 것이어야 한다. 기존 mismatch 데이터는 자동 마이그레이션하지 않는다.
 
 **상태 의미**
 

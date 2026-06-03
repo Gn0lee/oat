@@ -11,6 +11,10 @@ vi.mock("@/components/transactions/TransactionDeleteDialog", () => ({
   TransactionDeleteDialog: () => null,
 }));
 
+vi.mock("@/components/transactions/TransactionChangeRequestDialog", () => ({
+  TransactionChangeRequestDialog: () => null,
+}));
+
 const transaction: TransactionWithDetails = {
   id: "tx-1",
   ticker: "LONG",

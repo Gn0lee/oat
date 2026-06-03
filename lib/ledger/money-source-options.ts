@@ -6,6 +6,7 @@ export type LedgerMoneySourceKind = "none" | "paymentMethod" | "account";
 export interface LedgerMoneySourcePaymentMethod {
   id: string;
   name: string;
+  ownerId?: string;
   ownerName: string;
   type: PaymentMethodType;
   issuer: string | null;
@@ -15,6 +16,7 @@ export interface LedgerMoneySourcePaymentMethod {
 export interface LedgerMoneySourceAccount {
   id: string;
   name: string;
+  ownerId?: string;
   ownerName: string;
   broker: string | null;
   lastFour: string | null;

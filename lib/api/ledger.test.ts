@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
+import { APIError } from "./error";
 import {
+  assertLedgerFinancialSourceOwnership,
   buildLedgerEntryPayload,
   buildTransferLedgerEntryPayload,
   calculateLedgerSummary,
@@ -212,6 +214,69 @@ describe("getLedgerBalanceEffects", () => {
     expect(effects).toEqual([
       { table: "payment_methods", id: "pm-1", delta: -12000 },
     ]);
+  });
+});
+
+describe("assertLedgerFinancialSourceOwnership", () => {
+  function createFinancialSourceSupabaseMock({
+    accounts = [],
+    paymentMethods = [],
+  }: {
+    accounts?: Array<{ id: string; owner_id: string }>;
+    paymentMethods?: Array<{ id: string; owner_id: string }>;
+  }) {
+    const createBuilder = (rows: Array<{ id: string; owner_id: string }>) => ({
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      in: vi.fn().mockResolvedValue({ data: rows, error: null }),
+    });
+    const accountsBuilder = createBuilder(accounts);
+    const paymentMethodsBuilder = createBuilder(paymentMethods);
+
+    return {
+      from: vi.fn((table: string) =>
+        table === "accounts" ? accountsBuilder : paymentMethodsBuilder,
+      ),
+      accountsBuilder,
+      paymentMethodsBuilder,
+    };
+  }
+
+  it("기록 소유자의 계좌와 결제수단이면 허용한다", async () => {
+    const supabase = createFinancialSourceSupabaseMock({
+      accounts: [{ id: "acc-1", owner_id: "user-1" }],
+      paymentMethods: [{ id: "pm-1", owner_id: "user-1" }],
+    });
+
+    await expect(
+      assertLedgerFinancialSourceOwnership(supabase as never, {
+        householdId: "household-1",
+        ownerId: "user-1",
+        accountIds: ["acc-1"],
+        paymentMethodIds: ["pm-1"],
+      }),
+    ).resolves.toBeUndefined();
+  });
+
+  it("다른 구성원의 Financial Source이면 거부한다", async () => {
+    const supabase = createFinancialSourceSupabaseMock({
+      accounts: [{ id: "acc-1", owner_id: "other-user" }],
+    });
+
+    await expect(
+      assertLedgerFinancialSourceOwnership(supabase as never, {
+        householdId: "household-1",
+        ownerId: "user-1",
+        accountIds: ["acc-1"],
+        paymentMethodIds: [],
+      }),
+    ).rejects.toMatchObject(
+      new APIError(
+        "LEDGER_FINANCIAL_SOURCE_FORBIDDEN",
+        "본인의 계좌 또는 결제수단만 기록에 사용할 수 있습니다.",
+        403,
+      ),
+    );
   });
 });
 

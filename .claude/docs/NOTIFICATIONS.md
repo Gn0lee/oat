@@ -28,6 +28,7 @@
 | Default Notification Preference | 사용자가 저장한 override가 없을 때 적용하는 제품 기본값. |
 | Collaboration Notification | 가구 구성원이 공유 재무 데이터를 함께 관리하기 위해 받는 알림. |
 | Record Change Request | 공유 기록의 비소유자가 소유자에게 수정 또는 삭제를 요청하는 원장. 수정안 또는 삭제 사유를 포함하며, User Notification은 이 요청에서 파생된다. |
+| Financial Source | 가계부 기록 또는 주식 거래에 연결되는 계좌 또는 결제수단. 기록의 공개 범위와 별개로 기록 소유자의 Financial Source만 새 입력값으로 선택할 수 있다. |
 
 ---
 
@@ -441,6 +442,16 @@ create unique index record_change_requests_pending_unique
 - 가계부: 제목, 금액, 유형, 카테고리 이름, 공용 여부
 - 주식: 종목명/티커, 매수/매도, 수량, 단가, 계좌 이름
 
+승인 직전에는 대상 원본 기록이 요청 당시 `target_snapshot`과 여전히 일치하는지 확인한다. 요청 생성 이후 대상 기록이 직접 수정되었거나 삭제되었다면 승인을 실패시키고, 소유자에게 새 요청이 필요하다고 안내한다. 이는 가계부와 주식 거래 모두에 적용되는 Record Change Request 공통 규칙이다.
+
+**Financial Source 소유권**
+
+공용 기록 여부는 조회 범위를 뜻하며, 다른 가구 구성원의 계좌나 결제수단을 사용할 권한을 뜻하지 않는다. 새로 생성하거나 수정하는 가계부 기록과 주식 거래는 기록 소유자의 Financial Source만 사용할 수 있다.
+
+조회/표시 화면은 과거 기록을 정확히 보여주기 위해 가구 전체 Financial Source 이름을 해석할 수 있다. 반면 생성/수정/수정 요청 같은 입력 selector는 대상 기록 소유자의 Financial Source로 후보를 제한한다.
+
+기존 데이터에 대해 owner mismatch를 자동 마이그레이션하지 않는다. 이번 규칙은 새 생성, 직접 수정, Record Change Request 승인에 적용한다.
+
 **최소 API**
 
 ```txt
@@ -526,6 +537,8 @@ POST /api/record-change-requests/[id]/resolve
 
 `proposed_changes`가 비어 있으면 수정 요청을 만들지 않고 클라이언트에서 안내한다.
 
+Financial Source 변경안은 대상 기록 소유자의 계좌/결제수단만 선택할 수 있다. 가구 전체 계좌/결제수단은 기록 표시에는 사용할 수 있지만, 요청 입력 후보로는 사용하지 않는다.
+
 **삭제 요청**
 
 삭제 요청 UI는 대상 기록 요약과 삭제 사유 입력을 보여준다. 삭제 사유는 `message`에 저장하고 `proposed_changes`는 빈 object로 둔다. 삭제 요청 승인 시 기존 `deleteLedgerEntryWithBalanceSync` 흐름을 사용해 원본 기록을 hard delete하고 잔액 영향을 되돌린다. 삭제 후에도 요청 상세는 `target_snapshot`으로 요청 당시 기록을 보여준다.
@@ -549,9 +562,7 @@ DB 제약은 #344 추가 마이그레이션에서 기존 `request_type` 포함 p
 - terminal 상태(`approved`, `rejected`, `cancelled`)는 읽기 전용이다.
 - 수정 요청은 변경된 필드만 "현재 값 → 요청 값" 비교로 보여준다.
 - 삭제 요청은 대상 기록 요약과 삭제 사유를 보여준다.
-- 대상 기록이 이미 삭제된 경우 `target_snapshot`으로 요청 당시 정보를 보여주고, 승인은 비활성화하며 거절만 허용한다.
-
-요청 생성 이후 대상 기록이 직접 수정되었을 수 있다. #344에서는 optimistic locking을 도입하지 않고, 현재 기록이 존재하면 현재 값에 요청 변경안을 적용한다. 화면에는 요청 당시 스냅샷과 현재 값이 다를 수 있음을 짧게 안내한다.
+- 대상 기록이 이미 삭제되었거나 `target_snapshot`과 달라진 경우 승인은 비활성화하거나 실패 처리하며, 거절은 허용한다.
 
 **승인/거절 처리**
 
@@ -581,8 +592,81 @@ DB 제약은 #344 추가 마이그레이션에서 기존 `request_type` 포함 p
 
 - Type: AFK
 - Blocked by: Slice 1, Slice 2
-- 범위: 비소유자가 transaction에 수정안 또는 삭제 사유를 보내고, 소유자가 알림에서 확인한다.
-- 완료 기준: 요청 생성 시 거래 소유자에게 알림이 생성되고, 소유자는 요청 상세에서 승인/거절할 수 있다.
+- 범위: 비소유자가 transaction에 수정안 또는 삭제 사유를 보내고, 소유자가 알림에서 확인한 뒤 승인/거절한다.
+- 완료 기준: 요청 생성 시 거래 소유자에게 알림이 생성되고, 소유자는 요청 상세에서 승인/거절할 수 있으며, 승인 시 기존 매도 수량 검증과 소유자 권한 규칙을 깨지 않고 원본 주식 거래에 반영된다.
+
+#### 확정 설계
+
+**대상 조건**
+
+- `target_type = 'stock_transaction'`
+- 대상 transaction이 존재해야 한다.
+- 요청자가 대상 거래를 조회할 수 있어야 한다.
+- 요청자는 대상 거래 소유자가 아니어야 한다.
+- 주식 거래는 가구 구성원이 함께 조회하는 공유 자산 데이터이므로, 비소유자에게 수정/삭제 요청 진입점을 제공한다.
+
+**메뉴 정책**
+
+주식 거래 목록 메뉴는 현재 사용자에 따라 분기한다.
+
+| 현재 사용자 | 메뉴 |
+|-------------|------|
+| 거래 소유자 | 수정, 삭제 |
+| 비소유자 | 수정 요청, 삭제 요청 |
+
+비소유자는 기존 메뉴 아이콘에서 수정 요청/삭제 요청을 시작한다. 가계부 협업 요청과 같은 UX를 사용한다.
+
+**수정 요청**
+
+수정 요청 UI는 기존 주식 거래 수정 폼과 같은 필드를 현재 값으로 채워 보여주되, 제출 버튼은 "수정 요청 보내기"로 둔다. 사용자가 제출하면 원본과 비교해 변경된 필드만 `proposed_changes`에 저장한다.
+
+허용 필드:
+
+- `quantity`
+- `price`
+- `transactedAt`
+- `accountId`
+- `memo`
+
+금지 필드:
+
+- `ticker`: 종목 변경은 삭제 후 재등록 흐름을 따른다.
+- `type`: 매수/매도 변경은 삭제 후 재등록 흐름을 따른다.
+- `ownerId`: 요청으로 거래 소유자를 바꾸지 않는다.
+
+`proposed_changes`가 비어 있으면 수정 요청을 만들지 않고 클라이언트에서 안내한다. `accountId` 변경안은 대상 거래 소유자의 투자 계좌만 선택할 수 있다.
+
+**삭제 요청**
+
+삭제 요청 UI는 대상 거래 요약과 삭제 사유 입력을 보여준다. 삭제 사유는 필수 입력으로 받고 `message`에 저장하며, `proposed_changes`는 빈 object로 둔다.
+
+**요청 상세 화면**
+
+알림 링크의 canonical route는 가계부와 동일하게 `/notifications/requests/[id]`를 사용한다. 요청 상세 route는 공통으로 유지하되, 화면 내부는 target type별 summary 컴포넌트로 분리한다.
+
+- 공통 detail client: 데이터 조회, 권한 계산, 승인/거절/취소 액션, 상태 표시
+- ledger summary: 가계부 snapshot과 변경 필드 표시
+- stock transaction summary: 종목, 매수/매도, 수량, 단가, 거래일, 계좌, 메모 변경 필드 표시
+
+**승인/거절 처리**
+
+주식 거래 요청 승인 적용은 `applyApprovedStockTransactionChangeRequest` 같은 오케스트레이션 함수에서 처리한다.
+
+승인 규칙:
+
+- 승인 직전 현재 transaction이 `target_snapshot`과 일치해야 한다.
+- `update`: 허용된 `proposed_changes` 필드만 기존 `updateTransaction` 흐름에 위임해 적용한다.
+- `delete`: 기존 `deleteTransaction` 흐름에 위임해 hard delete한다.
+- 매도 수량 검증, 거래 소유자 권한, 계좌 소유권 검증은 기존 거래 도메인 함수의 규칙을 재사용한다.
+- 대상 거래 없음 또는 snapshot 불일치: 승인 거부, 거절은 허용.
+
+소유자는 요청안을 수정해서 승인할 수 없다. 요청안이 틀렸다면 소유자가 직접 거래를 수정하고 요청은 거절한다.
+
+**알림 경계**
+
+#346은 요청 생성 시 대상 소유자에게 `stock_transaction_change_request` User Notification을 생성한다. 알림 제목은 요청자, 대상 종목, 요청 타입을 포함한다. 예: "민수가 삼성전자 거래 수정을 요청했습니다".
+
+승인/거절/취소 결과 알림은 #348에서 가계부와 주식 공통으로 처리한다.
 
 ### Slice 6. 주식 거래 변경 알림 (#347)
 
@@ -614,3 +698,6 @@ DB 제약은 #344 추가 마이그레이션에서 기존 `request_type` 포함 p
 3. 요청 상태는 `pending`, `approved`, `rejected`, `cancelled` 네 가지로 시작하고 `expired`는 두지 않는다.
 4. `approved`는 원본 기록 반영 완료를 뜻한다.
 5. 요청은 알림 테이블이 아니라 `record_change_requests`에서 관리한다.
+6. Record Change Request 승인은 대상 원본 기록이 요청 당시 snapshot과 일치할 때만 가능하다.
+7. 생성/수정/요청 승인에서 Financial Source는 기록 소유자의 것만 사용할 수 있다.
+8. 기존 owner mismatch 데이터는 자동 마이그레이션하지 않는다.

@@ -28,14 +28,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/components/ui/drawer";
+import { Drawer, DrawerContent } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -202,14 +195,6 @@ export function LedgerEntryEditDialog({
   const handleMobileMoneySourceChange = (v: string) => {
     handlePaymentChange(v);
     setMobileView("form");
-  };
-
-  const handleDrawerOpenChange = (nextOpen: boolean) => {
-    if (!nextOpen && mobileView !== "form") {
-      setMobileView("form");
-      return;
-    }
-    onOpenChange(nextOpen);
   };
 
   const moneySourceMode = entry.type === "expense" ? "expense" : "income";
@@ -381,6 +366,7 @@ export function LedgerEntryEditDialog({
               value={paymentValue}
               paymentMethods={paymentMethods}
               accounts={accounts}
+              ownerId={entry.ownerId}
               placeholder={moneySourcePlaceholder}
               onValueChange={handlePaymentChange}
             />
@@ -564,6 +550,7 @@ export function LedgerEntryEditDialog({
               value={paymentValue}
               paymentMethods={paymentMethods}
               accounts={accounts}
+              ownerId={entry.ownerId}
               title={
                 entry.type === "expense" ? "결제 방법 선택" : "입금 계좌 선택"
               }

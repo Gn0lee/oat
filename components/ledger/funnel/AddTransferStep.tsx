@@ -10,9 +10,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useAccounts } from "@/hooks/use-accounts";
+import { useCurrentUserId } from "@/hooks/use-current-user";
 import { usePaymentMethods } from "@/hooks/use-payment-methods";
 import type { TransferItemFormData, TransferLocation } from "@/lib/api/ledger";
-import { formatKst, getKstToday } from "@/lib/date";
+import { getKstToday } from "@/lib/date";
 
 const transferFormSchema = z
   .object({
@@ -52,6 +53,7 @@ export function AddTransferStep({
 }: AddTransferStepProps) {
   const { data: accounts = [] } = useAccounts();
   const { data: paymentMethods = [] } = usePaymentMethods();
+  const { userId } = useCurrentUserId();
 
   const form = useForm<TransferFormValues>({
     resolver: zodResolver(transferFormSchema),
@@ -125,6 +127,7 @@ export function AddTransferStep({
                 value={form.watch("fromValue")}
                 paymentMethods={paymentMethods}
                 accounts={accounts}
+                ownerId={userId}
                 includeClearOption={false}
                 excludedValues={toValue ? [toValue] : []}
                 placeholder="선택"
@@ -149,6 +152,7 @@ export function AddTransferStep({
                 value={form.watch("toValue")}
                 paymentMethods={paymentMethods}
                 accounts={accounts}
+                ownerId={userId}
                 includeClearOption={false}
                 excludedValues={fromValue ? [fromValue] : []}
                 placeholder="선택"

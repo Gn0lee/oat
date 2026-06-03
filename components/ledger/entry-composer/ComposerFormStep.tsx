@@ -29,6 +29,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useAccounts } from "@/hooks/use-accounts";
 import { useCategories } from "@/hooks/use-categories";
+import { useCurrentUserId } from "@/hooks/use-current-user";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { usePaymentMethods } from "@/hooks/use-payment-methods";
 import { getLedgerMoneySourceValue } from "@/lib/ledger/money-source-options";
@@ -68,6 +69,7 @@ export function ComposerFormStep({
   const { data: incomeCategories = [] } = useCategories("income");
   const { data: paymentMethods = [] } = usePaymentMethods();
   const { data: accounts = [] } = useAccounts();
+  const { userId } = useCurrentUserId();
 
   const itemType = form.watch(`items.${index}.type`);
   const itemIsShared = form.watch(`items.${index}.isShared`);
@@ -230,6 +232,7 @@ export function ComposerFormStep({
                 value={moneySourceValue}
                 paymentMethods={paymentMethods}
                 accounts={accounts}
+                ownerId={userId}
                 placeholder="선택 안함"
                 onValueChange={handleMoneySourceChange}
               />
@@ -311,6 +314,7 @@ export function ComposerFormStep({
                 value={moneySourceValue}
                 paymentMethods={paymentMethods}
                 accounts={accounts}
+                ownerId={userId}
                 title={
                   itemType === "expense" ? "결제 방법 선택" : "입금 계좌 선택"
                 }

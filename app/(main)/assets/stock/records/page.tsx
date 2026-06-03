@@ -1,5 +1,5 @@
 import { StockRecordsClient } from "@/components/transactions/records/StockRecordsClient";
-import { formatKst, getKstToday } from "@/lib/date";
+import { getKstToday } from "@/lib/date";
 import { normalizeRecordDate } from "@/lib/stock-records/records";
 import { requireUser } from "@/lib/supabase/auth";
 

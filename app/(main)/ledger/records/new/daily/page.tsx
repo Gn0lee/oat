@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { PageContainer } from "@/components/layout";
 import { LedgerEntryComposer } from "@/components/ledger/entry-composer/LedgerEntryComposer";
-import { formatKst, getKstToday } from "@/lib/date";
+import { getKstToday } from "@/lib/date";
 
 interface DailyLedgerEntryPageProps {
   searchParams: Promise<{

@@ -46,6 +46,7 @@ export function MultiTransactionFormWrapper({
       mode={mode}
       defaultDate={defaultDate}
       defaultAccountId={selectedDefaultAccountId}
+      ownerId={currentUserId ?? ""}
     />
   );
 }

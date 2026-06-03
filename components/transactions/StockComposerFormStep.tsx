@@ -13,12 +13,14 @@ import type { MultiTransactionFormData } from "@/schemas/multi-transaction-form"
 interface StockComposerFormStepProps {
   index: number;
   mode?: "full" | "daily";
+  ownerId: string;
   onBack: () => void;
 }
 
 export function StockComposerFormStep({
   index,
   mode = "full",
+  ownerId,
   onBack,
 }: StockComposerFormStepProps) {
   const form = useFormContext<MultiTransactionFormData>();
@@ -78,6 +80,7 @@ export function StockComposerFormStep({
                 name={`items.${index}.accountId`}
                 variant="inline"
                 placeholder="계좌 선택"
+                ownerId={ownerId}
               />
             </div>
           </div>

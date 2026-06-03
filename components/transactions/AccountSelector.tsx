@@ -54,6 +54,7 @@ interface AccountSelectorProps<T extends FieldValues> {
   variant?: "card" | "inline";
   placeholder?: string;
   allowClear?: boolean;
+  ownerId?: string | null;
   onChange?: (value: string) => void;
 }
 
@@ -303,9 +304,13 @@ export function AccountSelector<T extends FieldValues>({
   variant = "card",
   placeholder,
   allowClear = false,
+  ownerId,
   onChange,
 }: AccountSelectorProps<T>) {
-  const { data: accounts = [], isLoading } = useAccounts();
+  const { data: allAccounts = [], isLoading } = useAccounts();
+  const accounts = ownerId
+    ? allAccounts.filter((account) => account.ownerId === ownerId)
+    : allAccounts;
   const { field } = useController({
     control,
     name,

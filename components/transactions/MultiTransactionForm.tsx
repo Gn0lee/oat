@@ -23,12 +23,14 @@ interface MultiTransactionFormProps {
   mode?: "full" | "daily";
   defaultDate?: string;
   defaultAccountId: string;
+  ownerId: string;
 }
 
 export function MultiTransactionForm({
   mode = "full",
   defaultDate,
   defaultAccountId,
+  ownerId,
 }: MultiTransactionFormProps) {
   const router = useRouter();
   const createBatchTransactions = useCreateBatchTransactions();
@@ -147,6 +149,7 @@ export function MultiTransactionForm({
       <div className="w-full h-full">
         <StockComposerListStep
           mode={mode}
+          ownerId={ownerId}
           onEditItem={(index) => setEditIndex(index)}
           onSubmit={(data) => onSubmit(data)}
           isSubmitting={createBatchTransactions.isPending}
@@ -169,6 +172,7 @@ export function MultiTransactionForm({
                   key={editIndex}
                   index={editIndex}
                   mode={mode}
+                  ownerId={ownerId}
                   onBack={() => setEditIndex(null)}
                 />
               </motion.div>
@@ -194,6 +198,7 @@ export function MultiTransactionForm({
                 key={activeEditIndex}
                 index={activeEditIndex}
                 mode={mode}
+                ownerId={ownerId}
                 onBack={() => setEditIndex(null)}
               />
             </DrawerContent>

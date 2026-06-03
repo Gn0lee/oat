@@ -62,6 +62,7 @@ interface LedgerMoneySourceBaseProps {
   value: string;
   paymentMethods: LedgerMoneySourcePaymentMethod[];
   accounts: LedgerMoneySourceAccount[];
+  ownerId?: string | null;
   includeClearOption?: boolean;
   excludedValues?: string[];
 }
@@ -104,15 +105,22 @@ function useMoneySourceGroups({
   mode,
   paymentMethods,
   accounts,
+  ownerId,
   includeClearOption = true,
   excludedValues = [],
 }: LedgerMoneySourceBaseProps): LedgerMoneySourceGroup[] {
   return useMemo(() => {
     const excluded = new Set(excludedValues);
+    const scopedPaymentMethods = ownerId
+      ? paymentMethods.filter((item) => item.ownerId === ownerId)
+      : paymentMethods;
+    const scopedAccounts = ownerId
+      ? accounts.filter((item) => item.ownerId === ownerId)
+      : accounts;
     return buildLedgerMoneySourceGroups({
       mode,
-      paymentMethods,
-      accounts,
+      paymentMethods: scopedPaymentMethods,
+      accounts: scopedAccounts,
       includeClearOption,
     })
       .map((group) => ({
@@ -120,7 +128,14 @@ function useMoneySourceGroups({
         options: group.options.filter((option) => !excluded.has(option.value)),
       }))
       .filter((group) => group.options.length > 0);
-  }, [mode, paymentMethods, accounts, includeClearOption, excludedValues]);
+  }, [
+    mode,
+    paymentMethods,
+    accounts,
+    ownerId,
+    includeClearOption,
+    excludedValues,
+  ]);
 }
 
 export const LedgerMoneySourceTrigger = forwardRef<
@@ -537,6 +552,7 @@ export function LedgerMoneySourceCombobox({
   value,
   paymentMethods,
   accounts,
+  ownerId,
   includeClearOption = true,
   excludedValues,
   placeholder,
@@ -546,11 +562,15 @@ export function LedgerMoneySourceCombobox({
   const [search, setSearch] = useState("");
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [createInitialName, setCreateInitialName] = useState("");
+  const scopedAccounts = ownerId
+    ? accounts.filter((account) => account.ownerId === ownerId)
+    : accounts;
   const groups = useMoneySourceGroups({
     mode,
     value,
     paymentMethods,
     accounts,
+    ownerId,
     includeClearOption,
     excludedValues,
   });
@@ -622,7 +642,7 @@ export function LedgerMoneySourceCombobox({
         open={createDialogOpen}
         mode={mode}
         initialName={createInitialName}
-        accounts={accounts}
+        accounts={scopedAccounts}
         onOpenChange={setCreateDialogOpen}
         onCreated={onValueChange}
       />
@@ -635,6 +655,7 @@ export function LedgerMoneySourcePickerPanel({
   value,
   paymentMethods,
   accounts,
+  ownerId,
   includeClearOption = true,
   excludedValues,
   searchPlaceholder,
@@ -644,11 +665,15 @@ export function LedgerMoneySourcePickerPanel({
   const [target, setTarget] = useState<MoneySourceCreateTarget | null>(null);
   const shouldReduceMotion = useReducedMotion();
   const [createInitialName, setCreateInitialName] = useState("");
+  const scopedAccounts = ownerId
+    ? accounts.filter((account) => account.ownerId === ownerId)
+    : accounts;
   const groups = useMoneySourceGroups({
     mode,
     value,
     paymentMethods,
     accounts,
+    ownerId,
     includeClearOption,
     excludedValues,
   });
@@ -818,7 +843,7 @@ export function LedgerMoneySourcePickerPanel({
                   initialName={createInitialName}
                   type={target.type}
                   typeLabel={target.label}
-                  accounts={accounts}
+                  accounts={scopedAccounts}
                   onCreated={(paymentMethod) =>
                     onValueChange(`pm:${paymentMethod.id}`)
                   }

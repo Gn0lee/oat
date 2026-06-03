@@ -9,6 +9,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { useState } from "react";
+import { TransactionChangeRequestDialog } from "@/components/transactions/TransactionChangeRequestDialog";
 import { TransactionDeleteDialog } from "@/components/transactions/TransactionDeleteDialog";
 import { TransactionEditDialog } from "@/components/transactions/TransactionEditDialog";
 import { Badge } from "@/components/ui/badge";
@@ -25,7 +26,6 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import type { TransactionWithDetails } from "@/lib/api/transaction";
-import { cn } from "@/lib/utils/cn";
 import {
   formatCompactCurrency,
   formatCurrency,
@@ -50,6 +50,10 @@ export function StockRecordDayList({
   const [deleteTransaction, setDeleteTransaction] =
     useState<TransactionWithDetails | null>(null);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [requestTransaction, setRequestTransaction] =
+    useState<TransactionWithDetails | null>(null);
+  const [requestMode, setRequestMode] = useState<"update" | "delete">("update");
+  const [isRequestOpen, setIsRequestOpen] = useState(false);
 
   return (
     <>
@@ -77,41 +81,67 @@ export function StockRecordDayList({
                   className="group relative flex min-h-[72px] flex-col justify-center border-gray-100 border-t px-4 py-3.5 first:border-t-0 sm:px-5"
                 >
                   <div className="absolute right-2 top-1/2 z-10 -translate-y-1/2">
-                    {isOwner && (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="size-7 text-gray-400 hover:text-gray-600"
-                          >
-                            <MoreVertical className="size-4" />
-                            <span className="sr-only">메뉴 열기</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setEditTransaction(transaction);
-                              setIsEditOpen(true);
-                            }}
-                          >
-                            <Pencil className="mr-2 size-4" />
-                            수정
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setDeleteTransaction(transaction);
-                              setIsDeleteOpen(true);
-                            }}
-                            className="text-destructive focus:text-destructive"
-                          >
-                            <Trash2 className="mr-2 size-4" />
-                            삭제
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    )}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="size-7 text-gray-400 hover:text-gray-600"
+                        >
+                          <MoreVertical className="size-4" />
+                          <span className="sr-only">메뉴 열기</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        {isOwner ? (
+                          <>
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setEditTransaction(transaction);
+                                setIsEditOpen(true);
+                              }}
+                            >
+                              <Pencil className="mr-2 size-4" />
+                              수정
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setDeleteTransaction(transaction);
+                                setIsDeleteOpen(true);
+                              }}
+                              className="text-destructive focus:text-destructive"
+                            >
+                              <Trash2 className="mr-2 size-4" />
+                              삭제
+                            </DropdownMenuItem>
+                          </>
+                        ) : (
+                          <>
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setRequestTransaction(transaction);
+                                setRequestMode("update");
+                                setIsRequestOpen(true);
+                              }}
+                            >
+                              <Pencil className="mr-2 size-4" />
+                              수정 요청
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setRequestTransaction(transaction);
+                                setRequestMode("delete");
+                                setIsRequestOpen(true);
+                              }}
+                              className="text-destructive focus:text-destructive"
+                            >
+                              <Trash2 className="mr-2 size-4" />
+                              삭제 요청
+                            </DropdownMenuItem>
+                          </>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
 
                   <div className="flex min-w-0 flex-col gap-1 pr-6">
@@ -194,6 +224,12 @@ export function StockRecordDayList({
         transaction={deleteTransaction}
         open={isDeleteOpen}
         onOpenChange={setIsDeleteOpen}
+      />
+      <TransactionChangeRequestDialog
+        transaction={requestTransaction}
+        mode={requestMode}
+        open={isRequestOpen}
+        onOpenChange={setIsRequestOpen}
       />
     </>
   );

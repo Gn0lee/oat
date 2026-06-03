@@ -5,12 +5,16 @@ import {
   updateLedgerEntryWithBalanceSync,
 } from "@/lib/api/ledger";
 import { createUserNotification } from "@/lib/api/notifications";
+import { deleteTransaction, updateTransaction } from "@/lib/api/transaction";
 import type {
   CreateRecordChangeRequestInput,
   ListRecordChangeRequestsInput,
   ResolveRecordChangeRequestInput,
 } from "@/schemas/record-change-request";
-import { ledgerRecordUpdateProposedChangesSchema } from "@/schemas/record-change-request";
+import {
+  ledgerRecordUpdateProposedChangesSchema,
+  stockTransactionUpdateProposedChangesSchema,
+} from "@/schemas/record-change-request";
 import type { Database, Json, RecordChangeRequest } from "@/types";
 
 export interface ValidatedRecordChangeRequestTarget {
@@ -50,6 +54,7 @@ interface StockTransactionTargetRow {
   price: number | string;
   transacted_at: string;
   account_id: string | null;
+  memo: string | null;
   profiles: { name: string | null } | null;
 }
 
@@ -60,11 +65,14 @@ type RequestActionRow = Pick<
 
 type ApprovableRecordChangeRequest = Pick<
   RecordChangeRequest,
+  | "household_id"
+  | "message"
   | "target_owner_id"
   | "target_type"
   | "target_id"
   | "request_type"
   | "proposed_changes"
+  | "target_snapshot"
 >;
 
 function toJsonObject(value: Record<string, unknown>): Json {
@@ -189,6 +197,7 @@ export async function validateRecordChangeRequestTarget(
       price,
       transacted_at,
       account_id,
+      memo,
       profiles!transactions_owner_id_fkey(name)
     `)
     .eq("id", input.targetId)
@@ -224,6 +233,7 @@ export async function validateRecordChangeRequestTarget(
       quantity: Number(row.quantity),
       price: Number(row.price),
       accountId: row.account_id,
+      memo: row.memo,
     },
   };
 }
@@ -248,12 +258,63 @@ export function validateLedgerRecordChangeRequestInput(
   }
 }
 
+export function validateStockTransactionRecordChangeRequestInput(
+  input: CreateRecordChangeRequestInput,
+) {
+  if (input.targetType !== "stock_transaction") {
+    return;
+  }
+
+  if (input.requestType === "delete") {
+    if (!input.message?.trim()) {
+      throw new APIError(
+        "RECORD_CHANGE_REQUEST_MESSAGE_REQUIRED",
+        "삭제 요청 사유를 입력해주세요.",
+        400,
+      );
+    }
+    return;
+  }
+
+  const result = stockTransactionUpdateProposedChangesSchema.safeParse(
+    input.proposedChanges,
+  );
+
+  if (!result.success) {
+    throw new APIError(
+      "RECORD_CHANGE_REQUEST_PROPOSED_CHANGES_INVALID",
+      result.error.issues[0]?.message ?? "유효하지 않은 수정 요청입니다.",
+      400,
+    );
+  }
+}
+
+async function buildStockTransactionRequestNotificationTitle(
+  supabase: SupabaseClient<Database>,
+  requesterId: string,
+  requestType: "update" | "delete",
+  targetSnapshot: Record<string, unknown>,
+) {
+  const { data } = await supabase
+    .from("profiles")
+    .select("name")
+    .eq("id", requesterId)
+    .single();
+  const requesterName = data?.name ?? "가구 구성원";
+  const ticker =
+    typeof targetSnapshot.ticker === "string" ? targetSnapshot.ticker : "주식";
+  const action = requestType === "update" ? "수정" : "삭제";
+
+  return `${requesterName}님이 ${ticker} 거래 ${action}을 요청했습니다`;
+}
+
 export async function createRecordChangeRequest(
   supabase: SupabaseClient<Database>,
   requesterId: string,
   input: CreateRecordChangeRequestInput,
 ): Promise<RecordChangeRequest> {
   validateLedgerRecordChangeRequestInput(input);
+  validateStockTransactionRecordChangeRequestInput(input);
 
   const validatedTarget = await validateRecordChangeRequestTarget(
     supabase,
@@ -283,6 +344,16 @@ export async function createRecordChangeRequest(
     throw error;
   }
 
+  const notificationTitle =
+    input.targetType === "stock_transaction"
+      ? await buildStockTransactionRequestNotificationTitle(
+          supabase,
+          requesterId,
+          input.requestType,
+          validatedTarget.targetSnapshot,
+        )
+      : "수정/삭제 요청이 도착했습니다";
+
   await createUserNotification({
     recipientId: validatedTarget.targetOwnerId,
     householdId: validatedTarget.householdId,
@@ -290,7 +361,7 @@ export async function createRecordChangeRequest(
       input.targetType === "ledger_entry"
         ? "ledger_record_change_request"
         : "stock_transaction_change_request",
-    title: "수정/삭제 요청이 도착했습니다",
+    title: notificationTitle,
     body: input.message ?? null,
     link: {
       kind: "record_change_request_detail",
@@ -417,10 +488,105 @@ export async function applyApprovedRecordChangeRequest(
     return;
   }
 
-  throw new APIError(
-    "RECORD_CHANGE_REQUEST_APPLY_NOT_IMPLEMENTED",
-    "요청 승인 반영은 대상 도메인 구현에서 처리해야 합니다.",
-    501,
+  await applyApprovedStockTransactionChangeRequest(supabase, request);
+}
+
+interface CurrentStockTransactionRow {
+  id: string;
+  household_id: string;
+  owner_id: string;
+  ticker: string;
+  type: string;
+  quantity: number | string;
+  price: number | string;
+  transacted_at: string;
+  account_id: string | null;
+  memo: string | null;
+}
+
+function toRecord(value: Json): Record<string, unknown> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  return value as Record<string, unknown>;
+}
+
+function assertStockTransactionSnapshotMatches(
+  current: CurrentStockTransactionRow,
+  snapshot: Record<string, unknown>,
+) {
+  const matches =
+    snapshot.targetType === "stock_transaction" &&
+    snapshot.ticker === current.ticker &&
+    snapshot.type === current.type &&
+    Number(snapshot.quantity) === Number(current.quantity) &&
+    Number(snapshot.price) === Number(current.price) &&
+    snapshot.transactedAt === current.transacted_at &&
+    (snapshot.accountId ?? null) === current.account_id &&
+    (snapshot.memo ?? null) === current.memo;
+
+  if (!matches) {
+    throw new APIError(
+      "RECORD_CHANGE_REQUEST_TARGET_STALE",
+      "요청 이후 대상 기록이 변경되었습니다. 새 요청이 필요합니다.",
+      409,
+    );
+  }
+}
+
+export async function applyApprovedStockTransactionChangeRequest(
+  supabase: SupabaseClient<Database>,
+  request: ApprovableRecordChangeRequest,
+): Promise<void> {
+  const { data, error } = await supabase
+    .from("transactions")
+    .select(
+      "id, household_id, owner_id, ticker, type, quantity, price, transacted_at, account_id, memo",
+    )
+    .eq("id", request.target_id)
+    .eq("household_id", request.household_id)
+    .single();
+
+  if (error || !data) {
+    throw new APIError(
+      "RECORD_CHANGE_REQUEST_TARGET_NOT_FOUND",
+      "요청 대상 기록을 찾을 수 없습니다.",
+      404,
+    );
+  }
+
+  const current = data as unknown as CurrentStockTransactionRow;
+
+  if (current.owner_id !== request.target_owner_id) {
+    throw new APIError(
+      "RECORD_CHANGE_REQUEST_TARGET_STALE",
+      "요청 이후 대상 기록이 변경되었습니다. 새 요청이 필요합니다.",
+      409,
+    );
+  }
+
+  assertStockTransactionSnapshotMatches(
+    current,
+    toRecord(request.target_snapshot),
+  );
+
+  if (request.request_type === "delete") {
+    await deleteTransaction(
+      supabase,
+      request.target_id,
+      request.household_id,
+      request.target_owner_id,
+    );
+    return;
+  }
+
+  const proposedChanges = stockTransactionUpdateProposedChangesSchema.parse(
+    request.proposed_changes,
+  );
+  await updateTransaction(
+    supabase,
+    request.target_id,
+    request.household_id,
+    request.target_owner_id,
+    proposedChanges,
   );
 }
 

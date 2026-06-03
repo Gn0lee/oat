@@ -1,6 +1,6 @@
 import { PageContainer } from "@/components/layout";
 import { MultiTransactionFormWrapper } from "@/components/transactions/MultiTransactionFormWrapper";
-import { formatKst, getKstToday } from "@/lib/date";
+import { getKstToday } from "@/lib/date";
 
 interface NewStockTransactionAccountPageProps {
   searchParams: Promise<{

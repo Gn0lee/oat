@@ -18,25 +18,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/components/ui/drawer";
+import { Drawer, DrawerContent } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { useAccounts } from "@/hooks/use-accounts";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { useUpdateTransaction } from "@/hooks/use-transaction";
 import type { TransactionWithDetails } from "@/lib/api/transaction";
@@ -72,7 +57,6 @@ export function TransactionEditDialog({
   onOpenChange,
 }: TransactionEditDialogProps) {
   const updateMutation = useUpdateTransaction();
-  const { data: accounts } = useAccounts();
   const isDesktop = useMediaQuery("(min-width: 768px)");
 
   const {
@@ -219,6 +203,7 @@ export function TransactionEditDialog({
         variant="inline"
         placeholder="계좌 선택"
         allowClear={true}
+        ownerId={transaction.owner.id}
       />
 
       {/* 메모 */}
