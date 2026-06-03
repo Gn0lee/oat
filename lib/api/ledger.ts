@@ -170,6 +170,72 @@ export interface UpdateLedgerEntryParams {
   memo?: string | null;
 }
 
+interface LedgerFinancialSourceOwnershipInput {
+  householdId: string;
+  ownerId: string;
+  accountIds?: Array<string | null | undefined>;
+  paymentMethodIds?: Array<string | null | undefined>;
+}
+
+function uniqueDefined(values: Array<string | null | undefined>) {
+  return [...new Set(values.filter(Boolean) as string[])];
+}
+
+export async function assertLedgerFinancialSourceOwnership(
+  supabase: SupabaseClient<Database>,
+  input: LedgerFinancialSourceOwnershipInput,
+): Promise<void> {
+  const accountIds = uniqueDefined(input.accountIds ?? []);
+  const paymentMethodIds = uniqueDefined(input.paymentMethodIds ?? []);
+
+  const [accountsResult, paymentMethodsResult] = await Promise.all([
+    accountIds.length > 0
+      ? supabase
+          .from("accounts")
+          .select("id, owner_id")
+          .eq("household_id", input.householdId)
+          .in("id", accountIds)
+      : Promise.resolve({ data: [], error: null }),
+    paymentMethodIds.length > 0
+      ? supabase
+          .from("payment_methods")
+          .select("id, owner_id")
+          .eq("household_id", input.householdId)
+          .in("id", paymentMethodIds)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
+
+  if (accountsResult.error || paymentMethodsResult.error) {
+    throw new APIError(
+      "LEDGER_FINANCIAL_SOURCE_FETCH_ERROR",
+      "계좌 또는 결제수단 확인에 실패했습니다.",
+      500,
+    );
+  }
+
+  const accountMap = new Map(
+    (accountsResult.data ?? []).map((row) => [row.id, row.owner_id]),
+  );
+  const paymentMethodMap = new Map(
+    (paymentMethodsResult.data ?? []).map((row) => [row.id, row.owner_id]),
+  );
+
+  const hasInvalidAccount = accountIds.some(
+    (id) => accountMap.get(id) !== input.ownerId,
+  );
+  const hasInvalidPaymentMethod = paymentMethodIds.some(
+    (id) => paymentMethodMap.get(id) !== input.ownerId,
+  );
+
+  if (hasInvalidAccount || hasInvalidPaymentMethod) {
+    throw new APIError(
+      "LEDGER_FINANCIAL_SOURCE_FORBIDDEN",
+      "본인의 계좌 또는 결제수단만 기록에 사용할 수 있습니다.",
+      403,
+    );
+  }
+}
+
 export interface LedgerBalanceEffectInput {
   type: LedgerEntryType;
   amount: number;
@@ -738,6 +804,13 @@ export async function createLedgerEntryWithBalanceSync(
   supabase: SupabaseClient<Database>,
   params: CreateLedgerEntryParams,
 ): Promise<LedgerEntry> {
+  await assertLedgerFinancialSourceOwnership(supabase, {
+    householdId: params.householdId,
+    ownerId: params.ownerId,
+    accountIds: [params.fromAccountId, params.toAccountId],
+    paymentMethodIds: [params.fromPaymentMethodId, params.toPaymentMethodId],
+  });
+
   const effects = getLedgerBalanceEffects(toBalanceEffectInput(params));
 
   await applyLedgerBalanceEffects(
@@ -897,6 +970,13 @@ export async function updateLedgerEntryWithBalanceSync(
     params.toPaymentMethodId !== undefined
       ? params.toPaymentMethodId
       : existing.to_payment_method_id;
+
+  await assertLedgerFinancialSourceOwnership(supabase, {
+    householdId: existing.household_id,
+    ownerId,
+    accountIds: [nextFromAccountId, nextToAccountId],
+    paymentMethodIds: [nextFromPaymentMethodId, nextToPaymentMethodId],
+  });
 
   const oldEffects = getLedgerBalanceEffects({
     type: existing.type,

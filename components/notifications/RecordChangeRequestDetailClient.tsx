@@ -33,6 +33,12 @@ function formatValue(value: unknown) {
 }
 
 function getSnapshotTitle(snapshot: Record<string, unknown>) {
+  if (snapshot.targetType === "stock_transaction") {
+    const ticker =
+      typeof snapshot.ticker === "string" ? snapshot.ticker : "주식";
+    return `${ticker} 거래`;
+  }
+
   return (
     (typeof snapshot.title === "string" && snapshot.title) ||
     (typeof snapshot.categoryName === "string" && snapshot.categoryName) ||
@@ -63,7 +69,44 @@ const FIELD_LABELS: Record<string, string> = {
   toPaymentMethodId: "입금 결제수단",
   transactedAt: "날짜",
   memo: "메모",
+  quantity: "수량",
+  price: "단가",
+  accountId: "계좌",
 };
+
+function getSnapshotMeta(snapshot: Record<string, unknown>) {
+  if (snapshot.targetType === "stock_transaction") {
+    return [
+      {
+        label: "거래 유형",
+        value: snapshot.type === "buy" ? "매수" : "매도",
+      },
+      {
+        label: "수량",
+        value:
+          typeof snapshot.quantity === "number"
+            ? `${snapshot.quantity.toLocaleString()}주`
+            : formatValue(snapshot.quantity),
+      },
+      {
+        label: "단가",
+        value: formatValue(snapshot.price),
+      },
+      {
+        label: "거래일",
+        value: formatValue(snapshot.transactedAt).slice(0, 10),
+      },
+    ];
+  }
+
+  return [
+    { label: "요청 당시 금액", value: formatValue(snapshot.amount) },
+    {
+      label: "기록일",
+      value: formatValue(snapshot.transactedAt).slice(0, 10),
+    },
+  ];
+}
 
 export function RecordChangeRequestDetailClient({
   requestId,
@@ -153,16 +196,12 @@ export function RecordChangeRequestDetailClient({
         </div>
 
         <div className="grid grid-cols-2 gap-3 text-sm">
-          <div>
-            <p className="text-muted-foreground">요청 당시 금액</p>
-            <p className="font-semibold">{formatValue(snapshot.amount)}</p>
-          </div>
-          <div>
-            <p className="text-muted-foreground">기록일</p>
-            <p className="font-semibold">
-              {formatValue(snapshot.transactedAt).slice(0, 10)}
-            </p>
-          </div>
+          {getSnapshotMeta(snapshot).map((item) => (
+            <div key={item.label}>
+              <p className="text-muted-foreground">{item.label}</p>
+              <p className="font-semibold">{item.value}</p>
+            </div>
+          ))}
         </div>
       </div>
 

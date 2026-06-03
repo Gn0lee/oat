@@ -3,6 +3,7 @@ import {
   deleteLedgerEntryWithBalanceSync,
   updateLedgerEntryWithBalanceSync,
 } from "@/lib/api/ledger";
+import { deleteTransaction, updateTransaction } from "@/lib/api/transaction";
 import type { RecordChangeRequest } from "@/types";
 import { APIError } from "./error";
 import {
@@ -13,6 +14,7 @@ import {
   getRecordChangeRequestListQuery,
   validateLedgerRecordChangeRequestInput,
   validateRecordChangeRequestTarget,
+  validateStockTransactionRecordChangeRequestInput,
 } from "./record-change-requests";
 
 vi.mock("@/lib/api/ledger", () => ({
@@ -20,6 +22,11 @@ vi.mock("@/lib/api/ledger", () => ({
   updateLedgerEntryWithBalanceSync: vi
     .fn()
     .mockResolvedValue({ id: "entry-1" }),
+}));
+
+vi.mock("@/lib/api/transaction", () => ({
+  deleteTransaction: vi.fn().mockResolvedValue(undefined),
+  updateTransaction: vi.fn().mockResolvedValue({ id: "tx-1" }),
 }));
 
 const sharedLedgerEntry = {
@@ -176,6 +183,41 @@ describe("validateLedgerRecordChangeRequestInput", () => {
   });
 });
 
+describe("validateStockTransactionRecordChangeRequestInput", () => {
+  it("주식 거래 수정 요청에서 허용되지 않은 변경 필드를 거부한다", () => {
+    expect(() =>
+      validateStockTransactionRecordChangeRequestInput({
+        targetType: "stock_transaction",
+        targetId: "00000000-0000-4000-8000-000000000001",
+        requestType: "update",
+        proposedChanges: { ticker: "AAPL" },
+      }),
+    ).toThrow(APIError);
+  });
+
+  it("주식 거래 수정 요청에서 빈 변경안을 거부한다", () => {
+    expect(() =>
+      validateStockTransactionRecordChangeRequestInput({
+        targetType: "stock_transaction",
+        targetId: "00000000-0000-4000-8000-000000000001",
+        requestType: "update",
+        proposedChanges: {},
+      }),
+    ).toThrow(APIError);
+  });
+
+  it("주식 거래 삭제 요청은 삭제 사유가 필요하다", () => {
+    expect(() =>
+      validateStockTransactionRecordChangeRequestInput({
+        targetType: "stock_transaction",
+        targetId: "00000000-0000-4000-8000-000000000001",
+        requestType: "delete",
+        proposedChanges: {},
+      }),
+    ).toThrow(APIError);
+  });
+});
+
 describe("buildRecordChangeRequestInsert", () => {
   it("request body의 owner 값 없이 서버 검증 결과로 insert payload를 만든다", () => {
     const result = buildRecordChangeRequestInsert({
@@ -296,6 +338,116 @@ describe("applyApprovedRecordChangeRequest", () => {
       {},
       "entry-1",
       "owner-1",
+    );
+  });
+
+  function createStockApplySupabaseMock(row: unknown) {
+    const builder = {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      single: vi.fn().mockResolvedValue({ data: row, error: null }),
+    };
+
+    return {
+      from: vi.fn(() => builder),
+      builder,
+    };
+  }
+
+  const stockRequest = {
+    id: "request-1",
+    household_id: "household-1",
+    requester_id: "requester-1",
+    target_owner_id: "owner-1",
+    target_type: "stock_transaction",
+    target_id: "tx-1",
+    request_type: "update",
+    proposed_changes: {
+      quantity: 12,
+      price: 71000,
+      transactedAt: "2026-06-02T00:00:00.000Z",
+      accountId: "00000000-0000-4000-8000-000000000002",
+      memo: "정정",
+    },
+    target_snapshot: {
+      targetType: "stock_transaction",
+      ticker: "005930",
+      type: "buy",
+      quantity: 10,
+      price: 70000,
+      transactedAt: "2026-06-01T00:00:00.000Z",
+      accountId: "00000000-0000-4000-8000-000000000001",
+    },
+  } as unknown as RecordChangeRequest;
+
+  const currentStockTransaction = {
+    id: "tx-1",
+    household_id: "household-1",
+    owner_id: "owner-1",
+    ticker: "005930",
+    type: "buy",
+    quantity: 10,
+    price: 70000,
+    transacted_at: "2026-06-01T00:00:00.000Z",
+    account_id: "00000000-0000-4000-8000-000000000001",
+    memo: null,
+  };
+
+  it("주식 거래 수정 요청 승인 시 기존 거래 수정 함수에 위임한다", async () => {
+    const supabase = createStockApplySupabaseMock(currentStockTransaction);
+
+    await applyApprovedRecordChangeRequest(supabase as never, stockRequest);
+
+    expect(updateTransaction).toHaveBeenCalledWith(
+      supabase,
+      "tx-1",
+      "household-1",
+      "owner-1",
+      {
+        quantity: 12,
+        price: 71000,
+        transactedAt: "2026-06-02T00:00:00.000Z",
+        accountId: "00000000-0000-4000-8000-000000000002",
+        memo: "정정",
+      },
+    );
+  });
+
+  it("주식 거래 삭제 요청 승인 시 기존 거래 삭제 함수에 위임한다", async () => {
+    const supabase = createStockApplySupabaseMock(currentStockTransaction);
+
+    await applyApprovedRecordChangeRequest(
+      supabase as never,
+      {
+        ...stockRequest,
+        request_type: "delete",
+        proposed_changes: {},
+        message: "중복 거래",
+      } as unknown as RecordChangeRequest,
+    );
+
+    expect(deleteTransaction).toHaveBeenCalledWith(
+      supabase,
+      "tx-1",
+      "household-1",
+      "owner-1",
+    );
+  });
+
+  it("주식 거래가 요청 이후 변경되었으면 승인을 거부한다", async () => {
+    const supabase = createStockApplySupabaseMock({
+      ...currentStockTransaction,
+      quantity: 8,
+    });
+
+    await expect(
+      applyApprovedRecordChangeRequest(supabase as never, stockRequest),
+    ).rejects.toMatchObject(
+      new APIError(
+        "RECORD_CHANGE_REQUEST_TARGET_STALE",
+        "요청 이후 대상 기록이 변경되었습니다. 새 요청이 필요합니다.",
+        409,
+      ),
     );
   });
 });

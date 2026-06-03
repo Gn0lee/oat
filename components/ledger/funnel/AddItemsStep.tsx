@@ -19,9 +19,10 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useAccounts } from "@/hooks/use-accounts";
 import { useCategories } from "@/hooks/use-categories";
+import { useCurrentUserId } from "@/hooks/use-current-user";
 import { usePaymentMethods } from "@/hooks/use-payment-methods";
 import type { LedgerItemFormData } from "@/lib/api/ledger";
-import { formatKst, getKstToday } from "@/lib/date";
+import { getKstToday } from "@/lib/date";
 import { getLedgerMoneySourceValue } from "@/lib/ledger/money-source-options";
 import type { CategoryType } from "@/types";
 
@@ -54,6 +55,7 @@ export function AddItemsStep({ type, onNext }: AddItemsStepProps) {
     useCategories(categoryType);
   const { data: paymentMethods = [] } = usePaymentMethods();
   const { data: accounts = [] } = useAccounts();
+  const { userId } = useCurrentUserId();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -218,6 +220,7 @@ export function AddItemsStep({ type, onNext }: AddItemsStepProps) {
                     value={paymentValue}
                     paymentMethods={paymentMethods}
                     accounts={accounts}
+                    ownerId={userId}
                     placeholder="선택 안함"
                     onValueChange={handlePaymentChange}
                   />

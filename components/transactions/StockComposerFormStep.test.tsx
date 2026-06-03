@@ -34,7 +34,12 @@ function renderStep(mode: "full" | "daily") {
 
     return (
       <FormProvider {...form}>
-        <StockComposerFormStep index={0} mode={mode} onBack={vi.fn()} />
+        <StockComposerFormStep
+          index={0}
+          mode={mode}
+          ownerId="user-1"
+          onBack={vi.fn()}
+        />
       </FormProvider>
     );
   }

@@ -60,6 +60,38 @@ export type LedgerRecordUpdateProposedChanges = z.infer<
   typeof ledgerRecordUpdateProposedChangesSchema
 >;
 
+export const stockTransactionUpdateProposedChangesSchema = z
+  .object({
+    quantity: z
+      .number()
+      .positive("수량은 0보다 커야 합니다.")
+      .max(999999999, "수량이 너무 큽니다.")
+      .optional(),
+    price: z
+      .number()
+      .min(0, "가격은 0 이상이어야 합니다.")
+      .max(999999999999, "가격이 너무 큽니다.")
+      .optional(),
+    transactedAt: z
+      .string()
+      .datetime("올바른 날짜 형식이 아닙니다.")
+      .optional(),
+    accountId: z.uuid("유효한 계좌 ID가 아닙니다.").optional(),
+    memo: z
+      .string()
+      .max(500, "메모는 500자 이내여야 합니다.")
+      .nullable()
+      .optional(),
+  })
+  .strict()
+  .refine((value) => Object.keys(value).length > 0, {
+    message: "변경할 항목을 하나 이상 입력해주세요.",
+  });
+
+export type StockTransactionUpdateProposedChanges = z.infer<
+  typeof stockTransactionUpdateProposedChangesSchema
+>;
+
 export const createRecordChangeRequestSchema = z.object({
   targetType: recordChangeRequestTargetTypeSchema,
   targetId: z.uuid("유효한 대상 ID가 아닙니다."),

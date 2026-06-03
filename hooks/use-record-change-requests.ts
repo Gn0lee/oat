@@ -123,6 +123,9 @@ export function useResolveRecordChangeRequest() {
       queryClient.invalidateQueries({ queryKey: queries.ledgerEntries._def });
       queryClient.invalidateQueries({ queryKey: queries.accounts._def });
       queryClient.invalidateQueries({ queryKey: queries.paymentMethods._def });
+      queryClient.invalidateQueries({ queryKey: queries.transactions._def });
+      queryClient.invalidateQueries({ queryKey: queries.holdings._def });
+      queryClient.invalidateQueries({ queryKey: queries.dashboard._def });
     },
   });
 }
