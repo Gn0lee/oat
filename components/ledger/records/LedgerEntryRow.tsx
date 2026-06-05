@@ -49,6 +49,7 @@ export function LedgerEntryRow({
         entry.toAccountName ?? entry.toPaymentMethodName ?? "도착지"
       }`
     : null;
+  const iconName = isTransfer ? "ArrowLeftRight" : entry.categoryIcon;
 
   const metaParts = [
     entry.categoryName,
@@ -109,10 +110,7 @@ export function LedgerEntryRow({
 
       {/* 카테고리 아이콘 */}
       <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-gray-100 flex items-center justify-center">
-        <CategoryIcon
-          iconName={entry.categoryIcon}
-          className="w-5 h-5 text-gray-600"
-        />
+        <CategoryIcon iconName={iconName} className="w-5 h-5 text-gray-600" />
       </div>
 
       {/* 내용 */}

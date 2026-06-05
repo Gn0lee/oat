@@ -9,10 +9,19 @@ vi.mock("@/hooks/use-accounts", () => ({
     data: [
       {
         id: "account-1",
+        householdId: "household-1",
+        ownerId: "owner-1",
+        ownerName: "홍길동",
         name: "키움증권",
         broker: "키움",
+        lastFour: "1234",
         accountType: "stock",
         category: "investment",
+        balance: null,
+        balanceUpdatedAt: null,
+        memo: null,
+        createdAt: "2026-06-01T00:00:00.000Z",
+        updatedAt: "2026-06-01T00:00:00.000Z",
       },
     ],
     isLoading: false,
@@ -66,5 +75,16 @@ describe("AccountSelector", () => {
       screen.getByRole("dialog", { name: "새 투자 계좌" }),
     ).toBeInTheDocument();
     expect(screen.getByLabelText("계좌명")).toHaveValue("토스");
+  });
+
+  it("계좌 선택 목록에 마지막 4자리와 소유자를 표시한다", async () => {
+    const user = userEvent.setup();
+
+    render(<AccountSelectorHarness />);
+
+    await user.click(screen.getByRole("combobox"));
+
+    expect(screen.getByText("키움증권 (1234)")).toBeInTheDocument();
+    expect(screen.getByText("키움 · 소유자: 홍길동")).toBeInTheDocument();
   });
 });

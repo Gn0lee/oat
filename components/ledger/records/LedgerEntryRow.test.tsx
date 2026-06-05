@@ -4,6 +4,22 @@ import { describe, expect, it, vi } from "vitest";
 import type { LedgerEntryWithDetails } from "@/lib/api/ledger";
 import { LedgerEntryRow } from "./LedgerEntryRow";
 
+vi.mock("@/components/ledger/CategoryIcon", () => ({
+  CategoryIcon: ({
+    iconName,
+    className,
+  }: {
+    iconName: string | null;
+    className?: string;
+  }) => (
+    <span
+      className={className}
+      data-icon-name={iconName ?? "fallback"}
+      data-testid="ledger-entry-icon"
+    />
+  ),
+}));
+
 const baseEntry: LedgerEntryWithDetails = {
   id: "entry-1",
   householdId: "household-1",
@@ -80,5 +96,23 @@ describe("LedgerEntryRow", () => {
 
     expect(screen.queryByText("수정 요청")).not.toBeInTheDocument();
     expect(screen.getByText("삭제 요청")).toBeInTheDocument();
+  });
+
+  it("이체 기록에는 카테고리 기본 아이콘 대신 이체 아이콘을 보여준다", () => {
+    renderRow(
+      {
+        ...baseEntry,
+        type: "transfer",
+        categoryId: null,
+        categoryName: null,
+        categoryIcon: null,
+      },
+      "owner-1",
+    );
+
+    expect(screen.getByTestId("ledger-entry-icon")).toHaveAttribute(
+      "data-icon-name",
+      "ArrowLeftRight",
+    );
   });
 });

@@ -10,10 +10,7 @@ import { FormProvider, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Drawer, DrawerContent } from "@/components/ui/drawer";
-import {
-  useCreateBatchLedgerEntries,
-  useCreateLedgerEntry,
-} from "@/hooks/use-ledger-entries";
+import { useCreateBatchLedgerEntries } from "@/hooks/use-ledger-entries";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import {
   buildLedgerEntryPayload,
@@ -24,17 +21,58 @@ import { ComposerListStep } from "./ComposerListStep";
 
 export type ComposerType = "expense" | "income" | "transfer";
 
-export const ledgerComposerItemSchema = z.object({
-  type: z.enum(["expense", "income"]),
-  isShared: z.boolean(),
-  amount: z.string().min(1, "금액을 입력해주세요."),
-  title: z.string().min(1, "내용을 입력해주세요."),
-  categoryId: z.string().min(1, "카테고리를 선택해주세요."),
-  paymentMethodId: z.string().optional(),
-  accountId: z.string().optional(),
-  transactedAt: z.string().min(1, "날짜를 선택해주세요."),
-  memo: z.string().max(500, "메모는 500자 이내여야 합니다.").optional(),
-});
+export const ledgerComposerItemSchema = z
+  .object({
+    type: z.enum(["expense", "income", "transfer"]),
+    isShared: z.boolean(),
+    amount: z.string().min(1, "금액을 입력해주세요."),
+    title: z.string().min(1, "내용을 입력해주세요."),
+    categoryId: z.string().optional(),
+    paymentMethodId: z.string().optional(),
+    accountId: z.string().optional(),
+    fromValue: z.string().optional(),
+    toValue: z.string().optional(),
+    transactedAt: z.string().min(1, "날짜를 선택해주세요."),
+    memo: z.string().max(500, "메모는 500자 이내여야 합니다.").optional(),
+  })
+  .superRefine((value, ctx) => {
+    if (value.type === "transfer") {
+      if (!value.fromValue) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["fromValue"],
+          message: "어디에서 돈이 나갔는지 선택해주세요.",
+        });
+      }
+      if (!value.toValue) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["toValue"],
+          message: "어디로 돈이 들어갔는지 선택해주세요.",
+        });
+      }
+      if (
+        value.fromValue &&
+        value.toValue &&
+        value.fromValue === value.toValue
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["toValue"],
+          message: "돈이 나간 곳과 다른 곳을 선택해주세요.",
+        });
+      }
+      return;
+    }
+
+    if (!value.categoryId) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["categoryId"],
+        message: "카테고리를 선택해주세요.",
+      });
+    }
+  });
 
 export const ledgerComposerSchema = z.object({
   defaultType: z.enum(["expense", "income", "transfer"]),
@@ -56,7 +94,7 @@ export function createDefaultItem({
   isShared,
   date,
 }: {
-  type: Exclude<ComposerType, "transfer">;
+  type: ComposerType;
   isShared: boolean;
   date: string;
 }): LedgerComposerItemValues {
@@ -68,9 +106,18 @@ export function createDefaultItem({
     categoryId: "",
     paymentMethodId: undefined,
     accountId: undefined,
+    fromValue: "",
+    toValue: "",
     transactedAt: date,
     memo: "",
   };
+}
+
+function parseTransferLocation(value: string) {
+  if (value.startsWith("acc:")) {
+    return { kind: "account" as const, id: value.slice(4) };
+  }
+  return { kind: "paymentMethod" as const, id: value.slice(3) };
 }
 
 export function LedgerEntryComposer({
@@ -79,7 +126,6 @@ export function LedgerEntryComposer({
 }: LedgerEntryComposerProps) {
   const router = useRouter();
   const createBatch = useCreateBatchLedgerEntries();
-  const createSingle = useCreateLedgerEntry();
   const isDesktop = useMediaQuery("(min-width: 768px)");
 
   const [editIndex, setEditIndex] = useQueryState("editIndex", parseAsInteger);
@@ -122,35 +168,33 @@ export function LedgerEntryComposer({
 
   const handleSubmit = async (values: LedgerComposerFormValues) => {
     try {
-      const entries = values.items.map((item) =>
-        buildLedgerEntryPayload(item.type, item.isShared, item),
-      );
+      const entries = values.items.map((item) => {
+        if (item.type === "transfer") {
+          return buildTransferLedgerEntryPayload(item.isShared, {
+            amount: item.amount,
+            title: item.title,
+            from: parseTransferLocation(item.fromValue ?? ""),
+            to: parseTransferLocation(item.toValue ?? ""),
+            transactedAt: item.transactedAt,
+            memo: item.memo,
+          });
+        }
+
+        return buildLedgerEntryPayload(item.type, item.isShared, {
+          amount: item.amount,
+          title: item.title,
+          categoryId: item.categoryId ?? "",
+          paymentMethodId: item.paymentMethodId,
+          accountId: item.accountId,
+          transactedAt: item.transactedAt,
+          memo: item.memo,
+        });
+      });
       const result = await createBatch.mutateAsync(entries);
       toast.success(`${result.count}건의 내역이 저장되었습니다.`);
       router.push(
         mode === "daily"
           ? `/ledger/records?date=${values.defaultDate}`
-          : "/ledger/records",
-      );
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "저장에 실패했습니다.",
-      );
-    }
-  };
-
-  const handleTransferSubmit = async (
-    transferItem: Parameters<typeof buildTransferLedgerEntryPayload>[1],
-  ) => {
-    try {
-      const defaultIsShared = form.getValues("defaultIsShared");
-      await createSingle.mutateAsync(
-        buildTransferLedgerEntryPayload(defaultIsShared, transferItem),
-      );
-      toast.success("1건의 내역이 저장되었습니다.");
-      router.push(
-        mode === "daily"
-          ? `/ledger/records?date=${transferItem.transactedAt}`
           : "/ledger/records",
       );
     } catch (error) {
@@ -168,8 +212,6 @@ export function LedgerEntryComposer({
           onEditItem={(index) => setEditIndex(index)}
           onSubmit={handleSubmit}
           isSubmitting={createBatch.isPending}
-          onTransferSubmit={handleTransferSubmit}
-          isTransferSubmitting={createSingle.isPending}
         />
       </div>
 
