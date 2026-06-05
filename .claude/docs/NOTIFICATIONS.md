@@ -675,6 +675,83 @@ DB 제약은 #344 추가 마이그레이션에서 기존 `request_type` 포함 p
 - 범위: transaction 생성/수정/삭제 시 작성자를 제외한 구성원에게 알림을 만든다. 생성 알림은 기본 off 또는 조건부로 둔다.
 - 완료 기준: 거래 수정/삭제는 기본 알림으로 전달되고, 새 거래 추가 알림은 사용자별 설정을 켰을 때만 전달된다.
 
+#### 확정 설계
+
+**범위 경계**
+
+#347은 사용자가 주식 거래 API에서 직접 생성/수정/삭제한 거래 원장 변경만 다룬다. #346의 Record Change Request 승인으로 `updateTransaction` 또는 `deleteTransaction`이 호출되어 원본 거래가 바뀌더라도 #347에서 별도 `stock_transaction_changed` 알림을 만들지 않는다. 요청 승인/거절/취소 결과 알림은 #348에서 처리한다.
+
+**알림 생성 위치**
+
+주식 거래 알림은 별도 helper에서 fan-out한다.
+
+```txt
+lib/api/stock-transaction-notifications.ts
+```
+
+거래 API route는 원본 작업 성공 후 helper를 best effort로 호출한다.
+
+- `POST /api/transactions`: 단건 생성 알림
+- `POST /api/transactions/batch`: batch 생성 요약 알림
+- `PATCH /api/transactions/[id]`: 수정 알림
+- `DELETE /api/transactions/[id]`: 삭제 알림
+
+알림 생성 실패는 원본 거래 생성/수정/삭제를 실패시키지 않는다. 실패하면 서버 로그에 남긴다.
+
+**수신자와 Preference**
+
+수신자는 작성자를 제외한 같은 가구 구성원이다. User Notification 생성은 기존 `createUserNotification`을 사용하므로 사용자별 Notification Preference를 따른다.
+
+| Notification Type | 기본값 | 사용 시점 |
+|-------------------|:------:|-----------|
+| `stock_transaction_created` | in-app off | 단건/batch 거래 생성 |
+| `stock_transaction_changed` | in-app on | 거래 수정/삭제 |
+
+**링크 정책**
+
+모든 주식 거래 변경 알림은 `stock_record_date` 링크를 사용한다.
+
+| 이벤트 | 링크 날짜 |
+|--------|-----------|
+| 단건 생성 | 생성된 거래의 `transacted_at` |
+| batch 생성 | 생성된 거래 중 가장 최신 `transacted_at` |
+| 수정 | 수정 후 거래의 `transacted_at` |
+| 삭제 | 삭제 전 거래의 `transacted_at` |
+
+현재 앱의 canonical route는 `/assets/stock/records?date=YYYY-MM-DD`이다. 종목별 또는 계좌별 링크 kind는 #347 범위에서 추가하지 않는다.
+
+**문구 정책**
+
+알림 문구는 가구 구성원이 이미 조회할 수 있는 최소 거래 맥락만 포함한다. 단건/수정/삭제는 종목, 매수/매도, 수량 정도를 포함하고, batch는 거래별 상세 없이 건수 요약만 포함한다. 단가, 총액, 수정 전후 diff는 #347 범위에서 알림 본문에 넣지 않는다.
+
+예시:
+
+- 제목: `새 주식 거래가 추가되었습니다`
+- 본문: `홍길동님이 AAPL 매수 3주를 추가했습니다.`
+- 제목: `주식 거래 5건이 추가되었습니다`
+- 본문: `홍길동님이 2026-06-03 기준 주식 거래 5건을 추가했습니다.`
+- 제목: `주식 거래가 수정되었습니다`
+- 본문: `홍길동님이 AAPL 매수 기록을 수정했습니다.`
+- 제목: `주식 거래가 삭제되었습니다`
+- 본문: `홍길동님이 AAPL 매수 기록을 삭제했습니다.`
+
+**Dedupe**
+
+단건 생성, 수정, 삭제는 대상 거래 id를 기반으로 dedupe key를 만든다. 같은 거래가 여러 번 수정될 수 있으므로 수정 dedupe key에는 수정 후 `updated_at` 또는 helper 호출 시각처럼 이벤트를 구분할 값을 포함한다.
+
+Batch 생성 API에는 별도 batch id가 없으므로 생성된 거래 id 목록을 사용한다.
+
+```txt
+stock_transaction_created:{transactionId}
+stock_transaction_batch_created:{actorId}:{transactionId1,transactionId2,...}
+stock_transaction_updated:{transactionId}:{updatedAt}
+stock_transaction_deleted:{transactionId}
+```
+
+**삭제 전 거래 정보**
+
+삭제 알림은 삭제 전 거래일과 거래 요약이 필요하다. `deleteTransaction`은 이미 삭제 전 거래를 조회하므로, 삭제 성공 후 삭제된 transaction row를 반환하도록 변경한다. 기존 호출부가 반환값을 무시해도 동작은 깨지지 않는다.
+
 ### Slice 7. 요청 처리 결과와 초대 수락 확인 알림 (#348)
 
 - Type: AFK
@@ -701,3 +778,5 @@ DB 제약은 #344 추가 마이그레이션에서 기존 `request_type` 포함 p
 6. Record Change Request 승인은 대상 원본 기록이 요청 당시 snapshot과 일치할 때만 가능하다.
 7. 생성/수정/요청 승인에서 Financial Source는 기록 소유자의 것만 사용할 수 있다.
 8. 기존 owner mismatch 데이터는 자동 마이그레이션하지 않는다.
+9. 주식 거래 변경 알림(#347)은 직접 거래 API에서 발생한 생성/수정/삭제만 다루며, Record Change Request 승인 결과 알림은 #348에서 다룬다.
+10. 주식 거래 변경 알림 링크는 `stock_record_date`로 통일한다.

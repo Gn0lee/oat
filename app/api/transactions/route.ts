@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { APIError, toErrorResponse } from "@/lib/api/error";
 import { getUserHouseholdId } from "@/lib/api/invitation";
+import { notifyStockTransactionCreated } from "@/lib/api/stock-transaction-notifications";
 import {
   createTransaction,
   getTransactions,
@@ -157,6 +158,12 @@ export async function POST(request: Request) {
         currency: input.stock.currency,
         assetType: input.stock.assetType,
       },
+    });
+
+    await notifyStockTransactionCreated(supabase, {
+      actorId: user.id,
+      householdId,
+      transaction,
     });
 
     return NextResponse.json({ data: transaction }, { status: 201 });

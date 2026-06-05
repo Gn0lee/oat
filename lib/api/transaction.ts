@@ -516,7 +516,7 @@ export async function deleteTransaction(
   transactionId: string,
   householdId: string,
   userId: string,
-): Promise<void> {
+): Promise<Transaction> {
   // 1. 기존 거래 조회 (존재 여부 확인)
   const existingTransaction = await getTransactionById(
     supabase,
@@ -541,6 +541,8 @@ export async function deleteTransaction(
     console.error("Transaction delete error:", error);
     throw new APIError("TRANSACTION_ERROR", "거래 삭제에 실패했습니다.", 500);
   }
+
+  return existingTransaction;
 }
 
 // ============================================================================

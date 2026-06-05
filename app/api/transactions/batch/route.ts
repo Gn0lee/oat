@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { APIError, toErrorResponse } from "@/lib/api/error";
 import { getUserHouseholdId } from "@/lib/api/invitation";
+import { notifyBatchStockTransactionsCreated } from "@/lib/api/stock-transaction-notifications";
 import { createBatchTransactions } from "@/lib/api/transaction";
 import { createClient } from "@/lib/supabase/server";
 import { createBatchTransactionSchema } from "@/schemas/transaction";
@@ -70,6 +71,12 @@ export async function POST(request: Request) {
           assetType: item.stock.assetType,
         },
       })),
+    });
+
+    await notifyBatchStockTransactionsCreated(supabase, {
+      actorId: user.id,
+      householdId,
+      transactions,
     });
 
     return NextResponse.json(

@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { APIError } from "./error";
 import {
   assertTransactionAccountOwnership,
+  deleteTransaction,
   getTransactions,
 } from "./transaction";
 
@@ -132,5 +133,53 @@ describe("assertTransactionAccountOwnership", () => {
         403,
       ),
     );
+  });
+});
+
+describe("deleteTransaction", () => {
+  it("삭제 성공 후 삭제 전 거래 row를 반환한다", async () => {
+    const transaction = {
+      id: "tx-1",
+      household_id: "household-1",
+      owner_id: "user-1",
+      ticker: "AAPL",
+      type: "buy" as const,
+      quantity: 3,
+      price: 195.5,
+      transacted_at: "2026-06-03T03:00:00.000Z",
+      memo: null,
+      account_id: "account-1",
+      created_at: "2026-06-03T03:10:00.000Z",
+    };
+    const selectBuilder = {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      single: vi.fn().mockResolvedValue({ data: transaction, error: null }),
+    };
+    const deleteBuilder = {
+      delete: vi.fn(),
+      eq: vi.fn(),
+    };
+    deleteBuilder.delete.mockReturnValue(deleteBuilder);
+    deleteBuilder.eq
+      .mockReturnValueOnce(deleteBuilder)
+      .mockReturnValueOnce(deleteBuilder)
+      .mockResolvedValueOnce({ error: null });
+    const supabase = {
+      from: vi
+        .fn()
+        .mockReturnValueOnce(selectBuilder)
+        .mockReturnValueOnce(deleteBuilder),
+    };
+
+    const result = await deleteTransaction(
+      supabase as never,
+      "tx-1",
+      "household-1",
+      "user-1",
+    );
+
+    expect(result).toEqual(transaction);
+    expect(deleteBuilder.delete).toHaveBeenCalled();
   });
 });
