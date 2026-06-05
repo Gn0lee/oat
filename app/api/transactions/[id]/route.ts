@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { APIError, toErrorResponse } from "@/lib/api/error";
 import { getUserHouseholdId } from "@/lib/api/invitation";
 import {
+  notifyStockTransactionDeleted,
+  notifyStockTransactionUpdated,
+} from "@/lib/api/stock-transaction-notifications";
+import {
   deleteTransaction,
   getTransactionById,
   updateTransaction,
@@ -129,6 +133,11 @@ export async function PATCH(request: Request, { params }: RouteParams) {
       },
     );
 
+    await notifyStockTransactionUpdated(supabase, {
+      actorId: user.id,
+      transaction,
+    });
+
     return NextResponse.json({ data: transaction });
   } catch (error) {
     if (error instanceof APIError) {
@@ -181,7 +190,17 @@ export async function DELETE(_request: Request, { params }: RouteParams) {
     }
 
     // 거래 삭제
-    await deleteTransaction(supabase, id, householdId, user.id);
+    const transaction = await deleteTransaction(
+      supabase,
+      id,
+      householdId,
+      user.id,
+    );
+
+    await notifyStockTransactionDeleted(supabase, {
+      actorId: user.id,
+      transaction,
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {
