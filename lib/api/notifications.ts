@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { APIError } from "@/lib/api/error";
+import { sendPushForNotification } from "@/lib/api/push-notifications";
 import {
   getDefaultNotificationPreference,
   NOTIFICATION_TYPE_CONFIG,
@@ -22,6 +23,7 @@ import type {
 
 export interface NotificationItem {
   id: string;
+  recipientId: string;
   type: NotificationType;
   title: string;
   body: string | null;
@@ -95,6 +97,7 @@ export function normalizeNotificationLimit(limitParam: string | null): number {
 function mapNotification(row: Notification): NotificationItem {
   return {
     id: row.id,
+    recipientId: row.recipient_id,
     type: row.type,
     title: row.title,
     body: row.body,
@@ -245,12 +248,17 @@ export async function upsertNotificationPreference(
     pushEnabled: boolean;
   },
 ): Promise<NotificationPreferenceView> {
+  const nextInput = {
+    inAppEnabled: input.inAppEnabled,
+    pushEnabled: input.inAppEnabled ? input.pushEnabled : false,
+  };
+
   const { error } = await supabase.from("notification_preferences").upsert(
     {
       user_id: userId,
       type,
-      in_app_enabled: input.inAppEnabled,
-      push_enabled: input.pushEnabled,
+      in_app_enabled: nextInput.inAppEnabled,
+      push_enabled: nextInput.pushEnabled,
       updated_at: new Date().toISOString(),
     },
     { onConflict: "user_id,type" },
@@ -266,8 +274,8 @@ export async function upsertNotificationPreference(
     label: config.label,
     description: config.description,
     group: config.group,
-    inAppEnabled: input.inAppEnabled,
-    pushEnabled: input.pushEnabled,
+    inAppEnabled: nextInput.inAppEnabled,
+    pushEnabled: nextInput.pushEnabled,
     defaults: config.defaults,
   };
 }
@@ -294,6 +302,7 @@ export async function createUserNotification(
   if (!inAppEnabled) {
     return null;
   }
+  const pushEnabled = preference?.push_enabled ?? defaults.pushEnabled;
 
   const link = normalizeNotificationLink(input.link);
   const source = input.source
@@ -327,7 +336,17 @@ export async function createUserNotification(
     throw error;
   }
 
-  return mapNotification(data);
+  const notification = mapNotification(data);
+
+  if (pushEnabled) {
+    try {
+      await sendPushForNotification(notification);
+    } catch (error) {
+      console.error("Push notification fan-out error:", error);
+    }
+  }
+
+  return notification;
 }
 
 export function assertKnownNotificationType(type: string): NotificationType {

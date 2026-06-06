@@ -79,7 +79,7 @@ export function useUpdateNotificationPreference() {
               ? {
                   ...preference,
                   inAppEnabled: input.inAppEnabled,
-                  pushEnabled: input.pushEnabled,
+                  pushEnabled: input.inAppEnabled ? input.pushEnabled : false,
                 }
               : preference,
           ) ?? current,
