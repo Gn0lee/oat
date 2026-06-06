@@ -4,6 +4,7 @@ import { APIError } from "@/lib/api/error";
 import type { Database } from "@/types";
 
 export const DEFAULT_MCP_TOKEN_TTL_DAYS = 90;
+export const MCP_LAST_USED_REFRESH_INTERVAL_MS = 15 * 60 * 1000;
 export const DEFAULT_MCP_READ_SCOPES = [
   "read:overview",
   "read:ledger",
@@ -95,6 +96,18 @@ export function getMcpTokenExpiresAt(
   const expiresAt = new Date(now);
   expiresAt.setUTCDate(expiresAt.getUTCDate() + ttlDays);
   return expiresAt.toISOString();
+}
+
+export function shouldRefreshMcpTokenLastUsedAt(
+  lastUsedAt: string | null,
+  now = new Date(),
+): boolean {
+  if (!lastUsedAt) return true;
+
+  const lastUsedTime = new Date(lastUsedAt).getTime();
+  if (!Number.isFinite(lastUsedTime)) return true;
+
+  return now.getTime() - lastUsedTime >= MCP_LAST_USED_REFRESH_INTERVAL_MS;
 }
 
 export async function listMcpTokens(
@@ -192,7 +205,9 @@ export async function authenticateMcpToken(
 
   const { data, error } = await supabase
     .from("mcp_tokens")
-    .select("id, user_id, household_id, scopes, expires_at, revoked_at")
+    .select(
+      "id, user_id, household_id, scopes, expires_at, revoked_at, last_used_at",
+    )
     .eq("token_hash", hashMcpToken(token))
     .maybeSingle();
 
@@ -212,6 +227,7 @@ export async function authenticateMcpToken(
     scopes: string[];
     expires_at: string;
     revoked_at: string | null;
+    last_used_at: string | null;
   } | null;
 
   if (!row || row.revoked_at || new Date(row.expires_at) <= new Date()) {
@@ -233,10 +249,13 @@ export async function authenticateMcpToken(
     throw new APIError("MCP_FORBIDDEN", "가구 접근 권한이 없습니다.", 403);
   }
 
-  await supabase
-    .from("mcp_tokens")
-    .update({ last_used_at: new Date().toISOString() })
-    .eq("id", row.id);
+  const now = new Date();
+  if (shouldRefreshMcpTokenLastUsedAt(row.last_used_at, now)) {
+    await supabase
+      .from("mcp_tokens")
+      .update({ last_used_at: now.toISOString() })
+      .eq("id", row.id);
+  }
 
   return {
     tokenId: row.id,

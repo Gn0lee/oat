@@ -45,6 +45,16 @@ function summarizeToolInput(
   };
 }
 
+function isMcpNotification(message: unknown): boolean {
+  return (
+    !!message &&
+    typeof message === "object" &&
+    !("id" in message) &&
+    typeof (message as { method?: unknown }).method === "string" &&
+    (message as { method: string }).method.startsWith("notifications/")
+  );
+}
+
 export async function GET() {
   return NextResponse.json({
     data: {
@@ -85,25 +95,31 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const admin = createAdminClient();
   const startedAt = Date.now();
   let auth = null;
   let toolName = "unknown";
   let inputSummary: Record<string, unknown> | undefined;
+  let shouldAudit = false;
 
   try {
+    const message = await request.json();
+    if (isMcpNotification(message)) {
+      return new NextResponse(null, { status: 202 });
+    }
+
+    const admin = createAdminClient();
     auth = await authenticateMcpToken(
       admin,
       request.headers.get("authorization"),
     );
 
-    const message = await request.json();
     if (
       message &&
       typeof message === "object" &&
       "params" in message &&
       (message as { method?: unknown }).method === "tools/call"
     ) {
+      shouldAudit = true;
       const params = (message as { params?: { name?: unknown } }).params;
       toolName = typeof params?.name === "string" ? params.name : "unknown";
       inputSummary = summarizeToolInput(params);
@@ -117,7 +133,7 @@ export async function POST(request: NextRequest) {
       auth,
     });
 
-    if (toolName !== "unknown" && auth) {
+    if (shouldAudit && toolName !== "unknown" && auth) {
       await writeMcpAuditLog(admin, {
         auth,
         toolName,
@@ -133,7 +149,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(response.body, { status: response.status });
   } catch (error) {
-    if (auth) {
+    if (shouldAudit && auth) {
+      const admin = createAdminClient();
       await writeMcpAuditLog(admin, {
         auth,
         toolName,

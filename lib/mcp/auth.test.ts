@@ -5,6 +5,7 @@ import {
   getMcpTokenExpiresAt,
   hashMcpToken,
   parseBearerToken,
+  shouldRefreshMcpTokenLastUsedAt,
   toMcpTokenPreview,
 } from "./auth";
 
@@ -42,5 +43,18 @@ describe("MCP auth helpers", () => {
 
     expect(DEFAULT_MCP_TOKEN_TTL_DAYS).toBe(90);
     expect(expiresAt).toBe("2026-08-06T00:00:00.000Z");
+  });
+
+  it("throttles last_used_at refreshes", () => {
+    const now = new Date("2026-06-06T12:00:00.000Z");
+
+    expect(shouldRefreshMcpTokenLastUsedAt(null, now)).toBe(true);
+    expect(shouldRefreshMcpTokenLastUsedAt("invalid", now)).toBe(true);
+    expect(
+      shouldRefreshMcpTokenLastUsedAt("2026-06-06T11:50:01.000Z", now),
+    ).toBe(false);
+    expect(
+      shouldRefreshMcpTokenLastUsedAt("2026-06-06T11:45:00.000Z", now),
+    ).toBe(true);
   });
 });
