@@ -5,6 +5,7 @@ import {
   getPendingInvitationForUser,
   getUserHouseholdId,
 } from "@/lib/api/invitation";
+import { notifyInvitationAccepted } from "@/lib/api/invitation-notifications";
 import { createClient } from "@/lib/supabase/server";
 
 export async function POST() {
@@ -18,16 +19,6 @@ export async function POST() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // 이미 가구가 있는지 확인
-    const existingHouseholdId = await getUserHouseholdId(supabase, user.id);
-    if (existingHouseholdId) {
-      return NextResponse.json({
-        success: true,
-        householdId: existingHouseholdId,
-        message: "Already has household",
-      });
-    }
-
     // 초대가 있는지 확인
     if (user.email) {
       const invitation = await getPendingInvitationForUser(
@@ -37,12 +28,28 @@ export async function POST() {
 
       if (invitation) {
         await acceptInvitation(supabase, invitation, user.id);
+        await notifyInvitationAccepted(supabase, {
+          invitationId: invitation.id,
+          householdId: invitation.household_id,
+          acceptedUserId: user.id,
+          invitedEmail: invitation.email,
+        });
         return NextResponse.json({
           success: true,
           householdId: invitation.household_id,
           message: "Invitation accepted",
         });
       }
+    }
+
+    // 이미 가구가 있는지 확인
+    const existingHouseholdId = await getUserHouseholdId(supabase, user.id);
+    if (existingHouseholdId) {
+      return NextResponse.json({
+        success: true,
+        householdId: existingHouseholdId,
+        message: "Already has household",
+      });
     }
 
     // 초대가 없으면 새 가구 생성

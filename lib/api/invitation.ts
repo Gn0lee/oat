@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { APIError } from "@/lib/api/error";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database, Invitation } from "@/types";
 
@@ -215,21 +216,58 @@ export async function acceptInvitation(
 ): Promise<void> {
   const adminClient = createAdminClient();
 
-  // 가구에 member로 추가
-  const { error: memberError } = await adminClient
+  const { data: existingMembership, error: membershipError } = await adminClient
     .from("household_members")
-    .insert({
-      household_id: invitation.household_id,
-      user_id: userId,
-      role: "member",
-    });
+    .select("household_id")
+    .eq("user_id", userId)
+    .maybeSingle();
 
-  if (memberError) {
-    // 이미 가구에 속해있는 경우
-    if (memberError.code === "23505") {
-      throw new Error("이미 가구에 속해있습니다.");
+  if (membershipError) {
+    throw membershipError;
+  }
+
+  if (existingMembership) {
+    if (existingMembership.household_id !== invitation.household_id) {
+      throw new APIError(
+        "INVITATION_ALREADY_IN_OTHER_HOUSEHOLD",
+        "이미 다른 가구에 속해있습니다.",
+        409,
+      );
     }
-    throw memberError;
+  } else {
+    // 가구에 member로 추가
+    const { error: memberError } = await adminClient
+      .from("household_members")
+      .insert({
+        household_id: invitation.household_id,
+        user_id: userId,
+        role: "member",
+      });
+
+    if (memberError) {
+      if (memberError.code !== "23505") {
+        throw memberError;
+      }
+
+      const { data: duplicateMembership, error: duplicateMembershipError } =
+        await adminClient
+          .from("household_members")
+          .select("household_id")
+          .eq("user_id", userId)
+          .maybeSingle();
+
+      if (duplicateMembershipError) {
+        throw duplicateMembershipError;
+      }
+
+      if (duplicateMembership?.household_id !== invitation.household_id) {
+        throw new APIError(
+          "INVITATION_ALREADY_IN_OTHER_HOUSEHOLD",
+          "이미 다른 가구에 속해있습니다.",
+          409,
+        );
+      }
+    }
   }
 
   // 초대 상태 업데이트

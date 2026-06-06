@@ -759,6 +759,26 @@ stock_transaction_deleted:{transactionId}
 - 범위: 요청 승인/거절/취소 결과를 요청자에게 알림으로 전달하고, 초대 수락 시 기존 구성원에게 확인형 알림을 전달한다.
 - 완료 기준: 요청자는 처리 결과 알림을 받고 원본 기록으로 이동할 수 있으며, 초대 수락 시 기존 구성원이 가구 화면으로 이동할 수 있다.
 
+초대 수락 알림은 초대 상태 정합성과 함께 처리한다. **Household Member**가 실제 소속의 source of truth이고, `invitations.status`는 초대 요청의 lifecycle audit이다. 따라서 초대받은 사용자가 이미 해당 가구의 구성원이어도 초대 수락 API는 실패하지 않고 해당 invitation을 `accepted`로 정리해야 한다. UI에서 accepted invitation을 숨기는 것만으로는 충분하지 않으며, pending invitation과 member row가 공존하는 상태를 남기지 않는다.
+
+`invitation_accepted` User Notification의 수신자는 신규 합류자를 제외한 기존 가구 구성원 전체이다. 초대한 사람도 기존 구성원이므로 포함된다. 신규 합류자 본인은 이미 수락 플로우 안에 있으므로 자기 행동에 대한 확인 알림을 받지 않는다.
+
+초대 수락 알림은 `source_type = 'invitation'`, `source_id = invitation.id`로 추적한다. 중복 방지는 `dedupe_key = invitation_accepted:{invitationId}`를 사용한다. 초대 수락은 invitation lifecycle에서 한 번만 의미 있는 사건이므로 수락 API가 재호출되어도 같은 invitation에 대한 알림을 반복 생성하지 않는다. 알림 링크는 `household_settings`를 사용한다.
+
+멱등 수락은 초대받은 사용자가 이미 같은 household의 **Household Member**인 경우에만 적용한다. 사용자가 다른 household에 이미 속해있는 경우는 자동 이동이나 병합을 하지 않고 실패시킨다. 현재 앱은 사용자당 단일 household를 전제로 하므로, 다른 가구 소속자를 조용히 초대 가구로 합류시키면 데이터 소유권과 가구 경계가 깨질 수 있다.
+
+수락 처리 순서는 **Household Member** 추가 후 `invitations.status = 'accepted'` 업데이트이다. `household_members`가 실제 소속의 source of truth이므로, 멤버 추가가 실패했는데 invitation만 accepted가 되는 상태를 만들지 않는다. 단, 같은 household의 멤버 row가 이미 존재하는 경우는 멤버 추가를 성공으로 간주하고 invitation status를 accepted로 정리한다. `invitation_accepted` User Notification은 멤버십과 invitation lifecycle 정리가 끝난 뒤 best effort로 생성한다.
+
+같은 이메일에 여러 pending invitation이 있으면 현재 수락 API는 최신 유효 초대 1개를 수락한다. DB unique 제약은 `(household_id, email)`이므로 서로 다른 household에서 같은 이메일을 초대할 수 있고, 현재 초대 callback은 특정 invitation id/token을 전달하지 않는다. 사용자당 단일 household 전제에서는 최신 유효 초대 수락을 현재 범위의 규칙으로 둔다. 특정 초대를 명시적으로 수락하게 하려면 초대 링크에 invitation id 또는 token을 포함하는 별도 개선이 필요하다.
+
+초대 수락 알림 문구는 신규 합류자의 `profiles.name`을 우선 사용하고, 이름이 비어 있으면 이메일을 fallback으로 사용한다. 앱의 구성원 표시는 `profiles`를 기준으로 하므로, `auth.users`의 `display_name`은 알림 문구의 source로 사용하지 않는다.
+
+#348은 초대 수락 알림뿐 아니라 #191에서 관찰된 pending invitation/member 공존 상태를 예방하는 수락 정합성 수정을 포함한다. 알림은 정상적인 **Invitation Acceptance** 이벤트에 의존하므로, 수락 API가 invitation lifecycle을 정리하지 못하는 상태를 남긴 채 알림만 생성하지 않는다.
+
+초대 수락 알림 생성 실패는 초대 수락 자체를 실패시키지 않는다. **Household Member** 생성과 invitation lifecycle 정리가 성공했다면 `invitation_accepted` User Notification 생성은 best effort로 처리한다. 알림 생성 실패는 서버 로그에 남기고, dedupe 또는 preference 때문에 알림 row가 생성되지 않은 경우는 정상 처리한다.
+
+Record Change Request 승인/거절 결과 알림은 요청자에게 보낸다. 요청자가 pending 요청을 취소한 경우에는 대상 소유자에게 취소 확인 알림을 보낸다. 결과 알림은 `source_type = 'record_change_request'`, `source_id = record_change_requests.id`, `link_kind = 'record_change_request_detail'`을 사용하고, 중복 방지는 `record_change_request_result:{requestId}:{status}`를 사용한다. 결과 알림 생성 실패는 원본 요청 상태 변경을 실패시키지 않는다.
+
 ### Slice 8. Push 채널 구독과 테스트 알림 (#349)
 
 - Type: AFK
@@ -780,3 +800,13 @@ stock_transaction_deleted:{transactionId}
 8. 기존 owner mismatch 데이터는 자동 마이그레이션하지 않는다.
 9. 주식 거래 변경 알림(#347)은 직접 거래 API에서 발생한 생성/수정/삭제만 다루며, Record Change Request 승인 결과 알림은 #348에서 다룬다.
 10. 주식 거래 변경 알림 링크는 `stock_record_date`로 통일한다.
+11. 초대 수락은 멱등 처리하며, 실제 소속은 `household_members`, 초대 lifecycle은 `invitations.status`에 기록한다.
+12. 초대 수락 알림은 신규 합류자를 제외한 기존 가구 구성원 전체에게 보낸다.
+13. 초대 수락 알림은 `invitation_accepted:{invitationId}` dedupe key와 `household_settings` 링크를 사용한다.
+14. 초대 수락 멱등 처리는 이미 같은 household에 속한 사용자에게만 적용하고, 다른 household 소속자는 자동 이동하지 않는다.
+15. 초대 수락은 멤버 추가를 먼저 완료하고, 그 다음 invitation status를 `accepted`로 기록하며, 알림은 이후 best effort로 생성한다.
+16. 같은 이메일에 여러 pending invitation이 있으면 최신 유효 초대 1개를 수락한다.
+17. 초대 수락 알림 문구는 `profiles.name`을 우선 사용하고, 비어 있으면 이메일을 fallback으로 사용한다.
+18. #348은 초대 수락 알림과 함께 #191의 pending invitation/member 공존 상태를 예방하는 수락 정합성 수정을 포함한다.
+19. 초대 수락 알림 생성 실패는 원본 초대 수락을 실패시키지 않는다.
+20. Record Change Request 승인/거절 결과는 요청자에게, 취소 결과는 대상 소유자에게 알린다.

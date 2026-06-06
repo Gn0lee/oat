@@ -16,6 +16,7 @@ import {
   stockTransactionUpdateProposedChangesSchema,
 } from "@/schemas/record-change-request";
 import type { Database, Json, RecordChangeRequest } from "@/types";
+import { notifyRecordChangeRequestResult } from "./record-change-request-notifications";
 
 export interface ValidatedRecordChangeRequestTarget {
   householdId: string;
@@ -613,6 +614,8 @@ export async function cancelRecordChangeRequest(
     throw error;
   }
 
+  await notifyRecordChangeRequestResult(data);
+
   return data;
 }
 
@@ -645,6 +648,8 @@ export async function resolveRecordChangeRequest(
   if (error) {
     throw error;
   }
+
+  await notifyRecordChangeRequestResult(data);
 
   return data;
 }
