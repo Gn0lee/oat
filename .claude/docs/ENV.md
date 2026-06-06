@@ -5,6 +5,7 @@
 ## TL;DR
 
 - **Supabase** - URL, publishable key, secret key 필수
+- **Web Push** - Push 알림 사용 시 VAPID 키 필요
 - **환율 API** - ExchangeRate-API 키 (GitHub Actions에서 사용)
 - **GitHub Actions** - 종목/환율 동기화용 secrets 설정 필요
 - **`.env.local`** - 로컬 개발용 (`.gitignore`에 포함)
@@ -34,6 +35,25 @@
 |--------|------|--------|
 | `NEXT_PUBLIC_APP_URL` | 앱 URL | `http://localhost:3000` |
 | `LOG_LEVEL` | 로그 레벨 | `info` |
+
+### Push 알림
+
+Push 알림을 사용하는 환경에서는 Web Push VAPID 키를 설정합니다. Production에서 누락되면 배포 설정 사고로 봅니다.
+
+| 변수명 | 설명 | 공개 가능 |
+|--------|------|:--------:|
+| `NEXT_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY` | 브라우저 구독 생성용 VAPID public key | O |
+| `WEB_PUSH_VAPID_PUBLIC_KEY` | 서버 발송용 VAPID public key | X |
+| `WEB_PUSH_VAPID_PRIVATE_KEY` | 서버 발송용 VAPID private key | X |
+| `WEB_PUSH_VAPID_SUBJECT` | Push 발송자 연락처 또는 식별자 | X |
+
+VAPID 키는 한 번 생성해 환경별 secret에 저장합니다.
+
+```bash
+npx web-push generate-vapid-keys
+```
+
+`WEB_PUSH_VAPID_SUBJECT`는 `mailto:operator@example.com` 또는 서비스 URL처럼 고정된 연락 가능한 값을 사용합니다.
 
 ### system_config 전용 (선택)
 
@@ -77,6 +97,12 @@ SUPABASE_SECRET_KEY=sb_secret_xxx
 
 # App
 NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+# Web Push
+NEXT_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY=...
+WEB_PUSH_VAPID_PUBLIC_KEY=...
+WEB_PUSH_VAPID_PRIVATE_KEY=...
+WEB_PUSH_VAPID_SUBJECT=mailto:operator@example.com
 ```
 
 ### Vercel 배포
@@ -87,6 +113,10 @@ Vercel 대시보드 > Settings > Environment Variables에서 설정:
 2. `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
 3. `SUPABASE_SECRET_KEY`
 4. `NEXT_PUBLIC_APP_URL` (배포 도메인)
+5. `NEXT_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY`
+6. `WEB_PUSH_VAPID_PUBLIC_KEY`
+7. `WEB_PUSH_VAPID_PRIVATE_KEY`
+8. `WEB_PUSH_VAPID_SUBJECT`
 
 ### GitHub Actions 설정
 
@@ -127,6 +157,7 @@ GitHub Repository > Settings > Secrets and variables > Actions에서 설정:
 |------|----------|------|
 | `NEXT_PUBLIC_*` | O | 클라이언트에 노출됨 |
 | `SUPABASE_SECRET_KEY` | **X** | 서버에서만 사용 |
+| `WEB_PUSH_VAPID_PRIVATE_KEY` | **X** | 서버에서만 사용 |
 | `EXCHANGE_API_KEY` | **X** | GitHub Actions 전용 |
 
 **절대 커밋하지 말 것:**
@@ -153,6 +184,12 @@ declare namespace NodeJS {
     // App
     NEXT_PUBLIC_APP_URL?: string;
     LOG_LEVEL?: 'debug' | 'info' | 'warn' | 'error';
+
+    // Web Push
+    NEXT_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY?: string;
+    WEB_PUSH_VAPID_PUBLIC_KEY?: string;
+    WEB_PUSH_VAPID_PRIVATE_KEY?: string;
+    WEB_PUSH_VAPID_SUBJECT?: string;
   }
 }
 ```

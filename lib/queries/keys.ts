@@ -97,6 +97,9 @@ export const queries = createQueryKeyStore({
     list: (params?: { limit?: number }) => ({ queryKey: [params] }),
     unreadCount: null,
     preferences: null,
+    pushSubscription: (params?: { endpoint?: string | null }) => ({
+      queryKey: [params],
+    }),
   },
 
   recordChangeRequests: {
