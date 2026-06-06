@@ -152,14 +152,14 @@ describe("payment method auxiliary balance", () => {
     }
   });
 
-  it("보조잔액은 0 이상이어야 한다", () => {
+  it("보조잔액은 음수도 허용한다", () => {
     const result = createPaymentMethodSchema.safeParse({
       name: "상품권",
       type: "gift_card",
       balance: -1,
     });
 
-    expect(result.success).toBe(false);
+    expect(result.success).toBe(true);
   });
 
   it("수정 스키마도 보조잔액 null을 허용한다", () => {

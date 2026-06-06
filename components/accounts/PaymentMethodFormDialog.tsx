@@ -97,9 +97,11 @@ const paymentMethodFormSchema = z.object({
     .max(31, "결제일은 31일 이하여야 합니다.")
     .optional()
     .or(z.nan()),
-  balanceStr: z.string().refine((value) => value === "" || Number(value) >= 0, {
-    message: "잔액은 0 이상이어야 합니다.",
-  }),
+  balanceStr: z
+    .string()
+    .refine((value) => value === "" || !Number.isNaN(Number(value)), {
+      message: "숫자로 입력해주세요.",
+    }),
   memo: z.string().max(500, "메모는 500자 이내여야 합니다.").optional(),
 });
 

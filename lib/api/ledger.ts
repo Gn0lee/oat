@@ -279,14 +279,34 @@ export function getLedgerBalanceEffects(
     ].filter(Boolean) as LedgerBalanceEffect[];
   }
 
-  if (input.type === "expense" && input.fromPaymentMethodId) {
+  if (input.type === "income") {
     return [
-      {
-        table: "payment_methods",
+      input.toAccountId && {
+        table: "accounts" as const,
+        id: input.toAccountId,
+        delta: input.amount,
+      },
+      input.toPaymentMethodId && {
+        table: "payment_methods" as const,
+        id: input.toPaymentMethodId,
+        delta: input.amount,
+      },
+    ].filter(Boolean) as LedgerBalanceEffect[];
+  }
+
+  if (input.type === "expense") {
+    return [
+      input.fromAccountId && {
+        table: "accounts" as const,
+        id: input.fromAccountId,
+        delta: -input.amount,
+      },
+      input.fromPaymentMethodId && {
+        table: "payment_methods" as const,
         id: input.fromPaymentMethodId,
         delta: -input.amount,
       },
-    ];
+    ].filter(Boolean) as LedgerBalanceEffect[];
   }
 
   return [];
@@ -592,6 +612,7 @@ export async function createLedgerEntry(
 type AccountBalanceRow = {
   id: string;
   household_id: string;
+  owner_id: string;
   balance: number | null;
 };
 
@@ -599,6 +620,7 @@ type PaymentMethodBalanceRow = {
   id: string;
   household_id: string;
   type: PaymentMethodType;
+  linked_account_id: string | null;
   balance: number | null;
 };
 
@@ -631,7 +653,7 @@ async function fetchAccountBalanceRows(
 
   const { data, error } = await supabase
     .from("accounts")
-    .select("id, household_id, balance")
+    .select("id, household_id, owner_id, balance")
     .in("id", ids);
 
   if (error) {
@@ -654,7 +676,7 @@ async function fetchPaymentMethodBalanceRows(
 
   const { data, error } = await supabase
     .from("payment_methods")
-    .select("id, household_id, type, balance")
+    .select("id, household_id, type, linked_account_id, balance")
     .in("id", ids);
 
   if (error) {
@@ -692,6 +714,7 @@ async function applyLedgerBalanceEffects(
   householdId: string,
   entryType: LedgerEntryType,
   effects: LedgerBalanceEffect[],
+  ownerId?: string,
 ): Promise<void> {
   const combinedEffects = combineBalanceEffects(effects);
   const accountIds = combinedEffects
@@ -708,45 +731,51 @@ async function applyLedgerBalanceEffects(
 
   const now = new Date().toISOString();
 
+  const applyAccountDelta = async (accountId: string, delta: number) => {
+    const account = accountMap.get(accountId);
+    if (!account || account.household_id !== householdId) {
+      throw new APIError(
+        "LEDGER_INVALID_TRANSFER_TARGET",
+        "이체할 계좌를 찾을 수 없습니다.",
+        400,
+      );
+    }
+
+    if (ownerId && account.owner_id !== ownerId) {
+      throw new APIError(
+        "LEDGER_FINANCIAL_SOURCE_FORBIDDEN",
+        "본인의 계좌 또는 결제수단만 기록에 사용할 수 있습니다.",
+        403,
+      );
+    }
+
+    if (account.balance === null) return;
+
+    const nextBalance = account.balance + delta;
+    account.balance = nextBalance;
+
+    const { error } = await supabase
+      .from("accounts")
+      .update({
+        balance: nextBalance,
+        balance_updated_at: now,
+        updated_at: now,
+      })
+      .eq("id", accountId);
+
+    if (error) {
+      console.error("Account balance update error:", error);
+      throw new APIError(
+        "LEDGER_BALANCE_UPDATE_ERROR",
+        "계좌 잔액 업데이트에 실패했습니다.",
+        500,
+      );
+    }
+  };
+
   for (const effect of combinedEffects) {
     if (effect.table === "accounts") {
-      const account = accountMap.get(effect.id);
-      if (!account || account.household_id !== householdId) {
-        throw new APIError(
-          "LEDGER_INVALID_TRANSFER_TARGET",
-          "이체할 계좌를 찾을 수 없습니다.",
-          400,
-        );
-      }
-
-      if (account.balance === null) continue;
-
-      const nextBalance = account.balance + effect.delta;
-      if (nextBalance < 0) {
-        throw new APIError(
-          "LEDGER_INSUFFICIENT_BALANCE",
-          "계좌 잔액이 부족합니다.",
-          400,
-        );
-      }
-
-      const { error } = await supabase
-        .from("accounts")
-        .update({
-          balance: nextBalance,
-          balance_updated_at: now,
-          updated_at: now,
-        })
-        .eq("id", effect.id);
-
-      if (error) {
-        console.error("Account balance update error:", error);
-        throw new APIError(
-          "LEDGER_BALANCE_UPDATE_ERROR",
-          "계좌 잔액 업데이트에 실패했습니다.",
-          500,
-        );
-      }
+      await applyAccountDelta(effect.id, effect.delta);
     } else {
       const paymentMethod = paymentMethodMap.get(effect.id);
       if (!paymentMethod || paymentMethod.household_id !== householdId) {
@@ -766,18 +795,30 @@ async function applyLedgerBalanceEffects(
             400,
           );
         }
+        if (
+          entryType === "expense" &&
+          paymentMethod.type === "debit_card" &&
+          paymentMethod.linked_account_id
+        ) {
+          if (!accountMap.has(paymentMethod.linked_account_id)) {
+            const linkedAccountMap = await fetchAccountBalanceRows(supabase, [
+              paymentMethod.linked_account_id,
+            ]);
+            for (const [id, account] of linkedAccountMap) {
+              accountMap.set(id, account);
+            }
+          }
+          await applyAccountDelta(
+            paymentMethod.linked_account_id,
+            effect.delta,
+          );
+        }
         continue;
       }
 
       const currentBalance = paymentMethod.balance ?? 0;
       const nextBalance = currentBalance + effect.delta;
-      if (nextBalance < 0) {
-        throw new APIError(
-          "LEDGER_INSUFFICIENT_BALANCE",
-          "결제수단 보조잔액이 부족합니다.",
-          400,
-        );
-      }
+      paymentMethod.balance = nextBalance;
 
       const { error } = await supabase
         .from("payment_methods")
@@ -818,6 +859,7 @@ export async function createLedgerEntryWithBalanceSync(
     params.householdId,
     params.type,
     effects,
+    params.ownerId,
   );
 
   try {
@@ -829,6 +871,7 @@ export async function createLedgerEntryWithBalanceSync(
         params.householdId,
         params.type,
         effects.map((effect) => ({ ...effect, delta: -effect.delta })),
+        params.ownerId,
       );
     }
     throw error;
@@ -1004,6 +1047,7 @@ export async function updateLedgerEntryWithBalanceSync(
     existing.household_id,
     nextType,
     balanceEffects,
+    ownerId,
   );
 
   try {
@@ -1015,6 +1059,7 @@ export async function updateLedgerEntryWithBalanceSync(
         existing.household_id,
         existing.type,
         balanceEffects.map((effect) => ({ ...effect, delta: -effect.delta })),
+        ownerId,
       );
     }
     throw error;
@@ -1110,6 +1155,7 @@ export async function deleteLedgerEntryWithBalanceSync(
     existing.household_id,
     existing.type,
     reversedEffects,
+    ownerId,
   );
 
   const { error } = await supabase
@@ -1124,6 +1170,7 @@ export async function deleteLedgerEntryWithBalanceSync(
         existing.household_id,
         existing.type,
         effects,
+        ownerId,
       );
     }
     console.error("Ledger entry delete error:", error);
