@@ -3,6 +3,7 @@ import { APIError } from "./error";
 import {
   assertTransactionAccountOwnership,
   deleteTransaction,
+  getTransactionAccountBalanceDelta,
   getTransactions,
 } from "./transaction";
 
@@ -81,6 +82,28 @@ describe("getTransactions", () => {
   });
 });
 
+describe("getTransactionAccountBalanceDelta", () => {
+  it("매수 거래는 계좌 예수금을 감소시킨다", () => {
+    expect(
+      getTransactionAccountBalanceDelta({
+        type: "buy",
+        quantity: 3,
+        price: 10000,
+      }),
+    ).toBe(-30000);
+  });
+
+  it("매도 거래는 계좌 예수금을 증가시킨다", () => {
+    expect(
+      getTransactionAccountBalanceDelta({
+        type: "sell",
+        quantity: 3,
+        price: 10000,
+      }),
+    ).toBe(30000);
+  });
+});
+
 describe("assertTransactionAccountOwnership", () => {
   function createAccountOwnershipSupabaseMock(row: unknown) {
     const builder = {
@@ -156,6 +179,22 @@ describe("deleteTransaction", () => {
       eq: vi.fn().mockReturnThis(),
       single: vi.fn().mockResolvedValue({ data: transaction, error: null }),
     };
+    const accountSelectBuilder = {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      single: vi.fn().mockResolvedValue({
+        data: {
+          id: "account-1",
+          household_id: "household-1",
+          balance: 100000,
+        },
+        error: null,
+      }),
+    };
+    const accountUpdateBuilder = {
+      update: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockResolvedValue({ error: null }),
+    };
     const deleteBuilder = {
       delete: vi.fn(),
       eq: vi.fn(),
@@ -169,6 +208,8 @@ describe("deleteTransaction", () => {
       from: vi
         .fn()
         .mockReturnValueOnce(selectBuilder)
+        .mockReturnValueOnce(accountSelectBuilder)
+        .mockReturnValueOnce(accountUpdateBuilder)
         .mockReturnValueOnce(deleteBuilder),
     };
 
@@ -180,6 +221,11 @@ describe("deleteTransaction", () => {
     );
 
     expect(result).toEqual(transaction);
+    expect(accountUpdateBuilder.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        balance: 100586.5,
+      }),
+    );
     expect(deleteBuilder.delete).toHaveBeenCalled();
   });
 });

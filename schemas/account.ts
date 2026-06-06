@@ -31,7 +31,7 @@ export const createAccountSchema = z.object({
     message: "계좌 유형을 선택해주세요.",
   }),
   category: z.enum(accountCategoryValues).optional(),
-  balance: z.number().min(0, "잔액은 0 이상이어야 합니다.").optional(),
+  balance: z.number().optional(),
   memo: z.string().max(500, "메모는 500자 이내여야 합니다.").optional(),
 });
 
@@ -60,11 +60,7 @@ export const updateAccountSchema = z.object({
     })
     .optional(),
   category: z.enum(accountCategoryValues).nullable().optional(),
-  balance: z
-    .number()
-    .min(0, "잔액은 0 이상이어야 합니다.")
-    .nullable()
-    .optional(),
+  balance: z.number().nullable().optional(),
   memo: z
     .string()
     .max(500, "메모는 500자 이내여야 합니다.")

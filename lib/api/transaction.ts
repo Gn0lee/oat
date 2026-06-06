@@ -34,6 +34,64 @@ export interface CreateTransactionParams {
   };
 }
 
+interface TransactionAccountBalanceInput {
+  type: TransactionType;
+  quantity: number;
+  price: number;
+}
+
+export function getTransactionAccountBalanceDelta(
+  input: TransactionAccountBalanceInput,
+): number {
+  const amount = input.quantity * input.price;
+  return input.type === "buy" ? -amount : amount;
+}
+
+async function applyTransactionAccountBalanceDelta(
+  supabase: SupabaseClient<Database>,
+  householdId: string,
+  accountId: string | null | undefined,
+  delta: number,
+): Promise<void> {
+  if (!accountId || delta === 0) return;
+
+  const { data: account, error: fetchError } = await supabase
+    .from("accounts")
+    .select("id, household_id, balance")
+    .eq("id", accountId)
+    .eq("household_id", householdId)
+    .single();
+
+  if (fetchError || !account) {
+    throw new APIError(
+      "TRANSACTION_ACCOUNT_NOT_FOUND",
+      "거래에 사용할 계좌를 찾을 수 없습니다.",
+      404,
+    );
+  }
+
+  if (account.balance === null) return;
+
+  const now = new Date().toISOString();
+  const { error: updateError } = await supabase
+    .from("accounts")
+    .update({
+      balance: Number(account.balance) + delta,
+      balance_updated_at: now,
+      updated_at: now,
+    })
+    .eq("id", accountId);
+
+  if (updateError) {
+    console.error("Transaction account balance update error:", updateError);
+    throw new APIError(
+      "TRANSACTION_BALANCE_UPDATE_ERROR",
+      "거래 계좌 예수금 업데이트에 실패했습니다.",
+      500,
+    );
+  }
+}
+
 /**
  * 거래 생성
  * 1. 종목 설정이 없으면 자동 생성 (UPSERT)
@@ -108,6 +166,18 @@ export async function createTransaction(
     }
   }
 
+  const balanceDelta = getTransactionAccountBalanceDelta({
+    type,
+    quantity,
+    price,
+  });
+  await applyTransactionAccountBalanceDelta(
+    supabase,
+    householdId,
+    accountId,
+    balanceDelta,
+  );
+
   // 3. 거래 기록 INSERT
   const { data, error } = await supabase
     .from("transactions")
@@ -126,6 +196,12 @@ export async function createTransaction(
     .single();
 
   if (error) {
+    await applyTransactionAccountBalanceDelta(
+      supabase,
+      householdId,
+      accountId,
+      -balanceDelta,
+    );
     console.error("Transaction insert error:", error);
     throw new APIError("TRANSACTION_ERROR", "거래 저장에 실패했습니다.", 500);
   }
@@ -482,6 +558,42 @@ export async function updateTransaction(
     }
   }
 
+  const oldBalanceDelta = getTransactionAccountBalanceDelta({
+    type: existingTransaction.type,
+    quantity: Number(existingTransaction.quantity),
+    price: Number(existingTransaction.price),
+  });
+  const newBalanceDelta = getTransactionAccountBalanceDelta({
+    type: existingTransaction.type,
+    quantity:
+      params.quantity !== undefined
+        ? params.quantity
+        : Number(existingTransaction.quantity),
+    price:
+      params.price !== undefined
+        ? params.price
+        : Number(existingTransaction.price),
+  });
+  const balanceEffects = [
+    {
+      accountId: existingTransaction.account_id,
+      delta: -oldBalanceDelta,
+    },
+    {
+      accountId: targetAccountId,
+      delta: newBalanceDelta,
+    },
+  ];
+
+  for (const effect of balanceEffects) {
+    await applyTransactionAccountBalanceDelta(
+      supabase,
+      householdId,
+      effect.accountId,
+      effect.delta,
+    );
+  }
+
   // 4. 거래 업데이트
   const updateData: Record<string, unknown> = {};
   if (params.quantity !== undefined) updateData.quantity = params.quantity;
@@ -501,6 +613,14 @@ export async function updateTransaction(
     .single();
 
   if (error) {
+    for (const effect of balanceEffects.toReversed()) {
+      await applyTransactionAccountBalanceDelta(
+        supabase,
+        householdId,
+        effect.accountId,
+        -effect.delta,
+      );
+    }
     console.error("Transaction update error:", error);
     throw new APIError("TRANSACTION_ERROR", "거래 수정에 실패했습니다.", 500);
   }
@@ -529,6 +649,18 @@ export async function deleteTransaction(
     throw new APIError("FORBIDDEN", "본인의 거래만 삭제할 수 있습니다.", 403);
   }
 
+  const balanceDelta = getTransactionAccountBalanceDelta({
+    type: existingTransaction.type,
+    quantity: Number(existingTransaction.quantity),
+    price: Number(existingTransaction.price),
+  });
+  await applyTransactionAccountBalanceDelta(
+    supabase,
+    householdId,
+    existingTransaction.account_id,
+    -balanceDelta,
+  );
+
   // 3. 거래 삭제
   const { error } = await supabase
     .from("transactions")
@@ -538,6 +670,12 @@ export async function deleteTransaction(
     .eq("owner_id", userId);
 
   if (error) {
+    await applyTransactionAccountBalanceDelta(
+      supabase,
+      householdId,
+      existingTransaction.account_id,
+      balanceDelta,
+    );
     console.error("Transaction delete error:", error);
     throw new APIError("TRANSACTION_ERROR", "거래 삭제에 실패했습니다.", 500);
   }
@@ -693,6 +831,23 @@ export async function createBatchTransactions(
     memo: item.memo || null,
     account_id: item.accountId ?? accountId,
   }));
+  const balanceEffects = insertData.map((item) => ({
+    accountId: item.account_id,
+    delta: getTransactionAccountBalanceDelta({
+      type,
+      quantity: Number(item.quantity),
+      price: Number(item.price),
+    }),
+  }));
+
+  for (const effect of balanceEffects) {
+    await applyTransactionAccountBalanceDelta(
+      supabase,
+      householdId,
+      effect.accountId,
+      effect.delta,
+    );
+  }
 
   const { data, error } = await supabase
     .from("transactions")
@@ -700,6 +855,14 @@ export async function createBatchTransactions(
     .select();
 
   if (error) {
+    for (const effect of balanceEffects.toReversed()) {
+      await applyTransactionAccountBalanceDelta(
+        supabase,
+        householdId,
+        effect.accountId,
+        -effect.delta,
+      );
+    }
     console.error("Batch transaction insert error:", error);
     throw new APIError("TRANSACTION_ERROR", "거래 저장에 실패했습니다.", 500);
   }

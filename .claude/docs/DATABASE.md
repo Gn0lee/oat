@@ -147,12 +147,83 @@ create type ledger_entry_type as enum (
   'transfer'   -- 이체 (계좌→계좌, 계좌→결제수단)
 );
 
+-- 잔액 조정 대상 유형
+create type balance_adjustment_target_type as enum (
+  'account',
+  'payment_method'
+);
+
 -- 카테고리 유형
 create type category_type as enum (
   'expense',  -- 지출 카테고리
   'income'    -- 수입 카테고리
 );
 ```
+
+## 잔액 동기화 원칙
+
+`accounts.balance`와 잔액 있는 `payment_methods.balance`는 현재 잔액으로 신뢰합니다. 가계부/투자/잔액 조정 이벤트는 저장될 때 대상 balance를 함께 갱신해야 합니다.
+
+| 이벤트 | balance 영향 | 현금흐름 통계 |
+|--------|---------------|---------------|
+| `income` + `to_account_id` | 계좌 `+amount` | 수입 포함 |
+| `income` + `to_payment_method_id` | 선불/상품권/현금 `+amount` | 수입 포함 |
+| `expense` + `from_account_id` | 계좌 `-amount` | 지출 포함 |
+| `expense` + 선불/상품권/현금 `from_payment_method_id` | 결제수단 `-amount` | 지출 포함 |
+| `expense` + 체크카드 `from_payment_method_id` | `linked_account_id`가 있으면 연결 계좌 `-amount` | 지출 포함 |
+| `expense` + 신용카드 `from_payment_method_id` | balance 변화 없음 | 지출 포함 |
+| `transfer` | 출발 대상 `-amount`, 도착 대상 `+amount` | 제외 |
+| 주식 매수 | 연결 투자 계좌 예수금 `-(수량 * 단가 + 수수료 + 세금)` | 제외 |
+| 주식 매도 | 연결 투자 계좌 예수금 `수량 * 단가 - 수수료 - 세금` | 제외 |
+| 잔액 조정 | 대상 balance를 실제 잔액으로 맞춤 | 제외 |
+
+추가 규칙:
+
+- 투자 계좌의 `balance`는 예수금만 의미합니다. 보유 주식 평가액은 holdings/valuation에서 계산합니다.
+- 선불지갑, 상품권, 현금은 잔액을 관리하지만 MVP 총자산 합산에는 포함하지 않습니다.
+- 신용카드와 체크카드는 자체 balance를 갖지 않습니다.
+- 체크카드 `linked_account_id`가 없으면 지출 기록은 생성하지만 계좌 balance mutation은 만들지 않습니다.
+- 체크카드 `linked_account_id`를 나중에 설정하거나 변경해도 과거 지출의 balance mutation을 자동 소급하지 않습니다. 새 설정은 이후 생성/수정되는 지출부터 적용합니다.
+- 계좌 balance가 `null`이면 자동 증감과 잔액 부족 검사를 건너뜁니다.
+- 수수료와 세금은 주식 거래의 선택 입력값이며, 미입력 시 `0`으로 취급합니다.
+- balance 갱신과 원본 이벤트 생성은 논리적으로 함께 성공하거나 함께 실패해야 합니다.
+- 원본 이벤트 수정 시 기존 balance effect를 되돌린 뒤 새 effect를 적용합니다.
+- 원본 이벤트 삭제 시 기존 balance effect를 되돌립니다.
+- 새 effect 적용 결과 balance가 0보다 작아져도 서버는 저장을 거부하지 않습니다. 음수 잔액 확인은 클라이언트 UX에서 Dialog로 처리하고, 서버는 저장 후 음수 balance 상태를 허용합니다.
+
+## 잔액 조정 테이블
+
+잔액 조정은 `ledger_entries`와 분리합니다. 가계부 현금흐름과 다른 성격의 기록이므로 통계, 카테고리, 공용/개인 장부 규칙에 섞지 않습니다.
+
+```sql
+create table public.balance_adjustments (
+  id uuid primary key default gen_random_uuid(),
+  household_id uuid not null references public.households(id) on delete cascade,
+  owner_id uuid not null references public.profiles(id) on delete cascade,
+  target_type balance_adjustment_target_type not null,
+  account_id uuid references public.accounts(id) on delete cascade,
+  payment_method_id uuid references public.payment_methods(id) on delete cascade,
+  previous_balance numeric(18, 2) not null,
+  actual_balance numeric(18, 2) not null,
+  delta numeric(18, 2) not null,
+  title text not null default '잔액 맞춤',
+  memo text,
+  adjusted_at timestamptz not null,
+  created_at timestamptz default now() not null,
+
+  check (
+    (target_type = 'account' and account_id is not null and payment_method_id is null)
+    or
+    (target_type = 'payment_method' and payment_method_id is not null and account_id is null)
+  )
+);
+```
+
+RLS/권한:
+
+- 가구 구성원은 가구 내 조정 기록을 조회할 수 있습니다.
+- 생성은 해당 계좌/결제수단 소유자만 가능합니다.
+- 조정 생성 시 대상 balance를 `actual_balance`로 갱신합니다.
 
 ---
 

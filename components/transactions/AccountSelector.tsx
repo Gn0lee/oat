@@ -45,6 +45,7 @@ import {
 } from "@/components/ui/popover";
 import { useAccounts, useCreateAccount } from "@/hooks/use-accounts";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import type { AccountWithOwner } from "@/lib/api/account";
 import { cn } from "@/lib/utils/cn";
 import type { Account } from "@/types";
 
@@ -107,8 +108,7 @@ function AccountCommandList({
   onCreate,
   className,
 }: {
-  // biome-ignore lint/suspicious/noExplicitAny: accounts type from useAccounts
-  accounts: any[];
+  accounts: AccountWithOwner[];
   value: string;
   allowClear: boolean;
   onValueChange: (value: string) => void;
@@ -148,7 +148,14 @@ function AccountCommandList({
         {accounts.map((account) => (
           <CommandItem
             key={account.id}
-            value={account.name}
+            value={[
+              account.name,
+              account.broker,
+              account.ownerName,
+              account.lastFour,
+            ]
+              .filter(Boolean)
+              .join(" ")}
             onSelect={() => onValueChange(account.id)}
             className="cursor-pointer py-2.5"
           >
@@ -159,10 +166,18 @@ function AccountCommandList({
               )}
             />
             <div className="flex flex-col flex-1 min-w-0">
-              <span className="truncate font-medium">{account.name}</span>
-              {account.broker && (
+              <span className="truncate font-medium">
+                {account.name}
+                {account.lastFour ? ` (${account.lastFour})` : ""}
+              </span>
+              {(account.broker || account.ownerName) && (
                 <span className="truncate text-xs text-muted-foreground">
-                  {account.broker}
+                  {[
+                    account.broker,
+                    account.ownerName && `소유자: ${account.ownerName}`,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
                 </span>
               )}
             </div>

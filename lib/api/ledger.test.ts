@@ -190,6 +190,30 @@ describe("transfer helpers", () => {
 });
 
 describe("getLedgerBalanceEffects", () => {
+  it("계좌 수입은 계좌 증가 효과를 만든다", () => {
+    const effects = getLedgerBalanceEffects({
+      type: "income",
+      amount: 3000000,
+      toAccountId: "acc-1",
+    });
+
+    expect(effects).toEqual([
+      { table: "accounts", id: "acc-1", delta: 3000000 },
+    ]);
+  });
+
+  it("계좌 지출은 계좌 감소 효과를 만든다", () => {
+    const effects = getLedgerBalanceEffects({
+      type: "expense",
+      amount: 80000,
+      fromAccountId: "acc-1",
+    });
+
+    expect(effects).toEqual([
+      { table: "accounts", id: "acc-1", delta: -80000 },
+    ]);
+  });
+
   it("계좌에서 보조 결제수단으로 이체하면 계좌 감소와 결제수단 증가 효과를 만든다", () => {
     const effects = getLedgerBalanceEffects({
       type: "transfer",
