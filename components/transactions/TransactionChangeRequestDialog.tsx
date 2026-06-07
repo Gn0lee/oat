@@ -167,7 +167,10 @@ export function TransactionChangeRequestDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent
+        className="left-0 top-0 flex h-[100dvh] max-h-[100dvh] w-full max-w-full translate-x-0 translate-y-0 flex-col overflow-y-auto rounded-none border-0 p-5 sm:left-[50%] sm:top-[50%] sm:h-auto sm:max-h-[85dvh] sm:max-w-md sm:translate-x-[-50%] sm:translate-y-[-50%] sm:rounded-lg sm:border sm:p-6"
+        onOpenAutoFocus={(event) => event.preventDefault()}
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {!isUpdate && (
@@ -288,7 +291,7 @@ export function TransactionChangeRequestDialog({
               />
             </div>
 
-            <DialogFooter>
+            <DialogFooter className="mt-auto">
               <Button
                 type="button"
                 variant="outline"
@@ -315,7 +318,7 @@ export function TransactionChangeRequestDialog({
               />
             </div>
 
-            <DialogFooter>
+            <DialogFooter className="mt-auto">
               <Button
                 type="button"
                 variant="outline"

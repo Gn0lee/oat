@@ -9,6 +9,7 @@ export const queries = createQueryKeyStore({
   accounts: {
     all: null,
     list: null,
+    detail: (id: string) => ({ queryKey: [id] }),
   },
 
   home: {
@@ -24,6 +25,7 @@ export const queries = createQueryKeyStore({
   paymentMethods: {
     all: null,
     list: null,
+    detail: (id: string) => ({ queryKey: [id] }),
   },
 
   holdings: {

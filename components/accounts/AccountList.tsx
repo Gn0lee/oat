@@ -8,6 +8,7 @@ import {
   Trash2,
   UserRound,
 } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,7 @@ import {
 import { useAccounts } from "@/hooks/use-accounts";
 import { useCurrentUserId } from "@/hooks/use-current-user";
 import type { AccountWithOwner } from "@/lib/api/account";
+import { formatCurrency } from "@/lib/utils/format";
 import { AccountDeleteDialog } from "./AccountDeleteDialog";
 import { AccountFormDialog } from "./AccountFormDialog";
 
@@ -75,37 +77,60 @@ function AccountCollection({
         const accountTypeLabel = account.accountType
           ? (ACCOUNT_TYPE_LABELS[account.accountType] ?? account.accountType)
           : "-";
+        const balanceLabel = isInvestmentAccountType(account.accountType)
+          ? "예수금"
+          : "잔액";
 
         return (
           <article
             key={account.id}
             className="flex min-h-[96px] items-center gap-3 border-gray-100 border-t px-4 py-4 first:border-t-0 sm:px-5"
           >
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-500">
-              <CreditCard className="size-5" />
-            </div>
+            <Link
+              href={`/assets/accounts/${account.id}`}
+              className="flex min-w-0 flex-1 items-center gap-3"
+            >
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-500">
+                <CreditCard className="size-5" />
+              </div>
 
-            <div className="min-w-0 flex-1">
-              <div className="flex min-w-0 flex-wrap items-center gap-2">
-                <h4 className="truncate font-semibold text-gray-900">
-                  {account.name}
-                </h4>
-                <Badge variant="outline">{accountTypeLabel}</Badge>
+              <div className="min-w-0 flex-1">
+                <div className="flex min-w-0 flex-wrap items-center gap-2">
+                  <h4 className="truncate font-semibold text-gray-900">
+                    {account.name}
+                  </h4>
+                  <Badge variant="outline">{accountTypeLabel}</Badge>
+                </div>
+                <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-gray-500 text-sm">
+                  <span className="inline-flex items-center gap-1">
+                    <UserRound className="size-4" />
+                    {account.ownerName}
+                  </span>
+                  <span className="inline-flex items-center gap-1">
+                    <Building2 className="size-4" />
+                    {account.broker || "기관 미입력"}
+                  </span>
+                  {account.lastFour && (
+                    <span className="text-gray-400">끝 {account.lastFour}</span>
+                  )}
+                </div>
+                <p className="mt-2 font-semibold text-gray-900 text-sm sm:hidden">
+                  {balanceLabel}{" "}
+                  {account.balance === null
+                    ? "-"
+                    : formatCurrency(account.balance)}
+                </p>
               </div>
-              <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-gray-500 text-sm">
-                <span className="inline-flex items-center gap-1">
-                  <UserRound className="size-4" />
-                  {account.ownerName}
-                </span>
-                <span className="inline-flex items-center gap-1">
-                  <Building2 className="size-4" />
-                  {account.broker || "기관 미입력"}
-                </span>
-                {account.lastFour && (
-                  <span className="text-gray-400">끝 {account.lastFour}</span>
-                )}
+
+              <div className="hidden shrink-0 text-right sm:block">
+                <p className="text-gray-400 text-xs">{balanceLabel}</p>
+                <p className="font-semibold text-gray-900">
+                  {account.balance === null
+                    ? "-"
+                    : formatCurrency(account.balance)}
+                </p>
               </div>
-            </div>
+            </Link>
 
             {isOwner && (
               <DropdownMenu>

@@ -97,6 +97,83 @@ export type Database = {
           },
         ];
       };
+      balance_adjustments: {
+        Row: {
+          account_id: string | null;
+          actual_balance: number;
+          adjusted_at: string;
+          created_at: string;
+          delta: number;
+          household_id: string;
+          id: string;
+          memo: string | null;
+          owner_id: string;
+          payment_method_id: string | null;
+          previous_balance: number;
+          target_type: Database["public"]["Enums"]["balance_adjustment_target_type"];
+          title: string;
+        };
+        Insert: {
+          account_id?: string | null;
+          actual_balance: number;
+          adjusted_at: string;
+          created_at?: string;
+          delta: number;
+          household_id: string;
+          id?: string;
+          memo?: string | null;
+          owner_id: string;
+          payment_method_id?: string | null;
+          previous_balance: number;
+          target_type: Database["public"]["Enums"]["balance_adjustment_target_type"];
+          title?: string;
+        };
+        Update: {
+          account_id?: string | null;
+          actual_balance?: number;
+          adjusted_at?: string;
+          created_at?: string;
+          delta?: number;
+          household_id?: string;
+          id?: string;
+          memo?: string | null;
+          owner_id?: string;
+          payment_method_id?: string | null;
+          previous_balance?: number;
+          target_type?: Database["public"]["Enums"]["balance_adjustment_target_type"];
+          title?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "balance_adjustments_account_id_fkey";
+            columns: ["account_id"];
+            isOneToOne: false;
+            referencedRelation: "accounts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "balance_adjustments_household_id_fkey";
+            columns: ["household_id"];
+            isOneToOne: false;
+            referencedRelation: "households";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "balance_adjustments_owner_id_fkey";
+            columns: ["owner_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "balance_adjustments_payment_method_id_fkey";
+            columns: ["payment_method_id"];
+            isOneToOne: false;
+            referencedRelation: "payment_methods";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       categories: {
         Row: {
           created_at: string;
@@ -1253,6 +1330,7 @@ export type Database = {
         | "commodity"
         | "crypto"
         | "alternative";
+      balance_adjustment_target_type: "account" | "payment_method";
       category_type: "expense" | "income";
       currency_type: "KRW" | "USD";
       exchange_type: "KOSPI" | "KOSDAQ" | "NYSE" | "NASDAQ" | "AMEX";
@@ -1462,6 +1540,7 @@ export const Constants = {
         "crypto",
         "alternative",
       ],
+      balance_adjustment_target_type: ["account", "payment_method"],
       category_type: ["expense", "income"],
       currency_type: ["KRW", "USD"],
       exchange_type: ["KOSPI", "KOSDAQ", "NYSE", "NASDAQ", "AMEX"],

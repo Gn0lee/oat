@@ -67,6 +67,11 @@ export const SERVICE_ROUTE_TREE = [
             mobile: "task",
             closeHref: "/ledger/payment-methods",
           },
+          {
+            href: "/ledger/payment-methods/[paymentMethodId]",
+            pattern: "/ledger/payment-methods/[paymentMethodId]",
+            label: "결제수단 상세",
+          },
         ],
       },
       { href: "/ledger/categories", label: "카테고리 관리" },

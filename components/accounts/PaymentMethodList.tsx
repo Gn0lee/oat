@@ -8,6 +8,7 @@ import {
   Trash2,
   UserRound,
 } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,6 +20,7 @@ import {
 import { useCurrentUserId } from "@/hooks/use-current-user";
 import { usePaymentMethods } from "@/hooks/use-payment-methods";
 import type { PaymentMethodWithDetails } from "@/lib/api/payment-method";
+import { formatCurrency } from "@/lib/utils/format";
 import { PaymentMethodDeleteDialog } from "./PaymentMethodDeleteDialog";
 import { PaymentMethodFormDialog } from "./PaymentMethodFormDialog";
 
@@ -29,6 +31,12 @@ const PAYMENT_METHOD_TYPE_LABELS: Record<string, string> = {
   gift_card: "상품권",
   cash: "현금",
 };
+
+const AUXILIARY_PAYMENT_METHOD_TYPES = new Set([
+  "prepaid",
+  "gift_card",
+  "cash",
+]);
 
 export function PaymentMethodList() {
   const { data: paymentMethods, isLoading, error } = usePaymentMethods();
@@ -92,41 +100,69 @@ export function PaymentMethodList() {
       <div className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-100">
         {paymentMethods.map((method) => {
           const isOwner = currentUserId === method.ownerId;
+          const hasBalance = AUXILIARY_PAYMENT_METHOD_TYPES.has(method.type);
           return (
             <article
               key={method.id}
               className="flex min-h-[96px] items-center gap-3 border-gray-100 border-t px-4 py-4 first:border-t-0 sm:px-5"
             >
-              <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-500">
-                <CreditCard className="size-5" />
-              </div>
+              <Link
+                href={`/ledger/payment-methods/${method.id}`}
+                className="flex min-w-0 flex-1 items-center gap-3"
+              >
+                <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-500">
+                  <CreditCard className="size-5" />
+                </div>
 
-              <div className="min-w-0 flex-1">
-                <div className="flex min-w-0 flex-wrap items-center gap-2">
-                  <h4 className="truncate font-semibold text-gray-900">
-                    {method.name}
-                  </h4>
-                  {method.lastFour && (
-                    <span className="text-gray-400 text-xs">
-                      {method.lastFour}
+                <div className="min-w-0 flex-1">
+                  <div className="flex min-w-0 flex-wrap items-center gap-2">
+                    <h4 className="truncate font-semibold text-gray-900">
+                      {method.name}
+                    </h4>
+                    {method.lastFour && (
+                      <span className="text-gray-400 text-xs">
+                        {method.lastFour}
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-gray-500 text-sm">
+                    <span>
+                      {PAYMENT_METHOD_TYPE_LABELS[method.type] || method.type}
                     </span>
-                  )}
+                    <span className="inline-flex items-center gap-1">
+                      <UserRound className="size-4" />
+                      {method.ownerName}
+                    </span>
+                    <span>{method.issuer || "발급사 미입력"}</span>
+                    <span className="inline-flex items-center gap-1">
+                      <Link2 className="size-4" />
+                      {method.linkedAccountName || "연결 계좌 없음"}
+                    </span>
+                  </div>
+                  <p className="mt-2 font-semibold text-gray-900 text-sm sm:hidden">
+                    {hasBalance
+                      ? `보조잔액 ${
+                          method.balance === null
+                            ? "-"
+                            : formatCurrency(method.balance)
+                        }`
+                      : "자체 잔액 없음"}
+                  </p>
                 </div>
-                <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-gray-500 text-sm">
-                  <span>
-                    {PAYMENT_METHOD_TYPE_LABELS[method.type] || method.type}
-                  </span>
-                  <span className="inline-flex items-center gap-1">
-                    <UserRound className="size-4" />
-                    {method.ownerName}
-                  </span>
-                  <span>{method.issuer || "발급사 미입력"}</span>
-                  <span className="inline-flex items-center gap-1">
-                    <Link2 className="size-4" />
-                    {method.linkedAccountName || "연결 계좌 없음"}
-                  </span>
+
+                <div className="hidden shrink-0 text-right sm:block">
+                  <p className="text-gray-400 text-xs">
+                    {hasBalance ? "보조잔액" : "잔액"}
+                  </p>
+                  <p className="font-semibold text-gray-900">
+                    {hasBalance
+                      ? method.balance === null
+                        ? "-"
+                        : formatCurrency(method.balance)
+                      : "-"}
+                  </p>
                 </div>
-              </div>
+              </Link>
 
               {isOwner && (
                 <DropdownMenu>

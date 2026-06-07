@@ -280,6 +280,35 @@ export async function upsertNotificationPreference(
   };
 }
 
+export async function upsertNotificationPreferences(
+  supabase: SupabaseClient<Database>,
+  userId: string,
+  updates: Array<{
+    type: NotificationType;
+    inAppEnabled: boolean;
+    pushEnabled: boolean;
+  }>,
+): Promise<NotificationPreferenceView[]> {
+  const now = new Date().toISOString();
+  const rows = updates.map((update) => ({
+    user_id: userId,
+    type: update.type,
+    in_app_enabled: update.inAppEnabled,
+    push_enabled: update.inAppEnabled ? update.pushEnabled : false,
+    updated_at: now,
+  }));
+
+  const { error } = await supabase
+    .from("notification_preferences")
+    .upsert(rows, { onConflict: "user_id,type" });
+
+  if (error) {
+    throw error;
+  }
+
+  return getNotificationPreferences(supabase, userId);
+}
+
 export async function createUserNotification(
   input: CreateUserNotificationInput,
 ): Promise<NotificationItem | null> {
