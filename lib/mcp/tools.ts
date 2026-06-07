@@ -16,10 +16,16 @@ export const MCP_TOOL_DEFINITIONS = [
   {
     name: "get_context",
     description:
-      "현재 oat MCP 연결의 사용자, 가구, 권한, privacy 모델을 조회합니다.",
+      "현재 oat MCP 연결의 사용자, 가구, 권한, privacy 모델을 조회합니다. 일반적으로 캐시된 값을 사용합니다. 사용자가 방금 MCP 토큰, 가구, 프로필 정보를 변경했고 최신값 확인을 명시한 경우에만 forceRefresh를 true로 설정하세요.",
     inputSchema: {
       type: "object",
-      properties: {},
+      properties: {
+        forceRefresh: {
+          type: "boolean",
+          description:
+            "캐시를 우회해 최신 연결 컨텍스트를 조회합니다. 자동 재시도, polling, 일반 호출에는 사용하지 말고, 사용자가 방금 변경한 값을 다시 확인하라고 요청한 경우에만 true로 설정하세요.",
+        },
+      },
       additionalProperties: false,
     },
   },
@@ -38,10 +44,17 @@ export const MCP_TOOL_DEFINITIONS = [
   },
   {
     name: "list_references",
-    description: "가구원, 카테고리, 계좌, 결제수단 참조 목록을 조회합니다.",
+    description:
+      "가구원, 카테고리, 계좌, 결제수단 참조 목록을 조회합니다. 일반적으로 캐시된 값을 사용합니다. 사용자가 방금 설정/참조 데이터를 변경했고 최신값 확인을 명시한 경우에만 forceRefresh를 true로 설정하세요.",
     inputSchema: {
       type: "object",
-      properties: {},
+      properties: {
+        forceRefresh: {
+          type: "boolean",
+          description:
+            "캐시를 우회해 최신 참조 데이터를 조회합니다. 자동 재시도, polling, 일반 호출에는 사용하지 말고, 사용자가 방금 변경한 값을 다시 확인하라고 요청한 경우에만 true로 설정하세요.",
+        },
+      },
       additionalProperties: false,
     },
   },

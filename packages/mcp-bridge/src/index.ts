@@ -16,6 +16,7 @@ Environment:
   OAT_MCP_URL         Optional endpoint override.
   OAT_MCP_DEBUG       Set to 1 for stderr debug logs.
   OAT_MCP_TIMEOUT_MS  Optional request timeout in milliseconds.
+  OAT_MCP_CACHE_TTL_MS Optional low-risk tool cache TTL. Set 0 to disable.
 `);
 }
 

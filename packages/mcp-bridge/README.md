@@ -95,6 +95,7 @@ https://oat-blond.vercel.app/api/mcp
 | `OAT_MCP_URL` | No | Endpoint override. Defaults to `https://oat-blond.vercel.app/api/mcp` |
 | `OAT_MCP_DEBUG` | No | Set to `1` for stderr debug logs |
 | `OAT_MCP_TIMEOUT_MS` | No | Request timeout. Defaults to `30000` |
+| `OAT_MCP_CACHE_TTL_MS` | No | Low-risk tool cache TTL. Set to `0` to disable `get_context` and `list_references` caching |
 
 Tokens are accepted only through environment variables. `--token` and `--url`
 arguments are intentionally not supported.
