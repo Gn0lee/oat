@@ -25,6 +25,8 @@ export type HouseholdRole = Enums<"household_role">;
 export type UserRole = Enums<"user_role">;
 export type AllocationCategory = Enums<"allocation_category">;
 export type LedgerEntryType = Enums<"ledger_entry_type">;
+export type BalanceAdjustmentTargetType =
+  Enums<"balance_adjustment_target_type">;
 export type CategoryType = Enums<"category_type">;
 export type NotificationType = Enums<"notification_type">;
 export type NotificationLinkKind = Enums<"notification_link_kind">;
@@ -49,11 +51,13 @@ export type Notification = Tables<"notifications">;
 export type NotificationPreference = Tables<"notification_preferences">;
 export type PushSubscription = Tables<"push_subscriptions">;
 export type RecordChangeRequest = Tables<"record_change_requests">;
+export type BalanceAdjustment = Tables<"balance_adjustments">;
 
 // 가계부 테이블 타입
 export type LedgerEntry = Tables<"ledger_entries">;
 export type LedgerEntryInsert = TablesInsert<"ledger_entries">;
 export type LedgerEntryUpdate = TablesUpdate<"ledger_entries">;
+export type BalanceAdjustmentInsert = TablesInsert<"balance_adjustments">;
 export type Category = Tables<"categories">;
 
 // View 타입

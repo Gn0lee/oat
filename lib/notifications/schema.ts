@@ -70,6 +70,34 @@ export type NotificationPreferenceUpdate = z.infer<
   typeof notificationPreferenceUpdateSchema
 >;
 
+export const notificationPreferenceBatchUpdateSchema = z
+  .object({
+    updates: z
+      .array(
+        notificationPreferenceUpdateSchema.extend({
+          type: notificationTypeSchema,
+        }),
+      )
+      .min(1, "변경할 알림 설정을 하나 이상 입력해주세요."),
+  })
+  .superRefine((value, context) => {
+    const seen = new Set<NotificationType>();
+    for (const [index, update] of value.updates.entries()) {
+      if (seen.has(update.type)) {
+        context.addIssue({
+          code: "custom",
+          message: "같은 알림 종류를 중복해서 설정할 수 없습니다.",
+          path: ["updates", index, "type"],
+        });
+      }
+      seen.add(update.type);
+    }
+  });
+
+export type NotificationPreferenceBatchUpdate = z.infer<
+  typeof notificationPreferenceBatchUpdateSchema
+>;
+
 export function normalizeNotificationLink(link?: NotificationLink | null): {
   linkKind: NotificationLinkKind | null;
   linkParams: Record<string, unknown>;

@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
+import { getPaymentMethodBalanceDetail } from "@/lib/api/balance-adjustment";
 import { APIError, toErrorResponse } from "@/lib/api/error";
+import { getUserHouseholdId } from "@/lib/api/invitation";
 import {
   deletePaymentMethod,
   updatePaymentMethod,
@@ -9,6 +11,54 @@ import { updatePaymentMethodSchema } from "@/schemas/payment-method";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
+}
+
+export async function GET(_request: Request, { params }: RouteParams) {
+  try {
+    const { id } = await params;
+    const supabase = await createClient();
+
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      throw new APIError("AUTH_UNAUTHORIZED", "로그인이 필요합니다.", 401);
+    }
+
+    const householdId = await getUserHouseholdId(supabase, user.id);
+    if (!householdId) {
+      throw new APIError(
+        "HOUSEHOLD_NOT_FOUND",
+        "가구 정보를 찾을 수 없습니다.",
+        404,
+      );
+    }
+
+    const detail = await getPaymentMethodBalanceDetail(
+      supabase,
+      householdId,
+      user.id,
+      id,
+    );
+
+    return NextResponse.json({ data: detail });
+  } catch (error) {
+    if (error instanceof APIError) {
+      return NextResponse.json(toErrorResponse(error), {
+        status: error.statusCode,
+      });
+    }
+
+    console.error("Payment method detail error:", error);
+    return NextResponse.json(
+      {
+        error: { code: "INTERNAL_ERROR", message: "서버 오류가 발생했습니다." },
+      },
+      { status: 500 },
+    );
+  }
 }
 
 /**

@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   useNotificationPreferences,
   useUpdateNotificationPreference,
+  useUpdateNotificationPreferencesBatch,
 } from "@/hooks/use-notification-preferences";
 import { usePushSubscription } from "@/hooks/use-push-subscription";
 import {
@@ -27,7 +28,7 @@ const IMPORTANT_PUSH_TYPES = new Set<NotificationType>([
 export function NotificationSettingsClient() {
   const { data: preferences = [], isLoading } = useNotificationPreferences();
   const pushSubscription = usePushSubscription();
-  const updatePreference = useUpdateNotificationPreference();
+  const updatePreferencesBatch = useUpdateNotificationPreferencesBatch();
 
   if (isLoading) {
     return (
@@ -60,7 +61,7 @@ export function NotificationSettingsClient() {
       <PushDeviceCard
         preferences={preferences}
         pushSubscription={pushSubscription}
-        updatePreference={updatePreference}
+        updatePreferencesBatch={updatePreferencesBatch}
       />
 
       {Object.entries(NOTIFICATION_PREFERENCE_GROUP_LABELS).map(
@@ -98,11 +99,13 @@ export function NotificationSettingsClient() {
 function PushDeviceCard({
   preferences,
   pushSubscription,
-  updatePreference,
+  updatePreferencesBatch,
 }: {
   preferences: NotificationPreferenceView[];
   pushSubscription: ReturnType<typeof usePushSubscription>;
-  updatePreference: ReturnType<typeof useUpdateNotificationPreference>;
+  updatePreferencesBatch: ReturnType<
+    typeof useUpdateNotificationPreferencesBatch
+  >;
 }) {
   const importantPushTargets = preferences.filter(
     (preference) =>
@@ -114,15 +117,13 @@ function PushDeviceCard({
     pushSubscription.isSubscribed && importantPushTargets.length > 0;
 
   const handleEnableImportantPush = async () => {
-    for (const preference of importantPushTargets) {
-      await updatePreference.mutateAsync({
+    await updatePreferencesBatch.mutateAsync({
+      updates: importantPushTargets.map((preference) => ({
         type: preference.type,
-        input: {
-          inAppEnabled: preference.inAppEnabled,
-          pushEnabled: true,
-        },
-      });
-    }
+        inAppEnabled: preference.inAppEnabled,
+        pushEnabled: true,
+      })),
+    });
   };
 
   const content = getPushDeviceCardContent(pushSubscription.deviceState);
@@ -199,11 +200,11 @@ function PushDeviceCard({
                 type="button"
                 size="sm"
                 variant="secondary"
-                disabled={updatePreference.isPending}
+                disabled={updatePreferencesBatch.isPending}
                 onClick={handleEnableImportantPush}
                 className="mt-3"
               >
-                {updatePreference.isPending && (
+                {updatePreferencesBatch.isPending && (
                   <Loader2 className="size-4 animate-spin" />
                 )}
                 주요 알림 Push 켜기
@@ -344,12 +345,14 @@ function PreferenceRow({
           label="앱"
           enabled={preference.inAppEnabled}
           disabled={updatePreference.isPending}
+          pending={updatePreference.isPending}
           onClick={() => handleToggle("inAppEnabled")}
         />
         <ToggleButton
           label="Push"
           enabled={preference.pushEnabled}
           disabled={pushDisabled}
+          pending={updatePreference.isPending}
           onClick={() => handleToggle("pushEnabled")}
         />
       </div>
@@ -361,11 +364,13 @@ function ToggleButton({
   label,
   enabled,
   disabled,
+  pending,
   onClick,
 }: {
   label: string;
   enabled: boolean;
   disabled: boolean;
+  pending: boolean;
   onClick: () => void;
 }) {
   return (
@@ -380,7 +385,7 @@ function ToggleButton({
         enabled ? "bg-primary text-white" : "bg-gray-100 text-gray-500",
       )}
     >
-      {disabled && <Loader2 className="size-3 animate-spin" />}
+      {pending && <Loader2 className="size-3 animate-spin" />}
       {label}
     </button>
   );

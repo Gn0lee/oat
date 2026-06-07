@@ -310,6 +310,7 @@ PATCH /api/notifications/[id]/read
 POST /api/notifications/read-all
 GET /api/notification-preferences
 PATCH /api/notification-preferences/[type]
+POST /api/notification-preferences/batch
 ```
 
 알림 목록은 최신순 cursor pagination을 사용한다.
@@ -320,7 +321,7 @@ order by created_at desc, id desc
 
 cursor는 `createdAt + id` 조합을 인코딩한다. 알림 삭제, 아카이브, 자동 만료, 보존 기간 정책은 Issue #342 범위에서 제외한다.
 
-`GET /api/notification-preferences`는 Default Notification Preference와 저장된 override를 서버에서 merge한 완성 목록을 반환한다. `PATCH /api/notification-preferences/[type]`는 단건 타입의 `inAppEnabled`, `pushEnabled`를 저장한다. 설정 토글은 낙관적 업데이트를 적용하고 실패 시 rollback한다.
+`GET /api/notification-preferences`는 Default Notification Preference와 저장된 override를 서버에서 merge한 완성 목록을 반환한다. `PATCH /api/notification-preferences/[type]`는 단건 타입의 `inAppEnabled`, `pushEnabled`를 저장한다. `POST /api/notification-preferences/batch`는 여러 타입을 한 번에 저장하며, batch 전체가 성공하거나 실패한다. 성공 응답은 저장 후 merge된 완성 목록을 반환한다. 설정 토글은 낙관적 업데이트를 적용하고 실패 시 rollback한다.
 
 #### UI Behavior
 
