@@ -276,7 +276,35 @@ AI가 다른 tool을 호출할 때 필요한 참조 데이터를 반환합니다
 - 계좌 목록
 - 결제수단 목록
 
-### 8.4 `search_ledger_entries`
+### 8.4 `get_money_endpoint_detail`
+
+계좌 또는 결제수단의 현재 잔액과 최근 변동 내역을 조회합니다.
+
+입력:
+
+```ts
+{
+  endpointType: "account" | "paymentMethod";
+  endpointId: string;
+}
+```
+
+반환:
+
+- 계좌 또는 결제수단 기본 정보
+- 현재 잔액
+- 투자 계좌의 주식 평가액과 계좌 총액
+- 최근 timeline
+
+timeline 종류:
+
+- `ledger`: 가계부 입출금/이체 기록
+- `stock_transaction`: 계좌에 연결된 주식 매수/매도 기록
+- `balance_adjustment`: 실제 잔액 맞춤 기록
+
+이 tool은 상세 사용자 데이터를 반환하므로 bridge cache 대상이 아니며, 연결 확인이나 polling 용도로 사용하지 않습니다.
+
+### 8.5 `search_ledger_entries`
 
 기간, 타입, 카테고리, Money Endpoint, 사용자, 공유 여부, 키워드 등으로 가계부 상세 내역을 조회합니다.
 
@@ -335,7 +363,7 @@ Money Endpoint:
 - v0.1은 `hasMore`만 제공하고 cursor pagination은 보류
 - 파트너 개인 지출 상세 제외
 
-### 8.5 `get_ledger_stats`
+### 8.6 `get_ledger_stats`
 
 기간별 가계부 집계를 반환합니다.
 
@@ -373,7 +401,7 @@ Trend 규칙:
 - 최대 12개월
 - 파트너 개인 장부는 세부 항목과 합계를 모두 제외
 
-### 8.6 `get_asset_snapshot`
+### 8.7 `get_asset_snapshot`
 
 자산/주식 snapshot을 반환합니다.
 
@@ -453,6 +481,7 @@ Valuation metadata:
 | Tool | 기본 범위 | 최대 범위 |
 |------|----------|----------|
 | `get_financial_overview` | 이번 달 + 현재 자산 | 최근 12개월 요약 |
+| `get_money_endpoint_detail` | 최근 80건 timeline | cursor pagination 보류 |
 | `search_ledger_entries` | 이번 달 | 100건/page |
 | `get_ledger_stats` | 이번 달 | 12개월 |
 | `get_asset_snapshot` | 현재 snapshot | 12개월 요약 추이 |

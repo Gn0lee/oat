@@ -1,4 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import {
+  getAccountBalanceDetail,
+  getPaymentMethodBalanceDetail,
+} from "@/lib/api/balance-adjustment";
 import { APIError } from "@/lib/api/error";
 import { getExchangeRateSafe } from "@/lib/api/exchange";
 import { getHoldings } from "@/lib/api/holdings";
@@ -55,6 +59,27 @@ export const MCP_TOOL_DEFINITIONS = [
             "캐시를 우회해 최신 참조 데이터를 조회합니다. 자동 재시도, polling, 일반 호출에는 사용하지 말고, 사용자가 방금 변경한 값을 다시 확인하라고 요청한 경우에만 true로 설정하세요.",
         },
       },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "get_money_endpoint_detail",
+    description:
+      "계좌 또는 결제수단의 현재 잔액과 최근 변동 내역을 조회합니다. timeline에는 가계부 기록, 잔액 조정, 계좌의 경우 주식 거래가 포함될 수 있습니다. 상세 사용자 데이터이므로 일반 연결 확인이나 반복 polling에는 사용하지 마세요.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        endpointType: {
+          type: "string",
+          enum: ["account", "paymentMethod"],
+          description: "조회할 Money Endpoint 유형",
+        },
+        endpointId: {
+          type: "string",
+          description: "조회할 계좌 또는 결제수단 ID",
+        },
+      },
+      required: ["endpointType", "endpointId"],
       additionalProperties: false,
     },
   },
@@ -276,6 +301,13 @@ function hasAnyScope(auth: McpAuthContext, scopes: string[]): boolean {
 
 function requireScope(auth: McpAuthContext, scopes: string[]) {
   if (!hasAnyScope(auth, scopes)) {
+    throw new APIError("MCP_FORBIDDEN", "MCP tool 권한이 없습니다.", 403);
+  }
+}
+
+function requireAllScopes(auth: McpAuthContext, scopes: string[]) {
+  const missingScopes = scopes.filter((scope) => !auth.scopes.includes(scope));
+  if (missingScopes.length > 0) {
     throw new APIError("MCP_FORBIDDEN", "MCP tool 권한이 없습니다.", 403);
   }
 }
@@ -549,6 +581,73 @@ async function listReferences(
       })),
       paymentMethods,
     },
+  };
+}
+
+async function getMoneyEndpointDetail(
+  supabase: LooseSupabaseClient,
+  auth: McpAuthContext,
+  args: Record<string, unknown>,
+) {
+  const endpointType = args.endpointType;
+  const endpointId = args.endpointId;
+
+  if (
+    (endpointType !== "account" && endpointType !== "paymentMethod") ||
+    typeof endpointId !== "string" ||
+    endpointId.trim().length === 0
+  ) {
+    throw new APIError(
+      "MCP_INVALID_REQUEST",
+      "Money Endpoint 유형과 ID가 필요합니다.",
+      400,
+    );
+  }
+
+  if (endpointType === "account") {
+    requireAllScopes(auth, ["read:references", "read:ledger", "read:assets"]);
+    const detail = await getAccountBalanceDetail(
+      supabase as SupabaseClient<Database>,
+      auth.householdId,
+      auth.userId,
+      endpointId,
+    );
+
+    return {
+      meta: buildMcpMeta({ period: null, scopes: auth.scopes }),
+      summary: {
+        endpointType,
+        endpointId,
+        name: detail.account.name,
+        ownerName: detail.account.ownerName,
+        balance: detail.account.balance,
+        stockValue: detail.stockValue,
+        totalValue: detail.totalValue,
+        timelineCount: detail.timeline.length,
+      },
+      data: detail,
+    };
+  }
+
+  requireAllScopes(auth, ["read:references", "read:ledger"]);
+  const detail = await getPaymentMethodBalanceDetail(
+    supabase as SupabaseClient<Database>,
+    auth.householdId,
+    auth.userId,
+    endpointId,
+  );
+
+  return {
+    meta: buildMcpMeta({ period: null, scopes: auth.scopes }),
+    summary: {
+      endpointType,
+      endpointId,
+      name: detail.paymentMethod.name,
+      ownerName: detail.paymentMethod.ownerName,
+      balance: detail.paymentMethod.balance,
+      timelineCount: detail.timeline.length,
+    },
+    data: detail,
   };
 }
 
@@ -1285,6 +1384,8 @@ export async function executeMcpTool(
       return getFinancialOverview(supabase, auth, args);
     case "list_references":
       return listReferences(supabase, auth);
+    case "get_money_endpoint_detail":
+      return getMoneyEndpointDetail(supabase, auth, args);
     case "search_ledger_entries":
       return searchLedgerEntries(supabase, auth, args);
     case "get_ledger_stats":

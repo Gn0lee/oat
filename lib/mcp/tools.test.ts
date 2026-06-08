@@ -15,6 +15,7 @@ describe("MCP tool helpers", () => {
       "get_context",
       "get_financial_overview",
       "list_references",
+      "get_money_endpoint_detail",
       "search_ledger_entries",
       "get_ledger_stats",
       "get_asset_snapshot",
@@ -33,6 +34,20 @@ describe("MCP tool helpers", () => {
       endpointTypes: { type: "array" },
       ownerIds: { type: "array" },
       isShared: { type: "boolean" },
+    });
+  });
+
+  it("exposes a Money Endpoint detail tool for balance timelines", () => {
+    const detailTool = MCP_TOOL_DEFINITIONS.find(
+      (tool) => tool.name === "get_money_endpoint_detail",
+    );
+
+    expect(detailTool?.inputSchema.properties).toMatchObject({
+      endpointType: {
+        type: "string",
+        enum: ["account", "paymentMethod"],
+      },
+      endpointId: { type: "string" },
     });
   });
 

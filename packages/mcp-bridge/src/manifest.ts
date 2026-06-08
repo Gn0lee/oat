@@ -45,6 +45,27 @@ export const BRIDGE_TOOL_DEFINITIONS = [
     },
   },
   {
+    name: "get_money_endpoint_detail",
+    description:
+      "계좌 또는 결제수단의 현재 잔액과 최근 변동 내역을 조회합니다. timeline에는 가계부 기록, 잔액 조정, 계좌의 경우 주식 거래가 포함될 수 있습니다. 상세 사용자 데이터이므로 일반 연결 확인이나 반복 polling에는 사용하지 마세요.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        endpointType: {
+          type: "string",
+          enum: ["account", "paymentMethod"],
+          description: "조회할 Money Endpoint 유형",
+        },
+        endpointId: {
+          type: "string",
+          description: "조회할 계좌 또는 결제수단 ID",
+        },
+      },
+      required: ["endpointType", "endpointId"],
+      additionalProperties: false,
+    },
+  },
+  {
     name: "search_ledger_entries",
     description:
       "가계부 상세 내역을 조회합니다. source/destination은 account 또는 paymentMethod 기반 Money Endpoint이며, 파트너 개인 지출 상세는 제외됩니다.",
