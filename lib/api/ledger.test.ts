@@ -6,6 +6,7 @@ import {
   buildTransferLedgerEntryPayload,
   calculateLedgerSummary,
   getLedgerBalanceEffects,
+  getLedgerEntryById,
   getOwnLedgerActivity,
   isTransferCapablePaymentMethod,
 } from "./ledger";
@@ -67,6 +68,110 @@ describe("calculateLedgerSummary", () => {
     expect(result.totalIncome).toBe(5000000);
     expect(result.totalExpense).toBe(835000);
     expect(result.balance).toBe(4165000);
+  });
+});
+
+describe("getLedgerEntryById", () => {
+  function createLedgerEntryDetailSupabaseMock({
+    entry,
+    error,
+  }: {
+    entry?: unknown;
+    error?: unknown;
+  }) {
+    const ledgerBuilder = {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      maybeSingle: vi.fn().mockResolvedValue({
+        data: entry ?? null,
+        error: error ?? null,
+      }),
+    };
+    const profilesBuilder = {
+      select: vi.fn().mockReturnThis(),
+      in: vi.fn().mockResolvedValue({ data: [{ id: "user-1", name: "진호" }] }),
+    };
+    const categoriesBuilder = {
+      select: vi.fn().mockReturnThis(),
+      in: vi.fn().mockResolvedValue({
+        data: [{ id: "cat-1", name: "식비", icon: "Utensils" }],
+      }),
+    };
+    const accountsBuilder = {
+      select: vi.fn().mockReturnThis(),
+      in: vi
+        .fn()
+        .mockResolvedValue({ data: [{ id: "acc-1", name: "토스뱅크" }] }),
+    };
+    const paymentMethodsBuilder = {
+      select: vi.fn().mockReturnThis(),
+      in: vi
+        .fn()
+        .mockResolvedValue({ data: [{ id: "pm-1", name: "체크카드" }] }),
+    };
+
+    return {
+      from: vi.fn((table: string) => {
+        if (table === "ledger_entries") return ledgerBuilder;
+        if (table === "profiles") return profilesBuilder;
+        if (table === "categories") return categoriesBuilder;
+        if (table === "accounts") return accountsBuilder;
+        return paymentMethodsBuilder;
+      }),
+      ledgerBuilder,
+    };
+  }
+
+  it("가계부 단건 조회에 표시용 상세 이름을 붙인다", async () => {
+    const supabase = createLedgerEntryDetailSupabaseMock({
+      entry: {
+        id: "entry-1",
+        household_id: "household-1",
+        owner_id: "user-1",
+        type: "expense",
+        amount: 12000,
+        title: "점심",
+        category_id: "cat-1",
+        from_account_id: null,
+        from_payment_method_id: "pm-1",
+        to_account_id: null,
+        to_payment_method_id: null,
+        is_shared: true,
+        memo: "메모 전체",
+        transacted_at: "2026-06-08T03:00:00.000Z",
+        created_at: "2026-06-08T03:10:00.000Z",
+        updated_at: "2026-06-08T03:10:00.000Z",
+      },
+    });
+
+    const result = await getLedgerEntryById(
+      supabase as never,
+      "entry-1",
+      "household-1",
+    );
+
+    expect(result).toMatchObject({
+      id: "entry-1",
+      ownerName: "진호",
+      categoryName: "식비",
+      fromPaymentMethodName: "체크카드",
+      memo: "메모 전체",
+    });
+    expect(supabase.ledgerBuilder.eq).toHaveBeenCalledWith("id", "entry-1");
+    expect(supabase.ledgerBuilder.eq).toHaveBeenCalledWith(
+      "household_id",
+      "household-1",
+    );
+  });
+
+  it("가계부 기록이 없으면 NOT_FOUND를 던진다", async () => {
+    const supabase = createLedgerEntryDetailSupabaseMock({});
+
+    await expect(
+      getLedgerEntryById(supabase as never, "missing", "household-1"),
+    ).rejects.toMatchObject(
+      new APIError("NOT_FOUND", "가계부 기록을 찾을 수 없습니다.", 404),
+    );
   });
 });
 

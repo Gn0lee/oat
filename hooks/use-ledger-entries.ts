@@ -73,6 +73,18 @@ export function useLedgerEntries(params?: LedgerEntriesParams) {
   });
 }
 
+async function fetchLedgerEntry(id: string): Promise<LedgerEntryWithDetails> {
+  return fetchApiData<LedgerEntryWithDetails>(`/api/ledger-entries/${id}`);
+}
+
+export function useLedgerEntry(id: string) {
+  return useQuery({
+    queryKey: queries.ledgerEntries.detail(id).queryKey,
+    queryFn: () => fetchLedgerEntry(id),
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
 // ============================================================================
 // 월간 수입/지출 요약 조회
 // ============================================================================

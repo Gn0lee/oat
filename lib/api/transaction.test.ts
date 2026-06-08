@@ -5,6 +5,7 @@ import {
   deleteTransaction,
   getTransactionAccountBalanceDelta,
   getTransactions,
+  getTransactionWithDetailsById,
 } from "./transaction";
 
 function createTransactionsSupabaseMock() {
@@ -79,6 +80,94 @@ describe("getTransactions", () => {
     });
 
     expect(result.data[0].accountName).toBe("삼성증권");
+  });
+});
+
+describe("getTransactionWithDetailsById", () => {
+  it("단일 거래에 표시용 상세 이름을 붙인다", async () => {
+    const transactionRow = {
+      id: "tx-1",
+      ticker: "AAPL",
+      type: "buy",
+      quantity: 3,
+      price: 195.5,
+      transacted_at: "2026-06-03T03:00:00.000Z",
+      memo: "장기 보유",
+      account_id: "account-1",
+      owner_id: "user-1",
+      profiles: { id: "user-1", name: "진호" },
+    };
+    const transactionBuilder = {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      maybeSingle: vi.fn().mockResolvedValue({
+        data: transactionRow,
+        error: null,
+      }),
+    };
+    const settingsBuilder = {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      in: vi.fn().mockResolvedValue({
+        data: [{ ticker: "AAPL", name: "Apple", currency: "USD" }],
+      }),
+    };
+    const accountsBuilder = {
+      select: vi.fn().mockReturnThis(),
+      in: vi
+        .fn()
+        .mockResolvedValue({ data: [{ id: "account-1", name: "나무증권" }] }),
+    };
+    const supabase = {
+      from: vi.fn((table: string) => {
+        if (table === "transactions") return transactionBuilder;
+        if (table === "accounts") return accountsBuilder;
+        return settingsBuilder;
+      }),
+    };
+
+    const result = await getTransactionWithDetailsById(
+      supabase as never,
+      "tx-1",
+      "household-1",
+    );
+
+    expect(result).toMatchObject({
+      id: "tx-1",
+      stockName: "Apple",
+      currency: "USD",
+      accountName: "나무증권",
+      owner: { id: "user-1", name: "진호" },
+    });
+    expect(transactionBuilder.eq).toHaveBeenCalledWith("id", "tx-1");
+    expect(transactionBuilder.eq).toHaveBeenCalledWith(
+      "household_id",
+      "household-1",
+    );
+  });
+
+  it("거래가 없으면 NOT_FOUND를 던진다", async () => {
+    const transactionBuilder = {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      maybeSingle: vi.fn().mockResolvedValue({
+        data: null,
+        error: null,
+      }),
+    };
+    const supabase = {
+      from: vi.fn(() => transactionBuilder),
+    };
+
+    await expect(
+      getTransactionWithDetailsById(
+        supabase as never,
+        "missing",
+        "household-1",
+      ),
+    ).rejects.toMatchObject(
+      new APIError("NOT_FOUND", "거래를 찾을 수 없습니다.", 404),
+    );
   });
 });
 

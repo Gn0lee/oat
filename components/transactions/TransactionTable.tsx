@@ -1,40 +1,19 @@
 "use client";
 
-import {
-  CalendarDays,
-  MoreVertical,
-  Pencil,
-  Trash2,
-  User,
-  Wallet,
-} from "lucide-react";
-import { useMemo, useState } from "react";
+import { CalendarDays, User, Wallet } from "lucide-react";
+import Link from "next/link";
+import { useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import type { TransactionWithDetails } from "@/lib/api/transaction";
 import {
   formatCompactCurrency,
-  formatCurrency,
   formatDate,
   formatDateISO,
 } from "@/lib/utils/format";
-import { TransactionDeleteDialog } from "./TransactionDeleteDialog";
-import { TransactionEditDialog } from "./TransactionEditDialog";
 
 interface TransactionTableProps {
   data: TransactionWithDetails[];
-  currentUserId: string;
+  detailQueryString: string;
 }
 
 interface TransactionDateGroup {
@@ -70,52 +49,21 @@ function groupTransactionsByDate(
 
 function TransactionItem({
   transaction,
-  currentUserId,
-  onEdit,
-  onDelete,
+  detailQueryString,
 }: {
   transaction: TransactionWithDetails;
-  currentUserId: string;
-  onEdit: (transaction: TransactionWithDetails) => void;
-  onDelete: (transaction: TransactionWithDetails) => void;
+  detailQueryString: string;
 }) {
   const isBuy = transaction.type === "buy";
-  const isOwner = transaction.owner.id === currentUserId;
   const typeLabel = isBuy ? "매수" : "매도";
+  const detailHref = `/assets/stock/transactions/${transaction.id}?${detailQueryString}`;
 
   return (
-    <article className="group relative flex min-h-[72px] flex-col justify-center border-gray-100 border-t px-4 py-3.5 first:border-t-0 sm:px-5">
-      <div className="absolute right-2 top-1/2 z-10 -translate-y-1/2">
-        {isOwner && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="size-7 text-gray-400 hover:text-gray-600"
-              >
-                <MoreVertical className="size-4" />
-                <span className="sr-only">메뉴 열기</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => onEdit(transaction)}>
-                <Pencil className="mr-2 size-4" />
-                수정
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => onDelete(transaction)}
-                className="text-destructive focus:text-destructive"
-              >
-                <Trash2 className="mr-2 size-4" />
-                삭제
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
-      </div>
-
-      <div className="flex min-w-0 flex-col gap-1 pr-6">
+    <article className="border-gray-100 border-t first:border-t-0">
+      <Link
+        href={detailHref}
+        className="flex min-h-[72px] flex-col justify-center px-4 py-3.5 transition-colors hover:bg-gray-50 sm:px-5"
+      >
         <div className="flex min-w-0 items-center justify-between gap-3">
           <div className="flex min-w-0 flex-1 items-center gap-2">
             <Badge
@@ -124,28 +72,9 @@ function TransactionItem({
             >
               {typeLabel}
             </Badge>
-            <Popover>
-              <PopoverTrigger className="cursor-pointer truncate text-left font-semibold text-gray-900 text-sm transition-colors hover:text-gray-600">
-                {transaction.stockName}
-              </PopoverTrigger>
-              <PopoverContent
-                className="w-auto p-3 text-sm shadow-md"
-                align="start"
-              >
-                <div className="mb-1 font-semibold text-gray-900">
-                  {transaction.stockName}
-                </div>
-                <div className="text-gray-500">
-                  총 거래금액:{" "}
-                  <span className="font-medium text-gray-900">
-                    {formatCurrency(
-                      transaction.price * transaction.quantity,
-                      transaction.currency,
-                    )}
-                  </span>
-                </div>
-              </PopoverContent>
-            </Popover>
+            <span className="truncate text-left font-semibold text-gray-900 text-sm">
+              {transaction.stockName}
+            </span>
           </div>
           <div className="shrink-0 font-medium text-gray-900 text-sm">
             {formatCompactCurrency(
@@ -167,23 +96,15 @@ function TransactionItem({
             </span>
           </span>
         </div>
-      </div>
+      </Link>
     </article>
   );
 }
 
 export function TransactionTable({
   data,
-  currentUserId,
+  detailQueryString,
 }: TransactionTableProps) {
-  const [editTransaction, setEditTransaction] =
-    useState<TransactionWithDetails | null>(null);
-  const [isEditOpen, setIsEditOpen] = useState(false);
-
-  const [deleteTransaction, setDeleteTransaction] =
-    useState<TransactionWithDetails | null>(null);
-  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-
   const groups = useMemo(() => groupTransactionsByDate(data), [data]);
 
   return (
@@ -209,15 +130,7 @@ export function TransactionTable({
                   <TransactionItem
                     key={transaction.id}
                     transaction={transaction}
-                    currentUserId={currentUserId}
-                    onEdit={(t) => {
-                      setEditTransaction(t);
-                      setIsEditOpen(true);
-                    }}
-                    onDelete={(t) => {
-                      setDeleteTransaction(t);
-                      setIsDeleteOpen(true);
-                    }}
+                    detailQueryString={detailQueryString}
                   />
                 ))}
               </div>
@@ -233,18 +146,6 @@ export function TransactionTable({
           </p>
         </div>
       )}
-
-      <TransactionEditDialog
-        transaction={editTransaction}
-        open={isEditOpen}
-        onOpenChange={setIsEditOpen}
-      />
-
-      <TransactionDeleteDialog
-        transaction={deleteTransaction}
-        open={isDeleteOpen}
-        onOpenChange={setIsDeleteOpen}
-      />
     </>
   );
 }

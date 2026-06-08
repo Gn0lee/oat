@@ -1,15 +1,7 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import type { TransactionWithDetails } from "@/lib/api/transaction";
 import { TransactionTable } from "./TransactionTable";
-
-vi.mock("./TransactionEditDialog", () => ({
-  TransactionEditDialog: () => null,
-}));
-
-vi.mock("./TransactionDeleteDialog", () => ({
-  TransactionDeleteDialog: () => null,
-}));
 
 const transactions: TransactionWithDetails[] = [
   {
@@ -70,7 +62,12 @@ const transactions: TransactionWithDetails[] = [
 
 describe("TransactionTable", () => {
   it("renders transactions as date-grouped collection items instead of a table", () => {
-    render(<TransactionTable data={transactions} currentUserId="user-1" />);
+    render(
+      <TransactionTable
+        data={transactions}
+        detailQueryString="from=transactions&page=2&type=buy"
+      />,
+    );
 
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
     expect(screen.getByText("2026년 5월 3일")).toBeInTheDocument();
@@ -81,13 +78,17 @@ describe("TransactionTable", () => {
     expect(screen.getByText("Tesla")).toBeInTheDocument();
     expect(screen.getByText("10주")).toBeInTheDocument();
     expect(screen.getByText("2주")).toBeInTheDocument();
-    expect(screen.getAllByRole("button", { name: "메뉴 열기" })).toHaveLength(
-      2,
+    expect(screen.queryByRole("button", { name: "메뉴 열기" })).toBeNull();
+    expect(screen.getByRole("link", { name: /삼성전자/ })).toHaveAttribute(
+      "href",
+      "/assets/stock/transactions/tx-1?from=transactions&page=2&type=buy",
     );
   });
 
   it("shows an empty collection state when there are no transactions", () => {
-    render(<TransactionTable data={[]} currentUserId="user-1" />);
+    render(
+      <TransactionTable data={[]} detailQueryString="from=transactions" />,
+    );
 
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
     expect(screen.getByText("거래 내역이 없습니다.")).toBeInTheDocument();

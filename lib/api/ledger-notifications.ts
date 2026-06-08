@@ -115,10 +115,15 @@ async function createLedgerNotifications(
         type: input.type,
         title: input.title,
         body: input.body.replace("{actorName}", actorName),
-        link: {
-          kind: "ledger_record_date",
-          params: { date: input.date },
-        },
+        link: input.source
+          ? {
+              kind: "ledger_record_detail",
+              params: { entryId: input.source.id },
+            }
+          : {
+              kind: "ledger_record_date",
+              params: { date: input.date },
+            },
         source: input.source,
         dedupeKey: input.dedupeKey,
       }),

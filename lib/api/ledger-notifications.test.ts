@@ -89,8 +89,8 @@ describe("ledger notification helpers", () => {
         title: "공용 가계부 기록이 추가되었습니다",
         body: '홍길동님이 "이마트 장보기" 52,000원을 추가했습니다.',
         link: {
-          kind: "ledger_record_date",
-          params: { date: "2026-06-03" },
+          kind: "ledger_record_detail",
+          params: { entryId: "00000000-0000-4000-8000-000000000101" },
         },
         source: {
           type: "ledger_entry",
@@ -161,8 +161,8 @@ describe("ledger notification helpers", () => {
         title: "공용 가계부 기록이 수정되었습니다",
         body: '홍길동님이 "이마트 장보기" 기록을 수정했습니다.',
         link: {
-          kind: "ledger_record_date",
-          params: { date: "2026-06-03" },
+          kind: "ledger_record_detail",
+          params: { entryId: "00000000-0000-4000-8000-000000000101" },
         },
       }),
     );
@@ -192,8 +192,8 @@ describe("ledger notification helpers", () => {
         title: "공용 가계부 기록이 삭제되었습니다",
         body: '홍길동님이 "이마트 장보기" 기록을 삭제했습니다.',
         link: {
-          kind: "ledger_record_date",
-          params: { date: "2026-06-03" },
+          kind: "ledger_record_detail",
+          params: { entryId: "00000000-0000-4000-8000-000000000101" },
         },
         source: {
           type: "ledger_entry",

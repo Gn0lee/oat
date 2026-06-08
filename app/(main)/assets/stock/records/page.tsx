@@ -12,14 +12,9 @@ interface StockRecordsPageProps {
 export default async function StockRecordsPage({
   searchParams,
 }: StockRecordsPageProps) {
-  const user = await requireUser();
+  await requireUser();
   const { date } = await searchParams;
   const today = getKstToday();
 
-  return (
-    <StockRecordsClient
-      currentUserId={user.id}
-      initialDate={normalizeRecordDate(date, today)}
-    />
-  );
+  return <StockRecordsClient initialDate={normalizeRecordDate(date, today)} />;
 }

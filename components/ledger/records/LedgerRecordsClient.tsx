@@ -6,9 +6,6 @@ import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
-import { LedgerEntryChangeRequestDialog } from "@/components/ledger/LedgerEntryChangeRequestDialog";
-import { LedgerEntryDeleteDialog } from "@/components/ledger/LedgerEntryDeleteDialog";
-import { LedgerEntryEditDialog } from "@/components/ledger/LedgerEntryEditDialog";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -18,7 +15,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useCurrentUserId } from "@/hooks/use-current-user";
 import { useLedgerEntries } from "@/hooks/use-ledger-entries";
 import {
   calculateLedgerSummary,
@@ -50,14 +46,7 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
     startOfMonth(initial),
   );
   const [selectedDate, setSelectedDate] = useState<Date>(initial);
-  const [selectedEntry, setSelectedEntry] =
-    useState<LedgerEntryWithDetails | null>(null);
-  const [editOpen, setEditOpen] = useState(false);
-  const [deleteOpen, setDeleteOpen] = useState(false);
-  const [requestOpen, setRequestOpen] = useState(false);
-  const [requestMode, setRequestMode] = useState<"update" | "delete">("update");
   const [scope, setScope] = useState<"shared" | "personal">("shared");
-  const { userId: currentUserId } = useCurrentUserId();
 
   const queryClient = useQueryClient();
 
@@ -94,28 +83,6 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
   }, [prevEntries, entries, nextEntries]);
 
   const dayEntries = entriesByDate.get(formatDateISO(selectedDate)) ?? [];
-
-  const handleEdit = (entry: LedgerEntryWithDetails) => {
-    setSelectedEntry(entry);
-    setEditOpen(true);
-  };
-
-  const handleDelete = (entry: LedgerEntryWithDetails) => {
-    setSelectedEntry(entry);
-    setDeleteOpen(true);
-  };
-
-  const handleRequestUpdate = (entry: LedgerEntryWithDetails) => {
-    setSelectedEntry(entry);
-    setRequestMode("update");
-    setRequestOpen(true);
-  };
-
-  const handleRequestDelete = (entry: LedgerEntryWithDetails) => {
-    setSelectedEntry(entry);
-    setRequestMode("delete");
-    setRequestOpen(true);
-  };
 
   const goToPrevMonth = () =>
     setCurrentMonth((m) => startOfMonth(subMonths(m, 1)));
@@ -282,11 +249,6 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
           <LedgerDayEntryList
             selectedDate={selectedDate}
             entries={dayEntries}
-            currentUserId={currentUserId}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onRequestUpdate={handleRequestUpdate}
-            onRequestDelete={handleRequestDelete}
           />
           <Button asChild className="w-full" size="icon-sm">
             <Link
@@ -298,24 +260,6 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
           </Button>
         </div>
       </div>
-
-      {/* 수정/삭제 다이얼로그 */}
-      <LedgerEntryEditDialog
-        entry={selectedEntry}
-        open={editOpen}
-        onOpenChange={setEditOpen}
-      />
-      <LedgerEntryDeleteDialog
-        entry={selectedEntry}
-        open={deleteOpen}
-        onOpenChange={setDeleteOpen}
-      />
-      <LedgerEntryChangeRequestDialog
-        entry={selectedEntry}
-        mode={requestMode}
-        open={requestOpen}
-        onOpenChange={setRequestOpen}
-      />
     </div>
   );
 }

@@ -17,10 +17,18 @@ export function buildNotificationHref(link: NotificationLinkParts): string {
   const params = getParamObject(link.linkParams);
 
   switch (link.linkKind) {
+    case "ledger_record_detail":
+      return typeof params.entryId === "string"
+        ? `/ledger/records/${encodeURIComponent(params.entryId)}?from=notification`
+        : "/ledger/records";
     case "ledger_record_date":
       return typeof params.date === "string"
         ? `/ledger/records?date=${encodeURIComponent(params.date)}`
         : "/ledger/records";
+    case "stock_transaction_detail":
+      return typeof params.transactionId === "string"
+        ? `/assets/stock/transactions/${encodeURIComponent(params.transactionId)}?from=notification`
+        : "/assets/stock/transactions";
     case "stock_record_date":
       return typeof params.date === "string"
         ? `/assets/stock/records?date=${encodeURIComponent(params.date)}`

@@ -1,40 +1,19 @@
 "use client";
 
-import { MoreVertical, UserIcon } from "lucide-react";
+import { UserIcon } from "lucide-react";
+import Link from "next/link";
 import { CategoryIcon } from "@/components/ledger/CategoryIcon";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import type { LedgerEntryWithDetails } from "@/lib/api/ledger";
 import { formatCurrency } from "@/lib/utils/format";
 
 interface LedgerEntryRowProps {
   entry: LedgerEntryWithDetails;
-  currentUserId?: string | null;
-  onEdit: (entry: LedgerEntryWithDetails) => void;
-  onDelete: (entry: LedgerEntryWithDetails) => void;
-  onRequestUpdate?: (entry: LedgerEntryWithDetails) => void;
-  onRequestDelete?: (entry: LedgerEntryWithDetails) => void;
+  href: string;
 }
 
-export function LedgerEntryRow({
-  entry,
-  currentUserId,
-  onEdit,
-  onDelete,
-  onRequestUpdate,
-  onRequestDelete,
-}: LedgerEntryRowProps) {
+export function LedgerEntryRow({ entry, href }: LedgerEntryRowProps) {
   const isIncome = entry.type === "income";
   const isTransfer = entry.type === "transfer";
-  const isOwner = Boolean(currentUserId && entry.ownerId === currentUserId);
-  const canUpdate = !isTransfer;
-  const canRequest = Boolean(currentUserId && !isOwner && entry.isShared);
-  const hasActions = isOwner || canRequest;
   const amountSign = isTransfer ? "" : isIncome ? "+" : "-";
   const amountColor = isTransfer
     ? "text-gray-900"
@@ -59,55 +38,10 @@ export function LedgerEntryRow({
   ].filter(Boolean);
 
   return (
-    <div className="group relative flex items-center gap-3 py-3 border-b last:border-b-0 pr-10">
-      {hasActions && (
-        <div className="absolute right-0 top-1/2 z-10 -translate-y-1/2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label="기록 작업"
-                className="h-8 w-8 text-gray-400 hover:text-gray-600"
-              >
-                <MoreVertical className="w-4 h-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {isOwner ? (
-                <>
-                  {canUpdate && (
-                    <DropdownMenuItem onClick={() => onEdit(entry)}>
-                      수정
-                    </DropdownMenuItem>
-                  )}
-                  <DropdownMenuItem
-                    className="text-destructive"
-                    onClick={() => onDelete(entry)}
-                  >
-                    삭제
-                  </DropdownMenuItem>
-                </>
-              ) : (
-                <>
-                  {canUpdate && (
-                    <DropdownMenuItem onClick={() => onRequestUpdate?.(entry)}>
-                      수정 요청
-                    </DropdownMenuItem>
-                  )}
-                  <DropdownMenuItem
-                    className="text-destructive"
-                    onClick={() => onRequestDelete?.(entry)}
-                  >
-                    삭제 요청
-                  </DropdownMenuItem>
-                </>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      )}
-
+    <Link
+      href={href}
+      className="group flex items-center gap-3 border-b py-3 transition-colors last:border-b-0 hover:bg-gray-50"
+    >
       {/* 카테고리 아이콘 */}
       <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-gray-100 flex items-center justify-center">
         <CategoryIcon iconName={iconName} className="w-5 h-5 text-gray-600" />
@@ -139,6 +73,6 @@ export function LedgerEntryRow({
           {formatCurrency(entry.amount)}
         </span>
       </div>
-    </div>
+    </Link>
   );
 }

@@ -1339,7 +1339,9 @@ export type Database = {
       ledger_entry_type: "expense" | "income" | "transfer";
       market_type: "KR" | "US" | "OTHER";
       notification_link_kind:
+        | "ledger_record_detail"
         | "ledger_record_date"
+        | "stock_transaction_detail"
         | "stock_record_date"
         | "record_change_request_detail"
         | "household_settings"
@@ -1549,7 +1551,9 @@ export const Constants = {
       ledger_entry_type: ["expense", "income", "transfer"],
       market_type: ["KR", "US", "OTHER"],
       notification_link_kind: [
+        "ledger_record_detail",
         "ledger_record_date",
+        "stock_transaction_detail",
         "stock_record_date",
         "record_change_request_detail",
         "household_settings",
