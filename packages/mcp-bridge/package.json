@@ -1,6 +1,6 @@
 {
   "name": "@oat-app/mcp-bridge",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "stdio MCP bridge for the hosted oat MCP endpoint",
   "license": "MIT",
   "type": "module",

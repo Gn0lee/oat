@@ -11,6 +11,7 @@ export interface BridgeConfig {
   token: string;
   debug: boolean;
   timeoutMs: number;
+  cacheTtlMs?: number;
   protocolVersion: string;
   userAgent: string;
 }
@@ -31,6 +32,19 @@ function parseTimeout(value: string | undefined): number {
   }
 
   return timeoutMs;
+}
+
+function parseCacheTtl(value: string | undefined): number | undefined {
+  if (value === undefined || value.trim() === "") return undefined;
+
+  const cacheTtlMs = Number(value);
+  if (!Number.isInteger(cacheTtlMs) || cacheTtlMs < 0) {
+    throw new ConfigError(
+      "OAT_MCP_CACHE_TTL_MS must be a non-negative integer.",
+    );
+  }
+
+  return cacheTtlMs;
 }
 
 function parseUrl(value: string | undefined): URL {
@@ -54,6 +68,7 @@ export function loadConfig(
     token,
     debug: env.OAT_MCP_DEBUG === "1" || env.OAT_MCP_DEBUG === "true",
     timeoutMs: parseTimeout(env.OAT_MCP_TIMEOUT_MS),
+    cacheTtlMs: parseCacheTtl(env.OAT_MCP_CACHE_TTL_MS),
     protocolVersion: MCP_PROTOCOL_VERSION,
     userAgent: `${PACKAGE_NAME}/${PACKAGE_VERSION}`,
   };

@@ -54,6 +54,7 @@ describe("MCP JSON-RPC handler", () => {
       "get_context",
       "get_financial_overview",
       "list_references",
+      "get_money_endpoint_detail",
       "search_ledger_entries",
       "get_ledger_stats",
       "get_asset_snapshot",

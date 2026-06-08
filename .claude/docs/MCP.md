@@ -276,7 +276,35 @@ AI가 다른 tool을 호출할 때 필요한 참조 데이터를 반환합니다
 - 계좌 목록
 - 결제수단 목록
 
-### 8.4 `search_ledger_entries`
+### 8.4 `get_money_endpoint_detail`
+
+계좌 또는 결제수단의 현재 잔액과 최근 변동 내역을 조회합니다.
+
+입력:
+
+```ts
+{
+  endpointType: "account" | "paymentMethod";
+  endpointId: string;
+}
+```
+
+반환:
+
+- 계좌 또는 결제수단 기본 정보
+- 현재 잔액
+- 투자 계좌의 주식 평가액과 계좌 총액
+- 최근 timeline
+
+timeline 종류:
+
+- `ledger`: 가계부 입출금/이체 기록
+- `stock_transaction`: 계좌에 연결된 주식 매수/매도 기록
+- `balance_adjustment`: 실제 잔액 맞춤 기록
+
+이 tool은 상세 사용자 데이터를 반환하므로 bridge cache 대상이 아니며, 연결 확인이나 polling 용도로 사용하지 않습니다.
+
+### 8.5 `search_ledger_entries`
 
 기간, 타입, 카테고리, Money Endpoint, 사용자, 공유 여부, 키워드 등으로 가계부 상세 내역을 조회합니다.
 
@@ -335,7 +363,7 @@ Money Endpoint:
 - v0.1은 `hasMore`만 제공하고 cursor pagination은 보류
 - 파트너 개인 지출 상세 제외
 
-### 8.5 `get_ledger_stats`
+### 8.6 `get_ledger_stats`
 
 기간별 가계부 집계를 반환합니다.
 
@@ -373,7 +401,7 @@ Trend 규칙:
 - 최대 12개월
 - 파트너 개인 장부는 세부 항목과 합계를 모두 제외
 
-### 8.6 `get_asset_snapshot`
+### 8.7 `get_asset_snapshot`
 
 자산/주식 snapshot을 반환합니다.
 
@@ -453,6 +481,7 @@ Valuation metadata:
 | Tool | 기본 범위 | 최대 범위 |
 |------|----------|----------|
 | `get_financial_overview` | 이번 달 + 현재 자산 | 최근 12개월 요약 |
+| `get_money_endpoint_detail` | 최근 80건 timeline | cursor pagination 보류 |
 | `search_ledger_entries` | 이번 달 | 100건/page |
 | `get_ledger_stats` | 이번 달 | 12개월 |
 | `get_asset_snapshot` | 현재 snapshot | 12개월 요약 추이 |
@@ -461,7 +490,45 @@ Valuation metadata:
 
 ---
 
-## 11. Settings UI
+## 11. 비용 제어와 캐시
+
+MCP lifecycle 호출은 실제 데이터 조회와 분리해서 다룹니다. 특히 Claude Desktop 같은 stdio 클라이언트는 연결 유지 중 `tools/list`와 notification 메시지를 반복할 수 있으므로, 이 요청들이 Vercel/Supabase 비용을 만들지 않게 해야 합니다.
+
+캐시 정책:
+
+| 대상 | 처리 | 이유 |
+|------|------|------|
+| `notifications/*` | 인증 전 202 반환 | 응답 본문과 데이터 접근이 필요 없는 lifecycle 메시지 |
+| `tools/list` | bridge static manifest 응답 | v0에서는 모든 유효 토큰이 같은 tool 목록을 보며 scope는 `tools/call`에서 검사 |
+| `get_context` | 짧은 TTL 캐시 후보 | 사용자, 가구, scope 확인용이며 연결 확인 때 반복될 수 있음 |
+| `list_references` | 짧은 TTL 캐시 후보 | 가구원, 카테고리, 계좌, 결제수단은 자주 바뀌지 않음 |
+| ledger/assets 상세 조회 | 기본 캐시하지 않음 | 최신성과 privacy 필터가 중요함 |
+
+`tools/list` manifest는 bridge 패키지에 포함할 수 있지만, 서버의 `MCP_TOOL_DEFINITIONS`와 어긋나지 않도록 drift detection 테스트를 둡니다.
+
+`get_context`와 `list_references`는 `forceRefresh` 입력을 지원할 수 있습니다. 이 옵션은 "방금 계좌 이름을 바꿨다", "방금 카테고리를 추가했다"처럼 사용자가 명시적으로 최신 값을 다시 확인하라고 요청한 경우에만 사용합니다. MCP 클라이언트가 일반 호출, 자동 재시도, 주기적 polling 목적으로 `forceRefresh`를 남용하지 않도록 tool description에 강하게 안내합니다.
+
+넓은 종합 tool은 비용이 큰 기본 선택지가 되지 않게 세분화합니다. `get_financial_overview`는 compatibility wrapper로 유지하되, 새 클라이언트가 다음 summary tool을 우선 선택하도록 설명을 조정합니다.
+
+- `get_cashflow_summary`
+- `get_liquid_balance_summary`
+- `get_asset_summary`
+- `get_cashflow_breakdown`
+- `get_cashflow_trend`
+- `get_asset_allocation`
+- `list_holdings`
+
+2단계 개선 후보:
+
+- 서버 측 per-token/IP rate limit을 추가해 잘못된 클라이언트 루프를 제한합니다.
+- remote MCP 직접 연결 클라이언트를 위해 서버 측 짧은 TTL cache를 추가합니다.
+- token별 lifecycle 호출 수, 최근 method, 최근 오류를 `/settings/mcp`에 노출합니다.
+- summary tool 응답을 미리 계산한 snapshot/RPC로 옮겨 DB read 수를 줄입니다.
+- Vercel Firewall 또는 secret path/gate로 무인 스캔과 잘못된 endpoint 호출을 차단합니다.
+
+---
+
+## 12. Settings UI
 
 설정 하위에 MCP 연결 화면을 둡니다.
 
@@ -487,7 +554,7 @@ app/(main)/settings/mcp/page.tsx
 
 ---
 
-## 12. 구현 순서 제안
+## 13. 구현 순서 제안
 
 1. `mcp_tokens`, `mcp_audit_logs` 마이그레이션 추가
 2. MCP 토큰 생성/회수 API 추가
@@ -503,7 +570,7 @@ app/(main)/settings/mcp/page.tsx
 
 ---
 
-## 13. 보류한 결정
+## 14. 보류한 결정
 
 v0에서는 다루지 않습니다.
 
@@ -517,7 +584,7 @@ v0에서는 다루지 않습니다.
 
 ---
 
-## 14. 열린 질문
+## 15. 열린 질문
 
 - Next.js Route Handler에서 사용할 MCP SDK/transport 구현체를 무엇으로 할 것인가?
 - Vercel 환경에서 Streamable HTTP의 GET/SSE 요구사항을 얼마나 지원할 것인가?

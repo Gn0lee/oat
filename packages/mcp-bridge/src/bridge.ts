@@ -4,9 +4,11 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
+import { CachedRemoteMcpClient } from "./cache.js";
 import type { BridgeConfig } from "./config.js";
 import { PACKAGE_NAME, PACKAGE_VERSION } from "./constants.js";
 import type { Logger } from "./logger.js";
+import { BRIDGE_TOOL_DEFINITIONS } from "./manifest.js";
 import { RemoteMcpClient } from "./remote.js";
 
 export async function runBridge(
@@ -15,6 +17,9 @@ export async function runBridge(
 ): Promise<void> {
   const remote = new RemoteMcpClient(config, logger);
   await remote.connect();
+  const cachedRemote = new CachedRemoteMcpClient(remote, {
+    cacheTtlMs: config.cacheTtlMs,
+  });
 
   const server = new Server(
     {
@@ -28,11 +33,11 @@ export async function runBridge(
     },
   );
 
-  server.setRequestHandler(ListToolsRequestSchema, (request) =>
-    remote.listTools(request.params),
-  );
+  server.setRequestHandler(ListToolsRequestSchema, () => ({
+    tools: BRIDGE_TOOL_DEFINITIONS,
+  }));
   server.setRequestHandler(CallToolRequestSchema, (request) =>
-    remote.callTool(request.params),
+    cachedRemote.callTool(request.params),
   );
 
   const transport = new StdioServerTransport();
