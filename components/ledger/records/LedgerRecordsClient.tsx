@@ -152,22 +152,22 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
         </div>
       </div>
       <div className="grid grid-cols-3 gap-2 text-center">
-        <div>
+        <div className="min-w-0">
           <p className="text-xs text-gray-500 mb-1">입금</p>
-          <p className="text-sm font-semibold text-red-500">
+          <p className="text-sm font-semibold leading-tight text-red-500 [overflow-wrap:anywhere]">
             +{formatCurrency(summary.totalIncome)}
           </p>
         </div>
-        <div>
+        <div className="min-w-0">
           <p className="text-xs text-gray-500 mb-1">지출</p>
-          <p className="text-sm font-semibold text-blue-500">
+          <p className="text-sm font-semibold leading-tight text-blue-500 [overflow-wrap:anywhere]">
             -{formatCurrency(summary.totalExpense)}
           </p>
         </div>
-        <div>
+        <div className="min-w-0">
           <p className="text-xs text-gray-500 mb-1">잔액</p>
           <p
-            className={`text-sm font-semibold ${
+            className={`text-sm font-semibold leading-tight [overflow-wrap:anywhere] ${
               summary.balance >= 0 ? "text-gray-900" : "text-blue-500"
             }`}
           >

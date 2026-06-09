@@ -42,19 +42,19 @@ export function StockRecordDayList({
                   href={`/assets/stock/transactions/${transaction.id}?from=records&date=${selectedDate}`}
                   className="flex min-h-[72px] flex-col justify-center px-4 py-3.5 transition-colors hover:bg-gray-50 sm:px-5"
                 >
-                  <div className="flex min-w-0 items-center justify-between gap-3">
-                    <div className="flex min-w-0 flex-1 items-center gap-2">
+                  <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+                    <div className="flex min-w-0 flex-1 items-start gap-2">
                       <Badge
                         variant={isBuy ? "default" : "secondary"}
                         className="shrink-0 px-1.5 py-0 text-[10px]"
                       >
                         {typeLabel}
                       </Badge>
-                      <span className="truncate text-left font-semibold text-gray-900 text-sm">
+                      <span className="line-clamp-2 min-w-0 text-left font-semibold text-gray-900 text-sm leading-5 break-words">
                         {transaction.stockName}
                       </span>
                     </div>
-                    <div className="shrink-0 font-medium text-gray-900 text-sm">
+                    <div className="max-w-full self-end text-right font-medium text-gray-900 text-sm leading-tight [overflow-wrap:anywhere] sm:shrink-0">
                       {formatCompactCurrency(
                         transaction.price * transaction.quantity,
                         transaction.currency,

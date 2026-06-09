@@ -108,7 +108,7 @@ export function TransactionDetailClient({
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <p className="truncate text-sm text-gray-500">
                     {transaction.ticker}
                   </p>
@@ -160,7 +160,7 @@ export function TransactionDetailClient({
                   </DropdownMenu>
                 )}
               </div>
-              <p className="mt-4 text-3xl font-bold text-gray-900">
+              <p className="mt-4 max-w-full text-2xl font-bold leading-tight text-gray-900 [overflow-wrap:anywhere] sm:text-3xl">
                 {formatCurrency(transaction.totalAmount, transaction.currency)}
               </p>
               <div className="mt-3 flex flex-wrap gap-2">

@@ -42,7 +42,7 @@ describe("StockRecordDayList", () => {
     );
   });
 
-  it("keeps long stock names truncatable", () => {
+  it("allows long stock names to wrap across two lines", () => {
     render(
       <StockRecordDayList
         selectedDate="2026-05-31"
@@ -50,6 +50,6 @@ describe("StockRecordDayList", () => {
       />,
     );
 
-    expect(screen.getByText(transaction.stockName)).toHaveClass("truncate");
+    expect(screen.getByText(transaction.stockName)).toHaveClass("line-clamp-2");
   });
 });

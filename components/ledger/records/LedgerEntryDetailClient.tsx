@@ -134,7 +134,7 @@ export function LedgerEntryDetailClient({
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <p className="truncate text-sm text-gray-500">{typeLabel}</p>
                   <h2 className="mt-1 break-words text-xl font-semibold text-gray-900">
                     {title}
@@ -188,7 +188,7 @@ export function LedgerEntryDetailClient({
                   </DropdownMenu>
                 )}
               </div>
-              <p className="mt-4 text-3xl font-bold text-gray-900">
+              <p className="mt-4 max-w-full text-2xl font-bold leading-tight text-gray-900 [overflow-wrap:anywhere] sm:text-3xl">
                 {formatCurrency(entry.amount)}
               </p>
               <div className="mt-3 flex flex-wrap gap-2">

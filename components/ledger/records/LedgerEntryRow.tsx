@@ -40,7 +40,7 @@ export function LedgerEntryRow({ entry, href }: LedgerEntryRowProps) {
   return (
     <Link
       href={href}
-      className="group flex items-center gap-3 border-b py-3 transition-colors last:border-b-0 hover:bg-gray-50"
+      className="group flex items-start gap-3 border-b py-3 transition-colors last:border-b-0 hover:bg-gray-50"
     >
       {/* 카테고리 아이콘 */}
       <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-gray-100 flex items-center justify-center">
@@ -50,7 +50,7 @@ export function LedgerEntryRow({ entry, href }: LedgerEntryRowProps) {
       {/* 내용 */}
       <div className="flex-1 min-w-0">
         <div className="flex min-w-0 items-center gap-1">
-          <span className="font-semibold text-gray-900 text-sm truncate">
+          <span className="line-clamp-2 min-w-0 font-semibold text-gray-900 text-sm leading-5 break-words">
             {entry.title ??
               entry.categoryName ??
               (isTransfer ? "이체" : "미분류")}
@@ -67,8 +67,10 @@ export function LedgerEntryRow({ entry, href }: LedgerEntryRowProps) {
       </div>
 
       {/* 금액 */}
-      <div className="flex items-center gap-1 flex-shrink-0">
-        <span className={`text-sm font-semibold ${amountColor}`}>
+      <div className="max-w-[42%] flex-shrink-0 text-right">
+        <span
+          className={`text-sm font-semibold leading-tight [overflow-wrap:anywhere] ${amountColor}`}
+        >
           {amountSign}
           {formatCurrency(entry.amount)}
         </span>
