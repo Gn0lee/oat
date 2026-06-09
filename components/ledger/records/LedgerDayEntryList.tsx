@@ -7,23 +7,14 @@ import { LedgerEntryRow } from "./LedgerEntryRow";
 interface LedgerDayEntryListProps {
   selectedDate: Date;
   entries: LedgerEntryWithDetails[];
-  currentUserId?: string | null;
-  onEdit: (entry: LedgerEntryWithDetails) => void;
-  onDelete: (entry: LedgerEntryWithDetails) => void;
-  onRequestUpdate?: (entry: LedgerEntryWithDetails) => void;
-  onRequestDelete?: (entry: LedgerEntryWithDetails) => void;
 }
 
 export function LedgerDayEntryList({
   selectedDate,
   entries,
-  currentUserId,
-  onEdit,
-  onDelete,
-  onRequestUpdate,
-  onRequestDelete,
 }: LedgerDayEntryListProps) {
   const dateLabel = formatKst(selectedDate, "M월 d일 (eee)");
+  const dateParam = formatKst(selectedDate, "yyyy-MM-dd");
 
   return (
     <div className="bg-white rounded-2xl shadow-sm mt-4 md:mt-0">
@@ -41,11 +32,7 @@ export function LedgerDayEntryList({
             <LedgerEntryRow
               key={entry.id}
               entry={entry}
-              currentUserId={currentUserId}
-              onEdit={onEdit}
-              onDelete={onDelete}
-              onRequestUpdate={onRequestUpdate}
-              onRequestDelete={onRequestDelete}
+              href={`/ledger/records/${entry.id}?from=records&date=${dateParam}`}
             />
           ))}
         </div>

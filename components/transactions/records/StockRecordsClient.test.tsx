@@ -96,7 +96,7 @@ describe("StockRecordsClient", () => {
 
     render(
       <QueryClientProvider client={queryClient}>
-        <StockRecordsClient currentUserId="user-1" initialDate="2026-05-31" />
+        <StockRecordsClient initialDate="2026-05-31" />
       </QueryClientProvider>,
     );
 

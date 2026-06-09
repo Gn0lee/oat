@@ -29,8 +29,16 @@ export type NotificationSourceType = z.infer<
 
 export const notificationLinkSchema = z.discriminatedUnion("kind", [
   z.object({
+    kind: z.literal("ledger_record_detail"),
+    params: z.object({ entryId: z.uuid() }),
+  }),
+  z.object({
     kind: z.literal("ledger_record_date"),
     params: z.object({ date: z.iso.date() }),
+  }),
+  z.object({
+    kind: z.literal("stock_transaction_detail"),
+    params: z.object({ transactionId: z.uuid() }),
   }),
   z.object({
     kind: z.literal("stock_record_date"),
@@ -54,7 +62,9 @@ export type NotificationLink = z.infer<typeof notificationLinkSchema>;
 export type NotificationLinkKind = NotificationLink["kind"];
 
 export const notificationLinkKindSchema = z.enum([
+  "ledger_record_detail",
   "ledger_record_date",
+  "stock_transaction_detail",
   "stock_record_date",
   "record_change_request_detail",
   "household_settings",

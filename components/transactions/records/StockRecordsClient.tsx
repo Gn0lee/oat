@@ -31,7 +31,6 @@ const YEAR_OPTIONS = Array.from({ length: 11 }, (_, i) => CURRENT_YEAR - 5 + i);
 const MONTH_OPTIONS = Array.from({ length: 12 }, (_, i) => i + 1);
 
 interface StockRecordsClientProps {
-  currentUserId: string;
   initialDate: string;
 }
 
@@ -45,10 +44,7 @@ function getMonthFilters(month: Date) {
   };
 }
 
-export function StockRecordsClient({
-  currentUserId,
-  initialDate,
-}: StockRecordsClientProps) {
+export function StockRecordsClient({ initialDate }: StockRecordsClientProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -216,7 +212,6 @@ export function StockRecordsClient({
           <StockRecordDayList
             selectedDate={selectedDateKey}
             transactions={dayTransactions}
-            currentUserId={currentUserId}
           />
           <Button asChild className="w-full" size="icon-sm">
             <Link

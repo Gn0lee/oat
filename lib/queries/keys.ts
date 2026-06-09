@@ -119,6 +119,7 @@ export const queries = createQueryKeyStore({
 
   ledgerEntries: {
     all: null,
+    detail: (id: string) => ({ queryKey: [id] }),
     list: (params?: {
       year?: number;
       month?: number;

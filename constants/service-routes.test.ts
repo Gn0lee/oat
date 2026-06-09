@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { getServiceRouteMeta } from "./service-routes";
+import {
+  getServiceRouteMeta,
+  resolveServiceParentHref,
+} from "./service-routes";
 
 describe("getServiceRouteMeta", () => {
   it("mobile top-level 화면을 구분한다", () => {
@@ -123,5 +126,64 @@ describe("getServiceRouteMeta", () => {
       label: "계좌 상세",
       parentHref: "/assets/accounts",
     });
+  });
+
+  it("new route를 상세 동적 route로 오인하지 않는다", () => {
+    expect(getServiceRouteMeta("/assets/accounts/new")).toMatchObject({
+      href: "/assets/accounts/new",
+      label: "계좌 추가",
+    });
+
+    expect(getServiceRouteMeta("/assets/stock/transactions/new")).toMatchObject(
+      {
+        href: "/assets/stock/transactions/new",
+        label: "거래 등록",
+      },
+    );
+  });
+
+  it("가계부 기록 상세는 일간조회 날짜로 돌아간다", () => {
+    const meta = getServiceRouteMeta("/ledger/records/entry-123");
+
+    expect(
+      resolveServiceParentHref({
+        meta,
+        searchParams: new URLSearchParams("from=records&date=2026-06-08"),
+      }),
+    ).toBe("/ledger/records?date=2026-06-08");
+
+    expect(
+      resolveServiceParentHref({
+        meta,
+        searchParams: new URLSearchParams("from=notification"),
+      }),
+    ).toBe("/notifications");
+  });
+
+  it("주식 거래 상세는 진입한 collection으로 돌아간다", () => {
+    const meta = getServiceRouteMeta("/assets/stock/transactions/tx-123");
+
+    expect(
+      resolveServiceParentHref({
+        meta,
+        searchParams: new URLSearchParams("from=records&date=2026-06-08"),
+      }),
+    ).toBe("/assets/stock/records?date=2026-06-08");
+
+    expect(
+      resolveServiceParentHref({
+        meta,
+        searchParams: new URLSearchParams(
+          "from=transactions&page=2&type=buy&ticker=AAPL",
+        ),
+      }),
+    ).toBe("/assets/stock/transactions?page=2&type=buy&ticker=AAPL");
+
+    expect(
+      resolveServiceParentHref({
+        meta,
+        searchParams: new URLSearchParams("from=notification"),
+      }),
+    ).toBe("/notifications");
   });
 });

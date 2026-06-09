@@ -5,7 +5,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { NotificationBell } from "@/components/notifications";
-import { getServiceRouteMeta } from "@/constants/service-routes";
+import {
+  getServiceRouteMeta,
+  resolveServiceParentHref,
+} from "@/constants/service-routes";
 import { cn } from "@/lib/utils/cn";
 
 interface ServiceHeaderProps {
@@ -18,9 +21,8 @@ export function ServiceHeader({ variant }: ServiceHeaderProps) {
     null,
   );
   const meta = getServiceRouteMeta(pathname);
-  const parentHref = getParentHref({
-    parentHref: meta?.parentHref,
-    preserveSearchParams: meta?.preserveSearchParams ?? [],
+  const parentHref = resolveServiceParentHref({
+    meta,
     searchParams,
   });
 
@@ -81,35 +83,6 @@ function MobileServiceHeader({
       </IconLink>
     </header>
   );
-}
-
-function getParentHref({
-  parentHref,
-  preserveSearchParams,
-  searchParams,
-}: {
-  parentHref?: string;
-  preserveSearchParams: string[];
-  searchParams: URLSearchParams | null;
-}) {
-  if (!parentHref) {
-    return undefined;
-  }
-
-  const preservedParams = new URLSearchParams();
-  for (const key of preserveSearchParams) {
-    const value = searchParams?.get(key);
-    if (value) {
-      preservedParams.set(key, value);
-    }
-  }
-
-  const queryString = preservedParams.toString();
-  if (queryString) {
-    return `${parentHref}?${queryString}`;
-  }
-
-  return parentHref;
 }
 
 function DesktopServiceHeader({

@@ -20,12 +20,14 @@ interface TransactionDeleteDialogProps {
   transaction: TransactionWithDetails | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onDeleted?: () => void;
 }
 
 export function TransactionDeleteDialog({
   transaction,
   open,
   onOpenChange,
+  onDeleted,
 }: TransactionDeleteDialogProps) {
   const deleteMutation = useDeleteTransaction();
 
@@ -36,6 +38,7 @@ export function TransactionDeleteDialog({
       await deleteMutation.mutateAsync(transaction.id);
       toast.success("거래가 삭제되었습니다.");
       onOpenChange(false);
+      onDeleted?.();
     } catch (error) {
       if (error instanceof Error) {
         toast.error(error.message);

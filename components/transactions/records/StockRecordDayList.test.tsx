@@ -1,19 +1,7 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import type { TransactionWithDetails } from "@/lib/api/transaction";
 import { StockRecordDayList } from "./StockRecordDayList";
-
-vi.mock("@/components/transactions/TransactionEditDialog", () => ({
-  TransactionEditDialog: () => null,
-}));
-
-vi.mock("@/components/transactions/TransactionDeleteDialog", () => ({
-  TransactionDeleteDialog: () => null,
-}));
-
-vi.mock("@/components/transactions/TransactionChangeRequestDialog", () => ({
-  TransactionChangeRequestDialog: () => null,
-}));
 
 const transaction: TransactionWithDetails = {
   id: "tx-1",
@@ -37,7 +25,6 @@ describe("StockRecordDayList", () => {
       <StockRecordDayList
         selectedDate="2026-05-31"
         transactions={[transaction]}
-        currentUserId="user-1"
       />,
     );
 
@@ -49,17 +36,20 @@ describe("StockRecordDayList", () => {
     expect(
       screen.queryByText("목록에서는 보이면 안 되는 메모"),
     ).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /아주아주/ })).toHaveAttribute(
+      "href",
+      "/assets/stock/transactions/tx-1?from=records&date=2026-05-31",
+    );
   });
 
-  it("keeps long stock names truncatable", () => {
+  it("allows long stock names to wrap across two lines", () => {
     render(
       <StockRecordDayList
         selectedDate="2026-05-31"
         transactions={[transaction]}
-        currentUserId="user-1"
       />,
     );
 
-    expect(screen.getByText(transaction.stockName)).toHaveClass("truncate");
+    expect(screen.getByText(transaction.stockName)).toHaveClass("line-clamp-2");
   });
 });

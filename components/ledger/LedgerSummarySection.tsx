@@ -78,24 +78,24 @@ export function LedgerSummarySection({
         </p>
       ) : summary ? (
         <div className="space-y-4">
-          <div className="flex justify-between items-end">
+          <div className="flex items-end justify-between gap-4">
             <span className="text-gray-700">남은 금액</span>
-            <span className="text-3xl font-bold text-gray-900">
+            <span className="min-w-0 text-right text-2xl font-bold leading-tight text-gray-900 [overflow-wrap:anywhere] sm:text-3xl">
               {formatCurrency(summary.balance)}
             </span>
           </div>
 
           <div className="h-px bg-gray-100 w-full" />
 
-          <div className="flex justify-between items-center text-sm">
+          <div className="flex items-center justify-between gap-4 text-sm">
             <span className="text-gray-500">수입</span>
-            <span className="font-medium text-gray-900">
+            <span className="min-w-0 text-right font-medium text-gray-900 [overflow-wrap:anywhere]">
               {formatCurrency(summary.totalIncome)}
             </span>
           </div>
-          <div className="flex justify-between items-center text-sm">
+          <div className="flex items-center justify-between gap-4 text-sm">
             <span className="text-gray-500">지출</span>
-            <span className="font-medium text-gray-900">
+            <span className="min-w-0 text-right font-medium text-gray-900 [overflow-wrap:anywhere]">
               {formatCurrency(summary.totalExpense)}
             </span>
           </div>

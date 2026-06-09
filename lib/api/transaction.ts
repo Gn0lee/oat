@@ -270,6 +270,82 @@ const TRANSACTION_SORT_COLUMNS: Record<TransactionSortField, string> = {
   price: "price",
 };
 
+interface TransactionDetailRow {
+  id: string;
+  ticker: string;
+  type: TransactionType;
+  quantity: number;
+  price: number;
+  transacted_at: string;
+  memo: string | null;
+  account_id: string | null;
+  owner_id: string;
+  profiles?: { id: string; name: string } | null;
+}
+
+async function attachTransactionDetails(
+  supabase: SupabaseClient<Database>,
+  householdId: string,
+  rows: TransactionDetailRow[],
+): Promise<TransactionWithDetails[]> {
+  const tickers = [...new Set(rows.map((t) => t.ticker))];
+  const stockSettingsMap = new Map<
+    string,
+    { name: string; currency: CurrencyType }
+  >();
+  const accountIds = [
+    ...new Set(rows.map((t) => t.account_id).filter(Boolean) as string[]),
+  ];
+  const accountMap = new Map<string, string>();
+
+  if (tickers.length > 0) {
+    const { data: stockSettings } = await supabase
+      .from("household_stock_settings")
+      .select("ticker, name, currency")
+      .eq("household_id", householdId)
+      .in("ticker", tickers);
+
+    for (const s of stockSettings ?? []) {
+      stockSettingsMap.set(s.ticker, { name: s.name, currency: s.currency });
+    }
+  }
+
+  if (accountIds.length > 0) {
+    const { data: accounts } = await supabase
+      .from("accounts")
+      .select("id, name")
+      .in("id", accountIds);
+
+    for (const account of accounts ?? []) {
+      accountMap.set(account.id, account.name);
+    }
+  }
+
+  return rows.map((t) => {
+    const profile = t.profiles ?? null;
+    const stockSettings = stockSettingsMap.get(t.ticker);
+
+    return {
+      id: t.id,
+      ticker: t.ticker,
+      stockName: stockSettings?.name ?? t.ticker,
+      type: t.type,
+      quantity: Number(t.quantity),
+      price: Number(t.price),
+      totalAmount: Number(t.quantity) * Number(t.price),
+      currency: stockSettings?.currency ?? "KRW",
+      transactedAt: t.transacted_at,
+      memo: t.memo,
+      accountId: t.account_id,
+      accountName: t.account_id ? (accountMap.get(t.account_id) ?? null) : null,
+      owner: {
+        id: profile?.id ?? t.owner_id,
+        name: profile?.name ?? "알 수 없음",
+      },
+    };
+  });
+}
+
 /**
  * 거래 내역 목록 조회
  */
@@ -360,66 +436,56 @@ export async function getTransactions(
     );
   }
 
-  // 종목 정보 조회 (별도 쿼리)
-  const tickers = [...new Set((data ?? []).map((t) => t.ticker))];
-  const stockSettingsMap = new Map<
-    string,
-    { name: string; currency: CurrencyType }
-  >();
-  const accountIds = [
-    ...new Set((data ?? []).map((t) => t.account_id).filter(Boolean)),
-  ];
-  const accountMap = new Map<string, string>();
-
-  if (tickers.length > 0) {
-    const { data: stockSettings } = await supabase
-      .from("household_stock_settings")
-      .select("ticker, name, currency")
-      .eq("household_id", householdId)
-      .in("ticker", tickers);
-
-    for (const s of stockSettings ?? []) {
-      stockSettingsMap.set(s.ticker, { name: s.name, currency: s.currency });
-    }
-  }
-
-  if (accountIds.length > 0) {
-    const { data: accounts } = await supabase
-      .from("accounts")
-      .select("id, name")
-      .in("id", accountIds);
-
-    for (const account of accounts ?? []) {
-      accountMap.set(account.id, account.name);
-    }
-  }
-
-  // 데이터 변환
-  const transactions: TransactionWithDetails[] = (data ?? []).map((t) => {
-    const profile = t.profiles as { id: string; name: string } | null;
-    const stockSettings = stockSettingsMap.get(t.ticker);
-
-    return {
-      id: t.id,
-      ticker: t.ticker,
-      stockName: stockSettings?.name ?? t.ticker,
-      type: t.type,
-      quantity: Number(t.quantity),
-      price: Number(t.price),
-      totalAmount: Number(t.quantity) * Number(t.price),
-      currency: stockSettings?.currency ?? "KRW",
-      transactedAt: t.transacted_at,
-      memo: t.memo,
-      accountId: t.account_id,
-      accountName: t.account_id ? (accountMap.get(t.account_id) ?? null) : null,
-      owner: {
-        id: profile?.id ?? t.owner_id,
-        name: profile?.name ?? "알 수 없음",
-      },
-    };
-  });
+  const transactions = await attachTransactionDetails(
+    supabase,
+    householdId,
+    (data ?? []) as TransactionDetailRow[],
+  );
 
   return createPaginatedResult(transactions, count ?? 0, pagination);
+}
+
+export async function getTransactionWithDetailsById(
+  supabase: SupabaseClient<Database>,
+  transactionId: string,
+  householdId: string,
+): Promise<TransactionWithDetails> {
+  const { data, error } = await supabase
+    .from("transactions")
+    .select(
+      `
+      id,
+      ticker,
+      type,
+      quantity,
+      price,
+      transacted_at,
+      memo,
+      account_id,
+      owner_id,
+      profiles!transactions_owner_id_fkey (
+        id,
+        name
+      )
+    `,
+    )
+    .eq("id", transactionId)
+    .eq("household_id", householdId)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Transaction detail query error:", error);
+    throw new APIError("TRANSACTION_ERROR", "거래 조회에 실패했습니다.", 500);
+  }
+
+  if (!data) {
+    throw new APIError("NOT_FOUND", "거래를 찾을 수 없습니다.", 404);
+  }
+
+  const [transaction] = await attachTransactionDetails(supabase, householdId, [
+    data as TransactionDetailRow,
+  ]);
+  return transaction;
 }
 
 // ============================================================================

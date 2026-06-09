@@ -1,5 +1,4 @@
 import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import type { LedgerEntryWithDetails } from "@/lib/api/ledger";
 import { LedgerEntryRow } from "./LedgerEntryRow";
@@ -46,69 +45,34 @@ const baseEntry: LedgerEntryWithDetails = {
   updatedAt: "2026-06-02T00:00:00.000Z",
 };
 
-function renderRow(entry: LedgerEntryWithDetails, currentUserId: string) {
+function renderRow(entry: LedgerEntryWithDetails) {
   return render(
     <LedgerEntryRow
       entry={entry}
-      currentUserId={currentUserId}
-      onEdit={vi.fn()}
-      onDelete={vi.fn()}
-      onRequestUpdate={vi.fn()}
-      onRequestDelete={vi.fn()}
+      href={`/ledger/records/${entry.id}?from=records&date=2026-06-02`}
     />,
   );
 }
 
 describe("LedgerEntryRow", () => {
-  it("소유자 지출 기록에는 직접 수정과 삭제 액션을 보여준다", async () => {
-    renderRow(baseEntry, "owner-1");
+  it("기록 상세로 이동하는 링크를 렌더링한다", () => {
+    renderRow(baseEntry);
 
-    await userEvent.click(screen.getByRole("button", { name: "기록 작업" }));
-
-    expect(screen.getByText("수정")).toBeInTheDocument();
-    expect(screen.getByText("삭제")).toBeInTheDocument();
-    expect(screen.queryByText("수정 요청")).not.toBeInTheDocument();
-  });
-
-  it("소유자 이체 기록에는 삭제 액션만 보여준다", async () => {
-    renderRow({ ...baseEntry, type: "transfer" }, "owner-1");
-
-    await userEvent.click(screen.getByRole("button", { name: "기록 작업" }));
-
-    expect(screen.queryByText("수정")).not.toBeInTheDocument();
-    expect(screen.getByText("삭제")).toBeInTheDocument();
-  });
-
-  it("비소유자 공용 지출 기록에는 수정 요청과 삭제 요청을 보여준다", async () => {
-    renderRow(baseEntry, "requester-1");
-
-    await userEvent.click(screen.getByRole("button", { name: "기록 작업" }));
-
-    expect(screen.getByText("수정 요청")).toBeInTheDocument();
-    expect(screen.getByText("삭제 요청")).toBeInTheDocument();
-    expect(screen.queryByText("수정")).not.toBeInTheDocument();
-  });
-
-  it("비소유자 공용 이체 기록에는 삭제 요청만 보여준다", async () => {
-    renderRow({ ...baseEntry, type: "transfer" }, "requester-1");
-
-    await userEvent.click(screen.getByRole("button", { name: "기록 작업" }));
-
-    expect(screen.queryByText("수정 요청")).not.toBeInTheDocument();
-    expect(screen.getByText("삭제 요청")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /점심/ })).toHaveAttribute(
+      "href",
+      "/ledger/records/entry-1?from=records&date=2026-06-02",
+    );
+    expect(screen.queryByRole("button", { name: "기록 작업" })).toBeNull();
   });
 
   it("이체 기록에는 카테고리 기본 아이콘 대신 이체 아이콘을 보여준다", () => {
-    renderRow(
-      {
-        ...baseEntry,
-        type: "transfer",
-        categoryId: null,
-        categoryName: null,
-        categoryIcon: null,
-      },
-      "owner-1",
-    );
+    renderRow({
+      ...baseEntry,
+      type: "transfer",
+      categoryId: null,
+      categoryName: null,
+      categoryIcon: null,
+    });
 
     expect(screen.getByTestId("ledger-entry-icon")).toHaveAttribute(
       "data-icon-name",

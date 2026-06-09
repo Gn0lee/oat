@@ -170,6 +170,8 @@ export interface UpdateLedgerEntryParams {
   memo?: string | null;
 }
 
+type LedgerEntryRow = LedgerEntry;
+
 interface LedgerFinancialSourceOwnershipInput {
   householdId: string;
   ownerId: string;
@@ -361,62 +363,31 @@ function getDateRange(options: GetLedgerEntriesOptions): {
   return { from: from.toISOString(), to: to.toISOString() };
 }
 
-export async function getLedgerEntries(
+async function attachLedgerEntryDetails(
   supabase: SupabaseClient<Database>,
-  householdId: string,
-  options?: GetLedgerEntriesOptions,
+  rows: LedgerEntryRow[],
 ): Promise<LedgerEntryWithDetails[]> {
-  const { from, to } = getDateRange(options ?? {});
-
-  const { data, error } = await supabase
-    .from("ledger_entries")
-    .select("*")
-    .eq("household_id", householdId)
-    .gte("transacted_at", from)
-    .lte("transacted_at", to)
-    .order("transacted_at", { ascending: false })
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    console.error("Ledger entries fetch error:", error);
-    throw new APIError(
-      "LEDGER_FETCH_ERROR",
-      "가계부 내역 조회에 실패했습니다.",
-      500,
-    );
-  }
-
-  const rows = data ?? [];
-  const scopedRows = rows.filter((row) => {
-    if (!options?.scope) return true;
-    if (options.scope === "shared") return row.is_shared;
-    return !row.is_shared && row.owner_id === options.userId;
-  });
-
-  if (scopedRows.length === 0) {
+  if (rows.length === 0) {
     return [];
   }
 
-  // 관련 ID 수집
-  const ownerIds = [...new Set(scopedRows.map((r) => r.owner_id))];
+  const ownerIds = [...new Set(rows.map((r) => r.owner_id))];
   const categoryIds = [
-    ...new Set(
-      scopedRows.map((r) => r.category_id).filter(Boolean) as string[],
-    ),
+    ...new Set(rows.map((r) => r.category_id).filter(Boolean) as string[]),
   ];
   const accountIds = [
     ...new Set(
       [
-        ...scopedRows.map((r) => r.from_account_id),
-        ...scopedRows.map((r) => r.to_account_id),
+        ...rows.map((r) => r.from_account_id),
+        ...rows.map((r) => r.to_account_id),
       ].filter(Boolean) as string[],
     ),
   ];
   const paymentMethodIds = [
     ...new Set(
       [
-        ...scopedRows.map((r) => r.from_payment_method_id),
-        ...scopedRows.map((r) => r.to_payment_method_id),
+        ...rows.map((r) => r.from_payment_method_id),
+        ...rows.map((r) => r.to_payment_method_id),
       ].filter(Boolean) as string[],
     ),
   ];
@@ -456,7 +427,7 @@ export async function getLedgerEntries(
     (paymentMethods ?? []).map((pm) => [pm.id, pm.name]),
   );
 
-  return scopedRows.map((r) => ({
+  return rows.map((r) => ({
     id: r.id,
     householdId: r.household_id,
     ownerId: r.owner_id,
@@ -493,6 +464,74 @@ export async function getLedgerEntries(
     createdAt: r.created_at,
     updatedAt: r.updated_at,
   }));
+}
+
+export async function getLedgerEntryById(
+  supabase: SupabaseClient<Database>,
+  entryId: string,
+  householdId: string,
+): Promise<LedgerEntryWithDetails> {
+  const { data, error } = await supabase
+    .from("ledger_entries")
+    .select("*")
+    .eq("id", entryId)
+    .eq("household_id", householdId)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Ledger entry detail fetch error:", error);
+    throw new APIError(
+      "LEDGER_FETCH_ERROR",
+      "가계부 기록 조회에 실패했습니다.",
+      500,
+    );
+  }
+
+  if (!data) {
+    throw new APIError("NOT_FOUND", "가계부 기록을 찾을 수 없습니다.", 404);
+  }
+
+  const [entry] = await attachLedgerEntryDetails(supabase, [data]);
+  return entry;
+}
+
+export async function getLedgerEntries(
+  supabase: SupabaseClient<Database>,
+  householdId: string,
+  options?: GetLedgerEntriesOptions,
+): Promise<LedgerEntryWithDetails[]> {
+  const { from, to } = getDateRange(options ?? {});
+
+  const { data, error } = await supabase
+    .from("ledger_entries")
+    .select("*")
+    .eq("household_id", householdId)
+    .gte("transacted_at", from)
+    .lte("transacted_at", to)
+    .order("transacted_at", { ascending: false })
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Ledger entries fetch error:", error);
+    throw new APIError(
+      "LEDGER_FETCH_ERROR",
+      "가계부 내역 조회에 실패했습니다.",
+      500,
+    );
+  }
+
+  const rows = data ?? [];
+  const scopedRows = rows.filter((row) => {
+    if (!options?.scope) return true;
+    if (options.scope === "shared") return row.is_shared;
+    return !row.is_shared && row.owner_id === options.userId;
+  });
+
+  if (scopedRows.length === 0) {
+    return [];
+  }
+
+  return attachLedgerEntryDetails(supabase, scopedRows);
 }
 
 export async function getLedgerEntrySummary(

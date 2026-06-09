@@ -115,10 +115,15 @@ async function createStockTransactionNotifications(
         type: input.type,
         title: input.title,
         body: input.body.replace("{actorName}", actorName),
-        link: {
-          kind: "stock_record_date",
-          params: { date: input.date },
-        },
+        link: input.source
+          ? {
+              kind: "stock_transaction_detail",
+              params: { transactionId: input.source.id },
+            }
+          : {
+              kind: "stock_record_date",
+              params: { date: input.date },
+            },
         source: input.source,
         dedupeKey: input.dedupeKey,
       }),

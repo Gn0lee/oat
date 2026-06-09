@@ -14,6 +14,7 @@ export interface ServiceRouteMeta {
   closeHref?: string;
   breadcrumb: BreadcrumbItem[];
   preserveSearchParams: string[];
+  parentResolver?: "ledgerRecordDetail" | "stockTransactionDetail";
 }
 
 interface ServiceRouteNode {
@@ -23,6 +24,7 @@ interface ServiceRouteNode {
   mobile?: MobileHeaderVariant;
   closeHref?: string;
   preserveSearchParams?: readonly string[];
+  parentResolver?: ServiceRouteMeta["parentResolver"];
   children?: readonly ServiceRouteNode[];
 }
 
@@ -49,6 +51,12 @@ export const SERVICE_ROUTE_TREE = [
         label: "기록 조회",
         preserveSearchParams: ["date"],
         children: [
+          {
+            href: "/ledger/records/[entryId]",
+            pattern: "/ledger/records/[entryId]",
+            label: "기록 상세",
+            parentResolver: "ledgerRecordDetail",
+          },
           {
             href: "/ledger/records/new/daily",
             label: "하루 기록 추가",
@@ -118,15 +126,15 @@ export const SERVICE_ROUTE_TREE = [
         label: "계좌 관리",
         children: [
           {
-            href: "/assets/accounts/[accountId]",
-            pattern: "/assets/accounts/[accountId]",
-            label: "계좌 상세",
-          },
-          {
             href: "/assets/accounts/new",
             label: "계좌 추가",
             mobile: "task",
             closeHref: "/assets/accounts",
+          },
+          {
+            href: "/assets/accounts/[accountId]",
+            pattern: "/assets/accounts/[accountId]",
+            label: "계좌 상세",
           },
         ],
       },
@@ -161,6 +169,18 @@ export const SERVICE_ROUTE_TREE = [
             href: "/assets/stock/transactions",
             label: "거래 내역",
             children: [
+              {
+                href: "/assets/stock/transactions/new",
+                label: "거래 등록",
+                mobile: "task",
+                closeHref: "/assets/stock/transactions",
+              },
+              {
+                href: "/assets/stock/transactions/[transactionId]",
+                pattern: "/assets/stock/transactions/[transactionId]",
+                label: "거래 상세",
+                parentResolver: "stockTransactionDetail",
+              },
               {
                 href: "/assets/stock/transactions/new/full",
                 label: "거래 등록",
@@ -220,6 +240,7 @@ function flattenServiceRoutes(
       closeHref: route.closeHref,
       breadcrumb,
       preserveSearchParams: [...(route.preserveSearchParams ?? [])],
+      parentResolver: route.parentResolver,
     };
 
     return [
@@ -227,6 +248,76 @@ function flattenServiceRoutes(
       ...flattenServiceRoutes(route.children ?? [], route, breadcrumb),
     ];
   });
+}
+
+export function resolveServiceParentHref({
+  meta,
+  searchParams,
+}: {
+  meta: ServiceRouteMeta | null;
+  searchParams: URLSearchParams | null;
+}): string | undefined {
+  if (!meta) {
+    return undefined;
+  }
+
+  if (meta.parentResolver === "ledgerRecordDetail") {
+    const from = searchParams?.get("from");
+    if (from === "notification") {
+      return "/notifications";
+    }
+    if (from === "records") {
+      return appendAllowedSearchParams("/ledger/records", searchParams, [
+        "date",
+      ]);
+    }
+  }
+
+  if (meta.parentResolver === "stockTransactionDetail") {
+    const from = searchParams?.get("from");
+    if (from === "notification") {
+      return "/notifications";
+    }
+    if (from === "records") {
+      return appendAllowedSearchParams("/assets/stock/records", searchParams, [
+        "date",
+      ]);
+    }
+    if (from === "transactions") {
+      return appendAllowedSearchParams(
+        "/assets/stock/transactions",
+        searchParams,
+        ["page", "type", "ownerId", "accountId", "ticker", "search"],
+      );
+    }
+  }
+
+  return appendAllowedSearchParams(
+    meta.parentHref,
+    searchParams,
+    meta.preserveSearchParams,
+  );
+}
+
+function appendAllowedSearchParams(
+  href: string | undefined,
+  searchParams: URLSearchParams | null,
+  allowedKeys: string[],
+) {
+  if (!href) {
+    return undefined;
+  }
+
+  const preservedParams = new URLSearchParams();
+  for (const key of allowedKeys) {
+    const value = searchParams?.get(key);
+    if (value) {
+      preservedParams.set(key, value);
+    }
+  }
+
+  const queryString = preservedParams.toString();
+  return queryString ? `${href}?${queryString}` : href;
 }
 
 export function getServiceRouteMeta(pathname: string): ServiceRouteMeta | null {

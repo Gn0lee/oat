@@ -20,12 +20,14 @@ interface LedgerEntryDeleteDialogProps {
   entry: LedgerEntryWithDetails | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onDeleted?: () => void;
 }
 
 export function LedgerEntryDeleteDialog({
   entry,
   open,
   onOpenChange,
+  onDeleted,
 }: LedgerEntryDeleteDialogProps) {
   const deleteMutation = useDeleteLedgerEntry();
 
@@ -36,6 +38,7 @@ export function LedgerEntryDeleteDialog({
       await deleteMutation.mutateAsync(entry.id);
       toast.success("기록이 삭제되었습니다.");
       onOpenChange(false);
+      onDeleted?.();
     } catch (error) {
       if (error instanceof Error) {
         toast.error(error.message);

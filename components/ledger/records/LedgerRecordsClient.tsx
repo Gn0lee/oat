@@ -6,9 +6,7 @@ import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
-import { LedgerEntryChangeRequestDialog } from "@/components/ledger/LedgerEntryChangeRequestDialog";
-import { LedgerEntryDeleteDialog } from "@/components/ledger/LedgerEntryDeleteDialog";
-import { LedgerEntryEditDialog } from "@/components/ledger/LedgerEntryEditDialog";
+import { AmountWithPopover } from "@/components/records/AmountWithPopover";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -18,7 +16,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useCurrentUserId } from "@/hooks/use-current-user";
 import { useLedgerEntries } from "@/hooks/use-ledger-entries";
 import {
   calculateLedgerSummary,
@@ -26,7 +23,7 @@ import {
 } from "@/lib/api/ledger";
 import { formatKst, getKstToday, toKstDate } from "@/lib/date";
 import { queries } from "@/lib/queries/keys";
-import { formatCurrency, formatDateISO } from "@/lib/utils/format";
+import { formatDateISO } from "@/lib/utils/format";
 import { LedgerCalendar } from "./LedgerCalendar";
 import { LedgerDayEntryList } from "./LedgerDayEntryList";
 
@@ -50,14 +47,7 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
     startOfMonth(initial),
   );
   const [selectedDate, setSelectedDate] = useState<Date>(initial);
-  const [selectedEntry, setSelectedEntry] =
-    useState<LedgerEntryWithDetails | null>(null);
-  const [editOpen, setEditOpen] = useState(false);
-  const [deleteOpen, setDeleteOpen] = useState(false);
-  const [requestOpen, setRequestOpen] = useState(false);
-  const [requestMode, setRequestMode] = useState<"update" | "delete">("update");
   const [scope, setScope] = useState<"shared" | "personal">("shared");
-  const { userId: currentUserId } = useCurrentUserId();
 
   const queryClient = useQueryClient();
 
@@ -94,28 +84,6 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
   }, [prevEntries, entries, nextEntries]);
 
   const dayEntries = entriesByDate.get(formatDateISO(selectedDate)) ?? [];
-
-  const handleEdit = (entry: LedgerEntryWithDetails) => {
-    setSelectedEntry(entry);
-    setEditOpen(true);
-  };
-
-  const handleDelete = (entry: LedgerEntryWithDetails) => {
-    setSelectedEntry(entry);
-    setDeleteOpen(true);
-  };
-
-  const handleRequestUpdate = (entry: LedgerEntryWithDetails) => {
-    setSelectedEntry(entry);
-    setRequestMode("update");
-    setRequestOpen(true);
-  };
-
-  const handleRequestDelete = (entry: LedgerEntryWithDetails) => {
-    setSelectedEntry(entry);
-    setRequestMode("delete");
-    setRequestOpen(true);
-  };
 
   const goToPrevMonth = () =>
     setCurrentMonth((m) => startOfMonth(subMonths(m, 1)));
@@ -185,28 +153,31 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
         </div>
       </div>
       <div className="grid grid-cols-3 gap-2 text-center">
-        <div>
+        <div className="min-w-0">
           <p className="text-xs text-gray-500 mb-1">입금</p>
-          <p className="text-sm font-semibold text-red-500">
-            +{formatCurrency(summary.totalIncome)}
-          </p>
+          <AmountWithPopover
+            amount={summary.totalIncome}
+            sign="+"
+            className="text-sm font-semibold leading-tight text-red-500"
+          />
         </div>
-        <div>
+        <div className="min-w-0">
           <p className="text-xs text-gray-500 mb-1">지출</p>
-          <p className="text-sm font-semibold text-blue-500">
-            -{formatCurrency(summary.totalExpense)}
-          </p>
+          <AmountWithPopover
+            amount={summary.totalExpense}
+            sign="-"
+            className="text-sm font-semibold leading-tight text-blue-500"
+          />
         </div>
-        <div>
+        <div className="min-w-0">
           <p className="text-xs text-gray-500 mb-1">잔액</p>
-          <p
-            className={`text-sm font-semibold ${
+          <AmountWithPopover
+            amount={summary.balance}
+            sign={summary.balance >= 0 ? "+" : ""}
+            className={`text-sm font-semibold leading-tight ${
               summary.balance >= 0 ? "text-gray-900" : "text-blue-500"
             }`}
-          >
-            {summary.balance >= 0 ? "+" : ""}
-            {formatCurrency(summary.balance)}
-          </p>
+          />
         </div>
       </div>
     </div>
@@ -282,11 +253,6 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
           <LedgerDayEntryList
             selectedDate={selectedDate}
             entries={dayEntries}
-            currentUserId={currentUserId}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onRequestUpdate={handleRequestUpdate}
-            onRequestDelete={handleRequestDelete}
           />
           <Button asChild className="w-full" size="icon-sm">
             <Link
@@ -298,24 +264,6 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
           </Button>
         </div>
       </div>
-
-      {/* 수정/삭제 다이얼로그 */}
-      <LedgerEntryEditDialog
-        entry={selectedEntry}
-        open={editOpen}
-        onOpenChange={setEditOpen}
-      />
-      <LedgerEntryDeleteDialog
-        entry={selectedEntry}
-        open={deleteOpen}
-        onOpenChange={setDeleteOpen}
-      />
-      <LedgerEntryChangeRequestDialog
-        entry={selectedEntry}
-        mode={requestMode}
-        open={requestOpen}
-        onOpenChange={setRequestOpen}
-      />
     </div>
   );
 }

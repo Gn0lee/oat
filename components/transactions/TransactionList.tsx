@@ -20,12 +20,12 @@ interface Member {
 
 interface TransactionListProps {
   members: Member[];
-  currentUserId: string;
+  currentUserId?: string;
 }
 
 export function TransactionList({
   members,
-  currentUserId,
+  currentUserId: _currentUserId,
 }: TransactionListProps) {
   const [filters, setFilters] = useState<Filters>({});
   const [page, setPage] = useState(1);
@@ -47,6 +47,7 @@ export function TransactionList({
 
   const transactions = data?.data ?? [];
   const totalPages = data?.totalPages ?? 1;
+  const detailQueryString = buildTransactionDetailQueryString(filters, page);
 
   return (
     <div className="space-y-4">
@@ -57,7 +58,10 @@ export function TransactionList({
       />
 
       <div className={isLoading ? "opacity-50 pointer-events-none" : ""}>
-        <TransactionTable data={transactions} currentUserId={currentUserId} />
+        <TransactionTable
+          data={transactions}
+          detailQueryString={detailQueryString}
+        />
       </div>
 
       {totalPages > 1 && (
@@ -93,4 +97,15 @@ export function TransactionList({
       )}
     </div>
   );
+}
+
+function buildTransactionDetailQueryString(filters: Filters, page: number) {
+  const params = new URLSearchParams({ from: "transactions" });
+  if (page > 1) params.set("page", String(page));
+  if (filters.type) params.set("type", filters.type);
+  if (filters.ownerId) params.set("ownerId", filters.ownerId);
+  if (filters.accountId) params.set("accountId", filters.accountId);
+  if (filters.ticker) params.set("ticker", filters.ticker);
+  if (filters.search) params.set("search", filters.search);
+  return params.toString();
 }

@@ -85,8 +85,8 @@ describe("stock transaction notification helpers", () => {
         title: "새 주식 거래가 추가되었습니다",
         body: "홍길동님이 AAPL 매수 3주를 추가했습니다.",
         link: {
-          kind: "stock_record_date",
-          params: { date: "2026-06-03" },
+          kind: "stock_transaction_detail",
+          params: { transactionId: "00000000-0000-4000-8000-000000000201" },
         },
         source: {
           type: "stock_transaction",
@@ -152,8 +152,8 @@ describe("stock transaction notification helpers", () => {
         title: "주식 거래가 수정되었습니다",
         body: "홍길동님이 AAPL 매수 기록을 수정했습니다.",
         link: {
-          kind: "stock_record_date",
-          params: { date: "2026-06-04" },
+          kind: "stock_transaction_detail",
+          params: { transactionId: "00000000-0000-4000-8000-000000000201" },
         },
         dedupeKey:
           "stock_transaction_updated:00000000-0000-4000-8000-000000000201:1780617600000",
@@ -175,8 +175,8 @@ describe("stock transaction notification helpers", () => {
         title: "주식 거래가 삭제되었습니다",
         body: "홍길동님이 AAPL 매수 기록을 삭제했습니다.",
         link: {
-          kind: "stock_record_date",
-          params: { date: "2026-06-03" },
+          kind: "stock_transaction_detail",
+          params: { transactionId: "00000000-0000-4000-8000-000000000201" },
         },
         source: {
           type: "stock_transaction",

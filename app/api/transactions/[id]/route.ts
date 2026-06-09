@@ -7,7 +7,7 @@ import {
 } from "@/lib/api/stock-transaction-notifications";
 import {
   deleteTransaction,
-  getTransactionById,
+  getTransactionWithDetailsById,
   updateTransaction,
 } from "@/lib/api/transaction";
 import { createClient } from "@/lib/supabase/server";
@@ -48,7 +48,11 @@ export async function GET(_request: Request, { params }: RouteParams) {
     }
 
     // 거래 조회
-    const transaction = await getTransactionById(supabase, id, householdId);
+    const transaction = await getTransactionWithDetailsById(
+      supabase,
+      id,
+      householdId,
+    );
 
     return NextResponse.json({ data: transaction });
   } catch (error) {

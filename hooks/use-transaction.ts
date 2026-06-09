@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { fetchApiData } from "@/lib/api/client";
 import type {
   TransactionFilters,
   TransactionWithDetails,
@@ -68,6 +69,18 @@ export function useTransactions(params: UseTransactionsParams = {}) {
   return useQuery({
     queryKey: queries.transactions.list(params).queryKey,
     queryFn: () => fetchTransactions(params),
+  });
+}
+
+async function fetchTransaction(id: string): Promise<TransactionWithDetails> {
+  return fetchApiData<TransactionWithDetails>(`/api/transactions/${id}`);
+}
+
+export function useTransaction(id: string) {
+  return useQuery({
+    queryKey: queries.transactions.detail(id).queryKey,
+    queryFn: () => fetchTransaction(id),
+    staleTime: 1000 * 60 * 5,
   });
 }
 
