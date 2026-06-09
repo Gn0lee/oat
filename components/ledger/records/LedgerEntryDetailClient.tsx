@@ -125,7 +125,51 @@ export function LedgerEntryDetailClient({
   return (
     <>
       <div className="space-y-4">
-        <section className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
+        <section className="relative rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
+          {(showUpdateAction || showDeleteAction) && (
+            <div className="absolute top-5 right-5 flex items-center gap-1">
+              {showUpdateAction && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label={isOwner ? "기록 수정" : "기록 수정 요청"}
+                      className="text-gray-500 hover:text-gray-900"
+                      onClick={() =>
+                        isOwner ? setEditOpen(true) : handleRequest("update")
+                      }
+                    >
+                      <Pencil className="size-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    {isOwner ? "수정" : "수정 요청"}
+                  </TooltipContent>
+                </Tooltip>
+              )}
+              {showDeleteAction && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label={isOwner ? "기록 삭제" : "기록 삭제 요청"}
+                      className="text-gray-400 hover:text-red-500 focus-visible:text-red-500"
+                      onClick={() =>
+                        isOwner ? setDeleteOpen(true) : handleRequest("delete")
+                      }
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    {isOwner ? "삭제" : "삭제 요청"}
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </div>
+          )}
           <div className="flex items-start gap-4">
             <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-gray-100">
               <CategoryIcon
@@ -134,66 +178,12 @@ export function LedgerEntryDetailClient({
               />
             </div>
             <div className="min-w-0 flex-1">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm text-gray-500">{typeLabel}</p>
-                  <h2 className="mt-1 break-words text-xl font-semibold text-gray-900">
-                    {title}
-                  </h2>
-                </div>
-                {(showUpdateAction || showDeleteAction) && (
-                  <div className="flex shrink-0 items-center gap-1">
-                    {showUpdateAction && (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            aria-label={
-                              isOwner ? "기록 수정" : "기록 수정 요청"
-                            }
-                            className="text-gray-500 hover:text-gray-900"
-                            onClick={() =>
-                              isOwner
-                                ? setEditOpen(true)
-                                : handleRequest("update")
-                            }
-                          >
-                            <Pencil className="size-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent side="bottom">
-                          {isOwner ? "수정" : "수정 요청"}
-                        </TooltipContent>
-                      </Tooltip>
-                    )}
-                    {showDeleteAction && (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            aria-label={
-                              isOwner ? "기록 삭제" : "기록 삭제 요청"
-                            }
-                            className="text-gray-400 hover:text-red-500 focus-visible:text-red-500"
-                            onClick={() =>
-                              isOwner
-                                ? setDeleteOpen(true)
-                                : handleRequest("delete")
-                            }
-                          >
-                            <Trash2 className="size-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent side="bottom">
-                          {isOwner ? "삭제" : "삭제 요청"}
-                        </TooltipContent>
-                      </Tooltip>
-                    )}
-                  </div>
-                )}
-              </div>
+              <p className="truncate pr-20 text-sm text-gray-500">
+                {typeLabel}
+              </p>
+              <h2 className="mt-1 break-words text-xl font-semibold text-gray-900">
+                {title}
+              </h2>
               <p className="mt-4 max-w-full text-2xl font-bold leading-tight text-gray-900 [overflow-wrap:anywhere] sm:text-3xl">
                 {formatCurrency(entry.amount)}
               </p>
