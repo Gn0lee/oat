@@ -1,6 +1,6 @@
 "use client";
 
-import { MoreVertical } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { CategoryIcon } from "@/components/ledger/CategoryIcon";
@@ -11,13 +11,12 @@ import { DetailInfoRow } from "@/components/records/DetailInfoRow";
 import { RecordMissingState } from "@/components/records/RecordMissingState";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   getServiceRouteMeta,
   resolveServiceParentHref,
@@ -110,6 +109,8 @@ export function LedgerEntryDetailClient({
   const canUpdate = entry.type !== "transfer";
   const canRequest = Boolean(userId && !isOwner && entry.isShared);
   const hasActions = isOwner || canRequest;
+  const showUpdateAction = hasActions && canUpdate;
+  const showDeleteAction = hasActions;
   const typeLabel = getTypeLabel(entry.type);
   const typeVariant = entry.type === "expense" ? "default" : "secondary";
   const title = entry.title ?? entry.categoryName ?? typeLabel;
@@ -140,52 +141,57 @@ export function LedgerEntryDetailClient({
                     {title}
                   </h2>
                 </div>
-                {hasActions && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        aria-label="기록 작업"
-                        className="shrink-0 text-gray-500"
-                      >
-                        <MoreVertical className="size-5" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      {isOwner ? (
-                        <>
-                          {canUpdate && (
-                            <DropdownMenuItem onClick={() => setEditOpen(true)}>
-                              수정
-                            </DropdownMenuItem>
-                          )}
-                          <DropdownMenuItem
-                            className="text-destructive focus:text-destructive"
-                            onClick={() => setDeleteOpen(true)}
+                {(showUpdateAction || showDeleteAction) && (
+                  <div className="flex shrink-0 items-center gap-1">
+                    {showUpdateAction && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label={
+                              isOwner ? "기록 수정" : "기록 수정 요청"
+                            }
+                            className="text-gray-500 hover:text-gray-900"
+                            onClick={() =>
+                              isOwner
+                                ? setEditOpen(true)
+                                : handleRequest("update")
+                            }
                           >
-                            삭제
-                          </DropdownMenuItem>
-                        </>
-                      ) : (
-                        <>
-                          {canUpdate && (
-                            <DropdownMenuItem
-                              onClick={() => handleRequest("update")}
-                            >
-                              수정 요청
-                            </DropdownMenuItem>
-                          )}
-                          <DropdownMenuItem
-                            className="text-destructive focus:text-destructive"
-                            onClick={() => handleRequest("delete")}
+                            <Pencil className="size-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom">
+                          {isOwner ? "수정" : "수정 요청"}
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
+                    {showDeleteAction && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label={
+                              isOwner ? "기록 삭제" : "기록 삭제 요청"
+                            }
+                            className="text-gray-400 hover:text-red-500 focus-visible:text-red-500"
+                            onClick={() =>
+                              isOwner
+                                ? setDeleteOpen(true)
+                                : handleRequest("delete")
+                            }
                           >
-                            삭제 요청
-                          </DropdownMenuItem>
-                        </>
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                            <Trash2 className="size-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom">
+                          {isOwner ? "삭제" : "삭제 요청"}
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
+                  </div>
                 )}
               </div>
               <p className="mt-4 max-w-full text-2xl font-bold leading-tight text-gray-900 [overflow-wrap:anywhere] sm:text-3xl">
