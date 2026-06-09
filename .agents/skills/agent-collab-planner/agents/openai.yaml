@@ -1,0 +1,4 @@
+interface:
+  display_name: "Agent Collab Planner"
+  short_description: "Create decision-complete handoff plans."
+  default_prompt: "Use this skill to write tmp/agent-collab/plan.md for an implementer."

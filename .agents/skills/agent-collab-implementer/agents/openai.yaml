@@ -1,0 +1,4 @@
+interface:
+  display_name: "Agent Collab Implementer"
+  short_description: "Implement exactly from shared plans and report results."
+  default_prompt: "Use this skill to implement from tmp/agent-collab/plan.md and update the handoff files."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Agent Collab Reviewer"
+  short_description: "Review handoff implementations."
+  default_prompt: "Use this skill to review against tmp/agent-collab/plan.md and implementation-report.md."

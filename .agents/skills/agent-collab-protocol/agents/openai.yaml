@@ -1,0 +1,4 @@
+interface:
+  display_name: "Agent Collab Protocol"
+  short_description: "Shared file protocol for document-based agent collaboration."
+  default_prompt: "Use this skill to follow the shared tmp/agent-collab handoff protocol."

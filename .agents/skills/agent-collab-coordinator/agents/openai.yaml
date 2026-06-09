@@ -1,0 +1,4 @@
+interface:
+  display_name: "Agent Collab Coordinator"
+  short_description: "Route document-based agent handoffs between roles."
+  default_prompt: "Use this skill to inspect and update tmp/agent-collab/handoff.yml between agent roles."
