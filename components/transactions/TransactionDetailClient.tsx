@@ -98,14 +98,14 @@ export function TransactionDetailClient({
       <div className="space-y-4">
         <section className="relative rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
           {hasActions && (
-            <div className="absolute top-5 right-5 flex items-center gap-1">
+            <div className="absolute top-5 right-5 flex h-5 items-center gap-1">
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
                     variant="ghost"
                     size="icon"
                     aria-label={isOwner ? "거래 수정" : "거래 수정 요청"}
-                    className="h-8 w-8 text-gray-500 hover:text-gray-900"
+                    className="h-5 w-7 rounded-md p-0 text-gray-500 hover:text-gray-900"
                     onClick={() =>
                       isOwner ? setEditOpen(true) : handleRequest("update")
                     }
@@ -123,7 +123,7 @@ export function TransactionDetailClient({
                     variant="ghost"
                     size="icon"
                     aria-label={isOwner ? "거래 삭제" : "거래 삭제 요청"}
-                    className="h-8 w-8 text-gray-400 hover:text-red-500 focus-visible:text-red-500"
+                    className="h-5 w-7 rounded-md p-0 text-gray-400 hover:text-red-500 focus-visible:text-red-500"
                     onClick={() =>
                       isOwner ? setDeleteOpen(true) : handleRequest("delete")
                     }
