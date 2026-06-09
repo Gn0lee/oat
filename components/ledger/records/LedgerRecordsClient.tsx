@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
+import { AmountWithPopover } from "@/components/records/AmountWithPopover";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -22,7 +23,7 @@ import {
 } from "@/lib/api/ledger";
 import { formatKst, getKstToday, toKstDate } from "@/lib/date";
 import { queries } from "@/lib/queries/keys";
-import { formatCurrency, formatDateISO } from "@/lib/utils/format";
+import { formatDateISO } from "@/lib/utils/format";
 import { LedgerCalendar } from "./LedgerCalendar";
 import { LedgerDayEntryList } from "./LedgerDayEntryList";
 
@@ -154,26 +155,29 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
       <div className="grid grid-cols-3 gap-2 text-center">
         <div className="min-w-0">
           <p className="text-xs text-gray-500 mb-1">입금</p>
-          <p className="text-sm font-semibold leading-tight text-red-500 [overflow-wrap:anywhere]">
-            +{formatCurrency(summary.totalIncome)}
-          </p>
+          <AmountWithPopover
+            amount={summary.totalIncome}
+            sign="+"
+            className="text-sm font-semibold leading-tight text-red-500"
+          />
         </div>
         <div className="min-w-0">
           <p className="text-xs text-gray-500 mb-1">지출</p>
-          <p className="text-sm font-semibold leading-tight text-blue-500 [overflow-wrap:anywhere]">
-            -{formatCurrency(summary.totalExpense)}
-          </p>
+          <AmountWithPopover
+            amount={summary.totalExpense}
+            sign="-"
+            className="text-sm font-semibold leading-tight text-blue-500"
+          />
         </div>
         <div className="min-w-0">
           <p className="text-xs text-gray-500 mb-1">잔액</p>
-          <p
-            className={`text-sm font-semibold leading-tight [overflow-wrap:anywhere] ${
+          <AmountWithPopover
+            amount={summary.balance}
+            sign={summary.balance >= 0 ? "+" : ""}
+            className={`text-sm font-semibold leading-tight ${
               summary.balance >= 0 ? "text-gray-900" : "text-blue-500"
             }`}
-          >
-            {summary.balance >= 0 ? "+" : ""}
-            {formatCurrency(summary.balance)}
-          </p>
+          />
         </div>
       </div>
     </div>

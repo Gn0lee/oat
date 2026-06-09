@@ -4,7 +4,7 @@ import { UserIcon } from "lucide-react";
 import Link from "next/link";
 import { CategoryIcon } from "@/components/ledger/CategoryIcon";
 import type { LedgerEntryWithDetails } from "@/lib/api/ledger";
-import { formatCurrency } from "@/lib/utils/format";
+import { formatCompactCurrency, formatCurrency } from "@/lib/utils/format";
 
 interface LedgerEntryRowProps {
   entry: LedgerEntryWithDetails;
@@ -69,10 +69,11 @@ export function LedgerEntryRow({ entry, href }: LedgerEntryRowProps) {
       {/* 금액 */}
       <div className="max-w-[42%] flex-shrink-0 text-right">
         <span
+          title={`${amountSign}${formatCurrency(entry.amount)}`}
           className={`text-sm font-semibold leading-tight [overflow-wrap:anywhere] ${amountColor}`}
         >
           {amountSign}
-          {formatCurrency(entry.amount)}
+          {formatCompactCurrency(entry.amount)}
         </span>
       </div>
     </Link>

@@ -3,6 +3,7 @@
 import { Pencil, Trash2, TrendingDown, TrendingUp } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
+import { AmountWithPopover } from "@/components/records/AmountWithPopover";
 import { DetailInfoRow } from "@/components/records/DetailInfoRow";
 import { RecordMissingState } from "@/components/records/RecordMissingState";
 import { TransactionChangeRequestDialog } from "@/components/transactions/TransactionChangeRequestDialog";
@@ -104,7 +105,7 @@ export function TransactionDetailClient({
                     variant="ghost"
                     size="icon"
                     aria-label={isOwner ? "거래 수정" : "거래 수정 요청"}
-                    className="text-gray-500 hover:text-gray-900"
+                    className="h-8 w-8 text-gray-500 hover:text-gray-900"
                     onClick={() =>
                       isOwner ? setEditOpen(true) : handleRequest("update")
                     }
@@ -122,7 +123,7 @@ export function TransactionDetailClient({
                     variant="ghost"
                     size="icon"
                     aria-label={isOwner ? "거래 삭제" : "거래 삭제 요청"}
-                    className="text-gray-400 hover:text-red-500 focus-visible:text-red-500"
+                    className="h-8 w-8 text-gray-400 hover:text-red-500 focus-visible:text-red-500"
                     onClick={() =>
                       isOwner ? setDeleteOpen(true) : handleRequest("delete")
                     }
@@ -152,9 +153,11 @@ export function TransactionDetailClient({
               <h2 className="mt-1 break-words text-xl font-semibold text-gray-900">
                 {transaction.stockName}
               </h2>
-              <p className="mt-4 max-w-full text-2xl font-bold leading-tight text-gray-900 [overflow-wrap:anywhere] sm:text-3xl">
-                {formatCurrency(transaction.totalAmount, transaction.currency)}
-              </p>
+              <AmountWithPopover
+                amount={transaction.totalAmount}
+                currency={transaction.currency}
+                className="mt-4 block max-w-full text-2xl font-bold leading-tight text-gray-900 sm:text-3xl"
+              />
               <div className="mt-3 flex flex-wrap gap-2">
                 <Badge variant={isBuy ? "default" : "secondary"}>
                   {typeLabel}

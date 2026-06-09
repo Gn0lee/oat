@@ -7,6 +7,7 @@ import { CategoryIcon } from "@/components/ledger/CategoryIcon";
 import { LedgerEntryChangeRequestDialog } from "@/components/ledger/LedgerEntryChangeRequestDialog";
 import { LedgerEntryDeleteDialog } from "@/components/ledger/LedgerEntryDeleteDialog";
 import { LedgerEntryEditDialog } from "@/components/ledger/LedgerEntryEditDialog";
+import { AmountWithPopover } from "@/components/records/AmountWithPopover";
 import { DetailInfoRow } from "@/components/records/DetailInfoRow";
 import { RecordMissingState } from "@/components/records/RecordMissingState";
 import { Badge } from "@/components/ui/badge";
@@ -25,7 +26,6 @@ import { useCurrentUserId } from "@/hooks/use-current-user";
 import { useLedgerEntry } from "@/hooks/use-ledger-entries";
 import { ApiQueryError } from "@/lib/api/client";
 import type { LedgerEntryWithDetails } from "@/lib/api/ledger";
-import { formatCurrency } from "@/lib/utils/format";
 
 interface LedgerEntryDetailClientProps {
   entryId: string;
@@ -135,7 +135,7 @@ export function LedgerEntryDetailClient({
                       variant="ghost"
                       size="icon"
                       aria-label={isOwner ? "기록 수정" : "기록 수정 요청"}
-                      className="text-gray-500 hover:text-gray-900"
+                      className="h-8 w-8 text-gray-500 hover:text-gray-900"
                       onClick={() =>
                         isOwner ? setEditOpen(true) : handleRequest("update")
                       }
@@ -155,7 +155,7 @@ export function LedgerEntryDetailClient({
                       variant="ghost"
                       size="icon"
                       aria-label={isOwner ? "기록 삭제" : "기록 삭제 요청"}
-                      className="text-gray-400 hover:text-red-500 focus-visible:text-red-500"
+                      className="h-8 w-8 text-gray-400 hover:text-red-500 focus-visible:text-red-500"
                       onClick={() =>
                         isOwner ? setDeleteOpen(true) : handleRequest("delete")
                       }
@@ -184,9 +184,10 @@ export function LedgerEntryDetailClient({
               <h2 className="mt-1 break-words text-xl font-semibold text-gray-900">
                 {title}
               </h2>
-              <p className="mt-4 max-w-full text-2xl font-bold leading-tight text-gray-900 [overflow-wrap:anywhere] sm:text-3xl">
-                {formatCurrency(entry.amount)}
-              </p>
+              <AmountWithPopover
+                amount={entry.amount}
+                className="mt-4 block max-w-full text-2xl font-bold leading-tight text-gray-900 sm:text-3xl"
+              />
               <div className="mt-3 flex flex-wrap gap-2">
                 <Badge variant={typeVariant}>{typeLabel}</Badge>
                 <Badge variant="outline">
