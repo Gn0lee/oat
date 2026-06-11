@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRightIcon, PlusIcon, Trash2Icon } from "lucide-react";
+import { PlusIcon, X } from "lucide-react";
 import { useRef, useState } from "react";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { toast } from "sonner";

@@ -1220,3 +1220,48 @@ export async function deleteLedgerEntryWithBalanceSync(
     );
   }
 }
+
+export async function getLedgerEntryTitles(
+  supabase: SupabaseClient<Database>,
+  householdId: string,
+  query: string,
+): Promise<{ titles: string[]; hasMore: boolean }> {
+  const trimmedQuery = query.trim();
+  if (trimmedQuery.length < 2) {
+    return { titles: [], hasMore: false };
+  }
+
+  const { data, error } = await supabase
+    .from("ledger_entries")
+    .select("title")
+    .eq("household_id", householdId)
+    .not("title", "is", null)
+    .ilike("title", `%${trimmedQuery}%`)
+    .order("created_at", { ascending: false })
+    .limit(100);
+
+  if (error) {
+    console.error("Ledger titles fetch error:", error);
+    throw new APIError(
+      "LEDGER_TITLES_FETCH_ERROR",
+      "가계부 제목 조회에 실패했습니다.",
+      500,
+    );
+  }
+
+  const titlesSet = new Set<string>();
+  for (const row of data || []) {
+    if (row.title) {
+      titlesSet.add(row.title.trim());
+    }
+  }
+
+  const uniqueTitles = Array.from(titlesSet);
+  const hasMore = uniqueTitles.length > 10;
+  const slicedTitles = uniqueTitles.slice(0, 10);
+
+  return {
+    titles: slicedTitles,
+    hasMore,
+  };
+}

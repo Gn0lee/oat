@@ -14,6 +14,7 @@ import {
   LedgerMoneySourcePickerPanel,
   LedgerMoneySourceTrigger,
 } from "@/components/ledger/LedgerMoneySourceCombobox";
+import { LedgerTitleCombobox } from "@/components/ledger/LedgerTitleCombobox";
 import { Button } from "@/components/ui/button";
 import { DatePickerInput } from "@/components/ui/date-picker";
 import { Drawer, DrawerContent } from "@/components/ui/drawer";
@@ -220,13 +221,18 @@ export function ComposerFormStep({
 
         <div className="space-y-1">
           <Label className="text-sm text-gray-700">내용 *</Label>
-          <Input
+          <LedgerTitleCombobox
+            value={form.watch(`items.${index}.title`) ?? ""}
+            onValueChange={(value) =>
+              form.setValue(`items.${index}.title`, value, {
+                shouldValidate: true,
+              })
+            }
             placeholder={
               itemType === "transfer"
                 ? "예: 카카오페이 충전, 증권 계좌 입금"
                 : "예: 점심, 커피"
             }
-            {...form.register(`items.${index}.title`)}
           />
           {errors?.title && (
             <p className="text-xs text-red-500">{errors.title.message}</p>

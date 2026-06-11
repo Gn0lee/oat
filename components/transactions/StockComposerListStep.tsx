@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  ChevronRightIcon,
-  PackagePlusIcon,
-  PlusIcon,
-  Trash2Icon,
-} from "lucide-react";
+import { PackagePlusIcon, PlusIcon, X } from "lucide-react";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import { AccountSelector } from "@/components/transactions/AccountSelector";
