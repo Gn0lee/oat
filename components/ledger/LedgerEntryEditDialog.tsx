@@ -321,6 +321,7 @@ export function LedgerEntryEditDialog({
       <div className="space-y-2">
         <Label htmlFor="edit-title">내용 *</Label>
         <LedgerTitleCombobox
+          id="edit-title"
           value={watchTitle ?? ""}
           onValueChange={(value) =>
             setValue("title", value, { shouldValidate: true })

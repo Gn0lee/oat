@@ -27,6 +27,7 @@ import { useMediaQuery } from "@/hooks/use-media-query";
 import { cn } from "@/lib/utils/cn";
 
 export interface LedgerTitleComboboxProps {
+  id?: string;
   value: string;
   onValueChange: (value: string) => void;
   placeholder?: string;
@@ -34,6 +35,7 @@ export interface LedgerTitleComboboxProps {
 }
 
 export function LedgerTitleCombobox({
+  id,
   value,
   onValueChange,
   placeholder = "내용 입력",
@@ -62,6 +64,7 @@ export function LedgerTitleCombobox({
         <PopoverTrigger asChild>
           <div className="w-full">
             <Input
+              id={id}
               value={inputValue}
               onChange={(e) => {
                 setInputValue(e.target.value);
@@ -123,6 +126,7 @@ export function LedgerTitleCombobox({
   return (
     <>
       <Button
+        id={id}
         type="button"
         variant="outline"
         role="combobox"
