@@ -30,6 +30,9 @@ Usually this includes:
 
 - Follow `plan.md` exactly.
 - Use TDD for code changes: write or update the planned failing test before production code, run it, implement the minimum change, then rerun it.
+- Commit product code changes before handing off for review.
+- Keep `tmp/agent-collab/` coordination files out of implementation commits unless the user explicitly asks otherwise.
+- When addressing reviewer feedback, create a new follow-up commit for the change set instead of amending the prior implementation commit unless explicitly directed.
 - Do not add scope, features, refactors, dependency changes, or architectural changes that are not requested.
 - Do not choose between competing designs.
 - Do not silently change APIs, schemas, filenames, validation behavior, or UX beyond the plan.
@@ -50,6 +53,21 @@ For each planned code change:
 6. Run the broader verification commands from `plan.md`.
 
 Do not skip the red step. If the test unexpectedly passes before implementation, stop and ask because the plan or test target may be wrong.
+
+Use only the tests specified in the plan's testing contract unless reviewer or human instructions add more. Do not create tests that assert selector class names, private implementation details, or incidental markup unless the plan explicitly identifies that as the public contract.
+
+## Commit Workflow
+
+Before setting `status: ready_for_review`:
+
+1. Inspect the diff and staged files.
+2. Stage only implementation files that belong in the repository.
+3. Do not stage `tmp/agent-collab/` by default.
+4. Create a focused commit describing the implemented slice or review fix.
+5. Record the commit hash in `implementation-report.md`.
+6. Add the commit hash to `handoff.yml` under `artifacts.implementation_commits`.
+
+If there are unrelated pre-existing changes in the worktree, do not include them in the commit. If clean staging is impossible, stop and ask.
 
 ## Blocked Flow
 
@@ -86,6 +104,9 @@ After implementation, write `tmp/agent-collab/implementation-report.md`:
 - `focused green command`: pass/fail
 - `broader command`: pass/fail
 
+## Commits
+- `hash`: summary
+
 ## Deviations From Plan
 - None
 
@@ -112,4 +133,7 @@ required_writes:
 constraints:
   implementation_mode: sequential
   implementer_may_change_plan: false
+  coordination_files_committed: false
 ```
+
+Before ending, reread `handoff.yml` and confirm that `implementation-report.md`, commit hashes, status, owner role, reads, and writes match the actual handoff.

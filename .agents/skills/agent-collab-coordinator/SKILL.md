@@ -21,6 +21,9 @@ Read:
 - Verify the next owner role is consistent with the status.
 - Summarize the next action for the user or next agent.
 - Repair obvious handoff metadata mistakes, such as missing `required_reads`, when the intended state is clear from the documents.
+- Verify every role handoff has the required role-owned document updates.
+- Verify implementation commits are recorded when `status` is `ready_for_review` or `approved`.
+- Verify `tmp/agent-collab/` is not staged or committed unless the user explicitly requested it.
 - Keep the workflow sequential unless the user explicitly changes the protocol.
 
 ## Do Not
@@ -47,6 +50,8 @@ blocked                   -> planner, reviewer, coordinator, or human depending 
 - If `handoff.yml` is missing but `plan.md` exists, create a handoff for `ready_for_implementation`.
 - If `review.md` has `Changes Requested`, route to `implementer`.
 - If `review.md` has `Approved`, route to `human`.
+- If `ready_for_review` lacks `implementation-report.md` or implementation commit hashes, route back to `implementer`.
+- If `approved` lacks reviewer approval in `review.md`, route back to `reviewer`.
 - If documents disagree, write the inconsistency to `questions.md`, set `status: blocked`, and route to `human`.
 
 ## Handoff Summary
@@ -58,3 +63,6 @@ When asked for status, answer with:
 - files the next role must read
 - files the next role must write
 - exact next instruction
+- implementation commits, when present
+
+Before ending, update `handoff.yml` if routing metadata was repaired and reread it to confirm the state is internally consistent.

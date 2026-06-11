@@ -36,6 +36,8 @@ tmp/agent-collab/
 - `review.md`: approval or requested changes written by `reviewer`.
 - `decisions.md`: durable decisions that should prevent repeated debate.
 
+These coordination files are working artifacts. Do not include `tmp/agent-collab/` in implementation commits unless the user explicitly asks for it.
+
 ## Handoff Schema
 
 Use this shape for `handoff.yml`:
@@ -54,9 +56,12 @@ last_updated_at: "YYYY-MM-DDTHH:mm:ssZ"
 current_request: ""
 required_reads: []
 required_writes: []
+artifacts:
+  implementation_commits: []
 constraints:
   implementation_mode: sequential
   implementer_may_change_plan: false
+  coordination_files_committed: false
 ```
 
 ## State Flow
@@ -89,6 +94,8 @@ any status -> blocked
 - Keep implementation sequential by default: one implementer works at a time.
 - Treat `implementer_may_change_plan: false` as a hard stop. Implementers may not redesign; they must ask.
 - If required inputs are missing, create or update `questions.md`, set `status: blocked`, and set `owner_role` to the role that can answer.
+- Before ending any role turn, reread `handoff.yml` and verify that `status`, `owner_role`, `current_request`, `required_reads`, and `required_writes` match the actual next action.
+- Treat a missing required write as incomplete work. Update the role-owned document and `handoff.yml` before handing off.
 
 ## Status Updates
 
@@ -101,3 +108,22 @@ When handing off, update `handoff.yml` with:
 - `last_updated_at`
 - a concrete `current_request`
 - exact `required_reads` and `required_writes`
+- `artifacts.implementation_commits` when implementation commits exist
+
+## Commit Policy
+
+- Planner, reviewer, coordinator, and protocol-only updates do not create commits.
+- Implementer commits product code changes before each `ready_for_review` handoff.
+- When addressing requested changes, implementer creates a new follow-up commit instead of amending the previous implementation commit, unless the user explicitly asks otherwise.
+- Commit only implementation artifacts that belong in the repository. Keep `tmp/agent-collab/` uncommitted by default.
+- Record commit hashes in `implementation-report.md` and `handoff.yml`.
+
+## Handoff Completion Checklist
+
+Before handing off, confirm:
+
+- Every path in `required_reads` was read.
+- Every path in `required_writes` was created or updated.
+- The next `owner_role` matches the next `status`.
+- `current_request` is an executable instruction for the next role.
+- `tmp/agent-collab/` coordination files are not staged for commit unless explicitly requested.
