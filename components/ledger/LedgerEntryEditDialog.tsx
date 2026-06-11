@@ -17,6 +17,7 @@ import {
   LedgerMoneySourcePickerPanel,
   LedgerMoneySourceTrigger,
 } from "@/components/ledger/LedgerMoneySourceCombobox";
+import { LedgerTitleCombobox } from "@/components/ledger/LedgerTitleCombobox";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DatePickerInput } from "@/components/ui/date-picker";
@@ -100,6 +101,7 @@ export function LedgerEntryEditDialog({
   const watchTransactedAt = watch("transactedAt");
   const watchPaymentMethodId = watch("paymentMethodId");
   const watchAccountId = watch("accountId");
+  const watchTitle = watch("title");
 
   // entry 변경 시 폼 초기화
   useEffect(() => {
@@ -318,10 +320,12 @@ export function LedgerEntryEditDialog({
       {/* 내용 */}
       <div className="space-y-2">
         <Label htmlFor="edit-title">내용 *</Label>
-        <Input
-          id="edit-title"
+        <LedgerTitleCombobox
+          value={watchTitle ?? ""}
+          onValueChange={(value) =>
+            setValue("title", value, { shouldValidate: true })
+          }
           placeholder="예: 이마트 장보기, 스타벅스 아메리카노"
-          {...register("title")}
         />
         {errors.title && (
           <p className="text-sm text-destructive">{errors.title.message}</p>

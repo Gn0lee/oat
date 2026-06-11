@@ -131,6 +131,7 @@ export const queries = createQueryKeyStore({
     summary: (year: number, month: number, scope: "shared" | "personal") => ({
       queryKey: [year, month, scope],
     }),
+    titles: (query: string) => ({ queryKey: [query] }),
   },
 
   household: {
