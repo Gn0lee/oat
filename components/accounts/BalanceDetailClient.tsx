@@ -145,7 +145,10 @@ function PaymentMethodBalanceDetailView({ id }: { id: string }) {
       subtitle={[
         data.paymentMethod.ownerName,
         PAYMENT_METHOD_TYPE_LABELS[data.paymentMethod.type],
-        data.paymentMethod.issuer,
+        data.paymentMethod.type === "credit_card" ||
+        data.paymentMethod.type === "debit_card"
+          ? data.paymentMethod.issuer
+          : null,
       ]
         .filter(Boolean)
         .join(" · ")}
@@ -226,12 +229,14 @@ function BalanceDetailLayout({
           </div>
         </div>
 
-        <div className="mt-6">
-          <p className="text-gray-500 text-sm">{balanceLabel}</p>
-          <p className="mt-1 font-bold text-3xl text-gray-900">
-            {balance === null ? "-" : formatCurrency(balance)}
-          </p>
-        </div>
+        {balance !== null && (
+          <div className="mt-6">
+            <p className="text-gray-500 text-sm">{balanceLabel}</p>
+            <p className="mt-1 font-bold text-3xl text-gray-900">
+              {formatCurrency(balance)}
+            </p>
+          </div>
+        )}
 
         {totalLabel && (
           <div className="mt-4 grid grid-cols-2 gap-3">
