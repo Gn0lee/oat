@@ -248,7 +248,7 @@ export function ComposerListStep({
               <div
                 key={field.id}
                 className={cn(
-                  "flex items-center gap-2 rounded-2xl border p-4 shadow-sm transition-colors",
+                  "relative mt-2 flex items-center gap-2 rounded-2xl border p-4 shadow-sm transition-colors",
                   hasError
                     ? "border-red-200 bg-red-50/10 hover:border-red-300"
                     : "border-gray-100 bg-white hover:border-gray-200",
@@ -289,24 +289,20 @@ export function ComposerListStep({
                         ? `${Number(item.amount).toLocaleString()}원`
                         : "0원"}
                     </span>
-                    <ChevronRightIcon className="size-4 text-gray-400" />
                   </div>
                 </div>
 
-                {fields.length > 1 && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      remove(index);
-                    }}
-                    className="size-8 text-gray-400 hover:text-red-500 shrink-0"
-                  >
-                    <Trash2Icon className="size-4" />
-                  </Button>
-                )}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    remove(index);
+                  }}
+                  className="absolute -top-2.5 -right-2.5 flex h-6 w-6 items-center justify-center rounded-full bg-gray-400 text-white shadow-md hover:bg-red-500 transition-colors z-10"
+                >
+                  <X className="h-3 w-3" strokeWidth={3} />
+                </button>
               </div>
             );
           })}

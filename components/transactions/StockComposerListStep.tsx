@@ -147,7 +147,7 @@ export function StockComposerListStep({
                 <div
                   key={field.id}
                   className={cn(
-                    "flex items-center gap-2 rounded-2xl border p-4 shadow-sm transition-colors",
+                    "relative mt-2 flex items-center gap-2 rounded-2xl border p-4 shadow-sm transition-colors",
                     hasError
                       ? "border-red-200 bg-red-50/10 hover:border-red-300"
                       : "border-gray-100 bg-white hover:border-gray-200",
@@ -184,22 +184,20 @@ export function StockComposerListStep({
                           ? formatCurrency(subtotal, currency)
                           : "0원"}
                       </span>
-                      <ChevronRightIcon className="h-4 w-4 text-gray-400" />
                     </div>
                   </div>
 
-                  <Button
+                  <button
                     type="button"
-                    variant="ghost"
-                    size="icon"
                     onClick={(e) => {
+                      e.preventDefault();
                       e.stopPropagation();
                       remove(index);
                     }}
-                    className="h-8 w-8 text-gray-400 hover:text-red-500 shrink-0"
+                    className="absolute -top-2.5 -right-2.5 flex h-6 w-6 items-center justify-center rounded-full bg-gray-400 text-white shadow-md hover:bg-red-500 transition-colors z-10"
                   >
-                    <Trash2Icon className="h-4 w-4" />
-                  </Button>
+                    <X className="h-3 w-3" strokeWidth={3} />
+                  </button>
                 </div>
               );
             })}
