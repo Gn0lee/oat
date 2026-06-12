@@ -40,6 +40,16 @@ describe("calculateLedgerSummary", () => {
     expect(result.totalExpense).toBe(0);
   });
 
+  it("비지출 출금(non_expense_withdrawal)은 합산에서 제외한다", () => {
+    const entries = [
+      { type: "income" as const, amount: 1000000 },
+      { type: "non_expense_withdrawal" as const, amount: 500000 },
+    ];
+    const result = calculateLedgerSummary(entries);
+    expect(result.totalIncome).toBe(1000000);
+    expect(result.totalExpense).toBe(0);
+  });
+
   it("잔액 = 수입 - 지출", () => {
     const entries = [
       { type: "income" as const, amount: 5000000 },
@@ -342,6 +352,30 @@ describe("getLedgerBalanceEffects", () => {
 
     expect(effects).toEqual([
       { table: "payment_methods", id: "pm-1", delta: -12000 },
+    ]);
+  });
+
+  it("비지출 출금은 출금처 감소 효과를 만든다 (계좌)", () => {
+    const effects = getLedgerBalanceEffects({
+      type: "non_expense_withdrawal",
+      amount: 150000,
+      fromAccountId: "acc-1",
+    });
+
+    expect(effects).toEqual([
+      { table: "accounts", id: "acc-1", delta: -150000 },
+    ]);
+  });
+
+  it("비지출 출금은 출금처 감소 효과를 만든다 (결제수단)", () => {
+    const effects = getLedgerBalanceEffects({
+      type: "non_expense_withdrawal",
+      amount: 80000,
+      fromPaymentMethodId: "pm-1",
+    });
+
+    expect(effects).toEqual([
+      { table: "payment_methods", id: "pm-1", delta: -80000 },
     ]);
   });
 });

@@ -1336,7 +1336,11 @@ export type Database = {
       exchange_type: "KOSPI" | "KOSDAQ" | "NYSE" | "NASDAQ" | "AMEX";
       household_role: "owner" | "member";
       invitation_status: "pending" | "accepted" | "expired" | "cancelled";
-      ledger_entry_type: "expense" | "income" | "transfer";
+      ledger_entry_type:
+        | "expense"
+        | "income"
+        | "transfer"
+        | "non_expense_withdrawal";
       market_type: "KR" | "US" | "OTHER";
       notification_link_kind:
         | "ledger_record_detail"
@@ -1548,7 +1552,12 @@ export const Constants = {
       exchange_type: ["KOSPI", "KOSDAQ", "NYSE", "NASDAQ", "AMEX"],
       household_role: ["owner", "member"],
       invitation_status: ["pending", "accepted", "expired", "cancelled"],
-      ledger_entry_type: ["expense", "income", "transfer"],
+      ledger_entry_type: [
+        "expense",
+        "income",
+        "transfer",
+        "non_expense_withdrawal",
+      ],
       market_type: ["KR", "US", "OTHER"],
       notification_link_kind: [
         "ledger_record_detail",

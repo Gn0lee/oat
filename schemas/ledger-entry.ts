@@ -1,6 +1,11 @@
 import { z } from "zod";
 
-const ledgerEntryTypeValues = ["expense", "income", "transfer"] as const;
+const ledgerEntryTypeValues = [
+  "expense",
+  "income",
+  "transfer",
+  "non_expense_withdrawal",
+] as const;
 
 const createLedgerEntryBaseSchema = z.object({
   type: z.enum(ledgerEntryTypeValues, {
@@ -23,37 +28,65 @@ const createLedgerEntryBaseSchema = z.object({
 
 export const createLedgerEntrySchema = createLedgerEntryBaseSchema.superRefine(
   (value, ctx) => {
-    if (value.type !== "transfer") return;
+    if (value.type === "transfer") {
+      const sourceCount =
+        Number(Boolean(value.fromAccountId)) +
+        Number(Boolean(value.fromPaymentMethodId));
+      const destinationCount =
+        Number(Boolean(value.toAccountId)) +
+        Number(Boolean(value.toPaymentMethodId));
 
-    const sourceCount =
-      Number(Boolean(value.fromAccountId)) +
-      Number(Boolean(value.fromPaymentMethodId));
-    const destinationCount =
-      Number(Boolean(value.toAccountId)) +
-      Number(Boolean(value.toPaymentMethodId));
+      if (sourceCount !== 1) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["fromAccountId"],
+          message: "이체 출발지를 하나 선택해주세요.",
+        });
+      }
 
-    if (sourceCount !== 1) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["fromAccountId"],
-        message: "이체 출발지를 하나 선택해주세요.",
-      });
-    }
+      if (destinationCount !== 1) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["toAccountId"],
+          message: "이체 도착지를 하나 선택해주세요.",
+        });
+      }
 
-    if (destinationCount !== 1) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["toAccountId"],
-        message: "이체 도착지를 하나 선택해주세요.",
-      });
-    }
+      if (value.categoryId) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["categoryId"],
+          message: "이체에는 카테고리를 선택할 수 없습니다.",
+        });
+      }
+    } else if (value.type === "non_expense_withdrawal") {
+      const sourceCount =
+        Number(Boolean(value.fromAccountId)) +
+        Number(Boolean(value.fromPaymentMethodId));
 
-    if (value.categoryId) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["categoryId"],
-        message: "이체에는 카테고리를 선택할 수 없습니다.",
-      });
+      if (sourceCount !== 1) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["fromAccountId"],
+          message: "출금처를 하나 선택해주세요.",
+        });
+      }
+
+      if (value.toAccountId || value.toPaymentMethodId) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["toAccountId"],
+          message: "비지출 출금에는 입금처를 설정할 수 없습니다.",
+        });
+      }
+
+      if (value.categoryId) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["categoryId"],
+          message: "비지출 출금에는 카테고리를 설정할 수 없습니다.",
+        });
+      }
     }
   },
 );

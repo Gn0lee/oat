@@ -53,7 +53,7 @@ export function SelectTypeStep({ onSelect }: SelectTypeStepProps) {
             <ArrowRightLeftIcon className="w-6 h-6 text-gray-600" />
           </div>
           <div>
-            <p className="text-lg font-semibold text-gray-900">이체</p>
+            <p className="text-lg font-semibold text-gray-900">내부이체</p>
             <p className="text-sm text-gray-500">
               계좌, 선불페이, 상품권 간 이동
             </p>

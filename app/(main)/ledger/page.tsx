@@ -37,7 +37,7 @@ export default async function LedgerPage() {
             <div>
               <p className="font-semibold text-gray-900">기록 추가</p>
               <p className="text-xs text-gray-500 mt-0.5">
-                수입, 지출, 이체 내역 등록
+                수입, 지출, 내부이체, 비지출 출금 내역 등록
               </p>
             </div>
           </div>

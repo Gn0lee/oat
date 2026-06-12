@@ -100,7 +100,9 @@ export function ComposerFormStep({
     form.setValue(`items.${index}.accountId`, undefined);
   };
 
-  const handleTypeChange = (value: "expense" | "income" | "transfer") => {
+  const handleTypeChange = (
+    value: "expense" | "income" | "transfer" | "non_expense_withdrawal",
+  ) => {
     form.setValue(`items.${index}.type`, value);
     form.setValue(`items.${index}.categoryId`, "");
     form.setValue(`items.${index}.paymentMethodId`, undefined);
@@ -138,7 +140,13 @@ export function ComposerFormStep({
             <Select
               value={itemType}
               onValueChange={(value) =>
-                handleTypeChange(value as "expense" | "income" | "transfer")
+                handleTypeChange(
+                  value as
+                    | "expense"
+                    | "income"
+                    | "transfer"
+                    | "non_expense_withdrawal",
+                )
               }
             >
               <SelectTrigger className="h-10 w-full">
@@ -147,7 +155,10 @@ export function ComposerFormStep({
               <SelectContent>
                 <SelectItem value="expense">지출</SelectItem>
                 <SelectItem value="income">수입</SelectItem>
-                <SelectItem value="transfer">이체</SelectItem>
+                <SelectItem value="transfer">내부이체</SelectItem>
+                <SelectItem value="non_expense_withdrawal">
+                  비지출 출금
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -171,6 +182,12 @@ export function ComposerFormStep({
           </div>
         </div>
 
+        {itemType === "non_expense_withdrawal" && (
+          <div className="rounded-lg bg-gray-50 p-3 text-xs text-gray-500">
+            카드대금, 대출상환 등 이미 기록된 지출의 정산
+          </div>
+        )}
+
         {mode === "full" && (
           <div className="space-y-1">
             <Label className="text-sm text-gray-700">날짜</Label>
@@ -185,7 +202,7 @@ export function ComposerFormStep({
           </div>
         )}
 
-        {itemType !== "transfer" && (
+        {itemType !== "transfer" && itemType !== "non_expense_withdrawal" && (
           <div className="space-y-1">
             <Label className="text-sm text-gray-700">카테고리 *</Label>
             {isDesktop ? (
@@ -231,7 +248,9 @@ export function ComposerFormStep({
             placeholder={
               itemType === "transfer"
                 ? "예: 카카오페이 충전, 증권 계좌 입금"
-                : "예: 점심, 커피"
+                : itemType === "non_expense_withdrawal"
+                  ? "예: 신한카드 6월 대금, 신용대출 상환"
+                  : "예: 점심, 커피"
             }
           />
           {errors?.title && (
@@ -256,30 +275,51 @@ export function ComposerFormStep({
           {itemType !== "transfer" && (
             <div className="space-y-1">
               <Label className="text-sm text-gray-700">
-                {itemType === "expense" ? "결제 방법" : "입금 계좌"}
+                {itemType === "expense"
+                  ? "결제 방법"
+                  : itemType === "non_expense_withdrawal"
+                    ? "출금처 *"
+                    : "입금 계좌"}
               </Label>
               {isDesktop ? (
                 <LedgerMoneySourceCombobox
-                  mode={itemType}
+                  mode={
+                    itemType === "non_expense_withdrawal" ? "expense" : itemType
+                  }
                   value={moneySourceValue}
                   paymentMethods={paymentMethods}
                   accounts={accounts}
                   ownerId={userId}
-                  placeholder="선택 안함"
+                  placeholder={
+                    itemType === "non_expense_withdrawal" ? "선택" : "선택 안함"
+                  }
                   onValueChange={handleMoneySourceChange}
                 />
               ) : (
                 <LedgerMoneySourceTrigger
                   label={getLedgerMoneySourceLabel({
-                    mode: itemType,
+                    mode:
+                      itemType === "non_expense_withdrawal"
+                        ? "expense"
+                        : itemType,
                     value: moneySourceValue,
                     paymentMethods,
                     accounts,
-                    placeholder: "선택 안함",
+                    placeholder:
+                      itemType === "non_expense_withdrawal"
+                        ? "선택"
+                        : "선택 안함",
                   })}
-                  placeholder="선택 안함"
+                  placeholder={
+                    itemType === "non_expense_withdrawal" ? "선택" : "선택 안함"
+                  }
                   onClick={() => setMobileView("moneySourcePicker")}
                 />
+              )}
+              {(errors?.accountId || errors?.paymentMethodId) && (
+                <p className="text-xs text-red-500">
+                  {errors.accountId?.message || errors.paymentMethodId?.message}
+                </p>
               )}
             </div>
           )}
@@ -375,7 +415,7 @@ export function ComposerFormStep({
 
       {!isDesktop && (
         <>
-          {itemType !== "transfer" && (
+          {itemType !== "transfer" && itemType !== "non_expense_withdrawal" && (
             <Drawer
               open={mobileView === "categoryPicker"}
               onOpenChange={(open) => {
@@ -415,13 +455,19 @@ export function ComposerFormStep({
               onOpenAutoFocus={(event) => event.preventDefault()}
             >
               <LedgerMoneySourcePickerPanel
-                mode={itemType}
+                mode={
+                  itemType === "non_expense_withdrawal" ? "expense" : itemType
+                }
                 value={moneySourceValue}
                 paymentMethods={paymentMethods}
                 accounts={accounts}
                 ownerId={userId}
                 title={
-                  itemType === "expense" ? "결제 방법 선택" : "입금 계좌 선택"
+                  itemType === "expense"
+                    ? "결제 방법 선택"
+                    : itemType === "non_expense_withdrawal"
+                      ? "출금처 선택"
+                      : "입금 계좌 선택"
                 }
                 searchPlaceholder="이름, 기관, 소유자 검색"
                 onBack={() => setMobileView("form")}

@@ -121,6 +121,58 @@ describe("createLedgerEntrySchema", () => {
       expect(result.success).toBe(false);
     });
   });
+
+  describe("non_expense_withdrawal validation", () => {
+    const base = {
+      type: "non_expense_withdrawal" as const,
+      amount: 50000,
+      transactedAt: "2026-06-12T00:00:00.000Z",
+      title: "카드대금 결제",
+      isShared: true,
+    };
+
+    it("비지출 출금은 출금처(계좌 또는 결제수단) 중 하나만 필요하다", () => {
+      const okAccount = createLedgerEntrySchema.safeParse({
+        ...base,
+        fromAccountId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+      });
+      expect(okAccount.success).toBe(true);
+
+      const okPm = createLedgerEntrySchema.safeParse({
+        ...base,
+        fromPaymentMethodId: "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22",
+      });
+      expect(okPm.success).toBe(true);
+
+      const missingSource = createLedgerEntrySchema.safeParse(base);
+      expect(missingSource.success).toBe(false);
+
+      const doubleSource = createLedgerEntrySchema.safeParse({
+        ...base,
+        fromAccountId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+        fromPaymentMethodId: "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22",
+      });
+      expect(doubleSource.success).toBe(false);
+    });
+
+    it("비지출 출금은 입금처(to_*)를 가질 수 없다", () => {
+      const result = createLedgerEntrySchema.safeParse({
+        ...base,
+        fromAccountId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+        toAccountId: "c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a33",
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("비지출 출금은 카테고리(categoryId)를 가질 수 없다", () => {
+      const result = createLedgerEntrySchema.safeParse({
+        ...base,
+        fromAccountId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+        categoryId: "d0eebc99-9c0b-4ef8-bb6d-6bb9bd380a44",
+      });
+      expect(result.success).toBe(false);
+    });
+  });
 });
 
 describe("updateLedgerEntrySchema", () => {

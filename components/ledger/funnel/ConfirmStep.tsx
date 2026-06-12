@@ -52,7 +52,8 @@ export function ConfirmStep({
       ? Number(transferItem.amount)
       : items.reduce((sum, item) => sum + Number(item.amount), 0);
   const typeLabel =
-    type === "expense" ? "지출" : type === "income" ? "수입" : "이체";
+    type === "expense" ? "지출" : type === "income" ? "수입" : "내부이체";
+
   const itemCount = type === "transfer" ? 1 : items.length;
 
   const getTransferLocationName = (

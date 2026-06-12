@@ -14,6 +14,7 @@ interface LedgerEntryRowProps {
 export function LedgerEntryRow({ entry, href }: LedgerEntryRowProps) {
   const isIncome = entry.type === "income";
   const isTransfer = entry.type === "transfer";
+  const isNonExpenseWithdrawal = entry.type === "non_expense_withdrawal";
   const amountSign = isTransfer ? "" : isIncome ? "+" : "-";
   const amountColor = isTransfer
     ? "text-gray-900"
@@ -28,10 +29,14 @@ export function LedgerEntryRow({ entry, href }: LedgerEntryRowProps) {
         entry.toAccountName ?? entry.toPaymentMethodName ?? "도착지"
       }`
     : null;
-  const iconName = isTransfer ? "ArrowLeftRight" : entry.categoryIcon;
+  const iconName = isTransfer
+    ? "ArrowLeftRight"
+    : isNonExpenseWithdrawal
+      ? "ArrowUpRight"
+      : entry.categoryIcon;
 
   const metaParts = [
-    entry.categoryName,
+    isNonExpenseWithdrawal ? "비지출 출금" : entry.categoryName,
     transferLabel,
     entry.ownerName,
     paymentLabel,
@@ -52,9 +57,11 @@ export function LedgerEntryRow({ entry, href }: LedgerEntryRowProps) {
         <div className="flex min-w-0 items-center gap-1">
           <span className="line-clamp-2 min-w-0 font-semibold text-gray-900 text-sm leading-5 break-words">
             {entry.title ??
-              entry.categoryName ??
-              (isTransfer ? "이체" : "미분류")}
+              (isNonExpenseWithdrawal
+                ? "비지출 출금"
+                : (entry.categoryName ?? (isTransfer ? "내부이체" : "미분류")))}
           </span>
+
           {!entry.isShared && (
             <UserIcon className="w-3 h-3 text-gray-400 flex-shrink-0" />
           )}
