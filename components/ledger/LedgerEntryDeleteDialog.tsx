@@ -50,8 +50,49 @@ export function LedgerEntryDeleteDialog({
 
   if (!entry) return null;
 
-  const typeLabel = entry.type === "expense" ? "지출" : "수입";
-  const typeVariant = entry.type === "expense" ? "default" : "secondary";
+  const typeLabel =
+    entry.type === "expense"
+      ? "지출"
+      : entry.type === "income"
+        ? "수입"
+        : entry.type === "non_expense_withdrawal"
+          ? "비지출 출금"
+          : "내부이체";
+
+  const typeVariant =
+    entry.type === "expense" || entry.type === "non_expense_withdrawal"
+      ? "default"
+      : "secondary";
+
+  const moneyLocationLabel =
+    entry.type === "expense"
+      ? "결제 방법"
+      : entry.type === "non_expense_withdrawal"
+        ? "출금처"
+        : entry.type === "transfer"
+          ? "돈 이동"
+          : "입금 계좌";
+
+  const moneyLocationValue = (() => {
+    if (entry.type === "transfer") {
+      const from =
+        entry.fromAccountName ?? entry.fromPaymentMethodName ?? "출발지";
+      const to = entry.toAccountName ?? entry.toPaymentMethodName ?? "도착지";
+      return `${from} → ${to}`;
+    }
+    if (entry.type === "income") {
+      return (
+        entry.toAccountName ?? entry.toPaymentMethodName ?? "입금 위치 없음"
+      );
+    }
+    return (
+      entry.fromPaymentMethodName ??
+      entry.fromAccountName ??
+      (entry.type === "non_expense_withdrawal"
+        ? "출금 위치 없음"
+        : "결제 위치 없음")
+    );
+  })();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -87,20 +128,13 @@ export function LedgerEntryDeleteDialog({
                 <span>{entry.categoryName}</span>
               </div>
             )}
-            {(entry.fromPaymentMethodName ||
-              entry.fromAccountName ||
-              entry.toAccountName) && (
+            {moneyLocationValue && (
               <div className="flex justify-between">
-                <span>
-                  {entry.type === "expense" ? "결제 방법" : "입금 계좌"}
-                </span>
-                <span>
-                  {entry.fromPaymentMethodName ||
-                    entry.fromAccountName ||
-                    entry.toAccountName}
-                </span>
+                <span>{moneyLocationLabel}</span>
+                <span>{moneyLocationValue}</span>
               </div>
             )}
+
             <div className="flex justify-between">
               <span>날짜</span>
               <span>

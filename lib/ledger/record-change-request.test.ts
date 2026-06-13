@@ -61,3 +61,50 @@ describe("buildLedgerRecordUpdateProposedChanges", () => {
     });
   });
 });
+
+const nonExpenseWithdrawalEntry: LedgerEntryWithDetails = {
+  id: "entry-2",
+  householdId: "household-1",
+  ownerId: "owner-1",
+  ownerName: "소유자",
+  type: "non_expense_withdrawal",
+  amount: 50000,
+  title: "카드대금",
+  categoryId: null,
+  categoryName: null,
+  categoryIcon: null,
+  fromAccountId: "account-1",
+  fromAccountName: "토스뱅크",
+  fromPaymentMethodId: null,
+  fromPaymentMethodName: null,
+  toAccountId: null,
+  toAccountName: null,
+  toPaymentMethodId: null,
+  toPaymentMethodName: null,
+  isShared: true,
+  memo: "카드대금 정산",
+  transactedAt: "2026-06-02T00:00:00.000Z",
+  createdAt: "2026-06-02T00:00:00.000Z",
+  updatedAt: "2026-06-02T00:00:00.000Z",
+};
+
+describe("buildLedgerRecordUpdateProposedChanges with non_expense_withdrawal", () => {
+  it("비지출 출금 결제수단 변경을 fromPaymentMethodId 및 fromAccountId로 반환하고 categoryId를 제외한다", () => {
+    const result = buildLedgerRecordUpdateProposedChanges(
+      nonExpenseWithdrawalEntry,
+      {
+        amount: 50000,
+        title: "카드대금",
+        categoryId: "some-category-id", // 무시되어야 함
+        moneySourceId: "pm:payment-2",
+        transactedAt: "2026-06-02",
+        memo: "카드대금 정산",
+      },
+    );
+
+    expect(result).toEqual({
+      fromAccountId: null,
+      fromPaymentMethodId: "payment-2",
+    });
+  });
+});

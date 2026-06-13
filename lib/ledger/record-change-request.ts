@@ -15,7 +15,7 @@ function toIsoDateStart(value: string) {
 }
 
 function getOriginalMoneySourceId(entry: LedgerEntryWithDetails) {
-  if (entry.type === "expense") {
+  if (entry.type === "expense" || entry.type === "non_expense_withdrawal") {
     if (entry.fromPaymentMethodId) return `pm:${entry.fromPaymentMethodId}`;
     if (entry.fromAccountId) return `acc:${entry.fromAccountId}`;
   }
@@ -41,7 +41,7 @@ function applyMoneySourceChange(
       ? value.slice(4)
       : null;
 
-  if (entry.type === "expense") {
+  if (entry.type === "expense" || entry.type === "non_expense_withdrawal") {
     changes.fromPaymentMethodId = isPaymentMethod ? id : null;
     changes.fromAccountId = isAccount ? id : null;
     return;
@@ -61,9 +61,13 @@ export function buildLedgerRecordUpdateProposedChanges(
 
   if (values.amount !== entry.amount) changes.amount = values.amount;
   if (values.title !== (entry.title ?? "")) changes.title = values.title;
-  if (values.categoryId !== entry.categoryId) {
+  if (
+    entry.type !== "non_expense_withdrawal" &&
+    values.categoryId !== entry.categoryId
+  ) {
     changes.categoryId = values.categoryId;
   }
+
   if (transactedAt !== entry.transactedAt) changes.transactedAt = transactedAt;
   if (memo !== entry.memo) changes.memo = memo;
 

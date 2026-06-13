@@ -47,11 +47,13 @@ interface LedgerEntryChangeRequestDialogProps {
 function getInitialMoneySourceId(entry: LedgerEntryWithDetails) {
   const value = getLedgerMoneySourceValue({
     paymentMethodId:
-      entry.type === "expense"
+      entry.type === "expense" || entry.type === "non_expense_withdrawal"
         ? entry.fromPaymentMethodId
         : entry.toPaymentMethodId,
     accountId:
-      entry.type === "expense" ? entry.fromAccountId : entry.toAccountId,
+      entry.type === "expense" || entry.type === "non_expense_withdrawal"
+        ? entry.fromAccountId
+        : entry.toAccountId,
   });
 
   return value || "none";
@@ -81,7 +83,11 @@ export function LedgerEntryChangeRequestDialog({
     useState<LedgerRecordUpdateRequestFormValues | null>(null);
   const [message, setMessage] = useState("");
 
-  const categoryType = entry?.type === "transfer" ? undefined : entry?.type;
+  const categoryType =
+    entry?.type === "transfer" || entry?.type === "non_expense_withdrawal"
+      ? undefined
+      : entry?.type;
+
   const { data: categories = [] } = useCategories(categoryType as CategoryType);
   const { data: paymentMethods = [] } = usePaymentMethods();
   const { data: accounts = [] } = useAccounts();
@@ -219,32 +225,44 @@ export function LedgerEntryChangeRequestDialog({
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label>카테고리</Label>
-                <Select
-                  value={values.categoryId ?? "none"}
-                  onValueChange={(value) =>
-                    updateValue("categoryId", value === "none" ? null : value)
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">선택 안함</SelectItem>
-                    {categories.map((category) => (
-                      <SelectItem key={category.id} value={category.id}>
-                        {category.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            <div
+              className={
+                entry.type === "non_expense_withdrawal"
+                  ? "grid grid-cols-1"
+                  : "grid grid-cols-2 gap-3"
+              }
+            >
+              {entry.type !== "non_expense_withdrawal" && (
+                <div className="space-y-2">
+                  <Label>카테고리</Label>
+                  <Select
+                    value={values.categoryId ?? "none"}
+                    onValueChange={(value) =>
+                      updateValue("categoryId", value === "none" ? null : value)
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">선택 안함</SelectItem>
+                      {categories.map((category) => (
+                        <SelectItem key={category.id} value={category.id}>
+                          {category.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label>
-                  {entry.type === "expense" ? "결제 방법" : "입금 계좌"}
+                  {entry.type === "expense"
+                    ? "결제 방법"
+                    : entry.type === "non_expense_withdrawal"
+                      ? "출금처"
+                      : "입금 계좌"}
                 </Label>
                 <Select
                   value={values.moneySourceId}
