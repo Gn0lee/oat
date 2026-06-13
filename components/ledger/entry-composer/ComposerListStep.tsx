@@ -92,10 +92,11 @@ export function ComposerListStep({
   };
 
   const getCategoryName = (
-    type: "expense" | "income" | "transfer",
+    type: "expense" | "income" | "transfer" | "non_expense_withdrawal",
     categoryId?: string,
   ) => {
-    if (type === "transfer") return "이체";
+    if (type === "transfer") return "내부이체";
+    if (type === "non_expense_withdrawal") return "비지출 출금";
     const cats = type === "expense" ? expenseCategories : incomeCategories;
     return cats.find((c) => c.id === categoryId)?.name || "카테고리 없음";
   };
@@ -167,7 +168,11 @@ export function ComposerListStep({
                 onValueChange={(value) => {
                   form.setValue(
                     "defaultType",
-                    value as "expense" | "income" | "transfer",
+                    value as
+                      | "expense"
+                      | "income"
+                      | "transfer"
+                      | "non_expense_withdrawal",
                   );
                 }}
               >
@@ -177,7 +182,10 @@ export function ComposerListStep({
                 <SelectContent>
                   <SelectItem value="expense">지출</SelectItem>
                   <SelectItem value="income">수입</SelectItem>
-                  <SelectItem value="transfer">이체</SelectItem>
+                  <SelectItem value="transfer">내부이체</SelectItem>
+                  <SelectItem value="non_expense_withdrawal">
+                    비지출 출금
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -234,14 +242,18 @@ export function ComposerListStep({
               item.type === "income"
                 ? "수입"
                 : item.type === "transfer"
-                  ? "이체"
-                  : "지출";
+                  ? "내부이체"
+                  : item.type === "non_expense_withdrawal"
+                    ? "비지출 출금"
+                    : "지출";
             const typeColor =
               item.type === "income"
                 ? "text-blue-600"
                 : item.type === "transfer"
                   ? "text-gray-600"
-                  : "text-red-600";
+                  : item.type === "non_expense_withdrawal"
+                    ? "text-purple-600"
+                    : "text-red-600";
             const hasError = !!form.formState.errors.items?.[index];
 
             return (

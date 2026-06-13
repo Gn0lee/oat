@@ -44,7 +44,7 @@ export function isTransferCapablePaymentMethod(
 }
 
 export function buildLedgerEntryPayload(
-  type: "expense" | "income",
+  type: "expense" | "income" | "non_expense_withdrawal",
   isShared: boolean,
   item: LedgerItemFormData,
 ): CreateLedgerEntryInput {
@@ -55,12 +55,15 @@ export function buildLedgerEntryPayload(
       ? item.transactedAt
       : `${item.transactedAt}T00:00:00.000Z`,
     title: item.title,
-    categoryId: item.categoryId,
     isShared,
     memo: item.memo || undefined,
   };
 
-  if (type === "expense") {
+  if (item.categoryId && type !== "non_expense_withdrawal") {
+    base.categoryId = item.categoryId;
+  }
+
+  if (type === "expense" || type === "non_expense_withdrawal") {
     if (item.paymentMethodId) base.fromPaymentMethodId = item.paymentMethodId;
     if (item.accountId) base.fromAccountId = item.accountId;
   }
@@ -296,7 +299,7 @@ export function getLedgerBalanceEffects(
     ].filter(Boolean) as LedgerBalanceEffect[];
   }
 
-  if (input.type === "expense") {
+  if (input.type === "expense" || input.type === "non_expense_withdrawal") {
     return [
       input.fromAccountId && {
         table: "accounts" as const,

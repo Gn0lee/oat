@@ -264,7 +264,7 @@ export function AddTransferStep({
             않습니다.
           </p>
           <p className="text-xs text-gray-500">
-            타인에게 보낸 돈은 이체가 아니라 지출로 기록해주세요.
+            타인에게 보낸 돈은 내부이체가 아니라 지출로 기록해주세요.
           </p>
         </div>
 

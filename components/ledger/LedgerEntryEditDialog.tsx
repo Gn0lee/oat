@@ -59,7 +59,7 @@ const editFormSchema = z.object({
     .string()
     .min(1, "내용을 입력해주세요.")
     .max(100, "내용은 100자 이내여야 합니다."),
-  categoryId: z.string().min(1, "카테고리를 선택해주세요."),
+  categoryId: z.string().optional(),
   paymentMethodId: z.string().optional(),
   accountId: z.string().optional(),
   transactedAt: z.string().min(1, "날짜를 선택해주세요."),
@@ -86,6 +86,26 @@ export function LedgerEntryEditDialog({
   const { data: paymentMethods = [] } = usePaymentMethods();
   const { data: accounts = [] } = useAccounts();
 
+  const dynamicSchema = editFormSchema.superRefine((data, ctx) => {
+    if (entry?.type === "non_expense_withdrawal") {
+      if (!data.accountId && !data.paymentMethodId) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["accountId"],
+          message: "출금처를 선택해주세요.",
+        });
+      }
+    } else if (entry?.type !== "transfer") {
+      if (!data.categoryId) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["categoryId"],
+          message: "카테고리를 선택해주세요.",
+        });
+      }
+    }
+  });
+
   const {
     register,
     handleSubmit,
@@ -94,7 +114,7 @@ export function LedgerEntryEditDialog({
     setValue,
     formState: { errors, isSubmitting },
   } = useForm<EditFormValues>({
-    resolver: zodResolver(editFormSchema),
+    resolver: zodResolver(dynamicSchema),
   });
 
   const watchCategoryId = watch("categoryId");
@@ -103,7 +123,6 @@ export function LedgerEntryEditDialog({
   const watchAccountId = watch("accountId");
   const watchTitle = watch("title");
 
-  // entry 변경 시 폼 초기화
   useEffect(() => {
     if (entry) {
       const date = new Date(entry.transactedAt);
@@ -115,7 +134,7 @@ export function LedgerEntryEditDialog({
         categoryId: entry.categoryId ?? "",
         paymentMethodId: entry.fromPaymentMethodId ?? undefined,
         accountId:
-          entry.type === "expense"
+          entry.type === "expense" || entry.type === "non_expense_withdrawal"
             ? (entry.fromAccountId ?? undefined)
             : (entry.toAccountId ?? undefined),
         transactedAt: formattedDate,
@@ -141,7 +160,7 @@ export function LedgerEntryEditDialog({
       };
 
       // 유형에 따라 결제수단/계좌 필드 설정
-      if (entry.type === "expense") {
+      if (entry.type === "expense" || entry.type === "non_expense_withdrawal") {
         updateData.fromPaymentMethodId = data.paymentMethodId || null;
         updateData.fromAccountId = data.accountId || null;
       } else if (entry.type === "income") {
@@ -171,8 +190,14 @@ export function LedgerEntryEditDialog({
       ? "지출"
       : entry.type === "income"
         ? "수입"
-        : "이체";
-  const typeVariant = entry.type === "expense" ? "default" : "secondary";
+        : entry.type === "non_expense_withdrawal"
+          ? "비지출 출금"
+          : "내부이체";
+  const typeVariant =
+    entry.type === "expense" || entry.type === "non_expense_withdrawal"
+      ? "default"
+      : "secondary";
+
   const privacyLabel = entry.isShared ? "공용" : "개인";
 
   // 결제수단/계좌 통합 value
@@ -199,8 +224,12 @@ export function LedgerEntryEditDialog({
     setMobileView("form");
   };
 
-  const moneySourceMode = entry.type === "expense" ? "expense" : "income";
-  const moneySourcePlaceholder = "선택 안함";
+  const moneySourceMode =
+    entry.type === "expense" || entry.type === "non_expense_withdrawal"
+      ? "expense"
+      : "income";
+  const moneySourcePlaceholder =
+    entry.type === "non_expense_withdrawal" ? "선택" : "선택 안함";
   const moneySourceLabel = getLedgerMoneySourceLabel({
     mode: moneySourceMode,
     value: paymentValue,
@@ -226,7 +255,7 @@ export function LedgerEntryEditDialog({
   const transferEditNotice = (
     <div className="flex items-start gap-2 rounded-md bg-muted/50 p-3 text-sm text-muted-foreground">
       <InfoIcon className="mt-0.5 h-4 w-4 shrink-0" />
-      <p>이체 기록은 삭제 후 다시 등록해주세요.</p>
+      <p>내부이체 기록은 삭제 후 다시 등록해주세요.</p>
     </div>
   );
 
@@ -236,7 +265,8 @@ export function LedgerEntryEditDialog({
         <Dialog open={open} onOpenChange={onOpenChange}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>이체 기록</DialogTitle>
+              <DialogTitle>내부이체 기록</DialogTitle>
+
               <DialogDescription asChild>
                 {descriptionContent}
               </DialogDescription>
@@ -272,7 +302,8 @@ export function LedgerEntryEditDialog({
 
           <div className="flex-1 overflow-y-auto px-4 pt-16 space-y-4">
             <div className="space-y-1">
-              <h3 className="text-lg font-bold text-gray-900">이체 기록</h3>
+              <h3 className="text-lg font-bold text-gray-900">내부이체 기록</h3>
+
               <div className="text-sm text-gray-500">{descriptionContent}</div>
             </div>
 
@@ -334,37 +365,51 @@ export function LedgerEntryEditDialog({
       </div>
 
       {/* 카테고리 + 결제수단/계좌 — 2컬럼 그리드 */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-2">
-          <Label>카테고리 *</Label>
-          {isDesktop ? (
-            <LedgerCategoryCombobox
-              value={watchCategoryId ?? ""}
-              categories={categories}
-              placeholder="선택"
-              onValueChange={(v) =>
-                setValue("categoryId", v, { shouldValidate: true })
-              }
-            />
-          ) : (
-            <LedgerCategoryTrigger
-              label={
-                categories.find((cat) => cat.id === watchCategoryId)?.name ??
-                "선택"
-              }
-              placeholder="선택"
-              onClick={() => setMobileView("categoryPicker")}
-            />
-          )}
-          {errors.categoryId && (
-            <p className="text-sm text-destructive">
-              {errors.categoryId.message}
-            </p>
-          )}
-        </div>
+      <div
+        className={
+          entry.type === "non_expense_withdrawal"
+            ? "grid grid-cols-1"
+            : "grid grid-cols-2 gap-3"
+        }
+      >
+        {entry.type !== "non_expense_withdrawal" && (
+          <div className="space-y-2">
+            <Label>카테고리 *</Label>
+            {isDesktop ? (
+              <LedgerCategoryCombobox
+                value={watchCategoryId ?? ""}
+                categories={categories}
+                placeholder="선택"
+                onValueChange={(v) =>
+                  setValue("categoryId", v, { shouldValidate: true })
+                }
+              />
+            ) : (
+              <LedgerCategoryTrigger
+                label={
+                  categories.find((cat) => cat.id === watchCategoryId)?.name ??
+                  "선택"
+                }
+                placeholder="선택"
+                onClick={() => setMobileView("categoryPicker")}
+              />
+            )}
+            {errors.categoryId && (
+              <p className="text-sm text-destructive">
+                {errors.categoryId.message}
+              </p>
+            )}
+          </div>
+        )}
 
         <div className="space-y-2">
-          <Label>{entry.type === "expense" ? "결제 방법" : "입금 계좌"}</Label>
+          <Label>
+            {entry.type === "expense"
+              ? "결제 방법"
+              : entry.type === "non_expense_withdrawal"
+                ? "출금처 *"
+                : "입금 계좌"}
+          </Label>
           {isDesktop ? (
             <LedgerMoneySourceCombobox
               mode={moneySourceMode}
@@ -381,6 +426,11 @@ export function LedgerEntryEditDialog({
               placeholder={moneySourcePlaceholder}
               onClick={() => setMobileView("moneySourcePicker")}
             />
+          )}
+          {(errors.accountId || errors.paymentMethodId) && (
+            <p className="text-sm text-destructive">
+              {errors.accountId?.message || errors.paymentMethodId?.message}
+            </p>
           )}
         </div>
       </div>
@@ -557,7 +607,11 @@ export function LedgerEntryEditDialog({
               accounts={accounts}
               ownerId={entry.ownerId}
               title={
-                entry.type === "expense" ? "결제 방법 선택" : "입금 계좌 선택"
+                entry.type === "expense"
+                  ? "결제 방법 선택"
+                  : entry.type === "non_expense_withdrawal"
+                    ? "출금처 선택"
+                    : "입금 계좌 선택"
               }
               searchPlaceholder="이름, 기관, 소유자 검색"
               onBack={() => setMobileView("form")}

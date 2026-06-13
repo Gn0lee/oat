@@ -19,11 +19,15 @@ import {
 import { ComposerFormStep } from "./ComposerFormStep";
 import { ComposerListStep } from "./ComposerListStep";
 
-export type ComposerType = "expense" | "income" | "transfer";
+export type ComposerType =
+  | "expense"
+  | "income"
+  | "transfer"
+  | "non_expense_withdrawal";
 
 export const ledgerComposerItemSchema = z
   .object({
-    type: z.enum(["expense", "income", "transfer"]),
+    type: z.enum(["expense", "income", "transfer", "non_expense_withdrawal"]),
     isShared: z.boolean(),
     amount: z.string().min(1, "금액을 입력해주세요."),
     title: z.string().min(1, "내용을 입력해주세요."),
@@ -65,6 +69,17 @@ export const ledgerComposerItemSchema = z
       return;
     }
 
+    if (value.type === "non_expense_withdrawal") {
+      if (!value.accountId && !value.paymentMethodId) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["accountId"],
+          message: "출금처를 선택해주세요.",
+        });
+      }
+      return;
+    }
+
     if (!value.categoryId) {
       ctx.addIssue({
         code: "custom",
@@ -75,7 +90,12 @@ export const ledgerComposerItemSchema = z
   });
 
 export const ledgerComposerSchema = z.object({
-  defaultType: z.enum(["expense", "income", "transfer"]),
+  defaultType: z.enum([
+    "expense",
+    "income",
+    "transfer",
+    "non_expense_withdrawal",
+  ]),
   defaultIsShared: z.boolean(),
   defaultDate: z.string().min(1),
   items: z.array(ledgerComposerItemSchema).min(1),

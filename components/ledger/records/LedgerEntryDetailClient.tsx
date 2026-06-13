@@ -35,7 +35,8 @@ type RequestMode = "update" | "delete";
 
 function getTypeLabel(type: LedgerEntryWithDetails["type"]) {
   if (type === "income") return "수입";
-  if (type === "transfer") return "이체";
+  if (type === "transfer") return "내부이체";
+  if (type === "non_expense_withdrawal") return "비지출 출금";
   return "지출";
 }
 
@@ -52,7 +53,11 @@ function getMoneyLocation(entry: LedgerEntryWithDetails) {
   }
 
   return (
-    entry.fromPaymentMethodName ?? entry.fromAccountName ?? "결제 위치 없음"
+    entry.fromPaymentMethodName ??
+    entry.fromAccountName ??
+    (entry.type === "non_expense_withdrawal"
+      ? "출금 위치 없음"
+      : "결제 위치 없음")
   );
 }
 
@@ -112,10 +117,21 @@ export function LedgerEntryDetailClient({
   const showUpdateAction = hasActions && canUpdate;
   const showDeleteAction = hasActions;
   const typeLabel = getTypeLabel(entry.type);
-  const typeVariant = entry.type === "expense" ? "default" : "secondary";
-  const title = entry.title ?? entry.categoryName ?? typeLabel;
+  const typeVariant =
+    entry.type === "expense" || entry.type === "non_expense_withdrawal"
+      ? "default"
+      : "secondary";
+  const title =
+    entry.title ??
+    (entry.type === "non_expense_withdrawal"
+      ? "비지출 출금"
+      : (entry.categoryName ?? typeLabel));
   const iconName =
-    entry.type === "transfer" ? "ArrowLeftRight" : entry.categoryIcon;
+    entry.type === "transfer"
+      ? "ArrowLeftRight"
+      : entry.type === "non_expense_withdrawal"
+        ? "ArrowUpRight"
+        : entry.categoryIcon;
 
   const handleRequest = (mode: RequestMode) => {
     setRequestMode(mode);
@@ -199,12 +215,20 @@ export function LedgerEntryDetailClient({
         </section>
 
         <section className="rounded-2xl bg-white px-5 py-2 shadow-sm ring-1 ring-gray-100">
+          {entry.type !== "non_expense_withdrawal" && (
+            <DetailInfoRow
+              label="카테고리"
+              value={entry.categoryName ?? "없음"}
+            />
+          )}
           <DetailInfoRow
-            label="카테고리"
-            value={entry.categoryName ?? "없음"}
-          />
-          <DetailInfoRow
-            label={entry.type === "transfer" ? "돈 이동" : "돈 위치"}
+            label={
+              entry.type === "transfer"
+                ? "돈 이동"
+                : entry.type === "non_expense_withdrawal"
+                  ? "출금처"
+                  : "돈 위치"
+            }
             value={getMoneyLocation(entry)}
           />
           <DetailInfoRow label="작성자" value={entry.ownerName} />
