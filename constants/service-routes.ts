@@ -1,5 +1,3 @@
-import { isMcpEnabled } from "@/lib/mcp/feature-flags";
-
 export type MobileHeaderVariant = "topLevel" | "child" | "task";
 
 export interface BreadcrumbItem {
@@ -30,7 +28,9 @@ interface ServiceRouteNode {
   children?: readonly ServiceRouteNode[];
 }
 
-export function getServiceRouteTree(): readonly ServiceRouteNode[] {
+export function getServiceRouteTree(options?: {
+  mcpEnabled?: boolean;
+}): readonly ServiceRouteNode[] {
   return [
     {
       href: "/home",
@@ -211,7 +211,7 @@ export function getServiceRouteTree(): readonly ServiceRouteNode[] {
       mobile: "topLevel",
       children: [
         { href: "/settings/household", label: "가구 관리" },
-        ...(isMcpEnabled()
+        ...(options?.mcpEnabled
           ? [{ href: "/settings/mcp", label: "MCP 연결" } as const]
           : []),
         { href: "/settings/notifications", label: "알림 설정" },
@@ -220,10 +220,8 @@ export function getServiceRouteTree(): readonly ServiceRouteNode[] {
   ] as const satisfies readonly ServiceRouteNode[];
 }
 
-export const SERVICE_ROUTE_TREE = getServiceRouteTree();
-
-export function getRouteMeta() {
-  return flattenServiceRoutes(getServiceRouteTree());
+export function getRouteMeta(options?: { mcpEnabled?: boolean }) {
+  return flattenServiceRoutes(getServiceRouteTree(options));
 }
 
 function normalizePathname(pathname: string): string {
@@ -330,10 +328,13 @@ function appendAllowedSearchParams(
   return queryString ? `${href}?${queryString}` : href;
 }
 
-export function getServiceRouteMeta(pathname: string): ServiceRouteMeta | null {
+export function getServiceRouteMeta(
+  pathname: string,
+  options?: { mcpEnabled?: boolean },
+): ServiceRouteMeta | null {
   const normalizedPathname = normalizePathname(pathname);
   return (
-    getRouteMeta().find((route) =>
+    getRouteMeta(options).find((route) =>
       matchesRoutePath(route, normalizedPathname),
     ) ?? null
   );

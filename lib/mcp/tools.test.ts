@@ -61,8 +61,11 @@ describe("MCP tool helpers", () => {
 
     const properties = createTool?.inputSchema.properties;
     expect(properties).toMatchObject({
-      type: { type: "string" },
-      amount: { type: "number" },
+      type: {
+        type: "string",
+        enum: ["expense", "income", "transfer", "non_expense_withdrawal"],
+      },
+      amount: { type: "number", exclusiveMinimum: 0 },
       transactedAt: { type: "string" },
       title: { type: "string" },
       isShared: { type: "boolean" },
@@ -82,7 +85,13 @@ describe("MCP tool helpers", () => {
     const properties = updateTool?.inputSchema.properties;
     expect(properties).toMatchObject({
       entryId: { type: "string" },
-      amount: { type: "number" },
+      type: {
+        type: "string",
+        enum: ["expense", "income", "transfer", "non_expense_withdrawal"],
+      },
+      amount: { type: "number", exclusiveMinimum: 0 },
+      title: { type: ["string", "null"] },
+      categoryId: { type: ["string", "null"] },
     });
     expect(properties).not.toHaveProperty("ownerId");
     expect(properties).not.toHaveProperty("householdId");

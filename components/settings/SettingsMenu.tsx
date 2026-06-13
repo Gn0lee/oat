@@ -3,10 +3,9 @@
 import { Bell, Bot, LogOut, Monitor, Shield, User, Users } from "lucide-react";
 import { useTransition } from "react";
 import { signOutAction } from "@/app/(auth)/logout/actions";
-import { isMcpEnabled } from "@/lib/mcp/feature-flags";
 import { SettingsMenuItem } from "./SettingsMenuItem";
 
-export function SettingsMenu() {
+export function SettingsMenu({ mcpEnabled }: { mcpEnabled?: boolean }) {
   const [isPending, startTransition] = useTransition();
 
   const handleLogout = () => {
@@ -40,7 +39,7 @@ export function SettingsMenu() {
         disabled
       />
 
-      {isMcpEnabled() && (
+      {mcpEnabled && (
         <SettingsMenuItem
           icon={Bot}
           label="MCP 연결"

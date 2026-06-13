@@ -22,20 +22,13 @@ vi.mock("@/app/(auth)/logout/actions", () => ({
   signOutAction: vi.fn(),
 }));
 
-vi.mock("@/lib/mcp/feature-flags", () => ({
-  isMcpEnabled: vi.fn(),
-}));
-
-const isMcpEnabledMock = vi.mocked(isMcpEnabled);
-
 describe("SettingsMenu", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it("가구 관리 페이지로 이동하는 메뉴를 렌더링한다", () => {
-    isMcpEnabledMock.mockReturnValue(false);
-    render(<SettingsMenu />);
+    render(<SettingsMenu mcpEnabled={false} />);
 
     expect(screen.getByRole("link", { name: /가구 관리/ })).toHaveAttribute(
       "href",
@@ -44,8 +37,7 @@ describe("SettingsMenu", () => {
   });
 
   it("MCP가 비활성화되어 있으면 MCP 연결 메뉴를 렌더링하지 않는다", () => {
-    isMcpEnabledMock.mockReturnValue(false);
-    render(<SettingsMenu />);
+    render(<SettingsMenu mcpEnabled={false} />);
 
     expect(
       screen.queryByRole("link", { name: /MCP 연결/ }),
@@ -54,8 +46,7 @@ describe("SettingsMenu", () => {
   });
 
   it("MCP가 활성화되어 있으면 MCP 연결 메뉴를 렌더링한다", () => {
-    isMcpEnabledMock.mockReturnValue(true);
-    render(<SettingsMenu />);
+    render(<SettingsMenu mcpEnabled={true} />);
 
     expect(screen.getByRole("link", { name: /MCP 연결/ })).toHaveAttribute(
       "href",
