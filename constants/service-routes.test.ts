@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { isMcpEnabled } from "@/lib/mcp/feature-flags";
 import {
   getServiceRouteMeta,
   resolveServiceParentHref,
@@ -6,7 +7,7 @@ import {
 
 describe("getServiceRouteMeta", () => {
   it("mobile top-level 화면을 구분한다", () => {
-    expect(getServiceRouteMeta("/assets")).toMatchObject({
+    expect(getServiceRouteMeta("/assets", { mcpEnabled: true })).toMatchObject({
       label: "자산",
       mobileVariant: "topLevel",
       parentHref: undefined,
@@ -14,7 +15,9 @@ describe("getServiceRouteMeta", () => {
   });
 
   it("child 화면의 parent와 breadcrumb를 계산한다", () => {
-    expect(getServiceRouteMeta("/assets/stock/holdings")).toMatchObject({
+    expect(
+      getServiceRouteMeta("/assets/stock/holdings", { mcpEnabled: true }),
+    ).toMatchObject({
       label: "보유 종목",
       mobileVariant: "child",
       parentHref: "/assets/stock",
@@ -27,7 +30,9 @@ describe("getServiceRouteMeta", () => {
   });
 
   it("task 화면의 closeHref를 계산한다", () => {
-    expect(getServiceRouteMeta("/ledger/payment-methods/new")).toMatchObject({
+    expect(
+      getServiceRouteMeta("/ledger/payment-methods/new", { mcpEnabled: true }),
+    ).toMatchObject({
       label: "결제수단 추가",
       mobileVariant: "task",
       parentHref: "/ledger/payment-methods",
@@ -36,7 +41,9 @@ describe("getServiceRouteMeta", () => {
   });
 
   it("가계부 Entry Composer route를 task 화면으로 계산한다", () => {
-    expect(getServiceRouteMeta("/ledger/records/new/full")).toMatchObject({
+    expect(
+      getServiceRouteMeta("/ledger/records/new/full", { mcpEnabled: true }),
+    ).toMatchObject({
       label: "기록 추가",
       mobileVariant: "task",
       parentHref: "/ledger",
@@ -44,7 +51,9 @@ describe("getServiceRouteMeta", () => {
     });
 
     expect(
-      getServiceRouteMeta("/ledger/records/new/daily?date=2026-05-29"),
+      getServiceRouteMeta("/ledger/records/new/daily?date=2026-05-29", {
+        mcpEnabled: true,
+      }),
     ).toMatchObject({
       label: "하루 기록 추가",
       mobileVariant: "task",
@@ -54,7 +63,9 @@ describe("getServiceRouteMeta", () => {
   });
 
   it("가계부 기록 조회 route는 선택 날짜 query를 보존한다", () => {
-    expect(getServiceRouteMeta("/ledger/records")).toMatchObject({
+    expect(
+      getServiceRouteMeta("/ledger/records", { mcpEnabled: true }),
+    ).toMatchObject({
       label: "기록 조회",
       preserveSearchParams: ["date"],
     });
@@ -62,7 +73,9 @@ describe("getServiceRouteMeta", () => {
 
   it("주식 거래 Entry Composer route를 task 화면으로 계산한다", () => {
     expect(
-      getServiceRouteMeta("/assets/stock/transactions/new/full"),
+      getServiceRouteMeta("/assets/stock/transactions/new/full", {
+        mcpEnabled: true,
+      }),
     ).toMatchObject({
       label: "거래 등록",
       mobileVariant: "task",
@@ -73,6 +86,7 @@ describe("getServiceRouteMeta", () => {
     expect(
       getServiceRouteMeta(
         "/assets/stock/transactions/new/account?accountId=account-123",
+        { mcpEnabled: true },
       ),
     ).toMatchObject({
       label: "계좌 거래 등록",
@@ -84,6 +98,7 @@ describe("getServiceRouteMeta", () => {
     expect(
       getServiceRouteMeta(
         "/assets/stock/transactions/new/daily?date=2026-05-29",
+        { mcpEnabled: true },
       ),
     ).toMatchObject({
       label: "하루 거래 등록",
@@ -95,7 +110,9 @@ describe("getServiceRouteMeta", () => {
 
   it("주식 일별 기록 route를 계산하고 선택 날짜 query를 보존한다", () => {
     expect(
-      getServiceRouteMeta("/assets/stock/records?date=2026-05-29"),
+      getServiceRouteMeta("/assets/stock/records?date=2026-05-29", {
+        mcpEnabled: true,
+      }),
     ).toMatchObject({
       label: "일별 기록",
       mobileVariant: "child",
@@ -111,16 +128,28 @@ describe("getServiceRouteMeta", () => {
 
   it("query string과 trailing slash를 무시한다", () => {
     expect(
-      getServiceRouteMeta("/ledger/payment-methods/new?returnUrl=/ledger"),
+      getServiceRouteMeta("/ledger/payment-methods/new?returnUrl=/ledger", {
+        mcpEnabled: true,
+      }),
     ).toMatchObject({ href: "/ledger/payment-methods/new" });
 
-    expect(getServiceRouteMeta("/settings/mcp/")).toMatchObject({
+    expect(
+      getServiceRouteMeta("/settings/mcp/", { mcpEnabled: true }),
+    ).toMatchObject({
       href: "/settings/mcp",
     });
   });
 
+  it("MCP가 비활성화된 경우 /settings/mcp는 null을 반환한다", () => {
+    expect(
+      getServiceRouteMeta("/settings/mcp/", { mcpEnabled: false }),
+    ).toBeNull();
+  });
+
   it("path parameter 패턴 route를 매칭한다", () => {
-    expect(getServiceRouteMeta("/assets/accounts/account-123")).toMatchObject({
+    expect(
+      getServiceRouteMeta("/assets/accounts/account-123", { mcpEnabled: true }),
+    ).toMatchObject({
       href: "/assets/accounts/[accountId]",
       pattern: "/assets/accounts/[accountId]",
       label: "계좌 상세",
@@ -129,21 +158,27 @@ describe("getServiceRouteMeta", () => {
   });
 
   it("new route를 상세 동적 route로 오인하지 않는다", () => {
-    expect(getServiceRouteMeta("/assets/accounts/new")).toMatchObject({
+    expect(
+      getServiceRouteMeta("/assets/accounts/new", { mcpEnabled: true }),
+    ).toMatchObject({
       href: "/assets/accounts/new",
       label: "계좌 추가",
     });
 
-    expect(getServiceRouteMeta("/assets/stock/transactions/new")).toMatchObject(
-      {
-        href: "/assets/stock/transactions/new",
-        label: "거래 등록",
-      },
-    );
+    expect(
+      getServiceRouteMeta("/assets/stock/transactions/new", {
+        mcpEnabled: true,
+      }),
+    ).toMatchObject({
+      href: "/assets/stock/transactions/new",
+      label: "거래 등록",
+    });
   });
 
   it("가계부 기록 상세는 일간조회 날짜로 돌아간다", () => {
-    const meta = getServiceRouteMeta("/ledger/records/entry-123");
+    const meta = getServiceRouteMeta("/ledger/records/entry-123", {
+      mcpEnabled: true,
+    });
 
     expect(
       resolveServiceParentHref({
@@ -161,7 +196,9 @@ describe("getServiceRouteMeta", () => {
   });
 
   it("주식 거래 상세는 진입한 collection으로 돌아간다", () => {
-    const meta = getServiceRouteMeta("/assets/stock/transactions/tx-123");
+    const meta = getServiceRouteMeta("/assets/stock/transactions/tx-123", {
+      mcpEnabled: true,
+    });
 
     expect(
       resolveServiceParentHref({

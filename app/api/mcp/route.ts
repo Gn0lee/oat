@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { APIError } from "@/lib/api/error";
 import { writeMcpAuditLog } from "@/lib/mcp/audit";
 import { authenticateMcpToken } from "@/lib/mcp/auth";
+import { isMcpEnabled } from "@/lib/mcp/feature-flags";
 import { handleMcpJsonRpc } from "@/lib/mcp/protocol";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -42,6 +43,13 @@ function summarizeToolInput(
     ownerIds: args.ownerIds,
     isShared: args.isShared,
     hasQuery: typeof args.query === "string" && args.query.trim().length > 0,
+    entryId: args.entryId,
+    type: args.type,
+    amount: args.amount,
+    transactedAt: args.transactedAt,
+    categoryId: args.categoryId,
+    hasTitle: typeof args.title === "string" && args.title.trim().length > 0,
+    hasMemo: typeof args.memo === "string" && args.memo.trim().length > 0,
   };
 }
 
@@ -56,6 +64,10 @@ function isMcpNotification(message: unknown): boolean {
 }
 
 export async function GET() {
+  if (!isMcpEnabled()) {
+    return new NextResponse(null, { status: 404 });
+  }
+
   return NextResponse.json({
     data: {
       name: "oat MCP",
@@ -67,6 +79,10 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  if (!isMcpEnabled()) {
+    return new NextResponse(null, { status: 404 });
+  }
+
   if (!isAllowedOrigin(request)) {
     return NextResponse.json(
       {

@@ -118,4 +118,69 @@ export const BRIDGE_TOOL_DEFINITIONS = [
       additionalProperties: false,
     },
   },
+  {
+    name: "create_ledger_entry",
+    description:
+      "새로운 가계부 기록을 생성합니다. 토큰 소유자의 기록으로 생성되며, 기본적으로 가구원에게 공유됩니다. 공유를 원치 않으면 isShared를 false로 설정하세요.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        type: {
+          type: "string",
+          enum: ["expense", "income", "transfer", "non_expense_withdrawal"],
+        },
+        amount: { type: "number", exclusiveMinimum: 0 },
+        title: { type: "string" },
+        categoryId: { type: "string" },
+        fromAccountId: { type: "string" },
+        fromPaymentMethodId: { type: "string" },
+        toAccountId: { type: "string" },
+        toPaymentMethodId: { type: "string" },
+        transactedAt: { type: "string" },
+        isShared: { type: "boolean" },
+        memo: { type: "string" },
+      },
+      required: ["type", "amount", "title", "transactedAt"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "update_ledger_entry",
+    description:
+      "기존 가계부 기록을 수정합니다. 토큰 소유자의 기록만 수정할 수 있습니다. 수정할 필드만 전달하세요.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        entryId: { type: "string" },
+        type: {
+          type: "string",
+          enum: ["expense", "income", "transfer", "non_expense_withdrawal"],
+        },
+        amount: { type: "number", exclusiveMinimum: 0 },
+        title: { type: ["string", "null"] },
+        categoryId: { type: ["string", "null"] },
+        fromAccountId: { type: ["string", "null"] },
+        fromPaymentMethodId: { type: ["string", "null"] },
+        toAccountId: { type: ["string", "null"] },
+        toPaymentMethodId: { type: ["string", "null"] },
+        transactedAt: { type: "string" },
+        memo: { type: ["string", "null"] },
+      },
+      required: ["entryId"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "delete_ledger_entry",
+    description:
+      "기존 가계부 기록을 삭제합니다. 토큰 소유자의 기록만 삭제할 수 있습니다.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        entryId: { type: "string" },
+      },
+      required: ["entryId"],
+      additionalProperties: false,
+    },
+  },
 ] as const;

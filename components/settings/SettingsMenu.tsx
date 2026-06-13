@@ -5,7 +5,7 @@ import { useTransition } from "react";
 import { signOutAction } from "@/app/(auth)/logout/actions";
 import { SettingsMenuItem } from "./SettingsMenuItem";
 
-export function SettingsMenu() {
+export function SettingsMenu({ mcpEnabled }: { mcpEnabled?: boolean }) {
   const [isPending, startTransition] = useTransition();
 
   const handleLogout = () => {
@@ -39,12 +39,14 @@ export function SettingsMenu() {
         disabled
       />
 
-      <SettingsMenuItem
-        icon={Bot}
-        label="MCP 연결"
-        description="AI 도구 연결 토큰 관리"
-        href="/settings/mcp"
-      />
+      {mcpEnabled && (
+        <SettingsMenuItem
+          icon={Bot}
+          label="MCP 연결"
+          description="AI 도구 연결 토큰 관리"
+          href="/settings/mcp"
+        />
+      )}
 
       <SettingsMenuItem
         icon={Bell}

@@ -10,7 +10,7 @@ import {
 } from "./tools";
 
 describe("MCP tool helpers", () => {
-  it("exposes the v0 read-only tool set", () => {
+  it("exposes the v0 read-only tool set and prepared write tools", () => {
     expect(MCP_TOOL_DEFINITIONS.map((tool) => tool.name)).toEqual([
       "get_context",
       "get_financial_overview",
@@ -19,6 +19,9 @@ describe("MCP tool helpers", () => {
       "search_ledger_entries",
       "get_ledger_stats",
       "get_asset_snapshot",
+      "create_ledger_entry",
+      "update_ledger_entry",
+      "delete_ledger_entry",
     ]);
   });
 
@@ -49,6 +52,63 @@ describe("MCP tool helpers", () => {
       },
       endpointId: { type: "string" },
     });
+  });
+
+  it("exposes a ledger create tool without owner or household overrides", () => {
+    const createTool = MCP_TOOL_DEFINITIONS.find(
+      (tool) => tool.name === "create_ledger_entry",
+    );
+
+    const properties = createTool?.inputSchema.properties;
+    expect(properties).toMatchObject({
+      type: {
+        type: "string",
+        enum: ["expense", "income", "transfer", "non_expense_withdrawal"],
+      },
+      amount: { type: "number", exclusiveMinimum: 0 },
+      transactedAt: { type: "string" },
+      title: { type: "string" },
+      isShared: { type: "boolean" },
+    });
+    expect(properties).not.toHaveProperty("ownerId");
+    expect(properties).not.toHaveProperty("householdId");
+    expect(createTool?.inputSchema.required).toEqual(
+      expect.arrayContaining(["type", "amount", "transactedAt", "title"]),
+    );
+  });
+
+  it("exposes a ledger update tool requiring entryId without scope overrides", () => {
+    const updateTool = MCP_TOOL_DEFINITIONS.find(
+      (tool) => tool.name === "update_ledger_entry",
+    );
+
+    const properties = updateTool?.inputSchema.properties;
+    expect(properties).toMatchObject({
+      entryId: { type: "string" },
+      type: {
+        type: "string",
+        enum: ["expense", "income", "transfer", "non_expense_withdrawal"],
+      },
+      amount: { type: "number", exclusiveMinimum: 0 },
+      title: { type: ["string", "null"] },
+      categoryId: { type: ["string", "null"] },
+    });
+    expect(properties).not.toHaveProperty("ownerId");
+    expect(properties).not.toHaveProperty("householdId");
+    expect(properties).not.toHaveProperty("isShared");
+    expect(updateTool?.inputSchema.required).toEqual(["entryId"]);
+  });
+
+  it("exposes a ledger delete tool requiring only entryId", () => {
+    const deleteTool = MCP_TOOL_DEFINITIONS.find(
+      (tool) => tool.name === "delete_ledger_entry",
+    );
+
+    const properties = deleteTool?.inputSchema.properties;
+    expect(properties).toMatchObject({
+      entryId: { type: "string" },
+    });
+    expect(deleteTool?.inputSchema.required).toEqual(["entryId"]);
   });
 
   it("defaults the period to the current month and caps explicit ranges", () => {

@@ -13,14 +13,15 @@ import { cn } from "@/lib/utils/cn";
 
 interface ServiceHeaderProps {
   variant: "mobile" | "desktop";
+  mcpEnabled?: boolean;
 }
 
-export function ServiceHeader({ variant }: ServiceHeaderProps) {
+export function ServiceHeader({ variant, mcpEnabled }: ServiceHeaderProps) {
   const pathname = usePathname();
   const [searchParams, setSearchParams] = useState<URLSearchParams | null>(
     null,
   );
-  const meta = getServiceRouteMeta(pathname);
+  const meta = getServiceRouteMeta(pathname, { mcpEnabled });
   const parentHref = resolveServiceParentHref({
     meta,
     searchParams,

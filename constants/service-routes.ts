@@ -28,193 +28,201 @@ interface ServiceRouteNode {
   children?: readonly ServiceRouteNode[];
 }
 
-export const SERVICE_ROUTE_TREE = [
-  {
-    href: "/home",
-    label: "홈",
-    mobile: "topLevel",
-    children: [{ href: "/notifications", label: "알림함" }],
-  },
-  {
-    href: "/ledger",
-    label: "가계부",
-    mobile: "topLevel",
-    children: [
-      {
-        href: "/ledger/records/new/full",
-        label: "기록 추가",
-        mobile: "task",
-        closeHref: "/ledger",
-      },
-      {
-        href: "/ledger/records",
-        label: "기록 조회",
-        preserveSearchParams: ["date"],
-        children: [
-          {
-            href: "/ledger/records/[entryId]",
-            pattern: "/ledger/records/[entryId]",
-            label: "기록 상세",
-            parentResolver: "ledgerRecordDetail",
-          },
-          {
-            href: "/ledger/records/new/daily",
-            label: "하루 기록 추가",
-            mobile: "task",
-            closeHref: "/ledger/records",
-          },
-        ],
-      },
-      {
-        href: "/ledger/payment-methods",
-        label: "결제수단 관리",
-        children: [
-          {
-            href: "/ledger/payment-methods/new",
-            label: "결제수단 추가",
-            mobile: "task",
-            closeHref: "/ledger/payment-methods",
-          },
-          {
-            href: "/ledger/payment-methods/[paymentMethodId]",
-            pattern: "/ledger/payment-methods/[paymentMethodId]",
-            label: "결제수단 상세",
-          },
-        ],
-      },
-      { href: "/ledger/categories", label: "카테고리 관리" },
-      {
-        href: "/ledger/analysis",
-        label: "통계",
-        children: [
-          {
-            href: "/ledger/analysis/trend",
-            label: "월별 추이",
-            preserveSearchParams: ["scope"],
-          },
-          {
-            href: "/ledger/analysis/daily",
-            label: "일별 지출 현황",
-            preserveSearchParams: ["scope"],
-          },
-          {
-            href: "/ledger/analysis/by-category",
-            label: "카테고리별 지출",
-            preserveSearchParams: ["scope"],
-          },
-          {
-            href: "/ledger/analysis/by-payment-method",
-            label: "결제수단별 지출",
-            preserveSearchParams: ["scope"],
-          },
-          {
-            href: "/ledger/analysis/by-member",
-            label: "구성원별 지출",
-            preserveSearchParams: ["scope"],
-          },
-        ],
-      },
-    ],
-  },
-  {
-    href: "/assets",
-    label: "자산",
-    mobile: "topLevel",
-    children: [
-      {
-        href: "/assets/accounts",
-        label: "계좌 관리",
-        children: [
-          {
-            href: "/assets/accounts/new",
-            label: "계좌 추가",
-            mobile: "task",
-            closeHref: "/assets/accounts",
-          },
-          {
-            href: "/assets/accounts/[accountId]",
-            pattern: "/assets/accounts/[accountId]",
-            label: "계좌 상세",
-          },
-        ],
-      },
-      {
-        href: "/assets/analysis",
-        label: "전체 자산 분석",
-        children: [
-          { href: "/assets/analysis/by-owner", label: "소유자별 분석" },
-          { href: "/assets/analysis/by-risk", label: "위험도별 분석" },
-          { href: "/assets/analysis/by-asset-type", label: "자산군별 분석" },
-        ],
-      },
-      {
-        href: "/assets/stock",
-        label: "주식",
-        children: [
-          { href: "/assets/stock/holdings", label: "보유 종목" },
-          {
-            href: "/assets/stock/records",
-            label: "일별 기록",
-            preserveSearchParams: ["date"],
-            children: [
-              {
-                href: "/assets/stock/transactions/new/daily",
-                label: "하루 거래 등록",
-                mobile: "task",
-                closeHref: "/assets/stock/records",
-              },
-            ],
-          },
-          {
-            href: "/assets/stock/transactions",
-            label: "거래 내역",
-            children: [
-              {
-                href: "/assets/stock/transactions/new",
-                label: "거래 등록",
-                mobile: "task",
-                closeHref: "/assets/stock/transactions",
-              },
-              {
-                href: "/assets/stock/transactions/[transactionId]",
-                pattern: "/assets/stock/transactions/[transactionId]",
-                label: "거래 상세",
-                parentResolver: "stockTransactionDetail",
-              },
-              {
-                href: "/assets/stock/transactions/new/full",
-                label: "거래 등록",
-                mobile: "task",
-                closeHref: "/assets/stock/transactions",
-              },
-              {
-                href: "/assets/stock/transactions/new/account",
-                label: "계좌 거래 등록",
-                mobile: "task",
-                closeHref: "/assets/stock/transactions",
-              },
-            ],
-          },
-          { href: "/assets/stock/accounts", label: "증권 계좌" },
-          { href: "/assets/stock/settings", label: "종목 설정" },
-          { href: "/assets/stock/analysis", label: "주식 분석" },
-        ],
-      },
-    ],
-  },
-  {
-    href: "/settings",
-    label: "설정",
-    mobile: "topLevel",
-    children: [
-      { href: "/settings/household", label: "가구 관리" },
-      { href: "/settings/mcp", label: "MCP 연결" },
-      { href: "/settings/notifications", label: "알림 설정" },
-    ],
-  },
-] as const satisfies readonly ServiceRouteNode[];
+export function getServiceRouteTree(options?: {
+  mcpEnabled?: boolean;
+}): readonly ServiceRouteNode[] {
+  return [
+    {
+      href: "/home",
+      label: "홈",
+      mobile: "topLevel",
+      children: [{ href: "/notifications", label: "알림함" }],
+    },
+    {
+      href: "/ledger",
+      label: "가계부",
+      mobile: "topLevel",
+      children: [
+        {
+          href: "/ledger/records/new/full",
+          label: "기록 추가",
+          mobile: "task",
+          closeHref: "/ledger",
+        },
+        {
+          href: "/ledger/records",
+          label: "기록 조회",
+          preserveSearchParams: ["date"],
+          children: [
+            {
+              href: "/ledger/records/[entryId]",
+              pattern: "/ledger/records/[entryId]",
+              label: "기록 상세",
+              parentResolver: "ledgerRecordDetail",
+            },
+            {
+              href: "/ledger/records/new/daily",
+              label: "하루 기록 추가",
+              mobile: "task",
+              closeHref: "/ledger/records",
+            },
+          ],
+        },
+        {
+          href: "/ledger/payment-methods",
+          label: "결제수단 관리",
+          children: [
+            {
+              href: "/ledger/payment-methods/new",
+              label: "결제수단 추가",
+              mobile: "task",
+              closeHref: "/ledger/payment-methods",
+            },
+            {
+              href: "/ledger/payment-methods/[paymentMethodId]",
+              pattern: "/ledger/payment-methods/[paymentMethodId]",
+              label: "결제수단 상세",
+            },
+          ],
+        },
+        { href: "/ledger/categories", label: "카테고리 관리" },
+        {
+          href: "/ledger/analysis",
+          label: "통계",
+          children: [
+            {
+              href: "/ledger/analysis/trend",
+              label: "월별 추이",
+              preserveSearchParams: ["scope"],
+            },
+            {
+              href: "/ledger/analysis/daily",
+              label: "일별 지출 현황",
+              preserveSearchParams: ["scope"],
+            },
+            {
+              href: "/ledger/analysis/by-category",
+              label: "카테고리별 지출",
+              preserveSearchParams: ["scope"],
+            },
+            {
+              href: "/ledger/analysis/by-payment-method",
+              label: "결제수단별 지출",
+              preserveSearchParams: ["scope"],
+            },
+            {
+              href: "/ledger/analysis/by-member",
+              label: "구성원별 지출",
+              preserveSearchParams: ["scope"],
+            },
+          ],
+        },
+      ],
+    },
+    {
+      href: "/assets",
+      label: "자산",
+      mobile: "topLevel",
+      children: [
+        {
+          href: "/assets/accounts",
+          label: "계좌 관리",
+          children: [
+            {
+              href: "/assets/accounts/new",
+              label: "계좌 추가",
+              mobile: "task",
+              closeHref: "/assets/accounts",
+            },
+            {
+              href: "/assets/accounts/[accountId]",
+              pattern: "/assets/accounts/[accountId]",
+              label: "계좌 상세",
+            },
+          ],
+        },
+        {
+          href: "/assets/analysis",
+          label: "전체 자산 분석",
+          children: [
+            { href: "/assets/analysis/by-owner", label: "소유자별 분석" },
+            { href: "/assets/analysis/by-risk", label: "위험도별 분석" },
+            { href: "/assets/analysis/by-asset-type", label: "자산군별 분석" },
+          ],
+        },
+        {
+          href: "/assets/stock",
+          label: "주식",
+          children: [
+            { href: "/assets/stock/holdings", label: "보유 종목" },
+            {
+              href: "/assets/stock/records",
+              label: "일별 기록",
+              preserveSearchParams: ["date"],
+              children: [
+                {
+                  href: "/assets/stock/transactions/new/daily",
+                  label: "하루 거래 등록",
+                  mobile: "task",
+                  closeHref: "/assets/stock/records",
+                },
+              ],
+            },
+            {
+              href: "/assets/stock/transactions",
+              label: "거래 내역",
+              children: [
+                {
+                  href: "/assets/stock/transactions/new",
+                  label: "거래 등록",
+                  mobile: "task",
+                  closeHref: "/assets/stock/transactions",
+                },
+                {
+                  href: "/assets/stock/transactions/[transactionId]",
+                  pattern: "/assets/stock/transactions/[transactionId]",
+                  label: "거래 상세",
+                  parentResolver: "stockTransactionDetail",
+                },
+                {
+                  href: "/assets/stock/transactions/new/full",
+                  label: "거래 등록",
+                  mobile: "task",
+                  closeHref: "/assets/stock/transactions",
+                },
+                {
+                  href: "/assets/stock/transactions/new/account",
+                  label: "계좌 거래 등록",
+                  mobile: "task",
+                  closeHref: "/assets/stock/transactions",
+                },
+              ],
+            },
+            { href: "/assets/stock/accounts", label: "증권 계좌" },
+            { href: "/assets/stock/settings", label: "종목 설정" },
+            { href: "/assets/stock/analysis", label: "주식 분석" },
+          ],
+        },
+      ],
+    },
+    {
+      href: "/settings",
+      label: "설정",
+      mobile: "topLevel",
+      children: [
+        { href: "/settings/household", label: "가구 관리" },
+        ...(options?.mcpEnabled
+          ? [{ href: "/settings/mcp", label: "MCP 연결" } as const]
+          : []),
+        { href: "/settings/notifications", label: "알림 설정" },
+      ],
+    },
+  ] as const satisfies readonly ServiceRouteNode[];
+}
 
-const ROUTE_META = flattenServiceRoutes(SERVICE_ROUTE_TREE);
+export function getRouteMeta(options?: { mcpEnabled?: boolean }) {
+  return flattenServiceRoutes(getServiceRouteTree(options));
+}
 
 function normalizePathname(pathname: string): string {
   const [path] = pathname.split("?");
@@ -320,11 +328,15 @@ function appendAllowedSearchParams(
   return queryString ? `${href}?${queryString}` : href;
 }
 
-export function getServiceRouteMeta(pathname: string): ServiceRouteMeta | null {
+export function getServiceRouteMeta(
+  pathname: string,
+  options?: { mcpEnabled?: boolean },
+): ServiceRouteMeta | null {
   const normalizedPathname = normalizePathname(pathname);
   return (
-    ROUTE_META.find((route) => matchesRoutePath(route, normalizedPathname)) ??
-    null
+    getRouteMeta(options).find((route) =>
+      matchesRoutePath(route, normalizedPathname),
+    ) ?? null
   );
 }
 

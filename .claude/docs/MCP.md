@@ -5,7 +5,7 @@
 ## TL;DR
 
 - **목표**: 최종적으로 public remote MCP를 제공해 서비스 사용자가 자신의 AI 도구로 oat 데이터를 다룰 수 있게 한다.
-- **v0 범위**: private beta, read-only. 쓰기/삭제는 열지 않는다.
+- **현재 범위**: 앱 전체에서 MCP 기능은 기본적으로 비활성화(`MCP_ENABLED=false`)되어 있으며, 활성화 시 준비된 읽기 및 가계부 쓰기(생성/수정/삭제) 도구를 제공한다. 주식 거래 쓰기는 포함하지 않는다.
 - **배포 위치**: 기존 Next.js 앱 안의 `app/api/mcp/route.ts`에서 시작한다.
 - **전송 방식**: 원격 배포를 전제로 Streamable HTTP transport를 사용한다.
 - **인증**: 앱에서 사용자별 MCP 토큰을 발급한다. 토큰은 특정 `household_id`에 고정된다.
@@ -34,7 +34,7 @@ oat는 가족의 현금 흐름과 자산 성장을 함께 추적하는 서비스
 
 | 단계 | 범위 | 인증 | 제공 기능 |
 |------|------|------|----------|
-| v0 Private Beta | 나와 가족 중심 | 사용자별 MCP 토큰 | read-only tools |
+| v0 Private Beta | 나와 가족 중심 | 사용자별 MCP 토큰 | read-only tools + ledger write tools (기본 비활성화) |
 | v1 Controlled Public | 제한된 사용자 공개 | 사용자별 토큰 + scope 관리 | read-only + 일부 write |
 | v2 Public OAuth | 일반 사용자 공개 | OAuth 기반 MCP authorization | 사용자 동의, 토큰 회수, scope별 연결 |
 
@@ -160,7 +160,7 @@ v0에서는 서버 내부에서 `service_role` 클라이언트를 사용할 수 
 
 ## 5. Scope
 
-v0는 read-only입니다.
+v0는 읽기 전용 접근(기본) 및 준비된 쓰기 도구를 포함합니다.
 
 초기 scope:
 
@@ -171,15 +171,22 @@ read:assets
 read:references
 ```
 
-향후 쓰기 기능을 열 때는 다음처럼 분리합니다.
-
-```text
-ledger:write
-transactions:write
-delete:*        # v0/v1에서는 제공하지 않음
-```
+준비된 쓰기 도구(가계부)는 기존 `read:ledger` 권한을 통해 접근할 수 있도록 일시적으로 연동되어 있으나 향후 `ledger:write`와 분리할 계획입니다.
 
 계좌/결제수단 잔액은 분석에 필요하므로 read-only 범위에 포함합니다. 다만 사용자가 동의하는 scope 설명에서는 단순 "목록 조회"가 아니라 "계좌, 결제수단, 잔액, 현금흐름 조회"라고 명확히 표현해야 합니다.
+
+## 5.1 MCP_ENABLED 및 전역 비활성화
+
+- **`MCP_ENABLED` 플래그**: 현재 oat의 MCP 지원은 기본적으로 비활성화되어 있습니다. 서버 시작 시 `MCP_ENABLED=true` 환경 변수를 제공해야만 기능이 열립니다.
+- **비활성화 시 동작**: `/api/mcp` 엔드포인트는 HTTP 404를 반환하며 어떠한 요청도 처리하지 않습니다. 사용자의 `/settings/mcp` 페이지 접근은 막히며, 앱의 설정 메뉴에서도 MCP 연결 항목이 숨김 처리됩니다.
+
+## 5.2 가계부 쓰기 규칙 (Ledger Writes)
+
+MCP를 통한 가계부 데이터 쓰기(`create_ledger_entry`, `update_ledger_entry`, `delete_ledger_entry`)는 다음 규칙을 따릅니다:
+- **소유권 제한 (Token-Owner Only)**: 생성, 수정, 삭제는 오직 MCP 토큰을 발급받은 사용자의 권한으로만 이루어지며 `ownerId`를 인위적으로 지정할 수 없습니다. 파트너 개인 장부를 직접 조작할 수 없습니다.
+- **공유 기록 수정 제한**: 다른 가구원이 작성한 공유 기록을 MCP에서 직접 수정하거나 삭제할 수 없습니다.
+- **주식 거래 제외**: 이 쓰기 도구들은 가계부 기록에만 해당하며 주식 거래(Stock transactions) 수정은 지원하지 않습니다.
+- **기존 정책 유지**: 기존 앱 내 가계부 수정 API와 동일한 잔액 동기화(Balance sync) 및 알림(Notifications) 로직을 거칩니다.
 
 ---
 
@@ -485,6 +492,9 @@ Valuation metadata:
 | `search_ledger_entries` | 이번 달 | 100건/page |
 | `get_ledger_stats` | 이번 달 | 12개월 |
 | `get_asset_snapshot` | 현재 snapshot | 12개월 요약 추이 |
+| `create_ledger_entry` | 단건 | - |
+| `update_ledger_entry` | 단건 (본인 기록) | - |
+| `delete_ledger_entry` | 단건 (본인 기록) | - |
 
 전체 raw data를 한 번에 반환하지 않습니다. 필요 시 pagination과 집계 tool을 조합합니다.
 
@@ -572,11 +582,9 @@ app/(main)/settings/mcp/page.tsx
 
 ## 14. 보류한 결정
 
-v0에서는 다루지 않습니다.
+현재 범위에서는 다루지 않습니다.
 
 - MCP resources
-- write tools
-- delete tools
 - OAuth authorization flow
 - Dynamic Client Registration
 - 장기 streaming/SSE 활용
