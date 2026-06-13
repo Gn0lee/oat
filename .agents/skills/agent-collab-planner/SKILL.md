@@ -42,13 +42,20 @@ Include:
 - files or subsystems to inspect or change
 - TDD test-first steps before implementation steps
 - a testing contract naming exact test files, test cases, assertions, and what not to test
-- tests and verification commands
+- tests and verification commands, with an explicit owner for each command
 - allowed choices, if any
 - explicit stop conditions
 
 Avoid open-ended instructions such as "handle appropriately", "follow best practices", or "use existing patterns" unless you name the exact pattern or file to follow.
 
 For code changes, make the plan TDD-friendly by naming the first failing test or test file to create before production code. If a change is not testable first, state why and name the alternate verification.
+
+When the user limits an implementer to a narrow edit, do not assign broader environment validation to the implementer just because it would be useful. Split verification by role:
+
+- Implementer-owned verification: commands that are necessary and appropriate for the implementer's scope.
+- Reviewer/user-owned verification: commands that require local services, privileged tools, external systems, long-running setup, destructive resets, or checks the user explicitly reserves for review.
+
+For example, if the user says an implementer should only edit seed data and Supabase reset validation belongs to reviewer/user, the plan and `handoff.yml` must explicitly say the implementer must not run Supabase CLI commands. Put `supabase db reset` and SQL verification under reviewer/user-owned verification only.
 
 ## Testing Contract
 
@@ -59,10 +66,12 @@ For every planned code change, specify:
 - assertion target at the behavior/API/domain boundary
 - fixture or mock strategy, if needed
 - expected red failure before implementation
-- focused command to run
+- focused command to run, or the reviewer/user-owned command when the implementer must not run it
 - cases that must not be tested because they would encode implementation details
 
 Prefer tests that exercise behavior through public APIs, components, server actions, repositories, or domain functions. Do not ask implementers to test styling hooks, selector class names, private implementation details, or incidental DOM structure unless those are the actual contract.
+
+If verification is split by role, name both sides in the testing contract. The implementer section must include a clear "do not run" line for reviewer/user-owned commands so a lower-discretion implementer does not treat those commands as required implementation steps.
 
 ## Stop Conditions
 
@@ -138,3 +147,5 @@ constraints:
 ```
 
 Before ending, update `handoff.yml` and reread it to confirm the next status, owner, reads, and writes are correct.
+
+If any verification is reviewer/user-owned, include that boundary in `current_request`, for example: "Do not run Supabase CLI commands; reset/SQL verification belongs to reviewer/user."
