@@ -1,10 +1,21 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { isMcpEnabled } from "@/lib/mcp/feature-flags";
 import {
   getServiceRouteMeta,
   resolveServiceParentHref,
 } from "./service-routes";
 
+vi.mock("@/lib/mcp/feature-flags", () => ({
+  isMcpEnabled: vi.fn(),
+}));
+
+const isMcpEnabledMock = vi.mocked(isMcpEnabled);
+
 describe("getServiceRouteMeta", () => {
+  beforeEach(() => {
+    isMcpEnabledMock.mockReturnValue(true);
+  });
+
   it("mobile top-level 화면을 구분한다", () => {
     expect(getServiceRouteMeta("/assets")).toMatchObject({
       label: "자산",
@@ -114,9 +125,15 @@ describe("getServiceRouteMeta", () => {
       getServiceRouteMeta("/ledger/payment-methods/new?returnUrl=/ledger"),
     ).toMatchObject({ href: "/ledger/payment-methods/new" });
 
+    isMcpEnabledMock.mockReturnValue(true);
     expect(getServiceRouteMeta("/settings/mcp/")).toMatchObject({
       href: "/settings/mcp",
     });
+  });
+
+  it("MCP가 비활성화된 경우 /settings/mcp는 null을 반환한다", () => {
+    isMcpEnabledMock.mockReturnValue(false);
+    expect(getServiceRouteMeta("/settings/mcp/")).toBeNull();
   });
 
   it("path parameter 패턴 route를 매칭한다", () => {

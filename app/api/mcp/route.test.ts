@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { writeMcpAuditLog } from "@/lib/mcp/audit";
 import { authenticateMcpToken } from "@/lib/mcp/auth";
+import { isMcpEnabled } from "@/lib/mcp/feature-flags";
 import { handleMcpJsonRpc } from "@/lib/mcp/protocol";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { POST } from "./route";
+import { GET, POST } from "./route";
 
 vi.mock("@/lib/supabase/admin", () => ({
   createAdminClient: vi.fn(),
@@ -21,10 +22,15 @@ vi.mock("@/lib/mcp/audit", () => ({
   writeMcpAuditLog: vi.fn(),
 }));
 
+vi.mock("@/lib/mcp/feature-flags", () => ({
+  isMcpEnabled: vi.fn(),
+}));
+
 const createAdminClientMock = vi.mocked(createAdminClient);
 const authenticateMcpTokenMock = vi.mocked(authenticateMcpToken);
 const handleMcpJsonRpcMock = vi.mocked(handleMcpJsonRpc);
 const writeMcpAuditLogMock = vi.mocked(writeMcpAuditLog);
+const isMcpEnabledMock = vi.mocked(isMcpEnabled);
 
 const admin = {};
 const auth = {
@@ -51,6 +57,29 @@ describe("MCP route", () => {
     vi.clearAllMocks();
     createAdminClientMock.mockReturnValue(admin as never);
     authenticateMcpTokenMock.mockResolvedValue(auth);
+    isMcpEnabledMock.mockReturnValue(true);
+  });
+
+  it("returns 404 when MCP is disabled for GET", async () => {
+    isMcpEnabledMock.mockReturnValue(false);
+    const response = await GET();
+    expect(response.status).toBe(404);
+  });
+
+  it("returns 404 when MCP is disabled for POST", async () => {
+    isMcpEnabledMock.mockReturnValue(false);
+    const response = await POST(
+      createMcpRequest({
+        jsonrpc: "2.0",
+        method: "notifications/initialized",
+      }) as never,
+    );
+
+    expect(response.status).toBe(404);
+    expect(createAdminClientMock).not.toHaveBeenCalled();
+    expect(authenticateMcpTokenMock).not.toHaveBeenCalled();
+    expect(handleMcpJsonRpcMock).not.toHaveBeenCalled();
+    expect(writeMcpAuditLogMock).not.toHaveBeenCalled();
   });
 
   it("returns 202 for MCP notifications without authenticating", async () => {
@@ -118,5 +147,56 @@ describe("MCP route", () => {
       resultStatus: "success",
       durationMs: expect.any(Number),
     });
+  });
+
+  it("audits write tool calls without raw title or memo", async () => {
+    handleMcpJsonRpcMock.mockResolvedValue({
+      status: 200,
+      body: {
+        jsonrpc: "2.0",
+        id: 3,
+        result: { content: [] },
+      },
+    });
+
+    const response = await POST(
+      createMcpRequest({
+        jsonrpc: "2.0",
+        id: 3,
+        method: "tools/call",
+        params: {
+          name: "create_ledger_entry",
+          arguments: {
+            title: "Secret lunch",
+            memo: "With secret friend",
+            type: "expense",
+            amount: 5000,
+            isShared: true,
+          },
+        },
+      }) as never,
+    );
+
+    expect(response.status).toBe(200);
+    expect(writeMcpAuditLogMock).toHaveBeenCalledWith(admin, {
+      auth,
+      toolName: "create_ledger_entry",
+      inputSummary: expect.objectContaining({
+        type: "expense",
+        amount: 5000,
+        isShared: true,
+        hasTitle: true,
+        hasMemo: true,
+      }),
+      resultStatus: "success",
+      durationMs: expect.any(Number),
+    });
+
+    const lastCallArgs =
+      writeMcpAuditLogMock.mock.calls[
+        writeMcpAuditLogMock.mock.calls.length - 1
+      ][1];
+    expect(lastCallArgs.inputSummary).not.toHaveProperty("title");
+    expect(lastCallArgs.inputSummary).not.toHaveProperty("memo");
   });
 });

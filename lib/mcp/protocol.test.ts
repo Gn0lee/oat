@@ -58,6 +58,9 @@ describe("MCP JSON-RPC handler", () => {
       "search_ledger_entries",
       "get_ledger_stats",
       "get_asset_snapshot",
+      "create_ledger_entry",
+      "update_ledger_entry",
+      "delete_ledger_entry",
     ]);
   });
 

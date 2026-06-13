@@ -3,6 +3,7 @@
 import { Bell, Bot, LogOut, Monitor, Shield, User, Users } from "lucide-react";
 import { useTransition } from "react";
 import { signOutAction } from "@/app/(auth)/logout/actions";
+import { isMcpEnabled } from "@/lib/mcp/feature-flags";
 import { SettingsMenuItem } from "./SettingsMenuItem";
 
 export function SettingsMenu() {
@@ -39,12 +40,14 @@ export function SettingsMenu() {
         disabled
       />
 
-      <SettingsMenuItem
-        icon={Bot}
-        label="MCP 연결"
-        description="AI 도구 연결 토큰 관리"
-        href="/settings/mcp"
-      />
+      {isMcpEnabled() && (
+        <SettingsMenuItem
+          icon={Bot}
+          label="MCP 연결"
+          description="AI 도구 연결 토큰 관리"
+          href="/settings/mcp"
+        />
+      )}
 
       <SettingsMenuItem
         icon={Bell}

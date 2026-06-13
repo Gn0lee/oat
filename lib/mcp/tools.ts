@@ -6,9 +6,23 @@ import {
 import { APIError } from "@/lib/api/error";
 import { getExchangeRateSafe } from "@/lib/api/exchange";
 import { getHoldings } from "@/lib/api/holdings";
+import {
+  createLedgerEntryWithBalanceSync,
+  deleteLedgerEntryWithBalanceSync,
+  updateLedgerEntryWithBalanceSync,
+} from "@/lib/api/ledger";
+import {
+  notifyLedgerEntryCreated,
+  notifyLedgerEntryDeleted,
+  notifyLedgerEntryUpdated,
+} from "@/lib/api/ledger-notifications";
 import { getPaymentMethods } from "@/lib/api/payment-method";
 import { getStockPrices } from "@/lib/api/stock-price";
 import { calculateHoldingValuation } from "@/lib/api/valuation";
+import {
+  createLedgerEntrySchema,
+  updateLedgerEntrySchema,
+} from "@/schemas/ledger-entry";
 import type { Database } from "@/types";
 import type { McpAuthContext } from "./auth";
 
@@ -133,6 +147,64 @@ export const MCP_TOOL_DEFINITIONS = [
         includeHoldings: { type: "boolean" },
         includeAllocation: { type: "boolean" },
       },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "create_ledger_entry",
+    description:
+      "새로운 가계부 기록을 생성합니다. 토큰 소유자의 기록으로 생성되며, 기본적으로 가구원에게 공유됩니다. 공유를 원치 않으면 isShared를 false로 설정하세요.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        type: { type: "string", enum: ["expense", "income", "transfer"] },
+        amount: { type: "number", minimum: 0 },
+        title: { type: "string" },
+        categoryId: { type: "string" },
+        fromAccountId: { type: "string" },
+        fromPaymentMethodId: { type: "string" },
+        toAccountId: { type: "string" },
+        toPaymentMethodId: { type: "string" },
+        transactedAt: { type: "string" },
+        isShared: { type: "boolean" },
+        memo: { type: "string" },
+      },
+      required: ["type", "amount", "title", "transactedAt"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "update_ledger_entry",
+    description:
+      "기존 가계부 기록을 수정합니다. 토큰 소유자의 기록만 수정할 수 있습니다. 수정할 필드만 전달하세요.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        entryId: { type: "string" },
+        amount: { type: "number", minimum: 0 },
+        title: { type: "string" },
+        categoryId: { type: "string" },
+        fromAccountId: { type: "string" },
+        fromPaymentMethodId: { type: "string" },
+        toAccountId: { type: "string" },
+        toPaymentMethodId: { type: "string" },
+        transactedAt: { type: "string" },
+        memo: { type: "string" },
+      },
+      required: ["entryId"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "delete_ledger_entry",
+    description:
+      "기존 가계부 기록을 삭제합니다. 토큰 소유자의 기록만 삭제할 수 있습니다.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        entryId: { type: "string" },
+      },
+      required: ["entryId"],
       additionalProperties: false,
     },
   },
@@ -1371,6 +1443,148 @@ async function getFinancialOverview(
   };
 }
 
+async function createLedgerEntryFromMcp(
+  supabase: LooseSupabaseClient,
+  auth: McpAuthContext,
+  args: Record<string, unknown>,
+) {
+  requireScope(auth, ["read:ledger"]); // writes typically need ledger access
+
+  const parsed = createLedgerEntrySchema.safeParse({
+    ...args,
+    ownerId: auth.userId,
+    householdId: auth.householdId,
+  });
+
+  if (!parsed.success) {
+    throw new APIError(
+      "MCP_INVALID_REQUEST",
+      parsed.error.issues[0].message,
+      400,
+    );
+  }
+
+  const result = await createLedgerEntryWithBalanceSync(
+    supabase as SupabaseClient<Database>,
+    {
+      ...parsed.data,
+      ownerId: auth.userId,
+      householdId: auth.householdId,
+    },
+  );
+
+  await notifyLedgerEntryCreated(supabase as SupabaseClient<Database>, {
+    actorId: auth.userId,
+    householdId: auth.householdId,
+    entry: result,
+  });
+
+  return {
+    meta: buildMcpMeta({ period: null, scopes: auth.scopes }),
+    summary: { created: true, entryId: result.id },
+    data: result,
+  };
+}
+
+async function updateLedgerEntryFromMcp(
+  supabase: LooseSupabaseClient,
+  auth: McpAuthContext,
+  args: Record<string, unknown>,
+) {
+  requireScope(auth, ["read:ledger"]);
+
+  const entryId = args.entryId;
+  if (typeof entryId !== "string") {
+    throw new APIError("MCP_INVALID_REQUEST", "entryId가 필요합니다.", 400);
+  }
+
+  const parsed = updateLedgerEntrySchema.safeParse(args);
+  if (!parsed.success) {
+    throw new APIError(
+      "MCP_INVALID_REQUEST",
+      parsed.error.issues[0].message,
+      400,
+    );
+  }
+
+  const previousRow = await supabase
+    .from("ledger_entries")
+    .select("*")
+    .eq("id", entryId)
+    .maybeSingle();
+
+  if (!previousRow.data) {
+    throw new APIError(
+      "MCP_INVALID_REQUEST",
+      "기존 기록을 찾을 수 없습니다.",
+      404,
+    );
+  }
+
+  const result = await updateLedgerEntryWithBalanceSync(
+    supabase as SupabaseClient<Database>,
+    entryId,
+    auth.userId,
+    parsed.data,
+  );
+
+  await notifyLedgerEntryUpdated(supabase as SupabaseClient<Database>, {
+    actorId: auth.userId,
+    previousEntry: previousRow.data,
+    updatedEntry: result,
+  });
+
+  return {
+    meta: buildMcpMeta({ period: null, scopes: auth.scopes }),
+    summary: { updated: true, entryId: result.id },
+    data: result,
+  };
+}
+
+async function deleteLedgerEntryFromMcp(
+  supabase: LooseSupabaseClient,
+  auth: McpAuthContext,
+  args: Record<string, unknown>,
+) {
+  requireScope(auth, ["read:ledger"]);
+
+  const entryId = args.entryId;
+  if (typeof entryId !== "string") {
+    throw new APIError("MCP_INVALID_REQUEST", "entryId가 필요합니다.", 400);
+  }
+
+  const previousRow = await supabase
+    .from("ledger_entries")
+    .select("*")
+    .eq("id", entryId)
+    .maybeSingle();
+
+  if (!previousRow.data) {
+    throw new APIError(
+      "MCP_INVALID_REQUEST",
+      "기존 기록을 찾을 수 없습니다.",
+      404,
+    );
+  }
+
+  await deleteLedgerEntryWithBalanceSync(
+    supabase as SupabaseClient<Database>,
+    entryId,
+    auth.userId,
+  );
+
+  await notifyLedgerEntryDeleted(supabase as SupabaseClient<Database>, {
+    actorId: auth.userId,
+    entry: previousRow.data,
+  });
+
+  return {
+    meta: buildMcpMeta({ period: null, scopes: auth.scopes }),
+    summary: { deleted: true, entryId },
+    data: { success: true, entryId },
+  };
+}
+
 export async function executeMcpTool(
   supabase: LooseSupabaseClient,
   auth: McpAuthContext,
@@ -1392,6 +1606,12 @@ export async function executeMcpTool(
       return getLedgerStats(supabase, auth, args);
     case "get_asset_snapshot":
       return getAssetSnapshot(supabase, auth, args);
+    case "create_ledger_entry":
+      return createLedgerEntryFromMcp(supabase, auth, args);
+    case "update_ledger_entry":
+      return updateLedgerEntryFromMcp(supabase, auth, args);
+    case "delete_ledger_entry":
+      return deleteLedgerEntryFromMcp(supabase, auth, args);
     default:
       throw new APIError(
         "MCP_TOOL_NOT_FOUND",
