@@ -1,3 +1,4 @@
+import { PageContainer } from "@/components/layout";
 import { LedgerEntryDetailClient } from "@/components/ledger/records/LedgerEntryDetailClient";
 import { requireUser } from "@/lib/supabase/auth";
 
@@ -13,5 +14,9 @@ export default async function LedgerEntryDetailPage({
   await requireUser();
   const { entryId } = await params;
 
-  return <LedgerEntryDetailClient entryId={entryId} />;
+  return (
+    <PageContainer maxWidth="medium">
+      <LedgerEntryDetailClient entryId={entryId} />
+    </PageContainer>
+  );
 }

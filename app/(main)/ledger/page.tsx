@@ -1,4 +1,5 @@
 import { CalendarDays, CreditCard, PieChart, Plus, Tags } from "lucide-react";
+import { PageContainer } from "@/components/layout";
 import {
   EntryRow,
   GroupedList,
@@ -17,7 +18,7 @@ export default async function LedgerPage() {
   const month = now.getMonth() + 1;
 
   return (
-    <>
+    <PageContainer maxWidth="default">
       <LedgerSummarySection year={year} month={month} />
 
       <ScreenSection>
@@ -67,6 +68,6 @@ export default async function LedgerPage() {
           />
         </GroupedList>
       </ScreenSection>
-    </>
+    </PageContainer>
   );
 }

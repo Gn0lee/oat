@@ -7,7 +7,7 @@ const APP_VERSION = "0.1.0";
 export default function SettingsPage() {
   const mcpEnabled = isMcpEnabled();
   return (
-    <PageContainer maxWidth="narrow">
+    <PageContainer maxWidth="medium">
       {/* 설정 메뉴 */}
       <SettingsMenu mcpEnabled={mcpEnabled} />
 

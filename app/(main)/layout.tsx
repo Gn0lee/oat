@@ -23,9 +23,7 @@ export default function MainLayout({
         <div className="size-full overflow-y-scroll overflow-x-clip relative z-0">
           <PageTransitionProvider>
             <PageTransition className="flex-1 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-14 lg:pb-4 lg:pt-0">
-              <div className="p-4">
-                <div className="max-w-4xl mx-auto space-y-6">{children}</div>
-              </div>
+              <div className="px-4 py-4 sm:px-6 lg:px-8">{children}</div>
             </PageTransition>
           </PageTransitionProvider>
         </div>

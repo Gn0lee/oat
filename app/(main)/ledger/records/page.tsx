@@ -1,3 +1,4 @@
+import { PageContainer } from "@/components/layout";
 import { LedgerRecordsClient } from "@/components/ledger/records/LedgerRecordsClient";
 import { getKstToday } from "@/lib/date";
 import { normalizeRecordDate } from "@/lib/stock-records/records";
@@ -16,5 +17,9 @@ export default async function LedgerRecordsPage({
   const { date } = await searchParams;
   const today = getKstToday();
 
-  return <LedgerRecordsClient initialDate={normalizeRecordDate(date, today)} />;
+  return (
+    <PageContainer maxWidth="default">
+      <LedgerRecordsClient initialDate={normalizeRecordDate(date, today)} />
+    </PageContainer>
+  );
 }

@@ -7,6 +7,7 @@ import {
   Users,
 } from "lucide-react";
 import Link from "next/link";
+import { PageContainer } from "@/components/layout";
 import { LedgerAnalysisOverview } from "@/components/ledger/analysis/LedgerAnalysisOverview";
 import { ScopeTabs } from "@/components/ledger/analysis/ScopeTabs";
 import { getKstNow } from "@/lib/date";
@@ -87,7 +88,7 @@ export default async function LedgerAnalysisPage({
   );
 
   return (
-    <>
+    <PageContainer maxWidth="default">
       <ScopeTabs scope={scope} />
 
       <LedgerAnalysisOverview year={year} month={month} scope={scope} />
@@ -126,6 +127,6 @@ export default async function LedgerAnalysisPage({
           },
         )}
       </div>
-    </>
+    </PageContainer>
   );
 }

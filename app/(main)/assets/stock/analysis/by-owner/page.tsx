@@ -5,6 +5,7 @@ import {
   StockOwnerHoldingsList,
   StockOwnerSummary,
 } from "@/components/assets/stock/analysis/by-owner";
+import { PageContainer } from "@/components/layout";
 import { useStockOwnerAnalysis } from "@/hooks/use-stock-owner-analysis";
 
 export default function StockOwnerAnalysisPage() {
@@ -13,7 +14,7 @@ export default function StockOwnerAnalysisPage() {
   const isEmpty = !isLoading && (!data || data.summary.length === 0);
 
   return (
-    <>
+    <PageContainer maxWidth="default">
       {/* 에러 상태 */}
       {error && (
         <div className="bg-white rounded-2xl p-6 shadow-sm">
@@ -52,6 +53,6 @@ export default function StockOwnerAnalysisPage() {
           />
         </>
       )}
-    </>
+    </PageContainer>
   );
 }

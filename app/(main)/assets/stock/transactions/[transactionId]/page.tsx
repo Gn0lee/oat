@@ -1,3 +1,4 @@
+import { PageContainer } from "@/components/layout";
 import { TransactionDetailClient } from "@/components/transactions/TransactionDetailClient";
 import { requireUser } from "@/lib/supabase/auth";
 
@@ -13,5 +14,9 @@ export default async function TransactionDetailPage({
   await requireUser();
   const { transactionId } = await params;
 
-  return <TransactionDetailClient transactionId={transactionId} />;
+  return (
+    <PageContainer maxWidth="medium">
+      <TransactionDetailClient transactionId={transactionId} />
+    </PageContainer>
+  );
 }

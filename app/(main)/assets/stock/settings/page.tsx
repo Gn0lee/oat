@@ -1,3 +1,4 @@
+import { PageContainer } from "@/components/layout";
 import { StockSettingsList } from "@/components/stock-settings/StockSettingsList";
 import { getUserHouseholdId } from "@/lib/api/invitation";
 import { getStockSettings } from "@/lib/api/stock-settings";
@@ -13,9 +14,11 @@ export default async function StockSettingsPage() {
 
   if (!householdId) {
     return (
-      <p className="text-center text-gray-500 py-12">
-        가구 정보를 찾을 수 없습니다.
-      </p>
+      <PageContainer maxWidth="medium">
+        <p className="text-center text-gray-500 py-12">
+          가구 정보를 찾을 수 없습니다.
+        </p>
+      </PageContainer>
     );
   }
 
@@ -25,9 +28,9 @@ export default async function StockSettingsPage() {
   });
 
   return (
-    <>
+    <PageContainer maxWidth="medium">
       {/* 종목 설정 목록 */}
       <StockSettingsList initialData={initialData} />
-    </>
+    </PageContainer>
   );
 }
