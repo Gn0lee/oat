@@ -189,28 +189,28 @@ export interface AccountBreakdown {
   holdingCount: number;
 }
 
-// 소유자별 분석 페이지용 타입
-export interface OwnerAnalysisData {
+// 소유자별 주식 분석 페이지용 타입
+export interface StockOwnerAnalysisData {
   summary: MemberSummary[];
-  holdings: OwnerHoldings[];
+  holdings: StockOwnerHoldings[];
   exchangeRate: number;
 }
 
-export interface OwnerHoldings {
+export interface StockOwnerHoldings {
   ownerId: string;
   ownerName: string;
   stocks: StockHoldingWithReturn[];
 }
 
-// 위험도별 분석 페이지용 타입
-export interface RiskLevelSummary {
+// 위험도별 주식 분석 페이지용 타입
+export interface StockRiskLevelSummary {
   riskLevel: RiskLevel | null; // null = 미설정
   totalValue: number;
   percentage: number;
-  holdings: RiskHoldingItem[];
+  holdings: StockRiskHoldingItem[];
 }
 
-export interface RiskHoldingItem {
+export interface StockRiskHoldingItem {
   ticker: string;
   name: string;
   market: MarketType;
@@ -221,9 +221,9 @@ export interface RiskHoldingItem {
   returnRate: number;
 }
 
-export interface ByRiskAnalysisData {
+export interface StockRiskAnalysisData {
   totalValue: number;
-  byRiskLevel: RiskLevelSummary[];
+  byRiskLevel: StockRiskLevelSummary[];
   exchangeRate: number;
 }
 

@@ -74,6 +74,13 @@ export const queries = createQueryKeyStore({
     analysis: null,
   },
 
+  stockAnalysis: {
+    all: null,
+    overview: null,
+    byOwner: null,
+    byRisk: null,
+  },
+
   exchange: {
     all: null,
     rate: (from: string, to: string) => ({ queryKey: [from, to] }),
@@ -82,8 +89,6 @@ export const queries = createQueryKeyStore({
   dashboard: {
     all: null,
     summary: null,
-    byOwner: null,
-    byRisk: null,
   },
 
   marketTrend: {

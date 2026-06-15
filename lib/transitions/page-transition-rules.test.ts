@@ -66,12 +66,6 @@ describe("page transition rules", () => {
     });
     expect(getPageTransitionRules("mobile")).toContainEqual({
       kind: "drill",
-      enter: "/assets/analysis/*",
-      exit: "/assets/analysis",
-      type: "parallax",
-    });
-    expect(getPageTransitionRules("mobile")).toContainEqual({
-      kind: "drill",
       enter: "/assets/stock/*",
       exit: "/assets/stock",
       type: "parallax",
@@ -80,6 +74,12 @@ describe("page transition rules", () => {
       kind: "drill",
       enter: "/assets/stock/transactions/*",
       exit: "/assets/stock/transactions",
+      type: "parallax",
+    });
+    expect(getPageTransitionRules("mobile")).toContainEqual({
+      kind: "drill",
+      enter: "/assets/stock/analysis/*",
+      exit: "/assets/stock/analysis",
       type: "parallax",
     });
     expect(getPageTransitionRules("mobile")).toContainEqual({

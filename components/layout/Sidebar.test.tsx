@@ -62,7 +62,7 @@ describe("Sidebar", () => {
     expect(ledgerLink?.className).toContain("bg-primary/10");
   });
 
-  it("/assets/analysis 경로에서 자산 항목이 활성 상태이다", () => {
+  it("/assets/stock/analysis 경로에서 자산 항목이 활성 상태이다", () => {
     vi.mocked(usePathname).mockReturnValue("/assets/stock/analysis");
     render(<Sidebar />);
 

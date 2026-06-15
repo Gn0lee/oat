@@ -8,7 +8,7 @@ import {
   Settings,
   Wallet,
 } from "lucide-react";
-import { AnalysisCard } from "@/components/dashboard/AnalysisCard";
+import { PortfolioNavCard } from "./PortfolioNavCard";
 
 const navItems = [
   {
@@ -37,8 +37,8 @@ const navItems = [
   },
   {
     icon: ChartPie,
-    label: "주식 대시보드",
-    description: "수익률과 비중을 자세히 분석해 보세요",
+    label: "주식 분석",
+    description: "종합, 소유자별, 위험도별로 분석해 보세요",
     href: "/assets/stock/analysis",
     color: "text-purple-600",
     bgColor: "bg-purple-50",
@@ -67,7 +67,7 @@ export function PortfolioNavSection() {
       <h2 className="text-lg font-semibold text-gray-900 mb-4">관리</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {navItems.map((item) => (
-          <AnalysisCard key={item.href} {...item} />
+          <PortfolioNavCard key={item.href} {...item} />
         ))}
       </div>
     </section>

@@ -167,17 +167,15 @@ app/(main)/
 ├── home/                          # /home - 홈 (총 자산 요약, 빠른 액션)
 ├── assets/                        # /assets - 자산 메인 (유형 선택 허브)
 │   ├── page.tsx                   # 자산 유형별 진입점
-│   ├── analysis/                  # /assets/analysis - 전체 자산 분석
-│   │   ├── page.tsx               # 분석 허브
-│   │   ├── by-owner/              # /assets/analysis/by-owner
-│   │   ├── by-risk/               # /assets/analysis/by-risk
-│   │   └── by-asset-type/         # /assets/analysis/by-asset-type
 │   ├── total/
 │   │   └── holdings/
 │   │       └── page.tsx           # /assets/total/holdings - 전체 보유 현황
 │   └── stock/                     # 주식 자산
 │       ├── analysis/
-│       │   └── page.tsx           # /assets/stock/analysis - 주식 분석
+│       │   ├── page.tsx           # /assets/stock/analysis - 주식 분석 허브
+│       │   ├── overview/          # /assets/stock/analysis/overview - 종합 분석
+│       │   ├── by-owner/          # /assets/stock/analysis/by-owner
+│       │   └── by-risk/           # /assets/stock/analysis/by-risk
 │       ├── holdings/
 │       │   └── page.tsx           # /assets/stock/holdings - 주식 보유 현황
 │       ├── records/
@@ -231,22 +229,20 @@ assets/
 
 ### 자산 분석 계층 구조
 
-자산 분석은 독립 `/dashboard` 축을 만들지 않고 자산 도메인 내부에 둡니다. 전체 자산 분석은 `/assets/analysis`, 특정 자산 유형 분석은 `/assets/[type]/analysis` 패턴을 따릅니다.
+자산 분석은 독립 `/dashboard` 축이나 전체 자산 분석 허브를 만들지 않고 각 자산 유형 하위에 둡니다. `/assets/analysis` 계열은 제품 표면이 아니며, 현재 주식 분석은 `/assets/stock/analysis` hub 아래에 둡니다.
 
 ```
 app/(main)/
 ├── assets/
-│   ├── analysis/
-│   │   ├── page.tsx               # /assets/analysis - 전체 자산 분석 허브
-│   │   ├── by-owner/
-│   │   │   └── page.tsx           # /assets/analysis/by-owner
-│   │   ├── by-risk/
-│   │   │   └── page.tsx           # /assets/analysis/by-risk
-│   │   └── by-asset-type/
-│   │       └── page.tsx           # /assets/analysis/by-asset-type
 │   └── stock/
 │       └── analysis/
-│           └── page.tsx           # /assets/stock/analysis
+│           ├── page.tsx           # /assets/stock/analysis - 주식 분석 허브
+│           ├── overview/
+│           │   └── page.tsx       # /assets/stock/analysis/overview
+│           ├── by-owner/
+│           │   └── page.tsx       # /assets/stock/analysis/by-owner
+│           └── by-risk/
+│               └── page.tsx       # /assets/stock/analysis/by-risk
 ```
 
 준비 중인 자산 유형 분석은 `/assets/cash/analysis`, `/assets/real-estate/analysis`, `/assets/other/analysis`처럼 각 자산 유형 아래에 둡니다.

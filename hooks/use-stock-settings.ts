@@ -116,7 +116,7 @@ export function useUpdateStockSetting() {
       queryClient.invalidateQueries({ queryKey: queries.holdings._def });
       // 위험도별 분석 캐시 무효화
       queryClient.invalidateQueries({
-        queryKey: queries.dashboard.byRisk.queryKey,
+        queryKey: queries.stockAnalysis.byRisk.queryKey,
       });
     },
   });

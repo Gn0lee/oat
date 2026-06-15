@@ -42,9 +42,11 @@ describe("isNavItemActive", () => {
     expect(isNavItemActive(homeItem, "/home/sub")).toBe(false);
   });
 
-  it("/assets/analysis 경로에서 자산 항목이 활성이다", () => {
-    expect(isNavItemActive(assetsItem, "/assets/analysis")).toBe(true);
+  it("/assets/stock/analysis 경로에서 자산 항목이 활성이다", () => {
     expect(isNavItemActive(assetsItem, "/assets/stock/analysis")).toBe(true);
+    expect(isNavItemActive(assetsItem, "/assets/stock/analysis/by-owner")).toBe(
+      true,
+    );
   });
 
   it("/household 경로에서 설정 항목이 활성이다", () => {

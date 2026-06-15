@@ -75,8 +75,8 @@ describe("BottomNav", () => {
     expect(nav?.className).toContain("pb-[env(safe-area-inset-bottom)]");
   });
 
-  it("/assets/analysis 경로에서 자산 탭이 활성 상태이다", () => {
-    vi.mocked(usePathname).mockReturnValue("/assets/analysis");
+  it("/assets/stock/analysis 경로에서 자산 탭이 활성 상태이다", () => {
+    vi.mocked(usePathname).mockReturnValue("/assets/stock/analysis");
     render(<BottomNav />);
 
     const assetsLink = screen.getByText("자산").closest("a");
@@ -84,7 +84,7 @@ describe("BottomNav", () => {
   });
 
   it("/assets/stock/analysis 하위 경로에서도 자산 탭이 활성 상태이다", () => {
-    vi.mocked(usePathname).mockReturnValue("/assets/stock/analysis");
+    vi.mocked(usePathname).mockReturnValue("/assets/stock/analysis/by-risk");
     render(<BottomNav />);
 
     const assetsLink = screen.getByText("자산").closest("a");
