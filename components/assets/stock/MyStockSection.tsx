@@ -1,158 +1,148 @@
 "use client";
 
-import { ChevronRight, TrendingDown, Trophy } from "lucide-react";
+import { BarChart3 } from "lucide-react";
 import Link from "next/link";
 import { useMemo } from "react";
+import {
+  AmountText,
+  EntryRow,
+  GroupedList,
+  MetricBlock,
+  MetricStrip,
+  ScreenSection,
+  SectionHeader,
+} from "@/components/layout/screen";
 import { useStockAnalysis } from "@/hooks/use-stock-analysis";
-import { cn } from "@/lib/utils/cn";
-import { formatCurrency } from "@/lib/utils/format";
-import type { StockHoldingWithReturn } from "@/types";
-
-interface PerformerCardProps {
-  title: string;
-  icon: React.ReactNode;
-  items: StockHoldingWithReturn[];
-  type: "gainer" | "loser";
-}
-
-function PerformerCard({ title, icon, items, type }: PerformerCardProps) {
-  const isGainer = type === "gainer";
-  const colorClass = isGainer ? "text-[#F04452]" : "text-[#3182F6]";
-
-  return (
-    <div className="bg-white rounded-2xl p-5 shadow-sm">
-      <div className="flex items-center gap-2 mb-4">
-        {icon}
-        <h3 className="text-sm font-medium text-gray-900">{title}</h3>
-      </div>
-      {items.length === 0 ? (
-        <p className="text-sm text-gray-500 text-center py-4">
-          {isGainer ? "수익 종목이 없어요" : "손실 종목이 없어요"}
-        </p>
-      ) : (
-        <div className="space-y-3">
-          {items.map((item, index) => (
-            <div
-              key={item.ticker}
-              className="flex items-center justify-between"
-            >
-              <div className="flex items-center gap-3">
-                <span className="size-6 rounded-full bg-gray-100 flex items-center justify-center text-xs font-medium text-gray-600 flex-none">
-                  {index + 1}
-                </span>
-                <div>
-                  <p className="text-sm font-medium text-gray-900 line-clamp-1">
-                    {item.name}
-                  </p>
-                  <p className="text-xs text-gray-500">{item.ticker}</p>
-                </div>
-              </div>
-              <div className="text-right">
-                <p className={cn("text-sm font-medium", colorClass)}>
-                  {isGainer ? "+" : ""}
-                  {item.returnRate.toFixed(2)}%
-                </p>
-                <p className="text-xs text-gray-500">
-                  {isGainer ? "+" : ""}
-                  {formatCurrency(item.returnAmount, "KRW")}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
+import { formatPercent } from "@/lib/utils/format";
 
 export function MyStockSection() {
   const { data, isLoading } = useStockAnalysis();
 
-  const { gainers, losers } = useMemo(() => {
-    if (!data || data.holdings.length === 0) {
-      return { gainers: [], losers: [] };
-    }
-
-    const sorted = [...data.holdings].sort(
-      (a, b) => b.returnRate - a.returnRate,
-    );
-
-    const gainers = sorted.filter((h) => h.returnRate > 0).slice(0, 3);
-    const losers = sorted
-      .filter((h) => h.returnRate < 0)
-      .reverse()
-      .slice(0, 3);
-
-    return { gainers, losers };
+  const holdings = useMemo(() => {
+    if (!data?.holdings) return [];
+    return [...data.holdings]
+      .sort((a, b) => b.currentValue - a.currentValue)
+      .slice(0, 4);
   }, [data]);
 
   if (isLoading) {
     return (
-      <section>
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">내 종목</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {[1, 2].map((i) => (
-            <div key={i} className="bg-white rounded-2xl p-5 shadow-sm">
-              <div className="animate-pulse">
-                <div className="h-4 w-24 bg-gray-200 rounded mb-4" />
-                <div className="space-y-3">
-                  {[1, 2, 3].map((j) => (
-                    <div key={j} className="h-10 bg-gray-200 rounded" />
-                  ))}
-                </div>
+      <ScreenSection>
+        <SectionHeader title="투자 현황" />
+        <div className="animate-pulse space-y-3">
+          <MetricStrip columns={{ base: 2, lg: 4 }}>
+            {[1, 2, 3, 4].map((item) => (
+              <div key={item} className="space-y-2">
+                <div className="h-3 w-16 rounded bg-gray-200" />
+                <div className="h-6 w-28 rounded bg-gray-200" />
               </div>
-            </div>
-          ))}
+            ))}
+          </MetricStrip>
+          <div className="overflow-hidden rounded-xl bg-white ring-1 ring-gray-100">
+            {[1, 2, 3].map((item) => (
+              <div key={item} className="border-gray-100 border-b px-4 py-3.5">
+                <div className="h-4 w-32 rounded bg-gray-200" />
+                <div className="mt-2 h-3 w-20 rounded bg-gray-100" />
+              </div>
+            ))}
+          </div>
         </div>
-      </section>
+      </ScreenSection>
     );
   }
 
   if (!data || data.holdings.length === 0) {
     return (
-      <section>
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">내 종목</h2>
-        <div className="bg-white rounded-2xl p-6 shadow-sm text-center">
+      <ScreenSection>
+        <SectionHeader title="투자 현황" />
+        <div className="rounded-xl bg-white p-6 text-center ring-1 ring-gray-100">
           <p className="text-gray-500">아직 보유 종목이 없어요</p>
           <Link
             href="/assets/stock/transactions/new/full"
-            className="inline-block mt-3 text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+            className="mt-3 inline-block font-medium text-indigo-600 text-sm hover:text-indigo-700"
           >
-            첫 거래 기록하기 →
+            첫 거래 기록하기
           </Link>
         </div>
-      </section>
+      </ScreenSection>
     );
   }
 
+  const { summary } = data;
+  const returnTone = summary.totalReturn >= 0 ? "increase" : "decrease";
+  const returnSign = summary.totalReturn > 0 ? "+" : "";
+
   return (
-    <section>
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">내 종목</h2>
-      <div className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <PerformerCard
-            title="수익 TOP 3"
-            icon={<Trophy className="size-4 text-[#FF9F00]" />}
-            items={gainers}
-            type="gainer"
-          />
-          <PerformerCard
-            title="손실 TOP 3"
-            icon={<TrendingDown className="size-4 text-[#3182F6]" />}
-            items={losers}
-            type="loser"
-          />
-        </div>
-        <div className="flex justify-end">
+    <ScreenSection>
+      <SectionHeader
+        title="투자 현황"
+        description={`${summary.holdingCount}종목 기준`}
+        action={
           <Link
-            href="/assets/stock/analysis"
-            className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+            href="/assets/stock/analysis/overview"
+            className="font-medium text-gray-500 text-sm hover:text-gray-700"
           >
-            상세 분석
-            <ChevronRight className="size-4" />
+            종합 분석
           </Link>
-        </div>
-      </div>
-    </section>
+        }
+      />
+
+      <MetricStrip columns={{ base: 2, lg: 4 }}>
+        <MetricBlock
+          label="평가금액"
+          value={<AmountText amount={summary.totalValue} align="left" />}
+          emphasis
+        />
+        <MetricBlock
+          label="투자원금"
+          value={<AmountText amount={summary.totalInvested} align="left" />}
+        />
+        <MetricBlock
+          label="평가손익"
+          value={
+            <AmountText
+              amount={summary.totalReturn}
+              align="left"
+              sign={returnSign}
+              tone={returnTone}
+            />
+          }
+        />
+        <MetricBlock
+          label="수익률"
+          value={
+            <AmountText
+              align="left"
+              tone={summary.returnRate >= 0 ? "increase" : "decrease"}
+              value={formatPercent(summary.returnRate)}
+            />
+          }
+        />
+      </MetricStrip>
+
+      <GroupedList>
+        {holdings.map((item) => (
+          <EntryRow
+            key={`${item.ticker}-${item.account.id ?? "none"}`}
+            icon={BarChart3}
+            title={item.name}
+            description={`${item.ticker} · ${item.quantity.toLocaleString()}주`}
+            href="/assets/stock/holdings"
+            trailing={
+              <div className="space-y-0.5">
+                <AmountText amount={item.currentValue} compact />
+                <AmountText
+                  amount={item.returnAmount}
+                  className="text-xs"
+                  compact
+                  sign={item.returnAmount > 0 ? "+" : ""}
+                  tone={item.returnAmount >= 0 ? "increase" : "decrease"}
+                />
+              </div>
+            }
+          />
+        ))}
+      </GroupedList>
+    </ScreenSection>
   );
 }

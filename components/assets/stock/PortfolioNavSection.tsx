@@ -3,73 +3,87 @@
 import {
   BarChart3,
   CalendarDays,
+  ChartCandlestick,
   ChartPie,
   Receipt,
   Settings,
   Wallet,
 } from "lucide-react";
-import { PortfolioNavCard } from "./PortfolioNavCard";
+import {
+  EntryRow,
+  GroupedList,
+  ScreenSection,
+  SectionHeader,
+} from "@/components/layout/screen";
 
-const navItems = [
+const workflowItems = [
   {
     icon: BarChart3,
-    label: "보유 현황",
-    description: "어떤 주식을 갖고 있는지 확인해 보세요",
+    title: "보유 현황",
+    description: "종목별 보유 수량과 투자금 확인",
     href: "/assets/stock/holdings",
-    color: "text-blue-600",
-    bgColor: "bg-blue-50",
   },
   {
     icon: Receipt,
-    label: "거래 내역",
-    description: "지금까지의 매수·매도 기록을 확인해 보세요",
+    title: "거래 내역",
+    description: "매수와 매도 기록 확인",
     href: "/assets/stock/transactions",
-    color: "text-green-600",
-    bgColor: "bg-green-50",
   },
   {
     icon: CalendarDays,
-    label: "일별 기록",
-    description: "날짜별 매수·매도 기록을 확인해 보세요",
+    title: "일별 기록",
+    description: "날짜별 주식 거래 확인",
     href: "/assets/stock/records",
-    color: "text-orange-600",
-    bgColor: "bg-orange-50",
   },
   {
     icon: ChartPie,
-    label: "주식 분석",
-    description: "종합, 소유자별, 위험도별로 분석해 보세요",
+    title: "주식 분석",
+    description: "종합, 소유자별, 위험도별 분석",
     href: "/assets/stock/analysis",
-    color: "text-purple-600",
-    bgColor: "bg-purple-50",
   },
+];
+
+const adminItems = [
   {
     icon: Wallet,
-    label: "계좌 관리",
-    description: "증권 계좌를 등록하고 관리해 보세요",
+    title: "계좌 관리",
+    description: "증권 계좌 등록과 관리",
     href: "/assets/stock/accounts",
-    color: "text-indigo-600",
-    bgColor: "bg-indigo-50",
   },
   {
     icon: Settings,
-    label: "종목 설정",
-    description: "종목을 내 방식대로 관리해 보세요",
+    title: "종목 설정",
+    description: "종목별 소유자, 계좌, 위험도 관리",
     href: "/assets/stock/settings",
-    color: "text-gray-600",
-    bgColor: "bg-gray-100",
+  },
+  {
+    icon: ChartCandlestick,
+    title: "시장 동향",
+    description: "국내와 해외 시장 흐름 보기",
+    href: "/assets/stock/market",
   },
 ];
 
 export function PortfolioNavSection() {
   return (
-    <section>
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">관리</h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {navItems.map((item) => (
-          <PortfolioNavCard key={item.href} {...item} />
-        ))}
-      </div>
-    </section>
+    <>
+      <ScreenSection>
+        <SectionHeader title="주식" />
+        <GroupedList>
+          {workflowItems.map((item) => (
+            <EntryRow key={item.href} {...item} />
+          ))}
+        </GroupedList>
+      </ScreenSection>
+
+      <ScreenSection>
+        <SectionHeader title="관리와 참고" />
+        <GroupedList>
+          {adminItems.map((item) => (
+            <EntryRow key={item.href} {...item} />
+          ))}
+        </GroupedList>
+      </ScreenSection>
+    </>
   );
 }

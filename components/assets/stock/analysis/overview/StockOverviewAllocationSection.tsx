@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Check, ChevronsUpDown, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Cell, Pie, PieChart } from "recharts";
+import { ScreenSection, SectionHeader } from "@/components/layout/screen";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -127,19 +128,25 @@ export function StockOverviewAllocationSection() {
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-2xl p-5 shadow-sm min-h-[400px]">
-        <div className="animate-pulse space-y-6">
-          <div className="h-4 w-24 bg-gray-200 rounded" />
-          <div className="flex flex-col md:flex-row gap-6">
-            <div className="size-48 bg-gray-200 rounded-full shrink-0" />
-            <div className="flex-1 space-y-3">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <div key={i} className="h-10 bg-gray-200 rounded-lg" />
-              ))}
+      <ScreenSection>
+        <SectionHeader
+          title="종목별 비중"
+          description="선택한 종목 외에는 기타로 자동 그룹화됩니다."
+        />
+        <div className="min-h-[400px] rounded-xl bg-white p-5 ring-1 ring-gray-100">
+          <div className="animate-pulse space-y-6">
+            <div className="h-4 w-24 rounded bg-gray-200" />
+            <div className="flex flex-col gap-6 md:flex-row">
+              <div className="size-48 shrink-0 rounded-full bg-gray-200" />
+              <div className="flex-1 space-y-3">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} className="h-10 rounded-lg bg-gray-200" />
+                ))}
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </ScreenSection>
     );
   }
 
@@ -154,100 +161,97 @@ export function StockOverviewAllocationSection() {
   };
 
   return (
-    <div className="bg-white rounded-2xl p-5 shadow-sm transition-all duration-300">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <div>
-          <h3 className="text-sm font-medium text-gray-900">종목별 비중</h3>
-          <p className="text-[11px] text-gray-400 mt-0.5">
-            선택한 종목 외에는 기타로 자동 그룹화됩니다.
-          </p>
-        </div>
-
-        <Popover open={open} onOpenChange={setOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              role="combobox"
-              aria-expanded={open}
-              className="w-full sm:w-[240px] justify-between text-xs h-9 rounded-xl border-gray-100 hover:bg-gray-50 bg-gray-50/30 font-medium"
+    <ScreenSection>
+      <SectionHeader
+        title="종목별 비중"
+        description="선택한 종목 외에는 기타로 자동 그룹화됩니다."
+        action={
+          <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={open}
+                className="h-9 w-full justify-between rounded-xl border-gray-100 bg-gray-50/30 font-medium text-xs hover:bg-gray-50 sm:w-[240px]"
+              >
+                <div className="flex items-center gap-2 overflow-hidden">
+                  <Search className="size-3.5 shrink-0 text-gray-400" />
+                  <span className="truncate">
+                    {selectedTickers.length === data.byTicker.length
+                      ? "모든 종목 선택됨"
+                      : `${selectedTickers.length}개 종목 선택됨`}
+                  </span>
+                </div>
+                <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent
+              className="w-[300px] overflow-hidden rounded-2xl border-none p-0 shadow-2xl"
+              align="end"
             >
-              <div className="flex items-center gap-2 overflow-hidden">
-                <Search className="size-3.5 shrink-0 text-gray-400" />
-                <span className="truncate">
-                  {selectedTickers.length === data.byTicker.length
-                    ? "모든 종목 선택됨"
-                    : `${selectedTickers.length}개 종목 선택됨`}
-                </span>
-              </div>
-              <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent
-            className="w-[300px] p-0 rounded-2xl overflow-hidden shadow-2xl border-none"
-            align="end"
-          >
-            <Command className="border-none">
-              <CommandInput
-                placeholder="종목명 또는 티커 검색..."
-                className="h-11 text-sm border-none focus:ring-0"
-              />
-              <CommandList className="max-h-[300px] custom-scrollbar">
-                <CommandEmpty className="py-6 text-sm text-gray-400 text-center">
-                  검색 결과가 없습니다.
-                </CommandEmpty>
-                <CommandGroup>
-                  {data.byTicker.map((item) => (
-                    <CommandItem
-                      key={item.ticker}
-                      value={`${item.ticker} ${item.name}`}
-                      onSelect={() => toggleTicker(item.ticker)}
-                      className="cursor-pointer py-2.5 px-3 aria-selected:bg-indigo-50/50"
-                    >
-                      <div className="flex items-center justify-between w-full">
-                        <div className="flex items-center gap-3">
-                          <div
-                            className={cn(
-                              "flex size-4 items-center justify-center rounded-md border transition-all",
-                              selectedTickers.includes(item.ticker)
-                                ? "bg-indigo-600 border-indigo-600 shadow-sm"
-                                : "border-gray-200",
-                            )}
-                          >
-                            <Check
+              <Command className="border-none">
+                <CommandInput
+                  placeholder="종목명 또는 티커 검색..."
+                  className="h-11 border-none text-sm focus:ring-0"
+                />
+                <CommandList className="max-h-[300px] custom-scrollbar">
+                  <CommandEmpty className="py-6 text-center text-gray-400 text-sm">
+                    검색 결과가 없습니다.
+                  </CommandEmpty>
+                  <CommandGroup>
+                    {data.byTicker.map((item) => (
+                      <CommandItem
+                        key={item.ticker}
+                        value={`${item.ticker} ${item.name}`}
+                        onSelect={() => toggleTicker(item.ticker)}
+                        className="cursor-pointer px-3 py-2.5 aria-selected:bg-indigo-50/50"
+                      >
+                        <div className="flex w-full items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div
                               className={cn(
-                                "size-3 text-white transition-opacity",
+                                "flex size-4 items-center justify-center rounded-md border transition-all",
                                 selectedTickers.includes(item.ticker)
-                                  ? "opacity-100"
-                                  : "opacity-0",
+                                  ? "border-indigo-600 bg-indigo-600 shadow-sm"
+                                  : "border-gray-200",
                               )}
-                            />
+                            >
+                              <Check
+                                className={cn(
+                                  "size-3 text-white transition-opacity",
+                                  selectedTickers.includes(item.ticker)
+                                    ? "opacity-100"
+                                    : "opacity-0",
+                                )}
+                              />
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="font-medium text-gray-900 text-sm">
+                                {item.name}
+                              </span>
+                              <span className="font-medium text-[10px] text-gray-400 uppercase">
+                                {item.ticker}
+                              </span>
+                            </div>
                           </div>
-                          <div className="flex flex-col">
-                            <span className="text-sm font-medium text-gray-900">
-                              {item.name}
-                            </span>
-                            <span className="text-[10px] text-gray-400 font-medium uppercase">
-                              {item.ticker}
-                            </span>
-                          </div>
+                          <Badge
+                            variant="secondary"
+                            className="border-none bg-gray-100/50 font-medium text-[10px] text-gray-500"
+                          >
+                            {item.allocationPercent.toFixed(1)}%
+                          </Badge>
                         </div>
-                        <Badge
-                          variant="secondary"
-                          className="bg-gray-100/50 text-[10px] text-gray-500 border-none font-medium"
-                        >
-                          {item.allocationPercent.toFixed(1)}%
-                        </Badge>
-                      </div>
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              </CommandList>
-            </Command>
-          </PopoverContent>
-        </Popover>
-      </div>
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+        }
+      />
 
-      <div className="flex flex-col md:flex-row gap-8">
+      <div className="flex flex-col gap-8 rounded-xl bg-white p-4 ring-1 ring-gray-100 md:flex-row">
         {/* 도넛 차트 */}
         <div className="shrink-0 flex flex-col items-center">
           <div className="relative">
@@ -413,6 +417,6 @@ export function StockOverviewAllocationSection() {
           if (!nextOpen) setDetail(null);
         }}
       />
-    </div>
+    </ScreenSection>
   );
 }
