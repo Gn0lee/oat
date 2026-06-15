@@ -1,6 +1,5 @@
 import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { isMcpEnabled } from "@/lib/mcp/feature-flags";
 import { SettingsMenu } from "./SettingsMenu";
 
 vi.mock("next/link", () => ({

@@ -33,7 +33,15 @@ describe("HomePageClient", () => {
     const { container } = render(<HomePageClient />);
 
     expect(container.querySelectorAll("[data-slot='skeleton']").length).toBe(4);
-    expect(screen.getByText("더 자세히 보기")).toBeInTheDocument();
+    expect(screen.getByText("바로가기")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /가계부/ })).toHaveAttribute(
+      "href",
+      "/ledger",
+    );
+    expect(screen.getByRole("link", { name: /자산/ })).toHaveAttribute(
+      "href",
+      "/assets",
+    );
   });
 
   it("홈 요약 조회에 실패하면 에러 상태와 주요 진입점을 표시한다", () => {
@@ -113,7 +121,14 @@ describe("HomePageClient", () => {
     expect(screen.getByText("₩20,000,000")).toBeInTheDocument();
     expect(screen.getByText("식비")).toBeInTheDocument();
     expect(screen.getByText("₩2,800,000")).toBeInTheDocument();
-    expect(screen.getByText("4종목 · 2,000만")).toBeInTheDocument();
+    expect(screen.getByText("바로가기")).toBeInTheDocument();
+    expect(screen.queryByText("4종목 · 2,000만")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: /지출 분석/ }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: /설정/ }),
+    ).not.toBeInTheDocument();
     expect(screen.queryByText("지금 우리집 자산은")).not.toBeInTheDocument();
     expect(screen.queryByText(/수익률/)).not.toBeInTheDocument();
     expect(screen.queryByText("가족 지출")).not.toBeInTheDocument();
