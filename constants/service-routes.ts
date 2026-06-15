@@ -142,15 +142,6 @@ export function getServiceRouteTree(options?: {
           ],
         },
         {
-          href: "/assets/analysis",
-          label: "전체 자산 분석",
-          children: [
-            { href: "/assets/analysis/by-owner", label: "소유자별 분석" },
-            { href: "/assets/analysis/by-risk", label: "위험도별 분석" },
-            { href: "/assets/analysis/by-asset-type", label: "자산군별 분석" },
-          ],
-        },
-        {
           href: "/assets/stock",
           label: "주식",
           children: [
@@ -200,7 +191,24 @@ export function getServiceRouteTree(options?: {
             },
             { href: "/assets/stock/accounts", label: "증권 계좌" },
             { href: "/assets/stock/settings", label: "종목 설정" },
-            { href: "/assets/stock/analysis", label: "주식 분석" },
+            {
+              href: "/assets/stock/analysis",
+              label: "주식 분석",
+              children: [
+                {
+                  href: "/assets/stock/analysis/overview",
+                  label: "종합 분석",
+                },
+                {
+                  href: "/assets/stock/analysis/by-owner",
+                  label: "소유자별",
+                },
+                {
+                  href: "/assets/stock/analysis/by-risk",
+                  label: "위험도별",
+                },
+              ],
+            },
           ],
         },
       ],

@@ -96,12 +96,6 @@ export function getPageTransitionRules(
         },
         {
           kind: "drill",
-          enter: "/assets/analysis/*",
-          exit: "/assets/analysis",
-          type: "parallax",
-        },
-        {
-          kind: "drill",
           enter: "/assets/stock/*",
           exit: "/assets/stock",
           type: "parallax",
@@ -110,6 +104,12 @@ export function getPageTransitionRules(
           kind: "drill",
           enter: "/assets/stock/transactions/*",
           exit: "/assets/stock/transactions",
+          type: "parallax",
+        },
+        {
+          kind: "drill",
+          enter: "/assets/stock/analysis/*",
+          exit: "/assets/stock/analysis",
           type: "parallax",
         },
         {

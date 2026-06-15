@@ -126,6 +126,63 @@ describe("getServiceRouteMeta", () => {
     });
   });
 
+  it("주식 분석 hub와 하위 분석 route를 계산한다", () => {
+    expect(
+      getServiceRouteMeta("/assets/stock/analysis", { mcpEnabled: true }),
+    ).toMatchObject({
+      label: "주식 분석",
+      mobileVariant: "child",
+      parentHref: "/assets/stock",
+      breadcrumb: [
+        { href: "/assets", label: "자산" },
+        { href: "/assets/stock", label: "주식" },
+        { href: "/assets/stock/analysis", label: "주식 분석" },
+      ],
+    });
+
+    expect(
+      getServiceRouteMeta("/assets/stock/analysis/overview", {
+        mcpEnabled: true,
+      }),
+    ).toMatchObject({
+      label: "종합 분석",
+      parentHref: "/assets/stock/analysis",
+      breadcrumb: [
+        { href: "/assets", label: "자산" },
+        { href: "/assets/stock", label: "주식" },
+        { href: "/assets/stock/analysis", label: "주식 분석" },
+        { href: "/assets/stock/analysis/overview", label: "종합 분석" },
+      ],
+    });
+
+    expect(
+      getServiceRouteMeta("/assets/stock/analysis/by-owner", {
+        mcpEnabled: true,
+      }),
+    ).toMatchObject({
+      label: "소유자별",
+      parentHref: "/assets/stock/analysis",
+    });
+
+    expect(
+      getServiceRouteMeta("/assets/stock/analysis/by-risk", {
+        mcpEnabled: true,
+      }),
+    ).toMatchObject({
+      label: "위험도별",
+      parentHref: "/assets/stock/analysis",
+    });
+  });
+
+  it("일몰된 전체 자산 분석 route는 metadata를 제공하지 않는다", () => {
+    expect(
+      getServiceRouteMeta("/assets/analysis", { mcpEnabled: true }),
+    ).toBeNull();
+    expect(
+      getServiceRouteMeta("/assets/analysis/by-owner", { mcpEnabled: true }),
+    ).toBeNull();
+  });
+
   it("query string과 trailing slash를 무시한다", () => {
     expect(
       getServiceRouteMeta("/ledger/payment-methods/new?returnUrl=/ledger", {
