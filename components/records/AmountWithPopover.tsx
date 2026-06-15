@@ -16,6 +16,11 @@ interface AmountWithPopoverProps {
   compactThreshold?: number;
 }
 
+/**
+ * @deprecated Use `AmountText` from `@/components/layout/screen` for base
+ * amount typography. Wrap it with a popover only when a screen explicitly
+ * needs full-amount disclosure.
+ */
 export function AmountWithPopover({
   amount,
   currency = "KRW",
