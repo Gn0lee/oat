@@ -2,78 +2,76 @@
 
 import { TrendingDown, Trophy } from "lucide-react";
 import { useMemo, useState } from "react";
+import {
+  AmountText,
+  EntryRow,
+  GroupedList,
+  ScreenSection,
+  SectionHeader,
+} from "@/components/layout/screen";
 import { useStockAnalysis } from "@/hooks/use-stock-analysis";
-import { cn } from "@/lib/utils/cn";
-import { formatCurrency, formatPercent } from "@/lib/utils/format";
+import { formatPercent } from "@/lib/utils/format";
 import type { AggregatedStockHolding, StockHoldingWithReturn } from "@/types";
 import {
   type StockOverviewDetail,
   StockOverviewDetailDrawer,
 } from "./StockOverviewDetailDrawer";
 
-interface PerformerCardProps {
+type PerformerItem = StockHoldingWithReturn | AggregatedStockHolding;
+
+interface PerformerListProps {
   title: string;
-  icon: React.ReactNode;
-  items: (StockHoldingWithReturn | AggregatedStockHolding)[];
+  items: PerformerItem[];
   type: "gainer" | "loser";
-  onSelect: (item: StockHoldingWithReturn | AggregatedStockHolding) => void;
+  onSelect: (item: PerformerItem) => void;
 }
 
-function PerformerCard({
-  title,
-  icon,
-  items,
-  type,
-  onSelect,
-}: PerformerCardProps) {
+function PerformerList({ title, items, type, onSelect }: PerformerListProps) {
   const isGainer = type === "gainer";
-  const colorClass = isGainer ? "text-[#F04452]" : "text-[#3182F6]";
+  const Icon = isGainer ? Trophy : TrendingDown;
 
   return (
-    <div className="bg-white rounded-2xl p-5 shadow-sm">
-      <div className="flex items-center gap-2 mb-4">
-        {icon}
-        <h3 className="text-sm font-medium text-gray-900">{title}</h3>
+    <div className="space-y-2">
+      <div className="flex items-center gap-2 px-1">
+        <Icon
+          className={
+            isGainer ? "size-4 text-[#FF9F00]" : "size-4 text-[#3182F6]"
+          }
+        />
+        <h3 className="font-medium text-gray-900 text-sm">{title}</h3>
       </div>
-      {items.length === 0 ? (
-        <p className="text-sm text-gray-500 text-center py-4">
-          {isGainer ? "수익 종목이 없어요" : "손실 종목이 없어요"}
-        </p>
-      ) : (
-        <div className="space-y-3">
-          {items.map((item, index) => (
-            <button
-              type="button"
+      <GroupedList>
+        {items.length === 0 ? (
+          <div className="px-4 py-6 text-center text-gray-500 text-sm">
+            {isGainer ? "수익 종목이 없어요" : "손실 종목이 없어요"}
+          </div>
+        ) : (
+          items.map((item, index) => (
+            <EntryRow
               key={item.ticker}
+              title={item.name}
+              description={`${index + 1}위 · ${item.ticker}`}
               onClick={() => onSelect(item)}
-              className="flex w-full items-center justify-between gap-4 rounded-xl text-left transition-colors hover:bg-gray-50"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <span className="size-6 rounded-full bg-gray-100 flex items-center justify-center text-xs font-medium text-gray-600 shrink-0">
-                  {index + 1}
-                </span>
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">
-                    {item.name}
-                  </p>
-                  <p className="text-xs text-gray-500 truncate">
-                    {item.ticker}
-                  </p>
+              trailing={
+                <div className="space-y-0.5">
+                  <AmountText
+                    className="text-sm"
+                    tone={isGainer ? "increase" : "decrease"}
+                    value={formatPercent(item.returnRate)}
+                  />
+                  <AmountText
+                    amount={item.returnAmount}
+                    className="text-xs"
+                    compact
+                    sign={item.returnAmount > 0 ? "+" : ""}
+                    tone={isGainer ? "increase" : "decrease"}
+                  />
                 </div>
-              </div>
-              <div className="text-right shrink-0">
-                <p className={cn("text-sm font-medium", colorClass)}>
-                  {formatPercent(item.returnRate)}
-                </p>
-                <p className="text-xs text-gray-500">
-                  {item.returnAmount >= 0 ? "+" : ""}
-                  {formatCurrency(item.returnAmount, "KRW")}
-                </p>
-              </div>
-            </button>
-          ))}
-        </div>
-      )}
+              }
+            />
+          ))
+        )}
+      </GroupedList>
     </div>
   );
 }
@@ -87,15 +85,11 @@ export function StockOverviewTopPerformersSection() {
       return { gainers: [], losers: [] };
     }
 
-    // 수익률 기준 정렬
     const sorted = [...data.byTicker].sort(
       (a, b) => b.returnRate - a.returnRate,
     );
 
-    // 수익 TOP 5 (returnRate > 0인 것만)
     const gainers = sorted.filter((h) => h.returnRate > 0).slice(0, 5);
-
-    // 손실 TOP 5 (returnRate < 0인 것만, 절대값 큰 순)
     const losers = sorted
       .filter((h) => h.returnRate < 0)
       .reverse()
@@ -106,20 +100,21 @@ export function StockOverviewTopPerformersSection() {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {[1, 2].map((i) => (
-          <div key={i} className="bg-white rounded-2xl p-5 shadow-sm">
-            <div className="animate-pulse">
-              <div className="h-4 w-24 bg-gray-200 rounded mb-4" />
-              <div className="space-y-3">
-                {[1, 2, 3, 4, 5].map((j) => (
-                  <div key={j} className="h-10 bg-gray-200 rounded" />
-                ))}
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+      <ScreenSection>
+        <SectionHeader title="상위 성과 종목" />
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          {[1, 2].map((item) => (
+            <GroupedList key={item}>
+              {[1, 2, 3, 4, 5].map((row) => (
+                <div key={row} className="px-4 py-3.5">
+                  <div className="h-4 w-32 rounded bg-gray-200" />
+                  <div className="mt-2 h-3 w-20 rounded bg-gray-100" />
+                </div>
+              ))}
+            </GroupedList>
+          ))}
+        </div>
+      </ScreenSection>
     );
   }
 
@@ -128,33 +123,34 @@ export function StockOverviewTopPerformersSection() {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <PerformerCard
-        title="수익 TOP 5"
-        icon={<Trophy className="size-4 text-[#FF9F00]" />}
-        items={gainers}
-        type="gainer"
-        onSelect={(item) =>
-          setDetail({
-            kind: "ticker",
-            ticker: item.ticker,
-            title: `${item.name} 보유 항목`,
-          })
-        }
-      />
-      <PerformerCard
-        title="손실 TOP 5"
-        icon={<TrendingDown className="size-4 text-[#3182F6]" />}
-        items={losers}
-        type="loser"
-        onSelect={(item) =>
-          setDetail({
-            kind: "ticker",
-            ticker: item.ticker,
-            title: `${item.name} 보유 항목`,
-          })
-        }
-      />
+    <ScreenSection>
+      <SectionHeader title="상위 성과 종목" />
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <PerformerList
+          title="수익 TOP 5"
+          items={gainers}
+          type="gainer"
+          onSelect={(item) =>
+            setDetail({
+              kind: "ticker",
+              ticker: item.ticker,
+              title: `${item.name} 보유 항목`,
+            })
+          }
+        />
+        <PerformerList
+          title="손실 TOP 5"
+          items={losers}
+          type="loser"
+          onSelect={(item) =>
+            setDetail({
+              kind: "ticker",
+              ticker: item.ticker,
+              title: `${item.name} 보유 항목`,
+            })
+          }
+        />
+      </div>
       <StockOverviewDetailDrawer
         open={!!detail}
         detail={detail}
@@ -162,6 +158,6 @@ export function StockOverviewTopPerformersSection() {
           if (!nextOpen) setDetail(null);
         }}
       />
-    </div>
+    </ScreenSection>
   );
 }
