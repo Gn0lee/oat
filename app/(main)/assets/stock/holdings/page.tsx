@@ -1,7 +1,7 @@
 import { Plus } from "lucide-react";
 import Link from "next/link";
 import { HoldingsList } from "@/components/holdings/HoldingsList";
-import { PageActions } from "@/components/layout";
+import { PageActions, PageContainer } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { getAccounts } from "@/lib/api/account";
 import { getHouseholdWithMembers } from "@/lib/api/household";
@@ -18,9 +18,11 @@ export default async function HoldingsPage() {
 
   if (!householdId) {
     return (
-      <p className="text-center text-gray-500 py-12">
-        가구 정보를 찾을 수 없습니다.
-      </p>
+      <PageContainer maxWidth="default">
+        <p className="text-center text-gray-500 py-12">
+          가구 정보를 찾을 수 없습니다.
+        </p>
+      </PageContainer>
     );
   }
 
@@ -34,7 +36,7 @@ export default async function HoldingsPage() {
   const accounts = accountsData.map((a) => ({ id: a.id, name: a.name }));
 
   return (
-    <>
+    <PageContainer maxWidth="default">
       <PageActions>
         <Button asChild size="sm">
           <Link href="/assets/stock/transactions/new/full">
@@ -46,6 +48,6 @@ export default async function HoldingsPage() {
 
       {/* 보유 현황 목록 */}
       <HoldingsList members={members} accounts={accounts} />
-    </>
+    </PageContainer>
   );
 }

@@ -1,6 +1,6 @@
 import { Plus } from "lucide-react";
 import Link from "next/link";
-import { PageActions } from "@/components/layout";
+import { PageActions, PageContainer } from "@/components/layout";
 import { TransactionList } from "@/components/transactions/TransactionList";
 import { Button } from "@/components/ui/button";
 import { getHouseholdWithMembers } from "@/lib/api/household";
@@ -17,9 +17,11 @@ export default async function TransactionsPage() {
 
   if (!householdId) {
     return (
-      <p className="text-center text-gray-500 py-12">
-        가구 정보를 찾을 수 없습니다.
-      </p>
+      <PageContainer maxWidth="default">
+        <p className="text-center text-gray-500 py-12">
+          가구 정보를 찾을 수 없습니다.
+        </p>
+      </PageContainer>
     );
   }
 
@@ -29,7 +31,7 @@ export default async function TransactionsPage() {
     household?.members.map((m) => ({ id: m.userId, name: m.name })) ?? [];
 
   return (
-    <>
+    <PageContainer maxWidth="default">
       <PageActions>
         <Button asChild size="sm">
           <Link href="/assets/stock/transactions/new/full">
@@ -41,6 +43,6 @@ export default async function TransactionsPage() {
 
       {/* 거래 내역 목록 */}
       <TransactionList members={members} currentUserId={user.id} />
-    </>
+    </PageContainer>
   );
 }

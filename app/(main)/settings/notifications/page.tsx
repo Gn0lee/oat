@@ -6,7 +6,7 @@ export default async function NotificationSettingsPage() {
   await requireUser();
 
   return (
-    <PageContainer>
+    <PageContainer maxWidth="medium">
       <NotificationSettingsClient />
     </PageContainer>
   );

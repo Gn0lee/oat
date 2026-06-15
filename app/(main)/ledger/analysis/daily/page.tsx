@@ -1,3 +1,4 @@
+import { PageContainer } from "@/components/layout";
 import { DailyClient } from "@/components/ledger/analysis/DailyClient";
 import type { StatsScope } from "@/lib/api/ledger-stats";
 
@@ -8,5 +9,9 @@ export default async function DailyPage({
 }) {
   const { scope: rawScope } = await searchParams;
   const scope = (rawScope === "personal" ? "personal" : "shared") as StatsScope;
-  return <DailyClient scope={scope} />;
+  return (
+    <PageContainer maxWidth="default">
+      <DailyClient scope={scope} />
+    </PageContainer>
+  );
 }

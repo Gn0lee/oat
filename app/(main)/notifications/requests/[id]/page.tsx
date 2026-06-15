@@ -1,3 +1,4 @@
+import { PageContainer } from "@/components/layout";
 import { RecordChangeRequestDetailClient } from "@/components/notifications/RecordChangeRequestDetailClient";
 
 interface RecordChangeRequestDetailPageProps {
@@ -9,5 +10,9 @@ export default async function RecordChangeRequestDetailPage({
 }: RecordChangeRequestDetailPageProps) {
   const { id } = await params;
 
-  return <RecordChangeRequestDetailClient requestId={id} />;
+  return (
+    <PageContainer maxWidth="medium">
+      <RecordChangeRequestDetailClient requestId={id} />
+    </PageContainer>
+  );
 }

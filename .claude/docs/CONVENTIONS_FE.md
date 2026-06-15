@@ -324,45 +324,50 @@ ServiceHeader는 pathname으로 다음 정보를 계산합니다.
 
 ### PageContainer
 
-페이지 컨테이너 너비를 표준화합니다. 좁은 폼이나 설정 페이지에 사용합니다.
+페이지 콘텐츠의 최대 너비와 일관된 여백을 중앙 관리하는 컴포넌트입니다. `app/(main)/layout.tsx`는 레이아웃 패딩과 사이드바, 헤더 영역만 소유하며, 실제 콘텐츠의 최대 너비(max-width)는 개별 페이지 내의 `PageContainer`가 결정합니다.
+
+모든 `app/(main)` 페이지는 다음과 같이 `PageContainer`를 적용하거나 래핑하여 명시적인 너비 의도를 드러내야 합니다.
 
 ```tsx
 import { PageContainer } from "@/components/layout";
 
-// 좁은 너비 (설정, 폼 등) - max-w-lg
-<PageContainer maxWidth="narrow">
-  <SettingsMenu />
+// 기본 너비 (default) - max-w-5xl
+// 대시보드 홈, 가계부 메인, 자산 목록, 분석, 2컬럼 레이아웃 등 일반 화면
+<PageContainer maxWidth="default">
+  {children}
 </PageContainer>
 
-// 중간 너비 (가구 관리 등) - max-w-2xl
+// 중간 너비 (medium) - max-w-3xl
+// 설정 subpage, 계좌/결제수단/카테고리 관리 및 상세 화면, 알림 상세 등
 <PageContainer maxWidth="medium">
   <HouseholdSettings />
 </PageContainer>
 
-// 기본 너비 - 레이아웃의 max-w-4xl 사용 (래핑 없음)
-// default는 생략 가능하며, Fragment만 반환
-<PageContainer maxWidth="default">
-  {children}
+// 좁은 너비 (narrow) - max-w-xl
+// 수입/지출/거래 추가 등 작업(Task) 및 입력 폼 화면
+<PageContainer maxWidth="narrow">
+  <SettingsMenu />
 </PageContainer>
 ```
 
 | Props | 타입 | 기본값 | 설명 |
 |-------|------|--------|------|
-| maxWidth | "default" \| "narrow" \| "medium" | "default" | 컨테이너 너비 |
+| maxWidth | "default" \| "narrow" \| "medium" | "default" | 컨테이너 너비 (`default` = `max-w-5xl`, `medium` = `max-w-3xl`, `narrow` = `max-w-xl`) |
+
+#### PC 2-column 레이아웃 정책
+- 좌/우 2개의 명확한 콘텐츠 흐름이 존재하는 화면(예: 달력/요약 + 선택 날짜 목록 등)에만 2-column 그리드 레이아웃을 사용하며, 너비는 `default`를 적용합니다.
+- 단순히 넓은 화면을 채우기 위해 인위적으로 2컬럼 레이아웃을 구성해서는 안 됩니다. 단일 콘텐츠 흐름을 갖는 상세/관리 화면은 `medium`, 작업 폼은 `narrow`를 사용하여 중앙 정렬로 시각적 밀도를 유지합니다.
 
 ### 페이지별 적용 가이드
 
-| 페이지 | ServiceHeader | PageContainer |
-|--------|---------------|---------------|
-| `/home` | topLevel | default |
-| `/ledger` | topLevel | default |
-| `/assets` | topLevel | default |
-| `/settings` | topLevel | narrow |
-| `/household` | child, parent `/settings` | medium |
-| `/assets/stock/holdings` | child, breadcrumb `자산 > 주식 > 보유 종목` | default |
-| `/assets/stock/transactions` | child, breadcrumb `자산 > 주식 > 거래 내역` | default |
-| `/assets/stock/transactions/new/full` | task, close `/assets/stock/transactions` | narrow |
-| `/assets/stock/settings` | child, breadcrumb `자산 > 주식 > 종목 설정` | default |
+| 페이지 구분 | 대상 예시 경로 | ServiceHeader | PageContainer |
+|-------------|----------------|---------------|---------------|
+| **Top-level / Hub** | `/home`, `/ledger`, `/assets`, `/assets/stock` | topLevel | default (`max-w-5xl`) |
+| **Analysis** | `/ledger/analysis/**`, `/assets/stock/analysis/**` | child | default (`max-w-5xl`) |
+| **Records Calendar** | `/ledger/records`, `/assets/stock/records` | child | default (`max-w-5xl`) |
+| **Management / Settings** | `/settings`, `/settings/household`, `/settings/notifications`, `/settings/mcp`, `/ledger/categories`, `/ledger/payment-methods`, `/assets/accounts`, `/assets/stock/settings` | topLevel / child | medium (`max-w-3xl`) |
+| **Simple Detail** | `/ledger/records/[entryId]`, `/assets/stock/transactions/[transactionId]`, `/assets/accounts/[accountId]`, `/ledger/payment-methods/[paymentMethodId]` | child | medium (`max-w-3xl`) |
+| **Task / Form** | `/ledger/records/new/*`, `/assets/stock/transactions/new/*`, `/assets/accounts/new`, `/ledger/payment-methods/new` | task | narrow (`max-w-xl`) |
 
 ---
 

@@ -1,3 +1,4 @@
+import { PageContainer } from "@/components/layout";
 import { TrendClient } from "@/components/ledger/analysis/TrendClient";
 import type { StatsScope } from "@/lib/api/ledger-stats";
 
@@ -8,5 +9,9 @@ export default async function TrendPage({
 }) {
   const { scope: rawScope } = await searchParams;
   const scope = (rawScope === "personal" ? "personal" : "shared") as StatsScope;
-  return <TrendClient scope={scope} />;
+  return (
+    <PageContainer maxWidth="default">
+      <TrendClient scope={scope} />
+    </PageContainer>
+  );
 }

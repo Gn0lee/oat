@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { Cell, Pie, PieChart } from "recharts";
 import { StockRiskHoldingsList } from "@/components/assets/stock/analysis/by-risk";
+import { PageContainer } from "@/components/layout";
 import {
   type ChartConfig,
   ChartContainer,
@@ -77,7 +78,7 @@ export default function StockRiskAnalysisPage() {
   const isEmpty = !isLoading && (!data || data.totalValue === 0);
 
   return (
-    <>
+    <PageContainer maxWidth="default">
       {/* 로딩 상태 */}
       {isLoading && (
         <div className="space-y-4">
@@ -205,6 +206,6 @@ export default function StockRiskAnalysisPage() {
           <StockRiskHoldingsList data={sortedByRiskLevel} />
         </div>
       )}
-    </>
+    </PageContainer>
   );
 }

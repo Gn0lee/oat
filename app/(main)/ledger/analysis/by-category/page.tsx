@@ -1,3 +1,4 @@
+import { PageContainer } from "@/components/layout";
 import { ByCategoryClient } from "@/components/ledger/analysis/ByCategoryClient";
 import type { StatsScope } from "@/lib/api/ledger-stats";
 
@@ -8,5 +9,9 @@ export default async function ByCategoryPage({
 }) {
   const { scope: rawScope } = await searchParams;
   const scope = (rawScope === "personal" ? "personal" : "shared") as StatsScope;
-  return <ByCategoryClient scope={scope} />;
+  return (
+    <PageContainer maxWidth="default">
+      <ByCategoryClient scope={scope} />
+    </PageContainer>
+  );
 }

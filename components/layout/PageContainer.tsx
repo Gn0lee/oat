@@ -4,20 +4,18 @@ interface PageContainerProps {
 }
 
 const maxWidthClasses = {
-  default: "",
-  narrow: "max-w-lg mx-auto",
-  medium: "max-w-2xl mx-auto",
+  default: "max-w-5xl",
+  narrow: "max-w-xl",
+  medium: "max-w-3xl",
 };
 
 export function PageContainer({
   children,
   maxWidth = "default",
 }: PageContainerProps) {
-  if (maxWidth === "default") {
-    return <>{children}</>;
-  }
-
   return (
-    <div className={`${maxWidthClasses[maxWidth]} space-y-6`}>{children}</div>
+    <div className={`mx-auto w-full space-y-6 ${maxWidthClasses[maxWidth]}`}>
+      {children}
+    </div>
   );
 }

@@ -6,7 +6,7 @@ export default async function NotificationsPage() {
   await requireUser();
 
   return (
-    <PageContainer maxWidth="narrow">
+    <PageContainer maxWidth="medium">
       <NotificationInboxClient />
     </PageContainer>
   );

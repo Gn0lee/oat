@@ -1,3 +1,4 @@
+import { PageContainer } from "@/components/layout";
 import { StockRecordsClient } from "@/components/transactions/records/StockRecordsClient";
 import { getKstToday } from "@/lib/date";
 import { normalizeRecordDate } from "@/lib/stock-records/records";
@@ -16,5 +17,9 @@ export default async function StockRecordsPage({
   const { date } = await searchParams;
   const today = getKstToday();
 
-  return <StockRecordsClient initialDate={normalizeRecordDate(date, today)} />;
+  return (
+    <PageContainer maxWidth="default">
+      <StockRecordsClient initialDate={normalizeRecordDate(date, today)} />
+    </PageContainer>
+  );
 }
