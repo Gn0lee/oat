@@ -1,14 +1,18 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { ChartPie, ReceiptText, Settings, Wallet } from "lucide-react";
+import { ReceiptText, Wallet } from "lucide-react";
 import { useRef, useState } from "react";
+import {
+  EntryRow,
+  GroupedList,
+  ScreenSection,
+  SectionHeader,
+} from "@/components/layout/screen";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useHomeSummary } from "@/hooks/use-home-summary";
 import { getKstNow } from "@/lib/date";
-import { formatCompactNumber, formatCurrency } from "@/lib/utils/format";
 import { CashFlowCard } from "./CashFlowCard";
-import { FeatureCard } from "./FeatureCard";
 import { HomeTopCategories } from "./HomeTopCategories";
 import { TotalAssetCard } from "./TotalAssetCard";
 
@@ -69,21 +73,6 @@ export function HomePageClient() {
   };
 
   const month = data?.month || getKstNow().getMonth() + 1;
-
-  const ledgerHint = sharedFlow
-    ? sharedFlow.totalExpense > 0
-      ? `공용 지출 ${formatCurrency(sharedFlow.totalExpense)}`
-      : "이번 달 기록이 없어요"
-    : "기록을 시작해보세요";
-
-  const assetHint =
-    assets.holdingCount > 0
-      ? `${assets.holdingCount}종목 · ${formatCompactNumber(assets.totalInvested)}`
-      : "자산을 등록해보세요";
-
-  const analysisHint = sharedFlow?.totalExpense
-    ? `공용 저축률 ${sharedFlow.savingsRate.toFixed(0)}%`
-    : "기록 후 분석이 가능해요";
 
   const activeFlow = cashFlowIndex === 0 ? sharedFlow : personalFlow;
   const activeTitle = cashFlowIndex === 0 ? "공용 현금흐름" : "내 현금흐름";
@@ -156,44 +145,23 @@ export function HomePageClient() {
         </div>
       )}
 
-      <div className="mt-6 space-y-2">
-        <p className="text-sm text-gray-400">더 자세히 보기</p>
-      </div>
-
-      <div className="mt-3 grid grid-cols-2 gap-3">
-        <FeatureCard
-          icon={ReceiptText}
-          title="가계부"
-          description="수입과 지출을 기록해요"
-          hint={ledgerHint}
-          href="/ledger"
-          colorScheme="amber"
-        />
-        <FeatureCard
-          icon={Wallet}
-          title="자산"
-          description="투자 현황을 파악해요"
-          hint={assetHint}
-          href="/assets"
-          colorScheme="blue"
-        />
-        <FeatureCard
-          icon={ChartPie}
-          title="지출 분석"
-          description="소비 패턴을 분석해요"
-          hint={analysisHint}
-          href="/ledger/analysis"
-          colorScheme="emerald"
-        />
-        <FeatureCard
-          icon={Settings}
-          title="설정"
-          description="앱 사용 환경을 관리해요"
-          hint="설정 관리"
-          href="/settings"
-          colorScheme="violet"
-        />
-      </div>
+      <ScreenSection className="mt-6">
+        <SectionHeader title="바로가기" />
+        <GroupedList>
+          <EntryRow
+            icon={ReceiptText}
+            title="가계부"
+            description="수입과 지출을 기록해요"
+            href="/ledger"
+          />
+          <EntryRow
+            icon={Wallet}
+            title="자산"
+            description="가족 자산을 확인해요"
+            href="/assets"
+          />
+        </GroupedList>
+      </ScreenSection>
     </>
   );
 }

@@ -30,6 +30,8 @@ components/layout/screen/
 - `components/ui`의 일반 atom이 아니라 oat 앱 화면 문법입니다. 도메인 컴포넌트는 이 primitive를 조합하되, 금융/가구 규칙은 자기 영역에 둡니다.
 - `GroupedList`는 조용한 row surface입니다. `bg-white`, divider, 얕은 ring, 작은 radius는 허용하지만 기본 shadow나 큰 card 스타일은 쓰지 않습니다.
 - `EntryRow`는 typed props를 기본으로 사용합니다. title, description, icon, trailing, disclosure/action을 표준화하고, 도메인별 우측 값은 `trailing` slot으로 넣습니다.
+- Hub 화면의 `EntryRow`는 navigation-first입니다. 같은 화면 상단에 이미 보이는 요약 숫자를 반복하지 말고, description 중심으로 다음 행동을 설명합니다.
+- 비활성 row의 `준비 중` 같은 상태 표시는 요약 데이터가 아니라 affordance이므로 trailing에 둘 수 있습니다.
 - `MetricStrip`은 layout만 담당합니다. 어떤 metric을 보여줄지, 어떤 값을 계산할지는 후속 화면 이슈에서 결정합니다.
 - `ScreenState`는 전체 영역의 empty/error/loading에 사용합니다. 실제 목록의 loading skeleton row는 각 리스트에서 별도로 구성합니다.
 - `AmountText`가 기본 금액 표시 primitive입니다. `AmountWithPopover`는 deprecated이며, 전체 금액 disclosure가 꼭 필요한 legacy 화면에서만 유지합니다.
@@ -51,7 +53,7 @@ components/layout/screen/
 
 ## 후속 이슈 적용 기준
 
-- #385 허브 화면은 기존 카드형 링크를 `ScreenSection` + `GroupedList` + `EntryRow` 중심으로 전환합니다.
+- #385 허브 화면은 기존 카드형 링크를 `ScreenSection` + `GroupedList` + `EntryRow` 중심으로 전환합니다. `/home`은 `가계부`, `자산`만 핵심 진입점으로 두고, `/ledger`, `/assets`, `/settings`는 핵심 행동과 관리 행동을 섹션으로 분리합니다.
 - #386, #389 분석 화면은 metric이 실제 비교 단위일 때만 `MetricBlock`/`MetricStrip`을 사용합니다. 차트나 분석 패널 전체를 metric primitive로 대체하지 않습니다.
 - #388 금액/긴 텍스트 정책은 `AmountText`를 기본값으로 삼고, popover나 축약 표시 임계값은 별도 정책으로 결정합니다.
 - #391, #390 관리/설정 목록은 `GroupedList`와 `EntryRow`를 우선 검토합니다.

@@ -18,12 +18,6 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-vi.mock("sonner", () => ({
-  toast: {
-    info: vi.fn(),
-  },
-}));
-
 vi.mock("@/hooks/use-assets-summary", () => ({
   useAssetsSummary: vi.fn(),
 }));
@@ -39,8 +33,14 @@ describe("AssetsPageClient", () => {
     const { container } = render(<AssetsPageClient />);
 
     expect(container.querySelectorAll("[data-slot='skeleton']").length).toBe(1);
-    expect(container.querySelectorAll(".animate-pulse").length).toBeGreaterThan(
-      0,
+    expect(screen.getByText("자산 관리")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /주식/ })).toHaveAttribute(
+      "href",
+      "/assets/stock",
+    );
+    expect(screen.getByRole("link", { name: /현금\/계좌/ })).toHaveAttribute(
+      "href",
+      "/assets/accounts",
     );
   });
 
@@ -56,9 +56,13 @@ describe("AssetsPageClient", () => {
     expect(
       screen.getByText("자산 데이터를 불러오지 못했습니다."),
     ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /주식/ })).toHaveAttribute(
+      "href",
+      "/assets/stock",
+    );
   });
 
-  it("자산 요약 데이터로 총 자산, 주식, 계좌 항목을 렌더링한다", () => {
+  it("자산 요약 데이터와 description-only 자산 진입점을 렌더링한다", () => {
     vi.mocked(useAssetsSummary).mockReturnValue({
       data: {
         portfolio: {
@@ -76,9 +80,17 @@ describe("AssetsPageClient", () => {
     render(<AssetsPageClient />);
 
     expect(screen.getByText("총 자산")).toBeInTheDocument();
-    expect(screen.getAllByText("₩24,000,000")).toHaveLength(2);
-    expect(screen.getByText("4종목")).toBeInTheDocument();
-    expect(screen.getByText("2계좌")).toBeInTheDocument();
-    expect(screen.getByText("관리하기")).toBeInTheDocument();
+    expect(screen.getAllByText("₩24,000,000")).toHaveLength(1);
+    expect(screen.getByText("자산 관리")).toBeInTheDocument();
+    expect(
+      screen.getByText("보유 종목과 거래 내역을 관리해요"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("계좌와 현금성 자산을 관리해요"),
+    ).toBeInTheDocument();
+    expect(screen.getAllByText("준비 중").length).toBeGreaterThanOrEqual(2);
+    expect(screen.queryByText("4종목")).not.toBeInTheDocument();
+    expect(screen.queryByText("2계좌")).not.toBeInTheDocument();
+    expect(screen.queryByText("관리하기")).not.toBeInTheDocument();
   });
 });

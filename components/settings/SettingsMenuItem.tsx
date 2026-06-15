@@ -38,7 +38,6 @@ export function SettingsMenuItem({
           </span>
         ) : undefined
       }
-      className="rounded-xl bg-white"
     />
   );
 }

@@ -1,32 +1,89 @@
 "use client";
 
+import {
+  EntryRow,
+  GroupedList,
+  ScreenSection,
+  SectionHeader,
+} from "@/components/layout/screen";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAssetsSummary } from "@/hooks/use-assets-summary";
+import { BASE_ASSET_TYPE_CONFIG } from "@/lib/constants/assets";
 import { formatCurrency } from "@/lib/utils/format";
-import { AssetTypeCard } from "./common/AssetTypeCard";
 
 function AssetsSummarySkeleton() {
   return (
-    <>
+    <div className="space-y-6">
       <Skeleton className="h-36 rounded-2xl bg-gray-200" />
-      <div className="overflow-hidden rounded-2xl bg-white shadow-sm">
-        {[1, 2, 3, 4].map((item) => (
-          <div key={item} className="border-b border-gray-100 last:border-b-0">
-            <AssetTypeCard type="stock" isLoading />
-          </div>
-        ))}
-      </div>
-    </>
+      <AssetEntrySections />
+    </div>
   );
 }
 
 function AssetsErrorState() {
   return (
-    <div className="rounded-2xl bg-white p-6 text-center shadow-sm">
+    <div className="rounded-xl bg-white p-6 text-center ring-1 ring-gray-100">
       <p className="text-sm text-gray-500">
         자산 데이터를 불러오지 못했습니다.
       </p>
     </div>
+  );
+}
+
+function AssetEntrySections() {
+  const stock = BASE_ASSET_TYPE_CONFIG.stock;
+  const cash = BASE_ASSET_TYPE_CONFIG.cash;
+  const realEstate = BASE_ASSET_TYPE_CONFIG["real-estate"];
+  const other = BASE_ASSET_TYPE_CONFIG.other;
+
+  return (
+    <>
+      <ScreenSection>
+        <SectionHeader title="자산 관리" />
+        <GroupedList>
+          <EntryRow
+            icon={stock.icon}
+            title="주식"
+            description="보유 종목과 거래 내역을 관리해요"
+            href="/assets/stock"
+          />
+          <EntryRow
+            icon={cash.icon}
+            title="현금/계좌"
+            description="계좌와 현금성 자산을 관리해요"
+            href="/assets/accounts"
+          />
+        </GroupedList>
+      </ScreenSection>
+
+      <ScreenSection>
+        <SectionHeader title="준비 중" />
+        <GroupedList>
+          <EntryRow
+            icon={realEstate.icon}
+            title={realEstate.label}
+            description="부동산 자산 관리를 준비하고 있어요"
+            disabled
+            trailing={
+              <span className="rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-400">
+                준비 중
+              </span>
+            }
+          />
+          <EntryRow
+            icon={other.icon}
+            title={other.label}
+            description="기타 자산 관리를 준비하고 있어요"
+            disabled
+            trailing={
+              <span className="rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-400">
+                준비 중
+              </span>
+            }
+          />
+        </GroupedList>
+      </ScreenSection>
+    </>
   );
 }
 
@@ -38,11 +95,16 @@ export function AssetsPageClient() {
   }
 
   if (error || !data) {
-    return <AssetsErrorState />;
+    return (
+      <div className="space-y-6">
+        <AssetsErrorState />
+        <AssetEntrySections />
+      </div>
+    );
   }
 
   return (
-    <>
+    <div className="space-y-6">
       <div className="rounded-2xl bg-white p-6 shadow-sm">
         <span className="text-sm text-gray-500">총 자산</span>
         <p className="mt-1 text-3xl font-bold text-gray-900">
@@ -53,24 +115,7 @@ export function AssetsPageClient() {
         </p>
       </div>
 
-      <div className="divide-y divide-gray-100 rounded-2xl bg-white shadow-sm">
-        <AssetTypeCard
-          type="stock"
-          holdingCount={data.portfolio.holdingCount}
-          totalValue={data.portfolio.totalValue}
-          returnRate={data.portfolio.returnRate}
-        />
-        <AssetTypeCard
-          type="cash"
-          holdingCount={data.accountCount}
-          countLabel="계좌"
-          emptyText="아직 등록된 계좌가 없어요"
-          activeActionText="관리하기"
-          showValue={false}
-        />
-        <AssetTypeCard type="real-estate" disabled />
-        <AssetTypeCard type="other" disabled />
-      </div>
-    </>
+      <AssetEntrySections />
+    </div>
   );
 }
