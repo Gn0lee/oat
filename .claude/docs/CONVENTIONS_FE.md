@@ -107,6 +107,8 @@ lib/queries/index.ts  # 모든 쿼리 정의
 
 금융 기록이나 자산을 많이 보여주는 사용자-facing 화면은 테이블이나 카드 그리드를 기본값으로 두지 않습니다. 먼저 데이터 성격에 맞는 컬렉션 UI를 설계하고, 필요한 경우에만 내부 구현 도구로 table primitive나 TanStack Table을 사용합니다.
 
+#384 이후 섹션, grouped list, row, metric, 상태, 금액 표시가 필요한 화면은 먼저 `components/layout/screen/`의 screen primitive를 검토합니다. 세부 기준은 `.claude/docs/SCREEN_PRIMITIVES.md`를 따릅니다.
+
 | 화면 유형 | 기본 구조 |
 |----------|----------|
 | 날짜 기반 기록 | 캘린더/날짜별 목록/타임라인 + 상세 또는 작업 화면 |

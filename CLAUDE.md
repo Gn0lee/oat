@@ -31,6 +31,7 @@
 | **EXAMPLES.md** | `.claude/docs/` | 코드 예시 모음 |
 | **ENV.md** | `.claude/docs/` | 환경변수 설정 가이드 |
 | **NOTIFICATIONS.md** | `.claude/docs/` | 알림 기능 설계, 후보 이벤트, 구현 이슈 분해 |
+| **SCREEN_PRIMITIVES.md** | `.claude/docs/` | 공통 화면 primitive 기준, row/metric/state/amount 화면 문법 |
 
 ### Skills (작업별 자동 활성화)
 
