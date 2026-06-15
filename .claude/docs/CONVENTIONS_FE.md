@@ -353,7 +353,6 @@ import { PageContainer } from "@/components/layout";
 | Props | 타입 | 기본값 | 설명 |
 |-------|------|--------|------|
 | maxWidth | "default" \| "narrow" \| "medium" | "default" | 컨테이너 너비 (`default` = `max-w-5xl`, `medium` = `max-w-3xl`, `narrow` = `max-w-xl`) |
-| className | string | - | 추가적인 스타일 클래스 |
 
 #### PC 2-column 레이아웃 정책
 - 좌/우 2개의 명확한 콘텐츠 흐름이 존재하는 화면(예: 달력/요약 + 선택 날짜 목록 등)에만 2-column 그리드 레이아웃을 사용하며, 너비는 `default`를 적용합니다.

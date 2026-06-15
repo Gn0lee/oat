@@ -1,9 +1,6 @@
-import { cn } from "@/lib/utils/cn";
-
 interface PageContainerProps {
   children: React.ReactNode;
   maxWidth?: "default" | "narrow" | "medium";
-  className?: string;
 }
 
 const maxWidthClasses = {
@@ -15,16 +12,9 @@ const maxWidthClasses = {
 export function PageContainer({
   children,
   maxWidth = "default",
-  className,
 }: PageContainerProps) {
   return (
-    <div
-      className={cn(
-        "mx-auto w-full space-y-6",
-        maxWidthClasses[maxWidth],
-        className,
-      )}
-    >
+    <div className={`mx-auto w-full space-y-6 ${maxWidthClasses[maxWidth]}`}>
       {children}
     </div>
   );
