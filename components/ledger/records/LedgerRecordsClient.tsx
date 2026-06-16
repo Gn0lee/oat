@@ -6,7 +6,13 @@ import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
-import { AmountWithPopover } from "@/components/records/AmountWithPopover";
+import {
+  AmountDisclosure,
+  MetricBlock,
+  MetricStrip,
+  ScreenSection,
+  SectionHeader,
+} from "@/components/layout/screen";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -130,57 +136,67 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
   const summaryCard = isLoading ? (
     <Skeleton className="h-16 rounded-2xl mb-4" />
   ) : (
-    <div className="bg-white rounded-2xl p-4 shadow-sm mb-4">
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <p className="text-sm font-medium text-gray-900">
-          {scope === "shared" ? "공용 기록" : "내 기록"}
-        </p>
-        <div className="rounded-full bg-gray-100 p-0.5">
-          {(["shared", "personal"] as const).map((item) => (
-            <button
-              key={item}
-              type="button"
-              onClick={() => setScope(item)}
-              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                scope === item
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-500"
-              }`}
-            >
-              {item === "shared" ? "공용" : "개인"}
-            </button>
-          ))}
-        </div>
-      </div>
-      <div className="grid grid-cols-3 gap-2 text-center">
-        <div className="min-w-0">
-          <p className="text-xs text-gray-500 mb-1">입금</p>
-          <AmountWithPopover
-            amount={summary.totalIncome}
-            sign="+"
-            className="text-sm font-semibold leading-tight text-red-500"
-          />
-        </div>
-        <div className="min-w-0">
-          <p className="text-xs text-gray-500 mb-1">지출</p>
-          <AmountWithPopover
-            amount={summary.totalExpense}
-            sign="-"
-            className="text-sm font-semibold leading-tight text-blue-500"
-          />
-        </div>
-        <div className="min-w-0">
-          <p className="text-xs text-gray-500 mb-1">잔액</p>
-          <AmountWithPopover
-            amount={summary.balance}
-            sign={summary.balance >= 0 ? "+" : ""}
-            className={`text-sm font-semibold leading-tight ${
-              summary.balance >= 0 ? "text-gray-900" : "text-blue-500"
-            }`}
-          />
-        </div>
-      </div>
-    </div>
+    <ScreenSection className="mb-4">
+      <SectionHeader
+        title={scope === "shared" ? "공용 기록" : "내 기록"}
+        action={
+          <div className="rounded-full bg-gray-100 p-0.5">
+            {(["shared", "personal"] as const).map((item) => (
+              <button
+                key={item}
+                type="button"
+                onClick={() => setScope(item)}
+                className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                  scope === item
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-500"
+                }`}
+              >
+                {item === "shared" ? "공용" : "개인"}
+              </button>
+            ))}
+          </div>
+        }
+      />
+      <MetricStrip columns={{ base: 3 }}>
+        <MetricBlock
+          label="입금"
+          value={
+            <AmountDisclosure
+              amount={summary.totalIncome}
+              sign="+"
+              tone="income"
+              align="left"
+              className="text-sm font-semibold"
+            />
+          }
+        />
+        <MetricBlock
+          label="지출"
+          value={
+            <AmountDisclosure
+              amount={summary.totalExpense}
+              sign="-"
+              tone="expense"
+              align="left"
+              className="text-sm font-semibold"
+            />
+          }
+        />
+        <MetricBlock
+          label="잔액"
+          value={
+            <AmountDisclosure
+              amount={summary.balance}
+              sign={summary.balance >= 0 ? "+" : ""}
+              tone={summary.balance >= 0 ? "neutral" : "expense"}
+              align="left"
+              className="text-sm font-semibold"
+            />
+          }
+        />
+      </MetricStrip>
+    </ScreenSection>
   );
 
   const calendarSection = isLoading ? (

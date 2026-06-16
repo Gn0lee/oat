@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { Bell, Settings } from "lucide-react";
 import { describe, expect, it, vi } from "vitest";
 import {
+  AmountDisclosure,
   AmountText,
   EntryRow,
   GroupedList,
@@ -163,5 +164,22 @@ describe("screen primitives", () => {
       expect(v).toHaveClass("[overflow-wrap:anywhere]");
       expect(v.className).toMatch(/\btext-base\b/);
     });
+  });
+
+  it("renders compact amount disclosure with full amount popover affordance", () => {
+    render(<AmountDisclosure amount={1_250_000} sign="+" tone="income" />);
+
+    expect(screen.getByText(/\+125만원/)).toBeInTheDocument();
+
+    const trigger = screen.getByRole("button", {
+      name: "전체 금액 +1,250,000원",
+    });
+    expect(trigger).toBeInTheDocument();
+
+    const { rerender } = render(<AmountDisclosure amount={50000} />);
+    expect(screen.getByText("50,000원")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "전체 금액 50,000원" }),
+    ).not.toBeInTheDocument();
   });
 });

@@ -9,6 +9,15 @@ import {
   WalletCards,
 } from "lucide-react";
 import { useMemo, useState } from "react";
+import {
+  AmountDisclosure,
+  GroupedList,
+  MetricBlock,
+  MetricStrip,
+  ScreenSection,
+  ScreenState,
+  SectionHeader,
+} from "@/components/layout/screen";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -213,8 +222,8 @@ function BalanceDetailLayout({
   const canCurrentUserAdjust = canAdjust && userId === target.ownerId;
 
   return (
-    <div className="space-y-5">
-      <section className="rounded-2xl bg-white p-5 shadow-sm">
+    <div className="space-y-6">
+      <ScreenSection>
         <div className="flex items-start gap-3">
           <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
             <Banknote className="size-5" />
@@ -231,27 +240,42 @@ function BalanceDetailLayout({
 
         {balance !== null && (
           <div className="mt-6">
-            <p className="text-gray-500 text-sm">{balanceLabel}</p>
-            <p className="mt-1 font-bold text-3xl text-gray-900">
-              {formatCurrency(balance)}
-            </p>
+            <p className="text-gray-500 text-sm mb-1">{balanceLabel}</p>
+            <AmountDisclosure
+              amount={balance}
+              tone="neutral"
+              align="left"
+              className="mt-1 block max-w-full text-3xl font-bold leading-tight sm:text-4xl"
+            />
           </div>
         )}
 
         {totalLabel && (
-          <div className="mt-4 grid grid-cols-2 gap-3">
-            <div className="rounded-xl bg-gray-50 p-3">
-              <p className="text-gray-500 text-xs">보유 주식 평가액</p>
-              <p className="mt-1 font-semibold text-gray-900">
-                {formatCurrency(stockValue ?? 0)}
-              </p>
-            </div>
-            <div className="rounded-xl bg-gray-50 p-3">
-              <p className="text-gray-500 text-xs">{totalLabel}</p>
-              <p className="mt-1 font-semibold text-gray-900">
-                {formatCurrency(totalValue ?? 0)}
-              </p>
-            </div>
+          <div className="mt-6">
+            <MetricStrip columns={{ base: 2 }}>
+              <MetricBlock
+                label="보유 주식 평가액"
+                value={
+                  <AmountDisclosure
+                    amount={stockValue ?? 0}
+                    tone="neutral"
+                    align="left"
+                    className="text-base font-semibold"
+                  />
+                }
+              />
+              <MetricBlock
+                label={totalLabel}
+                value={
+                  <AmountDisclosure
+                    amount={totalValue ?? 0}
+                    tone="neutral"
+                    align="left"
+                    className="text-base font-semibold"
+                  />
+                }
+              />
+            </MetricStrip>
           </div>
         )}
 
@@ -269,7 +293,7 @@ function BalanceDetailLayout({
             {actionLabel}
           </Button>
         )}
-      </section>
+      </ScreenSection>
 
       <TimelineSection items={timeline} />
 
@@ -285,46 +309,29 @@ function BalanceDetailLayout({
 
 function TimelineSection({ items }: { items: BalanceTimelineItem[] }) {
   return (
-    <section className="space-y-2">
-      <h2 className="px-1 font-semibold text-gray-700 text-sm">
-        잔액 변화 내역
-      </h2>
-      <div className="overflow-hidden rounded-2xl bg-white shadow-sm">
-        {items.length === 0 ? (
-          <div className="p-6 text-center text-gray-500 text-sm">
-            아직 표시할 내역이 없습니다.
-          </div>
-        ) : (
-          items.map((item, index) => (
-            <TimelineRow
-              key={`${item.kind}:${item.id}`}
-              item={item}
-              showBorder={index > 0}
-            />
-          ))
-        )}
-      </div>
-    </section>
+    <ScreenSection>
+      <SectionHeader title="잔액 변화 내역" />
+      {items.length === 0 ? (
+        <div className="p-6 text-center text-gray-500 text-sm">
+          아직 표시할 내역이 없습니다.
+        </div>
+      ) : (
+        <GroupedList>
+          {items.map((item) => (
+            <TimelineRow key={`${item.kind}:${item.id}`} item={item} />
+          ))}
+        </GroupedList>
+      )}
+    </ScreenSection>
   );
 }
 
-function TimelineRow({
-  item,
-  showBorder,
-}: {
-  item: BalanceTimelineItem;
-  showBorder: boolean;
-}) {
+function TimelineRow({ item }: { item: BalanceTimelineItem }) {
   const isPositive = item.delta >= 0;
   const Icon = isPositive ? ArrowDownLeft : ArrowUpRight;
 
   return (
-    <article
-      className={cn(
-        "flex items-center gap-3 p-4",
-        showBorder && "border-gray-100 border-t",
-      )}
-    >
+    <article className="flex items-center gap-3 py-3 hover:bg-gray-50/50 transition-colors">
       <div
         className={cn(
           "flex size-10 shrink-0 items-center justify-center rounded-full",
@@ -337,18 +344,20 @@ function TimelineRow({
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex min-w-0 items-center gap-2">
-          <p className="truncate font-medium text-gray-900">{item.title}</p>
+          <p className="truncate font-medium text-gray-900 text-sm">
+            {item.title}
+          </p>
           <span className="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 font-medium text-[11px] text-gray-500">
             {item.label}
           </span>
         </div>
-        <p className="mt-1 text-gray-500 text-sm">
+        <p className="mt-1 text-gray-500 text-xs">
           {formatDateTime(item.occurredAt)}
         </p>
       </div>
       <p
         className={cn(
-          "shrink-0 font-semibold",
+          "shrink-0 font-semibold text-sm",
           isPositive ? "text-green-700" : "text-gray-900",
         )}
       >
@@ -479,11 +488,10 @@ function BalanceDetailSkeleton() {
 
 function BalanceDetailError() {
   return (
-    <div className="rounded-2xl bg-white p-8 text-center shadow-sm">
-      <WalletCards className="mx-auto size-10 text-gray-300" />
-      <p className="mt-3 text-gray-500 text-sm">
-        상세 정보를 불러오지 못했습니다.
-      </p>
-    </div>
+    <ScreenState
+      type="error"
+      title="상세 정보를 불러오지 못했습니다."
+      description="잠시 후 다시 시도해주세요."
+    />
   );
 }

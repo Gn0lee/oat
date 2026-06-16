@@ -96,6 +96,8 @@ describe("LedgerEntryRow", () => {
     expect(expenseAmount).toBeInTheDocument();
     expect(expenseAmount).toHaveClass("[overflow-wrap:anywhere]");
     expect(expenseAmount).toHaveAttribute("title", "-1,250,000원");
+    expect(expenseAmount.textContent).not.toContain("만원");
+    expect(expenseAmount.parentElement).toHaveClass("max-w-[42%]");
 
     // Add check for -42,000원
     const midExpenseEntry: LedgerEntryWithDetails = {

@@ -3,7 +3,12 @@
 import { Pencil, Trash2, TrendingDown, TrendingUp } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
-import { AmountWithPopover } from "@/components/records/AmountWithPopover";
+import {
+  AmountDisclosure,
+  GroupedList,
+  ScreenSection,
+  SectionHeader,
+} from "@/components/layout/screen";
 import { DetailInfoRow } from "@/components/records/DetailInfoRow";
 import { RecordMissingState } from "@/components/records/RecordMissingState";
 import { TransactionChangeRequestDialog } from "@/components/transactions/TransactionChangeRequestDialog";
@@ -95,10 +100,11 @@ export function TransactionDetailClient({
 
   return (
     <>
-      <div className="space-y-4">
-        <section className="relative rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
+      <div className="space-y-6">
+        {/* 헤더 섹션 */}
+        <ScreenSection className="relative">
           {hasActions && (
-            <div className="absolute top-5 right-5 flex h-5 items-center gap-1">
+            <div className="absolute top-0 right-0 flex h-5 items-center gap-1 z-10">
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -153,10 +159,12 @@ export function TransactionDetailClient({
               <h2 className="mt-1 break-words text-xl font-semibold text-gray-900">
                 {transaction.stockName}
               </h2>
-              <AmountWithPopover
+              <AmountDisclosure
                 amount={transaction.totalAmount}
                 currency={transaction.currency}
-                className="mt-4 block max-w-full text-2xl font-bold leading-tight text-gray-900 sm:text-3xl"
+                tone="neutral"
+                align="left"
+                className="mt-4 block max-w-full text-2xl font-bold leading-tight sm:text-3xl"
               />
               <div className="mt-3 flex flex-wrap gap-2">
                 <Badge variant={isBuy ? "default" : "secondary"}>
@@ -166,36 +174,42 @@ export function TransactionDetailClient({
               </div>
             </div>
           </div>
-        </section>
+        </ScreenSection>
 
-        <section className="rounded-2xl bg-white px-5 py-2 shadow-sm ring-1 ring-gray-100">
-          <DetailInfoRow
-            label="수량"
-            value={`${transaction.quantity.toLocaleString()}주`}
-          />
-          <DetailInfoRow
-            label="단가"
-            value={formatCurrency(transaction.price, transaction.currency)}
-          />
-          <DetailInfoRow
-            label="투자 계좌"
-            value={transaction.accountName ?? "계좌 없음"}
-          />
-          <DetailInfoRow label="작성자" value={transaction.owner.name} />
-          <DetailInfoRow
-            label="거래일"
-            value={new Date(transaction.transactedAt).toLocaleDateString(
-              "ko-KR",
-            )}
-          />
-        </section>
+        {/* 인포 로우 목록 */}
+        <ScreenSection>
+          <GroupedList>
+            <DetailInfoRow
+              label="수량"
+              value={`${transaction.quantity.toLocaleString()}주`}
+            />
+            <DetailInfoRow
+              label="단가"
+              value={formatCurrency(transaction.price, transaction.currency)}
+            />
+            <DetailInfoRow
+              label="투자 계좌"
+              value={transaction.accountName ?? "계좌 없음"}
+            />
+            <DetailInfoRow label="작성자" value={transaction.owner.name} />
+            <DetailInfoRow
+              label="거래일"
+              value={new Date(transaction.transactedAt).toLocaleDateString(
+                "ko-KR",
+              )}
+            />
+          </GroupedList>
+        </ScreenSection>
 
-        <section className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
-          <h3 className="text-sm font-semibold text-gray-900">메모</h3>
-          <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-6 text-gray-600">
-            {transaction.memo?.trim() || "메모가 없습니다."}
-          </p>
-        </section>
+        {/* 메모 섹션 */}
+        <ScreenSection>
+          <SectionHeader title="메모" />
+          <div className="rounded-xl border border-gray-100 bg-white p-4">
+            <p className="whitespace-pre-wrap break-words text-sm leading-6 text-gray-600">
+              {transaction.memo?.trim() || "메모가 없습니다."}
+            </p>
+          </div>
+        </ScreenSection>
       </div>
 
       <TransactionEditDialog
