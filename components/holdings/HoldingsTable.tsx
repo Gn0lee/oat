@@ -1,7 +1,8 @@
 "use client";
 
-import { ArrowDownUp, Building2, UserRound, WalletCards } from "lucide-react";
+import { ArrowDownUp, Building2, UserRound } from "lucide-react";
 import { useMemo, useState } from "react";
+import { GroupedList, ScreenState } from "@/components/layout/screen";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -47,13 +48,11 @@ export function HoldingsTable({ data }: HoldingsTableProps) {
 
   if (data.length === 0) {
     return (
-      <div className="rounded-2xl bg-white px-6 py-12 text-center shadow-sm ring-1 ring-gray-100">
-        <WalletCards className="mx-auto mb-3 size-8 text-gray-300" />
-        <p className="font-medium text-gray-700">보유 종목이 없습니다.</p>
-        <p className="mt-1 text-gray-400 text-sm">
-          거래를 등록하면 보유 종목이 여기에 표시됩니다.
-        </p>
-      </div>
+      <ScreenState
+        type="empty"
+        title="보유 종목이 없습니다."
+        description="거래를 등록하면 보유 종목이 여기에 표시됩니다."
+      />
     );
   }
 
@@ -81,11 +80,11 @@ export function HoldingsTable({ data }: HoldingsTableProps) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+      <GroupedList>
         {sortedHoldings.map((holding) => (
           <article
             key={`${holding.owner.id}:${holding.account.id ?? "none"}:${holding.ticker}`}
-            className="flex flex-col gap-2 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-gray-100"
+            className="flex flex-col gap-2 px-4 py-3.5 sm:px-5"
           >
             <div className="flex min-w-0 items-center justify-between gap-3">
               <div className="flex min-w-0 flex-1 items-center gap-2">
@@ -155,7 +154,7 @@ export function HoldingsTable({ data }: HoldingsTableProps) {
             </div>
           </article>
         ))}
-      </div>
+      </GroupedList>
     </div>
   );
 }

@@ -2,7 +2,6 @@
 
 import {
   Building2,
-  CreditCard,
   MoreHorizontal,
   Pencil,
   Trash2,
@@ -10,6 +9,12 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+import {
+  GroupedList,
+  ScreenSection,
+  ScreenState,
+  SectionHeader,
+} from "@/components/layout/screen";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -53,6 +58,8 @@ function isInvestmentAccountType(
 
 interface AccountListProps {
   filter?: "bank" | "investment";
+  title?: React.ReactNode;
+  action?: React.ReactNode;
 }
 
 interface AccountCollectionProps {
@@ -71,7 +78,7 @@ function AccountCollection({
   onDelete,
 }: AccountCollectionProps) {
   return (
-    <div className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-100">
+    <GroupedList>
       {accounts.map((account) => {
         const isOwner = currentUserId === account.ownerId;
         const accountTypeLabel = account.accountType
@@ -84,16 +91,12 @@ function AccountCollection({
         return (
           <article
             key={account.id}
-            className="flex min-h-[96px] items-center gap-3 border-gray-100 border-t px-4 py-4 first:border-t-0 sm:px-5"
+            className="flex min-h-[96px] items-center gap-3 px-4 py-3.5 sm:px-5"
           >
             <Link
               href={`/assets/accounts/${account.id}`}
               className="flex min-w-0 flex-1 items-center gap-3"
             >
-              <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-500">
-                <CreditCard className="size-5" />
-              </div>
-
               <div className="min-w-0 flex-1">
                 <div className="flex min-w-0 flex-wrap items-center gap-2">
                   <h4 className="truncate font-semibold text-gray-900">
@@ -158,11 +161,11 @@ function AccountCollection({
           </article>
         );
       })}
-    </div>
+    </GroupedList>
   );
 }
 
-export function AccountList({ filter }: AccountListProps) {
+export function AccountList({ filter, title, action }: AccountListProps) {
   const { data: accounts, isLoading, error } = useAccounts();
   const { userId: currentUserId } = useCurrentUserId();
 
@@ -196,23 +199,12 @@ export function AccountList({ filter }: AccountListProps) {
   };
 
   if (isLoading) {
-    return (
-      <div className="bg-white rounded-2xl shadow-sm p-8">
-        <div className="animate-pulse space-y-4">
-          <div className="h-4 bg-gray-200 rounded w-1/4" />
-          <div className="h-10 bg-gray-100 rounded" />
-          <div className="h-10 bg-gray-100 rounded" />
-          <div className="h-10 bg-gray-100 rounded" />
-        </div>
-      </div>
-    );
+    return <ScreenState type="loading" title="계좌 목록을 불러오는 중입니다" />;
   }
 
   if (error) {
     return (
-      <div className="bg-white rounded-2xl shadow-sm p-8 text-center">
-        <p className="text-destructive">계좌 목록을 불러오는데 실패했습니다.</p>
-      </div>
+      <ScreenState type="error" title="계좌 목록을 불러오는데 실패했습니다" />
     );
   }
 
@@ -228,17 +220,26 @@ export function AccountList({ filter }: AccountListProps) {
 
     if (filtered.length === 0) {
       return (
-        <div className="bg-white rounded-2xl shadow-sm p-8 text-center">
-          <p className="text-gray-500">등록된 계좌가 없습니다.</p>
-          <p className="text-sm text-gray-400 mt-1">
-            상단의 &quot;계좌 추가&quot; 버튼으로 계좌를 등록해보세요.
-          </p>
-        </div>
+        <ScreenSection>
+          <SectionHeader
+            title={title ?? (filter === "bank" ? "은행 계좌" : "투자 계좌")}
+            action={action}
+          />
+          <ScreenState
+            type="empty"
+            title="등록된 계좌가 없습니다."
+            description="상단의 &quot;계좌 추가&quot; 버튼으로 계좌를 등록해보세요."
+          />
+        </ScreenSection>
       );
     }
 
     return (
-      <>
+      <ScreenSection>
+        <SectionHeader
+          title={title ?? (filter === "bank" ? "은행 계좌" : "투자 계좌")}
+          action={action}
+        />
         <AccountCollection
           accounts={filtered}
           currentUserId={currentUserId}
@@ -258,7 +259,7 @@ export function AccountList({ filter }: AccountListProps) {
           open={!!deletingAccount}
           onOpenChange={(open) => !open && setDeletingAccount(null)}
         />
-      </>
+      </ScreenSection>
     );
   }
 
@@ -272,21 +273,25 @@ export function AccountList({ filter }: AccountListProps) {
 
   if (!hasAnyAccount) {
     return (
-      <div className="bg-white rounded-2xl shadow-sm p-8 text-center">
-        <p className="text-gray-500">등록된 계좌가 없습니다.</p>
-        <p className="text-sm text-gray-400 mt-1">
-          상단의 &quot;계좌 추가&quot; 버튼으로 계좌를 등록해보세요.
-        </p>
-      </div>
+      <ScreenSection>
+        <SectionHeader title={title ?? "계좌"} action={action} />
+        <ScreenState
+          type="empty"
+          title="등록된 계좌가 없습니다."
+          description="상단의 &quot;계좌 추가&quot; 버튼으로 계좌를 등록해보세요."
+        />
+      </ScreenSection>
     );
   }
 
   return (
-    <>
-      <div className="space-y-4">
+    <ScreenSection>
+      <SectionHeader title={title ?? "계좌"} action={action} />
+
+      <div className="space-y-6">
         {bankAccounts.length > 0 && (
-          <div>
-            <h3 className="text-sm font-medium text-gray-500 mb-2 px-1">
+          <div className="space-y-2">
+            <h3 className="text-sm font-medium text-gray-500 px-1">
               은행 계좌
             </h3>
             <AccountCollection
@@ -300,8 +305,8 @@ export function AccountList({ filter }: AccountListProps) {
         )}
 
         {investmentAccounts.length > 0 && (
-          <div>
-            <h3 className="text-sm font-medium text-gray-500 mb-2 px-1">
+          <div className="space-y-2">
+            <h3 className="text-sm font-medium text-gray-500 px-1">
               투자 계좌
             </h3>
             <AccountCollection
@@ -327,6 +332,6 @@ export function AccountList({ filter }: AccountListProps) {
         open={!!deletingAccount}
         onOpenChange={(open) => !open && setDeletingAccount(null)}
       />
-    </>
+    </ScreenSection>
   );
 }

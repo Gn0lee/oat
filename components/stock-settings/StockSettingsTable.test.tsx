@@ -21,7 +21,7 @@ const settings: StockSettingWithDetails[] = [
 ];
 
 describe("StockSettingsTable", () => {
-  it("renders settings as compact collection rows instead of a table", () => {
+  it("renders stock settings as compact grouped rows", () => {
     render(<StockSettingsTable data={settings} />);
 
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
@@ -36,6 +36,7 @@ describe("StockSettingsTable", () => {
     render(<StockSettingsTable data={[]} />);
 
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
+    expect(screen.getByTestId("screen-state")).toBeInTheDocument();
     expect(screen.getByText("등록된 종목이 없습니다.")).toBeInTheDocument();
   });
 });

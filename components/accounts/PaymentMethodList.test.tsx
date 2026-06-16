@@ -47,10 +47,10 @@ const paymentMethod: PaymentMethodWithDetails = {
 };
 
 describe("PaymentMethodList", () => {
-  it("renders payment methods as collection cards instead of a table", () => {
+  it("renders payment methods as grouped rows with details", () => {
     mocks.paymentMethods = [paymentMethod];
 
-    render(<PaymentMethodList />);
+    const { container } = render(<PaymentMethodList />);
 
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
     expect(screen.getByText("현대카드")).toBeInTheDocument();
@@ -58,5 +58,19 @@ describe("PaymentMethodList", () => {
     expect(screen.getByText("Hyundai")).toBeInTheDocument();
     expect(screen.getByText("1234")).toBeInTheDocument();
     expect(screen.getByText("생활비 통장")).toBeInTheDocument();
+
+    // Assert no credit card icon is rendered
+    expect(
+      container.querySelector(".lucide-credit-card"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("renders screen-state when empty", () => {
+    mocks.paymentMethods = [];
+
+    render(<PaymentMethodList />);
+
+    expect(screen.getByTestId("screen-state")).toBeInTheDocument();
+    expect(screen.getByText("등록된 결제수단이 없습니다.")).toBeInTheDocument();
   });
 });
