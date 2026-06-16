@@ -63,6 +63,9 @@ describe("LedgerEntryRow", () => {
       "/ledger/records/entry-1?from=records&date=2026-06-02",
     );
     expect(screen.queryByRole("button", { name: "기록 작업" })).toBeNull();
+    expect(screen.getByText("식비")).toBeInTheDocument();
+    expect(screen.getByText("소유자")).toBeInTheDocument();
+    expect(screen.getByText("현대카드")).toBeInTheDocument();
   });
 
   it("이체 기록에는 카테고리 기본 아이콘 대신 이체 아이콘을 보여준다", () => {
@@ -91,6 +94,9 @@ describe("LedgerEntryRow", () => {
 
     const titleElement = screen.getByText("아주아주아주아주아주긴가계부제목");
     expect(titleElement).toHaveClass("line-clamp-2");
+    expect(
+      titleElement.parentElement?.querySelector(".flex-wrap"),
+    ).not.toBeNull();
 
     const expenseAmount = screen.getByText("-1,250,000원");
     expect(expenseAmount).toBeInTheDocument();

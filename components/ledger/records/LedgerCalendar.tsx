@@ -55,6 +55,7 @@ export function LedgerCalendar({
         !modifiers.range_start &&
         !modifiers.range_end &&
         !modifiers.range_middle;
+      const isOutside = Boolean(modifiers.outside);
 
       return (
         // 버튼 전체 배경 선택 스타일 제거 — 원형 숫자 span에서만 선택 표시
@@ -66,19 +67,26 @@ export function LedgerCalendar({
         >
           {/* 날짜 숫자 — 고정 높이 원형 버튼 영역 */}
           <span
+            data-outside={isOutside || undefined}
             className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium transition-colors ${
               isSelected
                 ? "bg-gray-800 text-white"
                 : modifiers.today
                   ? "bg-gray-100 text-gray-900"
-                  : "text-gray-900"
+                  : isOutside
+                    ? "text-gray-300"
+                    : "text-gray-900"
             }`}
           >
             {children}
           </span>
 
           {/* 금액 텍스트 — 선택 상태 무관, 항상 동일 색상 */}
-          <span className="flex min-h-[22px] flex-col items-center justify-start gap-0.5 pt-0.5">
+          <span
+            className={`flex min-h-[22px] flex-col items-center justify-start gap-0.5 pt-0.5 ${
+              isOutside ? "opacity-45" : ""
+            }`}
+          >
             {income > 0 && (
               <span className="text-[9px] font-medium text-red-500 leading-none">
                 +{formatAmountShort(income)}

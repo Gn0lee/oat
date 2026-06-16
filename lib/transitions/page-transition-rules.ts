@@ -78,6 +78,12 @@ export function getPageTransitionRules(
         },
         {
           kind: "drill",
+          enter: "/ledger/records/*",
+          exit: "/ledger/records",
+          type: "parallax",
+        },
+        {
+          kind: "drill",
           enter: "/ledger/payment-methods/*",
           exit: "/ledger/payment-methods",
           type: "parallax",
@@ -104,6 +110,12 @@ export function getPageTransitionRules(
           kind: "drill",
           enter: "/assets/stock/transactions/*",
           exit: "/assets/stock/transactions",
+          type: "parallax",
+        },
+        {
+          kind: "drill",
+          enter: "/assets/stock/transactions/*",
+          exit: "/assets/stock/records",
           type: "parallax",
         },
         {

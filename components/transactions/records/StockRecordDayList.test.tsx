@@ -39,9 +39,10 @@ describe("StockRecordDayList", () => {
     // Verify stable two-column layout classes
     const gridContainer = amountText.closest(".grid");
     expect(gridContainer).toBeInTheDocument();
-    expect(gridContainer).toHaveClass(
-      "grid-cols-[minmax(0,1fr)_minmax(7rem,42%)]",
-    );
+    expect(gridContainer).toHaveClass("grid-cols-[minmax(0,1fr)_auto]");
+    expect(
+      screen.getAllByTestId("stock-transaction-row-chevron").length,
+    ).toBeGreaterThan(0);
     expect(amountText).toHaveClass("whitespace-nowrap");
 
     expect(screen.getByText("삼성증권")).toBeInTheDocument();

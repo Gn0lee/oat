@@ -7,7 +7,6 @@ import {
   AmountDisclosure,
   GroupedList,
   ScreenSection,
-  SectionHeader,
 } from "@/components/layout/screen";
 import { DetailInfoRow } from "@/components/records/DetailInfoRow";
 import { RecordMissingState } from "@/components/records/RecordMissingState";
@@ -29,7 +28,6 @@ import {
 import { useCurrentUserId } from "@/hooks/use-current-user";
 import { useTransaction } from "@/hooks/use-transaction";
 import { ApiQueryError } from "@/lib/api/client";
-import { cn } from "@/lib/utils/cn";
 import { formatCurrency } from "@/lib/utils/format";
 
 interface TransactionDetailClientProps {
@@ -194,12 +192,11 @@ export function TransactionDetailClient({
               )}
             />
             {transaction.memo?.trim() && (
-              <div className="flex flex-col gap-1 border-gray-100 border-b px-4 py-3 sm:px-5 last:border-b-0">
-                <span className="shrink-0 text-sm text-gray-500">메모</span>
-                <div className="min-w-0 text-left text-sm font-medium text-gray-900 whitespace-pre-wrap break-words leading-6">
-                  {transaction.memo.trim()}
-                </div>
-              </div>
+              <DetailInfoRow
+                label="메모"
+                value={transaction.memo.trim()}
+                multiline
+              />
             )}
           </GroupedList>
         </ScreenSection>
