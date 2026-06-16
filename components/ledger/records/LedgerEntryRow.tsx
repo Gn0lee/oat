@@ -46,11 +46,11 @@ export function LedgerEntryRow({ entry, href }: LedgerEntryRowProps) {
   return (
     <Link
       href={href}
-      className="group flex items-start gap-3 border-b py-3 transition-colors last:border-b-0 hover:bg-gray-50"
+      className="group flex items-start gap-3 border-b px-4 py-3 sm:px-5 transition-colors last:border-b-0 hover:bg-gray-50"
     >
       {/* 카테고리 아이콘 */}
-      <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-gray-100 flex items-center justify-center">
-        <CategoryIcon iconName={iconName} className="w-5 h-5 text-gray-600" />
+      <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
+        <CategoryIcon iconName={iconName} className="w-4 h-4 text-gray-600" />
       </div>
 
       {/* 내용 */}

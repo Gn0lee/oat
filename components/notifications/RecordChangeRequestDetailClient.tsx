@@ -225,7 +225,7 @@ export function RecordChangeRequestDetailClient({
             {Object.entries(proposedChanges).map(([key, value]) => (
               <div
                 key={key}
-                className="grid grid-cols-[100px_1fr_1fr] gap-4 py-3 text-sm"
+                className="grid grid-cols-[100px_1fr_1fr] gap-4 px-4 py-3 sm:px-5 text-sm"
               >
                 <span className="text-gray-500 font-medium">
                   {FIELD_LABELS[key] ?? key}

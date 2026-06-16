@@ -421,7 +421,7 @@ function TimelineRow({ item }: { item: BalanceTimelineItem }) {
   const Icon = isPositive ? ArrowDownLeft : ArrowUpRight;
 
   return (
-    <article className="flex items-center gap-3 py-3 hover:bg-gray-50/50 transition-colors">
+    <article className="flex items-center gap-3 px-4 py-3 sm:px-5 hover:bg-gray-50/50 transition-colors">
       <div
         className={cn(
           "flex size-10 shrink-0 items-center justify-center rounded-full",
