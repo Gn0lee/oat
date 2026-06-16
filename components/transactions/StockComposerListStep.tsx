@@ -3,6 +3,7 @@
 import { PackagePlusIcon, PlusIcon, X } from "lucide-react";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { toast } from "sonner";
+import { AmountText } from "@/components/layout/screen";
 import { AccountSelector } from "@/components/transactions/AccountSelector";
 import { TransactionSummary } from "@/components/transactions/TransactionSummary";
 import { TransactionTypeSelector } from "@/components/transactions/TransactionTypeSelector";
@@ -174,11 +175,18 @@ export function StockComposerListStep({
                       )}
                     </div>
                     <div className="text-right flex items-center gap-3">
-                      <span className="text-sm font-bold text-gray-900">
-                        {subtotal > 0
-                          ? formatCurrency(subtotal, currency)
-                          : "0원"}
-                      </span>
+                      <AmountText
+                        amount={subtotal}
+                        currency={currency}
+                        compact
+                        title={
+                          subtotal > 0
+                            ? formatCurrency(subtotal, currency)
+                            : "0원"
+                        }
+                        tone="neutral"
+                        className="text-sm font-bold"
+                      />
                     </div>
                   </div>
 

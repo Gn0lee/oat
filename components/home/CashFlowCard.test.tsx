@@ -55,7 +55,7 @@ describe("CashFlowCard", () => {
       />,
     );
     expect(
-      screen.getByText("이번 달은 아직 ₩1,200,000 남았어요"),
+      screen.getByText("이번 달은 아직 1,200,000원 남았어요"),
     ).toBeInTheDocument();
   });
 
@@ -70,7 +70,7 @@ describe("CashFlowCard", () => {
       />,
     );
     expect(
-      screen.getByText("이번 달은 ₩500,000 초과 지출 중이에요"),
+      screen.getByText("이번 달은 500,000원 초과 지출 중이에요"),
     ).toBeInTheDocument();
   });
 
@@ -84,8 +84,8 @@ describe("CashFlowCard", () => {
         month={4}
       />,
     );
-    expect(screen.getByText("₩5,000,000")).toBeInTheDocument();
-    expect(screen.getByText("₩3,800,000")).toBeInTheDocument();
+    expect(screen.getByText("5,000,000원")).toBeInTheDocument();
+    expect(screen.getByText("3,800,000원")).toBeInTheDocument();
   });
 
   it('"남은 금액" 레이블을 표시한다', () => {
@@ -111,7 +111,7 @@ describe("CashFlowCard", () => {
         month={4}
       />,
     );
-    const balanceEl = screen.getByText("-₩500,000");
+    const balanceEl = screen.getByText("-500,000원");
     expect(balanceEl).toHaveClass("text-red-500");
   });
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { formatCurrency } from "@/lib/utils/format";
+import { AmountText } from "@/components/layout/screen";
 import type { TransactionItemFormData } from "@/schemas/multi-transaction-form";
 
 interface TransactionSummaryProps {
@@ -41,18 +41,22 @@ export function TransactionSummary({ items, type }: TransactionSummaryProps) {
       {totals.KRW > 0 && (
         <div className="flex items-center justify-between">
           <span className="text-gray-500">총 {typeText}금액 (KRW)</span>
-          <span className="text-xl font-bold text-gray-900">
-            {formatCurrency(totals.KRW, "KRW")}
-          </span>
+          <AmountText
+            amount={totals.KRW}
+            currency="KRW"
+            className="text-xl font-bold"
+          />
         </div>
       )}
 
       {totals.USD > 0 && (
         <div className="flex items-center justify-between">
           <span className="text-gray-500">총 {typeText}금액 (USD)</span>
-          <span className="text-xl font-bold text-gray-900">
-            {formatCurrency(totals.USD, "USD")}
-          </span>
+          <AmountText
+            amount={totals.USD}
+            currency="USD"
+            className="text-xl font-bold"
+          />
         </div>
       )}
 

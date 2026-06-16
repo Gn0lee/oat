@@ -57,8 +57,8 @@ describe("LedgerSummarySection", () => {
 
     render(<LedgerSummarySection year={2026} month={5} />);
 
-    expect(screen.getByText("₩1,800,000")).toBeInTheDocument();
-    expect(screen.getByText("₩3,000,000")).toBeInTheDocument();
-    expect(screen.getByText("₩1,200,000")).toBeInTheDocument();
+    expect(screen.getByText("1,800,000원")).toBeInTheDocument();
+    expect(screen.getByText("3,000,000원")).toBeInTheDocument();
+    expect(screen.getByText("1,200,000원")).toBeInTheDocument();
   });
 });

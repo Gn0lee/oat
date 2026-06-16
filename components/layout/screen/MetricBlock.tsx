@@ -31,8 +31,8 @@ export function MetricBlock({
       <p className="truncate text-xs font-medium text-gray-500">{label}</p>
       <p
         className={cn(
-          "min-w-0 font-bold leading-tight tabular-nums [overflow-wrap:anywhere]",
-          emphasis ? "text-xl" : "text-lg",
+          "min-w-0 max-w-full font-bold leading-tight tabular-nums [overflow-wrap:anywhere] text-base",
+          emphasis ? "sm:text-xl" : "sm:text-lg",
           toneClasses[tone],
         )}
       >

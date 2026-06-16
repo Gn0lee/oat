@@ -110,7 +110,7 @@ export function TransactionItemRow<T extends FormWithItems>({
         </div>
         <div className="space-y-1">
           <Label className="text-sm text-gray-700">
-            {currency === "KRW" ? "단가 *" : "단가 ($) *"}
+            {currency === "KRW" ? "단가 (원) *" : "단가 ($) *"}
           </Label>
           <Input
             type="number"

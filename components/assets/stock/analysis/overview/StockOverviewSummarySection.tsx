@@ -69,12 +69,24 @@ export function StockOverviewSummarySection() {
       <MetricStrip columns={{ base: 2, lg: 4 }}>
         <MetricBlock
           label="평가금액"
-          value={<AmountText amount={summary.totalValue} align="left" />}
+          value={
+            <AmountText
+              amount={summary.totalValue}
+              align="left"
+              className="text-base sm:text-xl font-bold"
+            />
+          }
           emphasis
         />
         <MetricBlock
           label="투자원금"
-          value={<AmountText amount={summary.totalInvested} align="left" />}
+          value={
+            <AmountText
+              amount={summary.totalInvested}
+              align="left"
+              className="text-base sm:text-lg font-bold"
+            />
+          }
         />
         <MetricBlock
           label="평가손익"
@@ -84,8 +96,10 @@ export function StockOverviewSummarySection() {
               align="left"
               sign={returnSign}
               tone={returnTone}
+              className="text-base sm:text-xl font-bold"
             />
           }
+          emphasis
         />
         <MetricBlock
           label="수익률"
@@ -94,6 +108,7 @@ export function StockOverviewSummarySection() {
               align="left"
               tone={summary.returnRate >= 0 ? "increase" : "decrease"}
               value={formatPercent(summary.returnRate)}
+              className="text-base sm:text-lg font-bold"
             />
           }
         />

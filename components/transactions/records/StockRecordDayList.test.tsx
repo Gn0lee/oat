@@ -31,7 +31,11 @@ describe("StockRecordDayList", () => {
     expect(screen.getByText("2026년 5월 31일")).toBeInTheDocument();
     expect(screen.getByText("매수")).toBeInTheDocument();
     expect(screen.getByText("12주")).toBeInTheDocument();
-    expect(screen.getByText("₩41.4만")).toBeInTheDocument();
+
+    const amountText = screen.getByText("41.4만원");
+    expect(amountText).toBeInTheDocument();
+    expect(amountText.closest("[title]")).toHaveAttribute("title", "414,000원");
+
     expect(screen.getByText("삼성증권")).toBeInTheDocument();
     expect(
       screen.queryByText("목록에서는 보이면 안 되는 메모"),

@@ -80,7 +80,7 @@ describe("AssetsPageClient", () => {
     render(<AssetsPageClient />);
 
     expect(screen.getByText("총 자산")).toBeInTheDocument();
-    expect(screen.getAllByText("₩24,000,000")).toHaveLength(1);
+    expect(screen.getAllByText("24,000,000원")).toHaveLength(1);
     expect(screen.getByText("자산 관리")).toBeInTheDocument();
     expect(
       screen.getByText("보유 종목과 거래 내역을 관리해요"),

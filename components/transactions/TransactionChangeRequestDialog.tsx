@@ -232,7 +232,9 @@ export function TransactionChangeRequestDialog({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="request-price">단가</Label>
+                <Label htmlFor="request-price">
+                  단가 ({transaction.currency === "KRW" ? "원" : "$"})
+                </Label>
                 <Input
                   id="request-price"
                   type="number"

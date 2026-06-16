@@ -30,10 +30,10 @@ describe("MyStockSection", () => {
       isLoading: false,
       data: {
         summary: {
-          totalValue: 1200000,
-          totalInvested: 1000000,
-          totalReturn: 200000,
-          returnRate: 20,
+          totalValue: 123456789,
+          totalInvested: 88888888,
+          totalReturn: 99999999,
+          returnRate: 123.45,
           holdingCount: 2,
           missingPriceCount: 0,
           stalePriceCount: 0,
@@ -41,15 +41,15 @@ describe("MyStockSection", () => {
         holdings: [
           {
             ticker: "005930",
-            name: "삼성전자",
+            name: "아주아주아주아주아주긴이름의삼성전자주식",
             market: "KR",
             currency: "KRW",
             quantity: 10,
-            avgPrice: 70000,
-            currentPrice: 80000,
-            totalInvested: 700000,
-            currentValue: 800000,
-            returnAmount: 100000,
+            avgPrice: 7000000,
+            currentPrice: 8000000,
+            totalInvested: 70000000,
+            currentValue: 80000000,
+            returnAmount: 10000000,
             returnRate: 14.2857,
             allocationPercent: 66.67,
             account: {
@@ -66,11 +66,11 @@ describe("MyStockSection", () => {
             currency: "USD",
             quantity: 2,
             avgPrice: 100000,
-            currentPrice: 200000,
+            currentPrice: 50000,
             totalInvested: 300000,
-            currentValue: 400000,
-            returnAmount: 100000,
-            returnRate: 33.3333,
+            currentValue: 100000,
+            returnAmount: -200000,
+            returnRate: -66.6667,
             allocationPercent: 33.33,
             account: {
               id: "account-2",
@@ -87,12 +87,41 @@ describe("MyStockSection", () => {
 
     expect(screen.getByText("투자 현황")).toBeInTheDocument();
     expect(screen.getByText("평가금액")).toBeInTheDocument();
+    expect(screen.getByText("투자원금")).toBeInTheDocument();
     expect(screen.getByText("평가손익")).toBeInTheDocument();
-    expect(screen.getByText("삼성전자")).toBeInTheDocument();
-    expect(screen.getByText("Apple Inc.")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /종합 분석/ })).toHaveAttribute(
-      "href",
-      "/assets/stock/analysis/overview",
+    expect(screen.getByText("수익률")).toBeInTheDocument();
+
+    // Verify full metric amounts render with 원 and no ₩
+    const totalValueText = screen.getByText("123,456,789원");
+    expect(totalValueText).toBeInTheDocument();
+    expect(totalValueText).not.toHaveTextContent("₩");
+    // Verify metric-safe typography (text-base) is applied
+    expect(totalValueText).toHaveClass("text-base");
+
+    // Verify holding name line clamp and word break
+    const longName = screen.getByText(
+      "아주아주아주아주아주긴이름의삼성전자주식",
+    );
+    expect(longName).toHaveClass("line-clamp-2");
+
+    // Verify holding currentValue is compact and has full amount title
+    const samsungValueCompact = screen.getByText("8000만원");
+    expect(samsungValueCompact).toBeInTheDocument();
+    expect(samsungValueCompact.closest("[title]")).toHaveAttribute(
+      "title",
+      "80,000,000원",
+    );
+
+    // Verify sign policy: positive has no +, negative has -
+    const positiveReturnCompact = screen.getByText("1000만원");
+    expect(positiveReturnCompact).toBeInTheDocument();
+    expect(positiveReturnCompact.textContent).not.toContain("+");
+
+    const negativeReturnCompact = screen.getByText(/-\$200(\.00)?K/);
+    expect(negativeReturnCompact).toBeInTheDocument();
+    expect(negativeReturnCompact.closest("[title]")).toHaveAttribute(
+      "title",
+      expect.stringContaining("200,000"),
     );
   });
 

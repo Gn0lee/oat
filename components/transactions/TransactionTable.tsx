@@ -3,13 +3,10 @@
 import { CalendarDays, User, Wallet } from "lucide-react";
 import Link from "next/link";
 import { useMemo } from "react";
+import { AmountText } from "@/components/layout/screen";
 import { Badge } from "@/components/ui/badge";
 import type { TransactionWithDetails } from "@/lib/api/transaction";
-import {
-  formatCompactCurrency,
-  formatDate,
-  formatDateISO,
-} from "@/lib/utils/format";
+import { formatCurrency, formatDate, formatDateISO } from "@/lib/utils/format";
 
 interface TransactionTableProps {
   data: TransactionWithDetails[];
@@ -76,11 +73,18 @@ function TransactionItem({
               {transaction.stockName}
             </span>
           </div>
-          <div className="max-w-full self-end text-right font-medium text-gray-900 text-sm leading-tight [overflow-wrap:anywhere] sm:shrink-0">
-            {formatCompactCurrency(
-              transaction.price * transaction.quantity,
-              transaction.currency,
-            )}
+          <div className="max-w-full self-end text-right sm:shrink-0">
+            <AmountText
+              amount={transaction.price * transaction.quantity}
+              currency={transaction.currency}
+              compact
+              title={formatCurrency(
+                transaction.price * transaction.quantity,
+                transaction.currency,
+              )}
+              tone="neutral"
+              className="text-sm font-medium"
+            />
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-gray-500 text-xs">

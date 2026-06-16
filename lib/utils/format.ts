@@ -7,21 +7,44 @@ export function formatCurrency(
   value: number,
   currency: "KRW" | "USD" = "KRW",
 ): string {
+  if (currency === "KRW") {
+    const formatted = Math.abs(value).toLocaleString("ko-KR", {
+      maximumFractionDigits: 0,
+    });
+    return `${value < 0 ? "-" : ""}${formatted}원`;
+  }
+
   return new Intl.NumberFormat("ko-KR", {
     style: "currency",
     currency,
-    maximumFractionDigits: currency === "KRW" ? 0 : 2,
+    maximumFractionDigits: 2,
   }).format(value);
 }
 
 /**
- * 통화를 축약 형식으로 포맷 (예: $1.2M, ₩340만)
+ * 통화를 축약 형식으로 포맷 (예: $1.2M, 41.4만원)
  */
 export function formatCompactCurrency(
   value: number,
   currency: "KRW" | "USD" = "KRW",
 ): string {
-  return new Intl.NumberFormat("ko-KR", {
+  if (currency === "KRW") {
+    const abs = Math.abs(value);
+    const sign = value < 0 ? "-" : "";
+    if (abs >= 100_000_000) {
+      const num = abs / 100_000_000;
+      const formatted = Number(num.toFixed(2));
+      return `${sign}${formatted}억원`;
+    }
+    if (abs >= 10_000) {
+      const num = abs / 10_000;
+      const formatted = Number(num.toFixed(2));
+      return `${sign}${formatted}만원`;
+    }
+    return `${sign}${abs.toLocaleString("ko-KR", { maximumFractionDigits: 0 })}원`;
+  }
+
+  return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency,
     notation: "compact",

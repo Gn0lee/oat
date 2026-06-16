@@ -97,7 +97,7 @@ describe("AddTransferStep", () => {
     expect(onNext).not.toHaveBeenCalled();
     expect(screen.getByText("잔액이 음수가 됩니다")).toBeInTheDocument();
     expect(
-      screen.getByText(/저장하면 토스뱅크 잔액이 -₩10,000이 됩니다/),
+      screen.getByText(/저장하면 토스뱅크 잔액이 -10,000원이 됩니다/),
     ).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "그래도 저장" }));

@@ -298,7 +298,7 @@ export function ComposerListStep({
                   <div className="text-right flex items-center gap-3">
                     <span className="text-sm font-bold text-gray-900">
                       {item.amount
-                        ? `${Number(item.amount).toLocaleString()}원`
+                        ? formatCurrency(Number(item.amount))
                         : "0원"}
                     </span>
                   </div>
