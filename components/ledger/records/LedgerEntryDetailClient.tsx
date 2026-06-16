@@ -192,18 +192,18 @@ export function LedgerEntryDetailClient({
               )}
             </div>
           )}
-          <div className="flex items-start gap-4">
-            <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-gray-100">
-              <CategoryIcon
-                iconName={iconName}
-                className="size-6 text-gray-600"
-              />
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2">
+              <div className="flex size-6 shrink-0 items-center justify-center rounded-md bg-gray-100">
+                <CategoryIcon
+                  iconName={iconName}
+                  className="size-3.5 text-gray-600"
+                />
+              </div>
+              <p className="truncate text-sm text-gray-500">{typeLabel}</p>
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate pr-20 text-sm text-gray-500">
-                {typeLabel}
-              </p>
-              <h2 className="mt-1 break-words text-xl font-semibold text-gray-900">
+              <h2 className="break-words text-xl font-semibold text-gray-900">
                 {title}
               </h2>
               <AmountDisclosure
@@ -259,17 +259,15 @@ export function LedgerEntryDetailClient({
               label="거래일"
               value={new Date(entry.transactedAt).toLocaleDateString("ko-KR")}
             />
+            {entry.memo?.trim() && (
+              <div className="flex flex-col gap-1 border-gray-100 border-b px-4 py-3 sm:px-5 last:border-b-0">
+                <span className="shrink-0 text-sm text-gray-500">메모</span>
+                <div className="min-w-0 text-left text-sm font-medium text-gray-900 whitespace-pre-wrap break-words leading-6">
+                  {entry.memo.trim()}
+                </div>
+              </div>
+            )}
           </GroupedList>
-        </ScreenSection>
-
-        {/* 메모 섹션 */}
-        <ScreenSection>
-          <SectionHeader title="메모" />
-          <div className="rounded-xl border border-gray-100 bg-white p-4">
-            <p className="whitespace-pre-wrap break-words text-sm leading-6 text-gray-600">
-              {entry.memo?.trim() || "메모가 없습니다."}
-            </p>
-          </div>
         </ScreenSection>
       </div>
 

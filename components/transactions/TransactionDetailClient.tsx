@@ -1,6 +1,6 @@
 "use client";
 
-import { Pencil, Trash2, TrendingDown, TrendingUp } from "lucide-react";
+import { Pencil, Receipt, Trash2 } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import {
@@ -91,7 +91,7 @@ export function TransactionDetailClient({
   const hasActions = Boolean(userId);
   const isBuy = transaction.type === "buy";
   const typeLabel = isBuy ? "매수" : "매도";
-  const Icon = isBuy ? TrendingUp : TrendingDown;
+  const Icon = Receipt;
 
   const handleRequest = (mode: RequestMode) => {
     setRequestMode(mode);
@@ -144,12 +144,7 @@ export function TransactionDetailClient({
             </div>
           )}
           <div className="flex items-start gap-4">
-            <div
-              className={cn(
-                "flex size-12 shrink-0 items-center justify-center rounded-2xl",
-                isBuy ? "bg-red-50 text-red-500" : "bg-blue-50 text-blue-500",
-              )}
-            >
+            <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
               <Icon className="size-6" />
             </div>
             <div className="min-w-0 flex-1">
@@ -198,17 +193,15 @@ export function TransactionDetailClient({
                 "ko-KR",
               )}
             />
+            {transaction.memo?.trim() && (
+              <div className="flex flex-col gap-1 border-gray-100 border-b px-4 py-3 sm:px-5 last:border-b-0">
+                <span className="shrink-0 text-sm text-gray-500">메모</span>
+                <div className="min-w-0 text-left text-sm font-medium text-gray-900 whitespace-pre-wrap break-words leading-6">
+                  {transaction.memo.trim()}
+                </div>
+              </div>
+            )}
           </GroupedList>
-        </ScreenSection>
-
-        {/* 메모 섹션 */}
-        <ScreenSection>
-          <SectionHeader title="메모" />
-          <div className="rounded-xl border border-gray-100 bg-white p-4">
-            <p className="whitespace-pre-wrap break-words text-sm leading-6 text-gray-600">
-              {transaction.memo?.trim() || "메모가 없습니다."}
-            </p>
-          </div>
         </ScreenSection>
       </div>
 

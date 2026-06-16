@@ -7,6 +7,7 @@ import { requireUser } from "@/lib/supabase/auth";
 interface LedgerRecordsPageProps {
   searchParams: Promise<{
     date?: string;
+    scope?: string;
   }>;
 }
 
@@ -14,12 +15,16 @@ export default async function LedgerRecordsPage({
   searchParams,
 }: LedgerRecordsPageProps) {
   await requireUser();
-  const { date } = await searchParams;
+  const { date, scope } = await searchParams;
   const today = getKstToday();
+  const initialScope = scope === "personal" ? "personal" : "shared";
 
   return (
     <PageContainer maxWidth="default">
-      <LedgerRecordsClient initialDate={normalizeRecordDate(date, today)} />
+      <LedgerRecordsClient
+        initialDate={normalizeRecordDate(date, today)}
+        initialScope={initialScope}
+      />
     </PageContainer>
   );
 }

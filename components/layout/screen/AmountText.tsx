@@ -18,7 +18,7 @@ interface AmountTextProps extends React.ComponentProps<"span"> {
   suffix?: string;
   compact?: boolean;
   tone?: AmountTone;
-  align?: "left" | "right";
+  align?: "left" | "right" | "center";
 }
 
 const toneClasses: Record<AmountTone, string> = {
@@ -33,6 +33,7 @@ const toneClasses: Record<AmountTone, string> = {
 const alignClasses = {
   left: "text-left",
   right: "text-right",
+  center: "text-center",
 };
 
 export function AmountText({

@@ -39,9 +39,13 @@ const MONTH_OPTIONS = Array.from({ length: 12 }, (_, i) => i + 1);
 
 interface LedgerRecordsClientProps {
   initialDate?: string;
+  initialScope?: "shared" | "personal";
 }
 
-export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
+export function LedgerRecordsClient({
+  initialDate,
+  initialScope = "shared",
+}: LedgerRecordsClientProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -53,7 +57,14 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
     startOfMonth(initial),
   );
   const [selectedDate, setSelectedDate] = useState<Date>(initial);
-  const [scope, setScope] = useState<"shared" | "personal">("shared");
+  const [scope, setScopeState] = useState<"shared" | "personal">(initialScope);
+
+  const handleScopeChange = (nextScope: "shared" | "personal") => {
+    setScopeState(nextScope);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("scope", nextScope);
+    router.replace(`${pathname}?${params.toString()}`);
+  };
 
   const queryClient = useQueryClient();
 
@@ -145,7 +156,7 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
               <button
                 key={item}
                 type="button"
-                onClick={() => setScope(item)}
+                onClick={() => handleScopeChange(item)}
                 className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                   scope === item
                     ? "bg-white text-gray-900 shadow-sm"
@@ -160,37 +171,40 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
       />
       <MetricStrip columns={{ base: 3 }}>
         <MetricBlock
+          className="text-center"
           label="입금"
           value={
             <AmountDisclosure
               amount={summary.totalIncome}
               sign="+"
               tone="income"
-              align="left"
+              align="center"
               className="text-sm font-semibold"
             />
           }
         />
         <MetricBlock
+          className="text-center"
           label="지출"
           value={
             <AmountDisclosure
               amount={summary.totalExpense}
               sign="-"
               tone="expense"
-              align="left"
+              align="center"
               className="text-sm font-semibold"
             />
           }
         />
         <MetricBlock
+          className="text-center"
           label="잔액"
           value={
             <AmountDisclosure
               amount={summary.balance}
               sign={summary.balance >= 0 ? "+" : ""}
               tone={summary.balance >= 0 ? "neutral" : "expense"}
-              align="left"
+              align="center"
               className="text-sm font-semibold"
             />
           }
@@ -272,7 +286,7 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
           />
           <Button asChild className="w-full" size="icon-sm">
             <Link
-              href={`/ledger/records/new/daily?date=${formatKst(selectedDate, "yyyy-MM-dd")}`}
+              href={`/ledger/records/new/daily?date=${formatKst(selectedDate, "yyyy-MM-dd")}&scope=${scope}`}
             >
               <Plus className="w-5 h-5" />
               가계부 등록

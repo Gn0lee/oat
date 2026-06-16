@@ -14,7 +14,7 @@ interface AmountDisclosureProps {
   currency?: "KRW" | "USD";
   sign?: string;
   tone?: AmountTone;
-  align?: "left" | "right";
+  align?: "left" | "right" | "center";
   className?: string;
   amountClassName?: string;
   compactThreshold?: number;

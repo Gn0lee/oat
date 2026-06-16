@@ -1,6 +1,6 @@
 "use client";
 
-import { User, Wallet } from "lucide-react";
+import { ChevronRight, User, Wallet } from "lucide-react";
 import Link from "next/link";
 import {
   AmountText,
@@ -59,7 +59,7 @@ export function StockRecordDayList({
                       {transaction.stockName}
                     </span>
                   </div>
-                  <div className="shrink-0 text-right">
+                  <div className="flex items-center justify-end gap-1.5 shrink-0 text-right">
                     <AmountText
                       amount={transaction.price * transaction.quantity}
                       currency={transaction.currency}
@@ -70,6 +70,7 @@ export function StockRecordDayList({
                       tone="neutral"
                       className="text-sm font-medium whitespace-nowrap"
                     />
+                    <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 transition-colors flex-shrink-0" />
                   </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-gray-500 text-xs mt-1">

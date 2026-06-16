@@ -92,10 +92,32 @@ describe("LedgerRecordsClient", () => {
       "/ledger/records/entry-1?from=records&date=2026-06-16",
     );
 
-    // 4. add button href remains correctly formatted with date query
+    // 4. add button href remains correctly formatted with date and scope query
     expect(screen.getByRole("link", { name: /가계부 등록/ })).toHaveAttribute(
       "href",
-      "/ledger/records/new/daily?date=2026-06-16",
+      "/ledger/records/new/daily?date=2026-06-16&scope=shared",
+    );
+  });
+
+  it("initialScope가 personal일 때 daily add 버튼 링크에 scope=personal 쿼리가 포함된다", () => {
+    vi.mocked(useLedgerEntries).mockReturnValue({
+      data: [],
+      isLoading: false,
+    } as any);
+
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <LedgerRecordsClient initialDate="2026-06-16" initialScope="personal" />
+      </QueryClientProvider>,
+    );
+
+    expect(screen.getByRole("link", { name: /가계부 등록/ })).toHaveAttribute(
+      "href",
+      "/ledger/records/new/daily?date=2026-06-16&scope=personal",
     );
   });
 });

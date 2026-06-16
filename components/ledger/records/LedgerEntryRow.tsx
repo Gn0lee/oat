@@ -1,6 +1,6 @@
 "use client";
 
-import { UserIcon } from "lucide-react";
+import { ChevronRight, UserIcon } from "lucide-react";
 import Link from "next/link";
 import { AmountText } from "@/components/layout/screen";
 import { CategoryIcon } from "@/components/ledger/CategoryIcon";
@@ -17,11 +17,6 @@ export function LedgerEntryRow({ entry, href }: LedgerEntryRowProps) {
   const isTransfer = entry.type === "transfer";
   const isNonExpenseWithdrawal = entry.type === "non_expense_withdrawal";
   const amountSign = isTransfer ? "" : isIncome ? "+" : "-";
-  const amountColor = isTransfer
-    ? "text-gray-900"
-    : isIncome
-      ? "text-red-500"
-      : "text-blue-500";
 
   const paymentLabel =
     entry.fromPaymentMethodName ?? entry.fromAccountName ?? entry.toAccountName;
@@ -49,8 +44,8 @@ export function LedgerEntryRow({ entry, href }: LedgerEntryRowProps) {
       className="group flex items-start gap-3 border-b px-4 py-3 sm:px-5 transition-colors last:border-b-0 hover:bg-gray-50"
     >
       {/* 카테고리 아이콘 */}
-      <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-gray-100 flex items-center justify-center">
-        <CategoryIcon iconName={iconName} className="w-5 h-5 text-gray-600" />
+      <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center">
+        <CategoryIcon iconName={iconName} className="w-4 h-4 text-gray-600" />
       </div>
 
       {/* 내용 */}
@@ -74,7 +69,7 @@ export function LedgerEntryRow({ entry, href }: LedgerEntryRowProps) {
         )}
       </div>
 
-      <div className="max-w-[42%] flex-shrink-0 text-right">
+      <div className="flex items-center gap-1.5 max-w-[42%] flex-shrink-0 text-right">
         <AmountText
           amount={entry.amount}
           sign={amountSign}
@@ -82,6 +77,7 @@ export function LedgerEntryRow({ entry, href }: LedgerEntryRowProps) {
           title={`${amountSign}${formatCurrency(entry.amount)}`}
           className="text-sm whitespace-nowrap"
         />
+        <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 transition-colors flex-shrink-0" />
       </div>
     </Link>
   );

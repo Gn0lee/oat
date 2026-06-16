@@ -8,7 +8,6 @@ import {
   Pencil,
   PencilLine,
   Trash2,
-  WalletCards,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
@@ -29,6 +28,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -39,6 +46,7 @@ import {
   usePaymentMethodBalanceDetail,
 } from "@/hooks/use-balance-detail";
 import { useCurrentUserId } from "@/hooks/use-current-user";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import type { AccountWithOwner } from "@/lib/api/account";
 import type {
   AccountBalanceDetail,
@@ -481,6 +489,7 @@ function BalanceAdjustmentDialog({
     String(target.currentBalance),
   );
   const [memo, setMemo] = useState("");
+  const isDesktop = useMediaQuery("(min-width: 768px)");
 
   const delta = useMemo(() => {
     const next = Number(actualBalance);
@@ -501,71 +510,117 @@ function BalanceAdjustmentDialog({
     onOpenChange(false);
   };
 
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent onOpenAutoFocus={(event) => event.preventDefault()}>
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>
-            앱 잔액과 실제 잔액의 차이를 맞춘 기록이에요. 수입/지출 통계에는
-            포함되지 않아요.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="actual-balance">실제 잔액</Label>
-            <Input
-              id="actual-balance"
-              type="number"
-              inputMode="decimal"
-              value={actualBalance}
-              onChange={(event) => setActualBalance(event.target.value)}
-            />
-          </div>
-          <div className="rounded-xl bg-gray-50 p-3 text-sm">
-            <div className="flex items-center justify-between">
-              <span className="text-gray-500">현재 앱 잔액</span>
-              <span className="font-medium">
-                {formatCurrency(target.currentBalance)}
-              </span>
-            </div>
-            <div className="mt-2 flex items-center justify-between">
-              <span className="text-gray-500">조정 차액</span>
-              <span className="font-semibold">{formatCurrency(delta)}</span>
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="adjustment-memo">메모</Label>
-            <Textarea
-              id="adjustment-memo"
-              rows={3}
-              value={memo}
-              onChange={(event) => setMemo(event.target.value)}
-            />
-          </div>
+  const bodyContent = (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="actual-balance">실제 잔액</Label>
+        <Input
+          id="actual-balance"
+          type="number"
+          inputMode="decimal"
+          value={actualBalance}
+          onChange={(event) => setActualBalance(event.target.value)}
+        />
+      </div>
+      <div className="rounded-xl bg-gray-50 p-3 text-sm">
+        <div className="flex items-center justify-between">
+          <span className="text-gray-500">현재 앱 잔액</span>
+          <span className="font-medium">
+            {formatCurrency(target.currentBalance)}
+          </span>
         </div>
-        <DialogFooter>
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => onOpenChange(false)}
-            disabled={mutation.isPending}
-          >
-            취소
-          </Button>
-          <Button
-            type="button"
-            onClick={handleSubmit}
-            disabled={
-              mutation.isPending || !Number.isFinite(Number(actualBalance))
-            }
-          >
-            {mutation.isPending && <Loader2 className="size-4 animate-spin" />}
-            저장
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        <div className="mt-2 flex items-center justify-between">
+          <span className="text-gray-500">조정 차액</span>
+          <span className="font-semibold">{formatCurrency(delta)}</span>
+        </div>
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="adjustment-memo">메모</Label>
+        <Textarea
+          id="adjustment-memo"
+          rows={3}
+          value={memo}
+          onChange={(event) => setMemo(event.target.value)}
+        />
+      </div>
+    </div>
+  );
+
+  const descriptionText =
+    "앱 잔액과 실제 잔액의 차이를 맞춘 기록이에요. 수입/지출 통계에는 포함되지 않아요.";
+
+  if (isDesktop) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent onOpenAutoFocus={(event) => event.preventDefault()}>
+          <DialogHeader>
+            <DialogTitle>{title}</DialogTitle>
+            <DialogDescription>{descriptionText}</DialogDescription>
+          </DialogHeader>
+          {bodyContent}
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => onOpenChange(false)}
+              disabled={mutation.isPending}
+            >
+              취소
+            </Button>
+            <Button
+              type="button"
+              onClick={handleSubmit}
+              disabled={
+                mutation.isPending || !Number.isFinite(Number(actualBalance))
+              }
+            >
+              {mutation.isPending && (
+                <Loader2 className="size-4 animate-spin" />
+              )}
+              저장
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  return (
+    <Drawer open={open} onOpenChange={onOpenChange}>
+      <DrawerContent onOpenAutoFocus={(event) => event.preventDefault()}>
+        <DrawerHeader className="text-left">
+          <DrawerTitle>{title}</DrawerTitle>
+          <DrawerDescription>{descriptionText}</DrawerDescription>
+        </DrawerHeader>
+        <div className="px-4 py-2 space-y-4 overflow-y-auto">{bodyContent}</div>
+        <DrawerFooter className="pt-2 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={mutation.isPending}
+              className="flex-1"
+            >
+              취소
+            </Button>
+            <Button
+              type="button"
+              onClick={handleSubmit}
+              disabled={
+                mutation.isPending || !Number.isFinite(Number(actualBalance))
+              }
+              className="flex-1"
+            >
+              {mutation.isPending && (
+                <Loader2 className="size-4 animate-spin" />
+              )}
+              저장
+            </Button>
+          </div>
+        </DrawerFooter>
+      </DrawerContent>
+    </Drawer>
   );
 }
 

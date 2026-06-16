@@ -44,6 +44,21 @@ vi.mock("@/components/ui/dialog", () => ({
   DialogTitle: ({ children }: any) => <div>{children}</div>,
 }));
 
+// Mock window.matchMedia for JSDOM
+Object.defineProperty(window, "matchMedia", {
+  writable: true,
+  value: vi.fn().mockImplementation((query) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  })),
+});
+
 const mockAccountInvestmentDetail = {
   account: {
     id: "account-1",
