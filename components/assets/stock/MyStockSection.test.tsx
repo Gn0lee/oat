@@ -40,17 +40,17 @@ describe("MyStockSection", () => {
         },
         holdings: [
           {
-            ticker: "005930",
-            name: "아주아주아주아주아주긴이름의삼성전자주식",
-            market: "KR",
-            currency: "KRW",
+            ticker: "MSFT",
+            name: "Microsoft Corporation Long Name",
+            market: "US",
+            currency: "USD",
             quantity: 10,
-            avgPrice: 7000000,
-            currentPrice: 8000000,
-            totalInvested: 70000000,
-            currentValue: 80000000,
-            returnAmount: 10000000,
-            returnRate: 14.2857,
+            avgPrice: 300,
+            currentPrice: 400,
+            totalInvested: 3000,
+            currentValue: 4000,
+            returnAmount: 1000,
+            returnRate: 33.33,
             allocationPercent: 66.67,
             account: {
               id: "account-1",
@@ -83,7 +83,7 @@ describe("MyStockSection", () => {
       },
     } as unknown as ReturnType<typeof useStockAnalysis>);
 
-    render(<MyStockSection />);
+    const { container } = render(<MyStockSection />);
 
     expect(screen.getByText("투자 현황")).toBeInTheDocument();
     expect(screen.getByText("평가금액")).toBeInTheDocument();
@@ -98,22 +98,25 @@ describe("MyStockSection", () => {
     // Verify metric-safe typography (text-base) is applied
     expect(totalValueText).toHaveClass("text-base");
 
-    // Verify holding name line clamp and word break
-    const longName = screen.getByText(
-      "아주아주아주아주아주긴이름의삼성전자주식",
-    );
+    // Verify holding chart icon is not rendered (no size-10 class or lucide-bar-chart3/chart-column)
+    expect(container.querySelector(".size-10")).not.toBeInTheDocument();
+
+    // Verify holding name line clamp and break words, and not break-all
+    const longName = screen.getByText("Microsoft Corporation Long Name");
     expect(longName).toHaveClass("line-clamp-2");
+    expect(longName).toHaveClass("break-words");
+    expect(longName).not.toHaveClass("[word-break:break-all]");
 
     // Verify holding currentValue is compact and has full amount title
-    const samsungValueCompact = screen.getByText("8000만원");
-    expect(samsungValueCompact).toBeInTheDocument();
-    expect(samsungValueCompact.closest("[title]")).toHaveAttribute(
+    const microsoftValueCompact = screen.getByText("$4.00K");
+    expect(microsoftValueCompact).toBeInTheDocument();
+    expect(microsoftValueCompact.closest("[title]")).toHaveAttribute(
       "title",
-      "80,000,000원",
+      "US$4,000.00",
     );
 
     // Verify sign policy: positive has no +, negative has -
-    const positiveReturnCompact = screen.getByText("1000만원");
+    const positiveReturnCompact = screen.getByText("$1.00K");
     expect(positiveReturnCompact).toBeInTheDocument();
     expect(positiveReturnCompact.textContent).not.toContain("+");
 

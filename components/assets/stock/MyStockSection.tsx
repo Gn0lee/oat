@@ -1,6 +1,6 @@
 "use client";
 
-import { BarChart3, ChevronRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { useMemo } from "react";
 import {
@@ -149,18 +149,13 @@ export function MyStockSection() {
               href="/assets/stock/holdings"
               className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-gray-50 active:bg-gray-100"
             >
-              <div className="flex min-w-0 flex-1 items-center gap-3">
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-gray-100">
-                  <BarChart3 className="size-5 text-gray-600" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="font-medium text-gray-900 line-clamp-2 [word-break:break-all] whitespace-normal">
-                    {item.name}
-                  </p>
-                  <p className="mt-0.5 truncate text-sm text-gray-500">
-                    {item.ticker} · {item.quantity.toLocaleString()}주
-                  </p>
-                </div>
+              <div className="min-w-0 flex-1">
+                <p className="font-medium text-gray-900 line-clamp-2 break-words whitespace-normal">
+                  {item.name}
+                </p>
+                <p className="mt-0.5 truncate text-sm text-gray-500">
+                  {item.ticker} · {item.quantity.toLocaleString()}주
+                </p>
               </div>
               <div className="flex shrink-0 items-center gap-2">
                 <div className="w-[7.5rem] max-w-[40vw] shrink-0 text-right space-y-0.5 min-w-0">
