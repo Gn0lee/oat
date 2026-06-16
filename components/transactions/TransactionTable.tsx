@@ -61,8 +61,8 @@ function TransactionItem({
         href={detailHref}
         className="flex min-h-[72px] flex-col justify-center px-4 py-3.5 transition-colors hover:bg-gray-50 sm:px-5"
       >
-        <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
-          <div className="flex min-w-0 flex-1 items-start gap-2">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-3 items-start">
+          <div className="flex min-w-0 items-start gap-2">
             <Badge
               variant={isBuy ? "default" : "secondary"}
               className="shrink-0 px-1.5 py-0 text-[10px]"
@@ -73,11 +73,10 @@ function TransactionItem({
               {transaction.stockName}
             </span>
           </div>
-          <div className="max-w-full self-end text-right sm:shrink-0">
+          <div className="shrink-0 text-right">
             <AmountText
               amount={transaction.price * transaction.quantity}
               currency={transaction.currency}
-              compact
               title={formatCurrency(
                 transaction.price * transaction.quantity,
                 transaction.currency,

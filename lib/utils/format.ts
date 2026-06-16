@@ -32,14 +32,12 @@ export function formatCompactCurrency(
     const abs = Math.abs(value);
     const sign = value < 0 ? "-" : "";
     if (abs >= 100_000_000) {
-      const num = abs / 100_000_000;
-      const formatted = Number(num.toFixed(2));
-      return `${sign}${formatted}억원`;
+      const num = Math.round(abs / 100_000_000);
+      return `${sign}${num}억원`;
     }
     if (abs >= 10_000) {
-      const num = abs / 10_000;
-      const formatted = Number(num.toFixed(2));
-      return `${sign}${formatted}만원`;
+      const num = Math.round(abs / 10_000);
+      return `${sign}${num}만원`;
     }
     return `${sign}${abs.toLocaleString("ko-KR", { maximumFractionDigits: 0 })}원`;
   }

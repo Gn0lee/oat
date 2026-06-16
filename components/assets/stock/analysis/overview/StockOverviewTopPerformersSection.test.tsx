@@ -58,7 +58,7 @@ describe("StockOverviewTopPerformersSection", () => {
 
     // Verify gainer details
     const gainerRate = screen.getByText("+291.73%");
-    const gainerAmount = screen.getByText("306.08만원");
+    const gainerAmount = screen.getByText("306만원");
 
     expect(gainerRate).toBeInTheDocument();
     expect(gainerAmount).toBeInTheDocument();

@@ -81,15 +81,20 @@ describe("TransactionTable", () => {
     expect(screen.queryByRole("button", { name: "메뉴 열기" })).toBeNull();
 
     // Verify KRW formatting and title attribute
-    const samsungPriceText = screen.getByText("70만원");
+    const samsungPriceText = screen.getByText("700,000원");
     expect(samsungPriceText).toBeInTheDocument();
     expect(samsungPriceText.closest("[title]")).toHaveAttribute(
       "title",
       "700,000원",
     );
 
+    // Verify grid layout
+    const gridContainer = samsungPriceText.closest(".grid");
+    expect(gridContainer).toBeInTheDocument();
+    expect(gridContainer).toHaveClass("grid-cols-[minmax(0,1fr)_auto]");
+
     // Verify USD formatting and dollar sign inclusion
-    const applePriceText = screen.getByText("$380.00");
+    const applePriceText = screen.getByText("US$380.00");
     expect(applePriceText).toBeInTheDocument();
     expect(applePriceText.closest("[title]")).toHaveAttribute(
       "title",

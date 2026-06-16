@@ -21,15 +21,15 @@ describe("formatCurrency", () => {
 
 describe("formatCompactCurrency", () => {
   it("formats KRW values under 100 million compactly using 만원", () => {
-    expect(formatCompactCurrency(414000)).toBe("41.4만원");
+    expect(formatCompactCurrency(414000)).toBe("41만원");
   });
 
   it("formats KRW values over 100 million compactly using 억원", () => {
-    expect(formatCompactCurrency(125000000)).toBe("1.25억원");
+    expect(formatCompactCurrency(125000000)).toBe("1억원");
   });
 
   it("formats negative KRW values compactly", () => {
-    expect(formatCompactCurrency(-414000)).toBe("-41.4만원");
+    expect(formatCompactCurrency(-414000)).toBe("-41만원");
   });
 
   it("formats small KRW values with 원 suffix", () => {

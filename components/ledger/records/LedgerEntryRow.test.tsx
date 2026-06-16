@@ -92,10 +92,25 @@ describe("LedgerEntryRow", () => {
     const titleElement = screen.getByText("아주아주아주아주아주긴가계부제목");
     expect(titleElement).toHaveClass("line-clamp-2");
 
-    const expenseAmount = screen.getByText("-125만원");
+    const expenseAmount = screen.getByText("-1,250,000원");
     expect(expenseAmount).toBeInTheDocument();
     expect(expenseAmount).toHaveClass("[overflow-wrap:anywhere]");
     expect(expenseAmount).toHaveAttribute("title", "-1,250,000원");
+
+    // Add check for -42,000원
+    const midExpenseEntry: LedgerEntryWithDetails = {
+      ...baseEntry,
+      amount: 42000,
+      type: "expense",
+    };
+    rerender(
+      <LedgerEntryRow
+        entry={midExpenseEntry}
+        href={`/ledger/records/${midExpenseEntry.id}?from=records&date=2026-06-02`}
+      />,
+    );
+    const midExpenseAmount = screen.getByText("-42,000원");
+    expect(midExpenseAmount).toBeInTheDocument();
 
     const incomeEntry: LedgerEntryWithDetails = {
       ...baseEntry,
@@ -108,7 +123,7 @@ describe("LedgerEntryRow", () => {
         href={`/ledger/records/${incomeEntry.id}?from=records&date=2026-06-02`}
       />,
     );
-    const incomeAmount = screen.getByText("+125만원");
+    const incomeAmount = screen.getByText("+1,250,000원");
     expect(incomeAmount).toBeInTheDocument();
     expect(incomeAmount).toHaveAttribute("title", "+1,250,000원");
 
@@ -123,7 +138,7 @@ describe("LedgerEntryRow", () => {
         href={`/ledger/records/${transferEntry.id}?from=records&date=2026-06-02`}
       />,
     );
-    const transferAmount = screen.getByText("125만원");
+    const transferAmount = screen.getByText("1,250,000원");
     expect(transferAmount).toBeInTheDocument();
     expect(transferAmount).toHaveAttribute("title", "1,250,000원");
   });

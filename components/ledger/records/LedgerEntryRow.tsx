@@ -74,11 +74,9 @@ export function LedgerEntryRow({ entry, href }: LedgerEntryRowProps) {
         )}
       </div>
 
-      {/* 금액 */}
       <div className="max-w-[42%] flex-shrink-0 text-right">
         <AmountText
           amount={entry.amount}
-          compact
           sign={amountSign}
           tone={isTransfer ? "neutral" : isIncome ? "income" : "expense"}
           title={`${amountSign}${formatCurrency(entry.amount)}`}

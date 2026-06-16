@@ -32,9 +32,14 @@ describe("StockRecordDayList", () => {
     expect(screen.getByText("매수")).toBeInTheDocument();
     expect(screen.getByText("12주")).toBeInTheDocument();
 
-    const amountText = screen.getByText("41.4만원");
+    const amountText = screen.getByText("414,000원");
     expect(amountText).toBeInTheDocument();
     expect(amountText.closest("[title]")).toHaveAttribute("title", "414,000원");
+
+    // Verify stable two-column layout classes
+    const gridContainer = amountText.closest(".grid");
+    expect(gridContainer).toBeInTheDocument();
+    expect(gridContainer).toHaveClass("grid-cols-[minmax(0,1fr)_auto]");
 
     expect(screen.getByText("삼성증권")).toBeInTheDocument();
     expect(
