@@ -24,6 +24,27 @@ Then read:
 
 ## Review Priorities
 
+Review in two layers: first complete the mandatory passes below, then use the priority list to rank findings.
+
+## Mandatory Review Passes
+
+Before writing `tmp/agent-collab/review.md`, complete all three passes and record the coverage in the review output. Do not approve if any pass was skipped. If a pass has no findings, say that explicitly.
+
+1. Product/UX pass
+   - Check every acceptance criterion, user screenshot, policy decision, visible behavior, copy, signs, formatting, layout, accessibility affordance, and domain expectation.
+   - For visual/UI work, inspect the affected components and tests even when the screenshot issue looks obviously fixed.
+
+2. Implementation-quality pass
+   - Check module boundaries, formatter/component responsibilities, naming, type safety, unnecessary scope, duplication, local conventions, performance risks, accessibility risks, data integrity, and whether existing helpers were reused instead of reimplemented.
+   - Look for superficially correct UI fixes that leave fragile code, unbounded layout regions, over-broad selectors, platform assumptions, or contradictory ownership of business rules.
+
+3. Test/docs consistency pass
+   - Check that tests assert behavior rather than incidental Tailwind utility classes, broad DOM selectors, private structure, exact Intl currency spellings, or implementation details unless those are the explicit contract.
+   - For policy changes, run targeted text searches for stale examples, old symbols, old terminology, and contradictory comments across docs, comments, tests, `tmp/agent-collab/decisions.md`, and the touched implementation files.
+   - Check `implementation-report.md` against the actual diff and verification commands. Flag stale reports after follow-up commits.
+
+The review output must include a `## Review Coverage` section with one bullet for each pass. A review that lacks this section is incomplete.
+
 Check, in order:
 
 1. The implementation satisfies every acceptance criterion in `plan.md`.
@@ -82,6 +103,11 @@ Approved:
 ## Result
 Approved
 
+## Review Coverage
+- Product/UX pass: completed; ...
+- Implementation-quality pass: completed; ...
+- Test/docs consistency pass: completed; ...
+
 ## Notes
 - The implementation matches plan.md.
 - Reviewed implementation commits: ...
@@ -95,6 +121,11 @@ Changes requested:
 
 ## Result
 Changes Requested
+
+## Review Coverage
+- Product/UX pass: completed; ...
+- Implementation-quality pass: completed; ...
+- Test/docs consistency pass: completed; ...
 
 ## Critical
 - [ ] File/location:
@@ -120,6 +151,11 @@ Blocked:
 
 ## Result
 Blocked
+
+## Review Coverage
+- Product/UX pass: completed / skipped because ...
+- Implementation-quality pass: completed / skipped because ...
+- Test/docs consistency pass: completed / skipped because ...
 
 ## Questions
 - ...
