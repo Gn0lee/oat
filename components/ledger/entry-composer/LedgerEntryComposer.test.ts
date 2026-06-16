@@ -82,4 +82,17 @@ describe("LedgerEntryComposer schema", () => {
       toValue: "",
     });
   });
+  it("createDefaultItem은 isShared 매개변수를 생성되는 객체에 정확히 매핑한다", () => {
+    expect(
+      createDefaultItem({
+        type: "expense",
+        isShared: false,
+        date: "2026-06-05",
+      }),
+    ).toMatchObject({
+      type: "expense",
+      isShared: false,
+      transactedAt: "2026-06-05",
+    });
+  });
 });

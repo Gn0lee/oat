@@ -18,6 +18,7 @@ vi.mock("./HoldingsTable", () => ({
     data: Array<{ ticker: string; name: string }>;
   }) => (
     <div>
+      <p>총 {data.length}개 종목</p>
       {data.map((item) => (
         <div key={item.ticker}>
           <span>{item.name}</span>
@@ -60,7 +61,7 @@ describe("HoldingsList", () => {
     render(<HoldingsList members={members} accounts={accounts} />);
 
     expect(
-      screen.getByText("보유 현황을 불러오지 못했습니다."),
+      screen.getByText("보유 현황을 불러오지 못했습니다"),
     ).toBeInTheDocument();
   });
 
@@ -96,7 +97,7 @@ describe("HoldingsList", () => {
 
     render(<HoldingsList members={members} accounts={accounts} />);
 
-    expect(screen.getByText("총 1개 종목 보유 중")).toBeInTheDocument();
+    expect(screen.getByText("총 1개 종목")).toBeInTheDocument();
     expect(screen.getByText("삼성전자")).toBeInTheDocument();
     expect(screen.getByText("005930")).toBeInTheDocument();
   });

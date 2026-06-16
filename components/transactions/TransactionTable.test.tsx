@@ -92,6 +92,9 @@ describe("TransactionTable", () => {
     const gridContainer = samsungPriceText.closest(".grid");
     expect(gridContainer).toBeInTheDocument();
     expect(gridContainer).toHaveClass("grid-cols-[minmax(0,1fr)_auto]");
+    expect(
+      screen.getAllByTestId("stock-transaction-row-chevron").length,
+    ).toBeGreaterThan(0);
 
     // Verify USD formatting and dollar sign inclusion (supporting either US$380.00 or $380.00)
     const applePriceText = screen.getByText(/^(US)?\$380\.00$/);

@@ -107,6 +107,7 @@ export type LedgerComposerItemValues = z.infer<typeof ledgerComposerItemSchema>;
 interface LedgerEntryComposerProps {
   mode: "full" | "daily";
   defaultDate?: string;
+  defaultIsShared?: boolean;
 }
 
 export function createDefaultItem({
@@ -143,6 +144,7 @@ function parseTransferLocation(value: string) {
 export function LedgerEntryComposer({
   mode,
   defaultDate,
+  defaultIsShared = true,
 }: LedgerEntryComposerProps) {
   const router = useRouter();
   const createBatch = useCreateBatchLedgerEntries();
@@ -156,7 +158,7 @@ export function LedgerEntryComposer({
     resolver: zodResolver(ledgerComposerSchema),
     defaultValues: {
       defaultType: "expense",
-      defaultIsShared: true,
+      defaultIsShared: defaultIsShared,
       defaultDate: defaultDate ?? "",
       items: [],
     },

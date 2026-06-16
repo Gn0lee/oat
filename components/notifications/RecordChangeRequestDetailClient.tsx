@@ -3,6 +3,14 @@
 import { CheckIcon, XIcon } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import {
+  AmountDisclosure,
+  GroupedList,
+  ScreenSection,
+  ScreenState,
+  SectionHeader,
+} from "@/components/layout/screen";
+import { DetailInfoRow } from "@/components/records/DetailInfoRow";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -25,8 +33,11 @@ function toRecord(value: Json): Record<string, unknown> {
   return value as Record<string, unknown>;
 }
 
-function formatValue(value: unknown) {
-  if (typeof value === "number") return formatCurrency(value);
+function formatValue(value: unknown, key?: string) {
+  if (typeof value === "number") {
+    if (key === "quantity") return `${value.toLocaleString()}주`;
+    return formatCurrency(value);
+  }
   if (typeof value === "string") return value || "-";
   if (value === null || value === undefined) return "-";
   return String(value);
@@ -128,9 +139,11 @@ export function RecordChangeRequestDetailClient({
 
   if (error || !request) {
     return (
-      <div className="rounded-lg bg-white p-4 text-sm text-muted-foreground">
-        요청을 불러올 수 없습니다.
-      </div>
+      <ScreenState
+        type="error"
+        title="요청을 불러올 수 없습니다."
+        description="잠시 후 다시 시도해주세요."
+      />
     );
   }
 
@@ -179,103 +192,106 @@ export function RecordChangeRequestDetailClient({
   };
 
   return (
-    <div className="space-y-4 pb-6">
-      <div className="rounded-lg bg-white p-4 shadow-sm">
-        <div className="mb-3 flex items-center justify-between gap-3">
-          <div>
-            <p className="text-sm text-muted-foreground">
-              {request.request_type === "update" ? "수정 요청" : "삭제 요청"}
-            </p>
-            <h2 className="mt-1 text-lg font-semibold text-gray-900">
-              {getSnapshotTitle(snapshot)}
-            </h2>
-          </div>
-          <Badge variant={request.status === "pending" ? "default" : "outline"}>
-            {getStatusLabel(request.status)}
-          </Badge>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3 text-sm">
+    <div className="space-y-6 pb-6">
+      <ScreenSection>
+        <SectionHeader
+          title={getSnapshotTitle(snapshot)}
+          description={
+            request.request_type === "update" ? "수정 요청" : "삭제 요청"
+          }
+          action={
+            <Badge
+              variant={request.status === "pending" ? "default" : "outline"}
+            >
+              {getStatusLabel(request.status)}
+            </Badge>
+          }
+        />
+        <GroupedList>
           {getSnapshotMeta(snapshot).map((item) => (
-            <div key={item.label}>
-              <p className="text-muted-foreground">{item.label}</p>
-              <p className="font-semibold">{item.value}</p>
-            </div>
+            <DetailInfoRow
+              key={item.label}
+              label={item.label}
+              value={item.value}
+            />
           ))}
-        </div>
-      </div>
+        </GroupedList>
+      </ScreenSection>
 
       {request.request_type === "update" ? (
-        <div className="rounded-lg bg-white p-4 shadow-sm">
-          <h3 className="mb-3 text-sm font-semibold text-gray-900">
-            변경 내용
-          </h3>
-          <div className="space-y-2">
+        <ScreenSection>
+          <SectionHeader title="변경 내용" />
+          <GroupedList>
             {Object.entries(proposedChanges).map(([key, value]) => (
               <div
                 key={key}
-                className="grid grid-cols-[5rem_1fr_1fr] gap-2 rounded-md bg-muted/40 p-3 text-sm"
+                className="grid grid-cols-[100px_1fr_1fr] gap-4 px-4 py-3 sm:px-5 text-sm"
               >
-                <span className="text-muted-foreground">
+                <span className="text-gray-500 font-medium">
                   {FIELD_LABELS[key] ?? key}
                 </span>
-                <span>{formatValue(snapshot[key])}</span>
+                <span className="text-gray-900">
+                  {formatValue(snapshot[key], key)}
+                </span>
                 <span className="font-semibold text-gray-900">
-                  {formatValue(value)}
+                  {formatValue(value, key)}
                 </span>
               </div>
             ))}
-          </div>
-        </div>
+          </GroupedList>
+        </ScreenSection>
       ) : (
-        <div className="rounded-lg bg-white p-4 shadow-sm">
-          <h3 className="mb-2 text-sm font-semibold text-gray-900">
-            삭제 사유
-          </h3>
-          <p className="text-sm text-muted-foreground">
-            {request.message || "삭제 사유가 입력되지 않았습니다."}
-          </p>
-        </div>
+        <ScreenSection>
+          <SectionHeader title="삭제 사유" />
+          <div className="rounded-xl border border-gray-100 bg-white p-4">
+            <p className="text-sm text-gray-600">
+              {request.message || "삭제 사유가 입력되지 않았습니다."}
+            </p>
+          </div>
+        </ScreenSection>
       )}
 
       {request.message && request.request_type === "update" ? (
-        <div className="rounded-lg bg-white p-4 shadow-sm">
-          <h3 className="mb-2 text-sm font-semibold text-gray-900">
-            요청 메시지
-          </h3>
-          <p className="text-sm text-muted-foreground">{request.message}</p>
-        </div>
+        <ScreenSection>
+          <SectionHeader title="요청 메시지" />
+          <div className="rounded-xl border border-gray-100 bg-white p-4">
+            <p className="text-sm text-gray-600">{request.message}</p>
+          </div>
+        </ScreenSection>
       ) : null}
 
       {canResolve ? (
-        <div className="rounded-lg bg-white p-4 shadow-sm">
-          <Textarea
-            value={responseMessage}
-            rows={3}
-            className="mb-3 resize-none"
-            placeholder="응답 메시지 (선택)"
-            onChange={(event) => setResponseMessage(event.target.value)}
-          />
-          <div className="grid grid-cols-2 gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => handleResolve("rejected")}
-              disabled={resolveMutation.isPending}
-            >
-              <XIcon className="h-4 w-4" />
-              거절
-            </Button>
-            <Button
-              type="button"
-              onClick={() => handleResolve("approved")}
-              disabled={resolveMutation.isPending}
-            >
-              <CheckIcon className="h-4 w-4" />
-              승인
-            </Button>
+        <ScreenSection>
+          <SectionHeader title="요청 처리" />
+          <div className="rounded-xl border border-gray-100 bg-white p-4">
+            <Textarea
+              value={responseMessage}
+              rows={3}
+              className="mb-3 resize-none"
+              placeholder="응답 메시지 (선택)"
+              onChange={(event) => setResponseMessage(event.target.value)}
+            />
+            <div className="grid grid-cols-2 gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => handleResolve("rejected")}
+                disabled={resolveMutation.isPending}
+              >
+                <XIcon className="h-4 w-4" />
+                거절
+              </Button>
+              <Button
+                type="button"
+                onClick={() => handleResolve("approved")}
+                disabled={resolveMutation.isPending}
+              >
+                <CheckIcon className="h-4 w-4" />
+                승인
+              </Button>
+            </div>
           </div>
-        </div>
+        </ScreenSection>
       ) : null}
 
       {canCancel ? (

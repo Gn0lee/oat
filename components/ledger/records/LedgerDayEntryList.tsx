@@ -1,5 +1,12 @@
 "use client";
 
+import {
+  GroupedList,
+  ScreenSection,
+  ScreenState,
+  SectionHeader,
+} from "@/components/layout/screen";
+import { Badge } from "@/components/ui/badge";
 import type { LedgerEntryWithDetails } from "@/lib/api/ledger";
 import { formatKst } from "@/lib/date";
 import { LedgerEntryRow } from "./LedgerEntryRow";
@@ -17,17 +24,22 @@ export function LedgerDayEntryList({
   const dateParam = formatKst(selectedDate, "yyyy-MM-dd");
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm mt-4 md:mt-0">
-      <div className="px-4 pt-4 pb-2">
-        <h3 className="text-sm font-semibold text-gray-700">{dateLabel}</h3>
-      </div>
+    <ScreenSection className="mt-4 md:mt-0">
+      <SectionHeader
+        title={dateLabel}
+        action={
+          entries.length > 0 ? (
+            <Badge variant="secondary" className="font-medium">
+              {entries.length}건
+            </Badge>
+          ) : null
+        }
+      />
 
       {entries.length === 0 ? (
-        <p className="px-4 pb-4 text-sm text-gray-400">
-          이 날의 기록이 없습니다.
-        </p>
+        <ScreenState type="empty" title="이 날의 기록이 없습니다." />
       ) : (
-        <div className="px-4 pb-2">
+        <GroupedList>
           {entries.map((entry) => (
             <LedgerEntryRow
               key={entry.id}
@@ -35,8 +47,8 @@ export function LedgerDayEntryList({
               href={`/ledger/records/${entry.id}?from=records&date=${dateParam}`}
             />
           ))}
-        </div>
+        </GroupedList>
       )}
-    </div>
+    </ScreenSection>
   );
 }

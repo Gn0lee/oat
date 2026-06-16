@@ -1,3 +1,4 @@
+export { AmountDisclosure } from "./AmountDisclosure";
 export { AmountText, type AmountTone } from "./AmountText";
 export { EntryRow, type EntryRowAction } from "./EntryRow";
 export { GroupedList } from "./GroupedList";

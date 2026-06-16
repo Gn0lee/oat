@@ -6,6 +6,7 @@ import { getKstToday } from "@/lib/date";
 interface DailyLedgerEntryPageProps {
   searchParams: Promise<{
     date?: string;
+    scope?: string;
   }>;
 }
 
@@ -19,7 +20,8 @@ function getDefaultDate(date?: string) {
 export default async function DailyLedgerEntryPage({
   searchParams,
 }: DailyLedgerEntryPageProps) {
-  const { date } = await searchParams;
+  const { date, scope } = await searchParams;
+  const defaultIsShared = scope !== "personal";
 
   return (
     <PageContainer maxWidth="narrow">
@@ -33,7 +35,11 @@ export default async function DailyLedgerEntryPage({
           </div>
         }
       >
-        <LedgerEntryComposer mode="daily" defaultDate={getDefaultDate(date)} />
+        <LedgerEntryComposer
+          mode="daily"
+          defaultDate={getDefaultDate(date)}
+          defaultIsShared={defaultIsShared}
+        />
       </Suspense>
     </PageContainer>
   );

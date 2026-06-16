@@ -41,6 +41,7 @@ export function StockRecordsCalendar({
         !modifiers.range_start &&
         !modifiers.range_end &&
         !modifiers.range_middle;
+      const isOutside = Boolean(modifiers.outside);
 
       return (
         <CalendarDayButton
@@ -50,18 +51,25 @@ export function StockRecordsCalendar({
           className="flex-col gap-0 py-1 data-[selected-single=true]:!bg-transparent data-[selected-single=true]:!text-inherit hover:!bg-transparent"
         >
           <span
+            data-outside={isOutside || undefined}
             className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium transition-colors ${
               isSelected
                 ? "bg-gray-800 text-white"
                 : modifiers.today
                   ? "bg-gray-100 text-gray-900"
-                  : "text-gray-900"
+                  : isOutside
+                    ? "text-gray-300"
+                    : "text-gray-900"
             }`}
           >
             {children}
           </span>
 
-          <span className="flex min-h-[22px] flex-col items-center justify-start gap-0.5 pt-0.5">
+          <span
+            className={`flex min-h-[22px] flex-col items-center justify-start gap-0.5 pt-0.5 ${
+              isOutside ? "opacity-45" : ""
+            }`}
+          >
             {summary && summary.buy > 0 && (
               <span className="text-[9px] font-medium text-red-500 leading-none">
                 매수 {summary.buy}건

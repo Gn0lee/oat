@@ -40,6 +40,10 @@ describe("StockRecordDayList", () => {
     const gridContainer = amountText.closest(".grid");
     expect(gridContainer).toBeInTheDocument();
     expect(gridContainer).toHaveClass("grid-cols-[minmax(0,1fr)_auto]");
+    expect(
+      screen.getAllByTestId("stock-transaction-row-chevron").length,
+    ).toBeGreaterThan(0);
+    expect(amountText).toHaveClass("whitespace-nowrap");
 
     expect(screen.getByText("삼성증권")).toBeInTheDocument();
     expect(
@@ -60,5 +64,36 @@ describe("StockRecordDayList", () => {
     );
 
     expect(screen.getByText(transaction.stockName)).toHaveClass("line-clamp-2");
+  });
+
+  it("renders large transaction amount without compacting it", () => {
+    const largeTx: TransactionWithDetails = {
+      ...transaction,
+      id: "tx-large",
+      quantity: 10,
+      price: 125000, // total: 1,250,000
+    };
+
+    render(
+      <StockRecordDayList selectedDate="2026-05-31" transactions={[largeTx]} />,
+    );
+
+    const amountText = screen.getByText("1,250,000원");
+    expect(amountText).toBeInTheDocument();
+    expect(amountText).toHaveClass("whitespace-nowrap");
+    expect(amountText.textContent).not.toContain("125만원");
+    expect(amountText.closest("[title]")).toHaveAttribute(
+      "title",
+      "1,250,000원",
+    );
+  });
+
+  it("renders empty screen state when there are no transactions", () => {
+    render(<StockRecordDayList selectedDate="2026-05-31" transactions={[]} />);
+
+    expect(screen.getByTestId("screen-state")).toBeInTheDocument();
+    expect(
+      screen.getByText("선택한 날짜의 거래가 없습니다."),
+    ).toBeInTheDocument();
   });
 });

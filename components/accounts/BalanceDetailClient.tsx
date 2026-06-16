@@ -5,10 +5,20 @@ import {
   ArrowUpRight,
   Banknote,
   Loader2,
+  Pencil,
   PencilLine,
-  WalletCards,
+  Trash2,
 } from "lucide-react";
 import { useMemo, useState } from "react";
+import {
+  AmountDisclosure,
+  GroupedList,
+  MetricBlock,
+  MetricStrip,
+  ScreenSection,
+  ScreenState,
+  SectionHeader,
+} from "@/components/layout/screen";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -18,6 +28,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -28,13 +46,20 @@ import {
   usePaymentMethodBalanceDetail,
 } from "@/hooks/use-balance-detail";
 import { useCurrentUserId } from "@/hooks/use-current-user";
+import { useMediaQuery } from "@/hooks/use-media-query";
+import type { AccountWithOwner } from "@/lib/api/account";
 import type {
   AccountBalanceDetail,
   BalanceTimelineItem,
   PaymentMethodBalanceDetail,
 } from "@/lib/api/balance-adjustment";
+import type { PaymentMethodWithDetails } from "@/lib/api/payment-method";
 import { cn } from "@/lib/utils/cn";
 import { formatCurrency } from "@/lib/utils/format";
+import { AccountDeleteDialog } from "./AccountDeleteDialog";
+import { AccountFormDialog } from "./AccountFormDialog";
+import { PaymentMethodDeleteDialog } from "./PaymentMethodDeleteDialog";
+import { PaymentMethodFormDialog } from "./PaymentMethodFormDialog";
 
 const AUXILIARY_PAYMENT_METHOD_TYPES = new Set([
   "prepaid",
@@ -127,6 +152,7 @@ function AccountBalanceDetailView({ id }: { id: string }) {
         ownerId: data.account.ownerId,
       }}
       timeline={data.timeline}
+      account={data.account}
     />
   );
 }
@@ -171,6 +197,7 @@ function PaymentMethodBalanceDetailView({ id }: { id: string }) {
         ownerId: data.paymentMethod.ownerId,
       }}
       timeline={data.timeline}
+      paymentMethod={data.paymentMethod}
     />
   );
 }
@@ -188,6 +215,8 @@ function BalanceDetailLayout({
   actionLabel,
   target,
   timeline,
+  account,
+  paymentMethod,
 }: {
   title: string;
   subtitle: string;
@@ -207,51 +236,112 @@ function BalanceDetailLayout({
     ownerId: string;
   };
   timeline: BalanceTimelineItem[];
+  account?: AccountBalanceDetail["account"];
+  paymentMethod?: PaymentMethodBalanceDetail["paymentMethod"];
 }) {
   const { userId } = useCurrentUserId();
   const [adjustOpen, setAdjustOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const canCurrentUserAdjust = canAdjust && userId === target.ownerId;
+  const isOwner = userId === target.ownerId;
+
+  const accountData = account
+    ? ({
+        ...account,
+        createdAt: "",
+        updatedAt: "",
+      } as AccountWithOwner)
+    : null;
+
+  const paymentMethodData = paymentMethod
+    ? ({
+        ...paymentMethod,
+        createdAt: "",
+        updatedAt: "",
+      } as PaymentMethodWithDetails)
+    : null;
 
   return (
-    <div className="space-y-5">
-      <section className="rounded-2xl bg-white p-5 shadow-sm">
-        <div className="flex items-start gap-3">
-          <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-            <Banknote className="size-5" />
+    <div className="space-y-6">
+      <ScreenSection>
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start gap-3 min-w-0 flex-1">
+            <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <Banknote className="size-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h1 className="truncate font-semibold text-gray-900 text-xl">
+                {title}
+              </h1>
+              {subtitle && (
+                <p className="mt-1 text-gray-500 text-sm">{subtitle}</p>
+              )}
+            </div>
           </div>
-          <div className="min-w-0 flex-1">
-            <h1 className="truncate font-semibold text-gray-900 text-xl">
-              {title}
-            </h1>
-            {subtitle && (
-              <p className="mt-1 text-gray-500 text-sm">{subtitle}</p>
-            )}
-          </div>
+          {isOwner && (
+            <div className="flex items-center gap-1 shrink-0">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-9"
+                onClick={() => setEditOpen(true)}
+              >
+                <Pencil className="size-4" />
+                <span className="sr-only">수정</span>
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-9 text-destructive hover:text-destructive hover:bg-destructive/5"
+                onClick={() => setDeleteOpen(true)}
+              >
+                <Trash2 className="size-4" />
+                <span className="sr-only">삭제</span>
+              </Button>
+            </div>
+          )}
         </div>
 
         {balance !== null && (
           <div className="mt-6">
-            <p className="text-gray-500 text-sm">{balanceLabel}</p>
-            <p className="mt-1 font-bold text-3xl text-gray-900">
-              {formatCurrency(balance)}
-            </p>
+            <p className="text-gray-500 text-sm mb-1">{balanceLabel}</p>
+            <AmountDisclosure
+              amount={balance}
+              tone="neutral"
+              align="left"
+              compactThreshold={Number.POSITIVE_INFINITY}
+              className="mt-1 block max-w-full text-3xl font-bold leading-tight"
+            />
           </div>
         )}
 
         {totalLabel && (
-          <div className="mt-4 grid grid-cols-2 gap-3">
-            <div className="rounded-xl bg-gray-50 p-3">
-              <p className="text-gray-500 text-xs">보유 주식 평가액</p>
-              <p className="mt-1 font-semibold text-gray-900">
-                {formatCurrency(stockValue ?? 0)}
-              </p>
-            </div>
-            <div className="rounded-xl bg-gray-50 p-3">
-              <p className="text-gray-500 text-xs">{totalLabel}</p>
-              <p className="mt-1 font-semibold text-gray-900">
-                {formatCurrency(totalValue ?? 0)}
-              </p>
-            </div>
+          <div className="mt-6">
+            <MetricStrip columns={{ base: 2 }}>
+              <MetricBlock
+                label="보유 주식 평가액"
+                value={
+                  <AmountDisclosure
+                    amount={stockValue ?? 0}
+                    tone="neutral"
+                    align="left"
+                    className="text-base font-semibold"
+                  />
+                }
+              />
+              <MetricBlock
+                label={totalLabel}
+                value={
+                  <AmountDisclosure
+                    amount={totalValue ?? 0}
+                    tone="neutral"
+                    align="left"
+                    className="text-base font-semibold"
+                  />
+                }
+              />
+            </MetricStrip>
           </div>
         )}
 
@@ -269,7 +359,7 @@ function BalanceDetailLayout({
             {actionLabel}
           </Button>
         )}
-      </section>
+      </ScreenSection>
 
       <TimelineSection items={timeline} />
 
@@ -279,52 +369,67 @@ function BalanceDetailLayout({
         title={actionLabel}
         target={target}
       />
+
+      {isOwner && target.targetType === "account" && accountData && (
+        <>
+          <AccountFormDialog
+            open={editOpen}
+            onOpenChange={setEditOpen}
+            account={accountData}
+          />
+          <AccountDeleteDialog
+            open={deleteOpen}
+            onOpenChange={setDeleteOpen}
+            account={accountData}
+          />
+        </>
+      )}
+
+      {isOwner &&
+        target.targetType === "payment_method" &&
+        paymentMethodData && (
+          <>
+            <PaymentMethodFormDialog
+              open={editOpen}
+              onOpenChange={setEditOpen}
+              paymentMethod={paymentMethodData}
+            />
+            <PaymentMethodDeleteDialog
+              open={deleteOpen}
+              onOpenChange={setDeleteOpen}
+              paymentMethod={paymentMethodData}
+            />
+          </>
+        )}
     </div>
   );
 }
 
 function TimelineSection({ items }: { items: BalanceTimelineItem[] }) {
   return (
-    <section className="space-y-2">
-      <h2 className="px-1 font-semibold text-gray-700 text-sm">
-        잔액 변화 내역
-      </h2>
-      <div className="overflow-hidden rounded-2xl bg-white shadow-sm">
-        {items.length === 0 ? (
-          <div className="p-6 text-center text-gray-500 text-sm">
-            아직 표시할 내역이 없습니다.
-          </div>
-        ) : (
-          items.map((item, index) => (
-            <TimelineRow
-              key={`${item.kind}:${item.id}`}
-              item={item}
-              showBorder={index > 0}
-            />
-          ))
-        )}
-      </div>
-    </section>
+    <ScreenSection>
+      <SectionHeader title="잔액 변화 내역" />
+      {items.length === 0 ? (
+        <div className="p-6 text-center text-gray-500 text-sm">
+          아직 표시할 내역이 없습니다.
+        </div>
+      ) : (
+        <GroupedList>
+          {items.map((item) => (
+            <TimelineRow key={`${item.kind}:${item.id}`} item={item} />
+          ))}
+        </GroupedList>
+      )}
+    </ScreenSection>
   );
 }
 
-function TimelineRow({
-  item,
-  showBorder,
-}: {
-  item: BalanceTimelineItem;
-  showBorder: boolean;
-}) {
+function TimelineRow({ item }: { item: BalanceTimelineItem }) {
   const isPositive = item.delta >= 0;
   const Icon = isPositive ? ArrowDownLeft : ArrowUpRight;
 
   return (
-    <article
-      className={cn(
-        "flex items-center gap-3 p-4",
-        showBorder && "border-gray-100 border-t",
-      )}
-    >
+    <article className="flex items-center gap-3 px-4 py-3 sm:px-5 hover:bg-gray-50/50 transition-colors">
       <div
         className={cn(
           "flex size-10 shrink-0 items-center justify-center rounded-full",
@@ -337,24 +442,28 @@ function TimelineRow({
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex min-w-0 items-center gap-2">
-          <p className="truncate font-medium text-gray-900">{item.title}</p>
+          <p className="truncate font-medium text-gray-900 text-sm">
+            {item.title}
+          </p>
           <span className="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 font-medium text-[11px] text-gray-500">
             {item.label}
           </span>
         </div>
-        <p className="mt-1 text-gray-500 text-sm">
+        <p className="mt-1 text-gray-500 text-xs">
           {formatDateTime(item.occurredAt)}
         </p>
       </div>
-      <p
-        className={cn(
-          "shrink-0 font-semibold",
-          isPositive ? "text-green-700" : "text-gray-900",
-        )}
-      >
-        {isPositive ? "+" : "-"}
-        {formatCurrency(Math.abs(item.delta))}
-      </p>
+      <div className="max-w-[42%] min-w-[5rem] flex-shrink-0 text-right">
+        <p
+          className={cn(
+            "font-semibold text-sm whitespace-nowrap",
+            isPositive ? "text-green-700" : "text-gray-900",
+          )}
+        >
+          {isPositive ? "+" : "-"}
+          {formatCurrency(Math.abs(item.delta))}
+        </p>
+      </div>
     </article>
   );
 }
@@ -380,6 +489,7 @@ function BalanceAdjustmentDialog({
     String(target.currentBalance),
   );
   const [memo, setMemo] = useState("");
+  const isDesktop = useMediaQuery("(min-width: 768px)");
 
   const delta = useMemo(() => {
     const next = Number(actualBalance);
@@ -400,71 +510,117 @@ function BalanceAdjustmentDialog({
     onOpenChange(false);
   };
 
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent onOpenAutoFocus={(event) => event.preventDefault()}>
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>
-            앱 잔액과 실제 잔액의 차이를 맞춘 기록이에요. 수입/지출 통계에는
-            포함되지 않아요.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="actual-balance">실제 잔액</Label>
-            <Input
-              id="actual-balance"
-              type="number"
-              inputMode="decimal"
-              value={actualBalance}
-              onChange={(event) => setActualBalance(event.target.value)}
-            />
-          </div>
-          <div className="rounded-xl bg-gray-50 p-3 text-sm">
-            <div className="flex items-center justify-between">
-              <span className="text-gray-500">현재 앱 잔액</span>
-              <span className="font-medium">
-                {formatCurrency(target.currentBalance)}
-              </span>
-            </div>
-            <div className="mt-2 flex items-center justify-between">
-              <span className="text-gray-500">조정 차액</span>
-              <span className="font-semibold">{formatCurrency(delta)}</span>
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="adjustment-memo">메모</Label>
-            <Textarea
-              id="adjustment-memo"
-              rows={3}
-              value={memo}
-              onChange={(event) => setMemo(event.target.value)}
-            />
-          </div>
+  const bodyContent = (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="actual-balance">실제 잔액</Label>
+        <Input
+          id="actual-balance"
+          type="number"
+          inputMode="decimal"
+          value={actualBalance}
+          onChange={(event) => setActualBalance(event.target.value)}
+        />
+      </div>
+      <div className="rounded-xl bg-gray-50 p-3 text-sm">
+        <div className="flex items-center justify-between">
+          <span className="text-gray-500">현재 앱 잔액</span>
+          <span className="font-medium">
+            {formatCurrency(target.currentBalance)}
+          </span>
         </div>
-        <DialogFooter>
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => onOpenChange(false)}
-            disabled={mutation.isPending}
-          >
-            취소
-          </Button>
-          <Button
-            type="button"
-            onClick={handleSubmit}
-            disabled={
-              mutation.isPending || !Number.isFinite(Number(actualBalance))
-            }
-          >
-            {mutation.isPending && <Loader2 className="size-4 animate-spin" />}
-            저장
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        <div className="mt-2 flex items-center justify-between">
+          <span className="text-gray-500">조정 차액</span>
+          <span className="font-semibold">{formatCurrency(delta)}</span>
+        </div>
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="adjustment-memo">메모</Label>
+        <Textarea
+          id="adjustment-memo"
+          rows={3}
+          value={memo}
+          onChange={(event) => setMemo(event.target.value)}
+        />
+      </div>
+    </div>
+  );
+
+  const descriptionText =
+    "앱 잔액과 실제 잔액의 차이를 맞춘 기록이에요. 수입/지출 통계에는 포함되지 않아요.";
+
+  if (isDesktop) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent onOpenAutoFocus={(event) => event.preventDefault()}>
+          <DialogHeader>
+            <DialogTitle>{title}</DialogTitle>
+            <DialogDescription>{descriptionText}</DialogDescription>
+          </DialogHeader>
+          {bodyContent}
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => onOpenChange(false)}
+              disabled={mutation.isPending}
+            >
+              취소
+            </Button>
+            <Button
+              type="button"
+              onClick={handleSubmit}
+              disabled={
+                mutation.isPending || !Number.isFinite(Number(actualBalance))
+              }
+            >
+              {mutation.isPending && (
+                <Loader2 className="size-4 animate-spin" />
+              )}
+              저장
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  return (
+    <Drawer open={open} onOpenChange={onOpenChange}>
+      <DrawerContent onOpenAutoFocus={(event) => event.preventDefault()}>
+        <DrawerHeader className="text-left">
+          <DrawerTitle>{title}</DrawerTitle>
+          <DrawerDescription>{descriptionText}</DrawerDescription>
+        </DrawerHeader>
+        <div className="px-4 py-2 space-y-4 overflow-y-auto">{bodyContent}</div>
+        <DrawerFooter className="pt-2 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={mutation.isPending}
+              className="flex-1"
+            >
+              취소
+            </Button>
+            <Button
+              type="button"
+              onClick={handleSubmit}
+              disabled={
+                mutation.isPending || !Number.isFinite(Number(actualBalance))
+              }
+              className="flex-1"
+            >
+              {mutation.isPending && (
+                <Loader2 className="size-4 animate-spin" />
+              )}
+              저장
+            </Button>
+          </div>
+        </DrawerFooter>
+      </DrawerContent>
+    </Drawer>
   );
 }
 
@@ -479,11 +635,10 @@ function BalanceDetailSkeleton() {
 
 function BalanceDetailError() {
   return (
-    <div className="rounded-2xl bg-white p-8 text-center shadow-sm">
-      <WalletCards className="mx-auto size-10 text-gray-300" />
-      <p className="mt-3 text-gray-500 text-sm">
-        상세 정보를 불러오지 못했습니다.
-      </p>
-    </div>
+    <ScreenState
+      type="error"
+      title="상세 정보를 불러오지 못했습니다."
+      description="잠시 후 다시 시도해주세요."
+    />
   );
 }
