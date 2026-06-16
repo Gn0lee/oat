@@ -5,7 +5,9 @@ import {
   ArrowUpRight,
   Banknote,
   Loader2,
+  Pencil,
   PencilLine,
+  Trash2,
   WalletCards,
 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -37,13 +39,19 @@ import {
   usePaymentMethodBalanceDetail,
 } from "@/hooks/use-balance-detail";
 import { useCurrentUserId } from "@/hooks/use-current-user";
+import type { AccountWithOwner } from "@/lib/api/account";
 import type {
   AccountBalanceDetail,
   BalanceTimelineItem,
   PaymentMethodBalanceDetail,
 } from "@/lib/api/balance-adjustment";
+import type { PaymentMethodWithDetails } from "@/lib/api/payment-method";
 import { cn } from "@/lib/utils/cn";
 import { formatCurrency } from "@/lib/utils/format";
+import { AccountDeleteDialog } from "./AccountDeleteDialog";
+import { AccountFormDialog } from "./AccountFormDialog";
+import { PaymentMethodDeleteDialog } from "./PaymentMethodDeleteDialog";
+import { PaymentMethodFormDialog } from "./PaymentMethodFormDialog";
 
 const AUXILIARY_PAYMENT_METHOD_TYPES = new Set([
   "prepaid",
@@ -136,6 +144,7 @@ function AccountBalanceDetailView({ id }: { id: string }) {
         ownerId: data.account.ownerId,
       }}
       timeline={data.timeline}
+      account={data.account}
     />
   );
 }
@@ -180,6 +189,7 @@ function PaymentMethodBalanceDetailView({ id }: { id: string }) {
         ownerId: data.paymentMethod.ownerId,
       }}
       timeline={data.timeline}
+      paymentMethod={data.paymentMethod}
     />
   );
 }
@@ -197,6 +207,8 @@ function BalanceDetailLayout({
   actionLabel,
   target,
   timeline,
+  account,
+  paymentMethod,
 }: {
   title: string;
   subtitle: string;
@@ -216,26 +228,71 @@ function BalanceDetailLayout({
     ownerId: string;
   };
   timeline: BalanceTimelineItem[];
+  account?: AccountBalanceDetail["account"];
+  paymentMethod?: PaymentMethodBalanceDetail["paymentMethod"];
 }) {
   const { userId } = useCurrentUserId();
   const [adjustOpen, setAdjustOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const canCurrentUserAdjust = canAdjust && userId === target.ownerId;
+  const isOwner = userId === target.ownerId;
+
+  const accountData = account
+    ? ({
+        ...account,
+        createdAt: "",
+        updatedAt: "",
+      } as AccountWithOwner)
+    : null;
+
+  const paymentMethodData = paymentMethod
+    ? ({
+        ...paymentMethod,
+        createdAt: "",
+        updatedAt: "",
+      } as PaymentMethodWithDetails)
+    : null;
 
   return (
     <div className="space-y-6">
       <ScreenSection>
-        <div className="flex items-start gap-3">
-          <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-            <Banknote className="size-5" />
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start gap-3 min-w-0 flex-1">
+            <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <Banknote className="size-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h1 className="truncate font-semibold text-gray-900 text-xl">
+                {title}
+              </h1>
+              {subtitle && (
+                <p className="mt-1 text-gray-500 text-sm">{subtitle}</p>
+              )}
+            </div>
           </div>
-          <div className="min-w-0 flex-1">
-            <h1 className="truncate font-semibold text-gray-900 text-xl">
-              {title}
-            </h1>
-            {subtitle && (
-              <p className="mt-1 text-gray-500 text-sm">{subtitle}</p>
-            )}
-          </div>
+          {isOwner && (
+            <div className="flex items-center gap-1 shrink-0">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-9"
+                onClick={() => setEditOpen(true)}
+              >
+                <Pencil className="size-4" />
+                <span className="sr-only">수정</span>
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-9 text-destructive hover:text-destructive hover:bg-destructive/5"
+                onClick={() => setDeleteOpen(true)}
+              >
+                <Trash2 className="size-4" />
+                <span className="sr-only">삭제</span>
+              </Button>
+            </div>
+          )}
         </div>
 
         {balance !== null && (
@@ -245,7 +302,8 @@ function BalanceDetailLayout({
               amount={balance}
               tone="neutral"
               align="left"
-              className="mt-1 block max-w-full text-3xl font-bold leading-tight sm:text-4xl"
+              compactThreshold={Number.POSITIVE_INFINITY}
+              className="mt-1 block max-w-full text-3xl font-bold leading-tight"
             />
           </div>
         )}
@@ -303,6 +361,38 @@ function BalanceDetailLayout({
         title={actionLabel}
         target={target}
       />
+
+      {isOwner && target.targetType === "account" && accountData && (
+        <>
+          <AccountFormDialog
+            open={editOpen}
+            onOpenChange={setEditOpen}
+            account={accountData}
+          />
+          <AccountDeleteDialog
+            open={deleteOpen}
+            onOpenChange={setDeleteOpen}
+            account={accountData}
+          />
+        </>
+      )}
+
+      {isOwner &&
+        target.targetType === "payment_method" &&
+        paymentMethodData && (
+          <>
+            <PaymentMethodFormDialog
+              open={editOpen}
+              onOpenChange={setEditOpen}
+              paymentMethod={paymentMethodData}
+            />
+            <PaymentMethodDeleteDialog
+              open={deleteOpen}
+              onOpenChange={setDeleteOpen}
+              paymentMethod={paymentMethodData}
+            />
+          </>
+        )}
     </div>
   );
 }
@@ -355,15 +445,17 @@ function TimelineRow({ item }: { item: BalanceTimelineItem }) {
           {formatDateTime(item.occurredAt)}
         </p>
       </div>
-      <p
-        className={cn(
-          "shrink-0 font-semibold text-sm",
-          isPositive ? "text-green-700" : "text-gray-900",
-        )}
-      >
-        {isPositive ? "+" : "-"}
-        {formatCurrency(Math.abs(item.delta))}
-      </p>
+      <div className="max-w-[42%] min-w-[5rem] flex-shrink-0 text-right">
+        <p
+          className={cn(
+            "font-semibold text-sm whitespace-nowrap",
+            isPositive ? "text-green-700" : "text-gray-900",
+          )}
+        >
+          {isPositive ? "+" : "-"}
+          {formatCurrency(Math.abs(item.delta))}
+        </p>
+      </div>
     </article>
   );
 }

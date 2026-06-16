@@ -1,27 +1,17 @@
 "use client";
 
-import { Link2, MoreHorizontal, Pencil, Trash2, UserRound } from "lucide-react";
+import { Link2, UserRound } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
 import {
   GroupedList,
   ScreenSection,
   ScreenState,
   SectionHeader,
 } from "@/components/layout/screen";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { useCurrentUserId } from "@/hooks/use-current-user";
 import { usePaymentMethods } from "@/hooks/use-payment-methods";
 import type { PaymentMethodWithDetails } from "@/lib/api/payment-method";
 import { formatCurrency } from "@/lib/utils/format";
-import { PaymentMethodDeleteDialog } from "./PaymentMethodDeleteDialog";
-import { PaymentMethodFormDialog } from "./PaymentMethodFormDialog";
 
 const PAYMENT_METHOD_TYPE_LABELS: Record<string, string> = {
   credit_card: "신용카드",
@@ -44,26 +34,6 @@ interface PaymentMethodListProps {
 export function PaymentMethodList({ action }: PaymentMethodListProps) {
   const { data: paymentMethods, isLoading, error } = usePaymentMethods();
   const { userId: currentUserId } = useCurrentUserId();
-
-  const [editingMethod, setEditingMethod] =
-    useState<PaymentMethodWithDetails | null>(null);
-  const [deletingMethod, setDeletingMethod] =
-    useState<PaymentMethodWithDetails | null>(null);
-  const [isFormOpen, setIsFormOpen] = useState(false);
-
-  const handleEdit = (method: PaymentMethodWithDetails) => {
-    setEditingMethod(method);
-    setIsFormOpen(true);
-  };
-
-  const handleDelete = (method: PaymentMethodWithDetails) => {
-    setDeletingMethod(method);
-  };
-
-  const handleFormClose = () => {
-    setIsFormOpen(false);
-    setEditingMethod(null);
-  };
 
   if (isLoading) {
     return (
@@ -164,46 +134,10 @@ export function PaymentMethodList({ action }: PaymentMethodListProps) {
                   </p>
                 </div>
               </Link>
-
-              {isOwner && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="size-9">
-                      <MoreHorizontal className="size-4" />
-                      <span className="sr-only">메뉴 열기</span>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => handleEdit(method)}>
-                      <Pencil className="mr-2 size-4" />
-                      수정
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      className="text-destructive focus:text-destructive"
-                      onClick={() => handleDelete(method)}
-                    >
-                      <Trash2 className="mr-2 size-4" />
-                      삭제
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
             </article>
           );
         })}
       </GroupedList>
-
-      <PaymentMethodFormDialog
-        open={isFormOpen}
-        onOpenChange={handleFormClose}
-        paymentMethod={editingMethod}
-      />
-
-      <PaymentMethodDeleteDialog
-        paymentMethod={deletingMethod}
-        open={!!deletingMethod}
-        onOpenChange={(open) => !open && setDeletingMethod(null)}
-      />
     </ScreenSection>
   );
 }

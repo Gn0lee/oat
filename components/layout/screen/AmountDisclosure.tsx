@@ -16,6 +16,7 @@ interface AmountDisclosureProps {
   tone?: AmountTone;
   align?: "left" | "right";
   className?: string;
+  amountClassName?: string;
   compactThreshold?: number;
 }
 
@@ -26,6 +27,7 @@ export function AmountDisclosure({
   tone = "neutral",
   align = "right",
   className,
+  amountClassName,
   compactThreshold = 1_000_000,
 }: AmountDisclosureProps) {
   const shouldCompact = Math.abs(amount) >= compactThreshold;
@@ -40,7 +42,7 @@ export function AmountDisclosure({
         sign={sign}
         tone={tone}
         align={align}
-        className={className}
+        className={cn(className, amountClassName)}
       />
     );
   }
@@ -63,6 +65,7 @@ export function AmountDisclosure({
             tone={tone}
             align={align}
             compact
+            className={amountClassName}
           />
         </button>
       </PopoverTrigger>

@@ -39,7 +39,10 @@ describe("StockRecordDayList", () => {
     // Verify stable two-column layout classes
     const gridContainer = amountText.closest(".grid");
     expect(gridContainer).toBeInTheDocument();
-    expect(gridContainer).toHaveClass("grid-cols-[minmax(0,1fr)_auto]");
+    expect(gridContainer).toHaveClass(
+      "grid-cols-[minmax(0,1fr)_minmax(7rem,42%)]",
+    );
+    expect(amountText).toHaveClass("whitespace-nowrap");
 
     expect(screen.getByText("삼성증권")).toBeInTheDocument();
     expect(
@@ -76,6 +79,7 @@ describe("StockRecordDayList", () => {
 
     const amountText = screen.getByText("1,250,000원");
     expect(amountText).toBeInTheDocument();
+    expect(amountText).toHaveClass("whitespace-nowrap");
     expect(amountText.textContent).not.toContain("125만원");
     expect(amountText.closest("[title]")).toHaveAttribute(
       "title",

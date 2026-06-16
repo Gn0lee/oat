@@ -1,14 +1,7 @@
 "use client";
 
-import {
-  Building2,
-  MoreHorizontal,
-  Pencil,
-  Trash2,
-  UserRound,
-} from "lucide-react";
+import { Building2, UserRound } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
 import {
   GroupedList,
   ScreenSection,
@@ -16,19 +9,10 @@ import {
   SectionHeader,
 } from "@/components/layout/screen";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { useAccounts } from "@/hooks/use-accounts";
 import { useCurrentUserId } from "@/hooks/use-current-user";
 import type { AccountWithOwner } from "@/lib/api/account";
 import { formatCurrency } from "@/lib/utils/format";
-import { AccountDeleteDialog } from "./AccountDeleteDialog";
-import { AccountFormDialog } from "./AccountFormDialog";
 
 const ACCOUNT_TYPE_LABELS: Record<string, string> = {
   checking: "입출금",
@@ -66,16 +50,12 @@ interface AccountCollectionProps {
   accounts: AccountWithOwner[];
   currentUserId: string | null;
   category?: "bank" | "investment";
-  onEdit: (account: AccountWithOwner, category?: "bank" | "investment") => void;
-  onDelete: (account: AccountWithOwner) => void;
 }
 
 function AccountCollection({
   accounts,
   currentUserId,
   category,
-  onEdit,
-  onDelete,
 }: AccountCollectionProps) {
   return (
     <GroupedList>
@@ -134,30 +114,6 @@ function AccountCollection({
                 </p>
               </div>
             </Link>
-
-            {isOwner && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="size-9">
-                    <MoreHorizontal className="size-4" />
-                    <span className="sr-only">메뉴 열기</span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => onEdit(account, category)}>
-                    <Pencil className="mr-2 size-4" />
-                    수정
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    className="text-destructive focus:text-destructive"
-                    onClick={() => onDelete(account)}
-                  >
-                    <Trash2 className="mr-2 size-4" />
-                    삭제
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
           </article>
         );
       })}
@@ -168,35 +124,6 @@ function AccountCollection({
 export function AccountList({ filter, title, action }: AccountListProps) {
   const { data: accounts, isLoading, error } = useAccounts();
   const { userId: currentUserId } = useCurrentUserId();
-
-  const [editingAccount, setEditingAccount] = useState<AccountWithOwner | null>(
-    null,
-  );
-  const [editingCategory, setEditingCategory] = useState<
-    "bank" | "investment" | undefined
-  >();
-  const [deletingAccount, setDeletingAccount] =
-    useState<AccountWithOwner | null>(null);
-  const [isFormOpen, setIsFormOpen] = useState(false);
-
-  const handleEdit = (
-    account: AccountWithOwner,
-    category?: "bank" | "investment",
-  ) => {
-    setEditingAccount(account);
-    setEditingCategory(category);
-    setIsFormOpen(true);
-  };
-
-  const handleDelete = (account: AccountWithOwner) => {
-    setDeletingAccount(account);
-  };
-
-  const handleFormClose = () => {
-    setIsFormOpen(false);
-    setEditingAccount(null);
-    setEditingCategory(undefined);
-  };
 
   if (isLoading) {
     return <ScreenState type="loading" title="계좌 목록을 불러오는 중입니다" />;
@@ -240,25 +167,7 @@ export function AccountList({ filter, title, action }: AccountListProps) {
           title={title ?? (filter === "bank" ? "은행 계좌" : "투자 계좌")}
           action={action}
         />
-        <AccountCollection
-          accounts={filtered}
-          currentUserId={currentUserId}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-        />
-
-        <AccountFormDialog
-          open={isFormOpen}
-          onOpenChange={handleFormClose}
-          account={editingAccount}
-          category={filter}
-        />
-
-        <AccountDeleteDialog
-          account={deletingAccount}
-          open={!!deletingAccount}
-          onOpenChange={(open) => !open && setDeletingAccount(null)}
-        />
+        <AccountCollection accounts={filtered} currentUserId={currentUserId} />
       </ScreenSection>
     );
   }
@@ -298,8 +207,6 @@ export function AccountList({ filter, title, action }: AccountListProps) {
               accounts={bankAccounts}
               currentUserId={currentUserId}
               category="bank"
-              onEdit={handleEdit}
-              onDelete={handleDelete}
             />
           </div>
         )}
@@ -313,25 +220,10 @@ export function AccountList({ filter, title, action }: AccountListProps) {
               accounts={investmentAccounts}
               currentUserId={currentUserId}
               category="investment"
-              onEdit={handleEdit}
-              onDelete={handleDelete}
             />
           </div>
         )}
       </div>
-
-      <AccountFormDialog
-        open={isFormOpen}
-        onOpenChange={handleFormClose}
-        account={editingAccount}
-        category={editingCategory}
-      />
-
-      <AccountDeleteDialog
-        account={deletingAccount}
-        open={!!deletingAccount}
-        onOpenChange={(open) => !open && setDeletingAccount(null)}
-      />
     </ScreenSection>
   );
 }

@@ -18,6 +18,22 @@ vi.mock("@/hooks/use-balance-detail", () => ({
   useCreateBalanceAdjustment: vi.fn(),
 }));
 
+vi.mock("./AccountFormDialog", () => ({
+  AccountFormDialog: () => null,
+}));
+
+vi.mock("./AccountDeleteDialog", () => ({
+  AccountDeleteDialog: () => null,
+}));
+
+vi.mock("./PaymentMethodFormDialog", () => ({
+  PaymentMethodFormDialog: () => null,
+}));
+
+vi.mock("./PaymentMethodDeleteDialog", () => ({
+  PaymentMethodDeleteDialog: () => null,
+}));
+
 // Dialog component mocks to prevent Radix UI portal issues in test environment
 vi.mock("@/components/ui/dialog", () => ({
   Dialog: ({ children }: any) => <div>{children}</div>,
@@ -89,9 +105,10 @@ describe("BalanceDetailClient", () => {
 
     // 2. 메트릭스 라벨 및 금액 디스크로저
     expect(screen.getByText("예수금")).toBeInTheDocument();
+    expect(screen.getAllByText("1,500,000원")[0]).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "전체 금액 1,500,000원" }),
-    ).toBeInTheDocument();
+      screen.queryByRole("button", { name: "전체 금액 1,500,000원" }),
+    ).not.toBeInTheDocument();
 
     expect(screen.getByText("보유 주식 평가액")).toBeInTheDocument();
     expect(
@@ -159,5 +176,43 @@ describe("BalanceDetailClient", () => {
     expect(
       screen.getByText("상세 정보를 불러오지 못했습니다."),
     ).toBeInTheDocument();
+  });
+
+  it("소유자일 때 계좌 상세에서 수정 및 삭제 버튼이 렌더링된다", () => {
+    vi.mocked(useCurrentUserId).mockReturnValue({
+      userId: "owner-1",
+      isLoading: false,
+    });
+    vi.mocked(useAccountBalanceDetail).mockReturnValue({
+      data: mockAccountInvestmentDetail,
+      isLoading: false,
+      error: null,
+    } as any);
+
+    render(<BalanceDetailClient kind="account" id="account-1" />);
+
+    expect(screen.getByRole("button", { name: "수정" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "삭제" })).toBeInTheDocument();
+  });
+
+  it("소유자가 아닐 때 계좌 상세에서 수정 및 삭제 버튼이 렌더링되지 않는다", () => {
+    vi.mocked(useCurrentUserId).mockReturnValue({
+      userId: "other-user",
+      isLoading: false,
+    });
+    vi.mocked(useAccountBalanceDetail).mockReturnValue({
+      data: mockAccountInvestmentDetail,
+      isLoading: false,
+      error: null,
+    } as any);
+
+    render(<BalanceDetailClient kind="account" id="account-1" />);
+
+    expect(
+      screen.queryByRole("button", { name: "수정" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "삭제" }),
+    ).not.toBeInTheDocument();
   });
 });

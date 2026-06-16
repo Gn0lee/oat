@@ -45,9 +45,9 @@ export function StockRecordDayList({
               <Link
                 key={transaction.id}
                 href={`/assets/stock/transactions/${transaction.id}?from=records&date=${selectedDate}`}
-                className="group flex flex-col justify-center border-b py-3.5 transition-colors last:border-b-0 hover:bg-gray-50"
+                className="group flex flex-col justify-center border-b px-4 py-3.5 transition-colors last:border-b-0 hover:bg-gray-50 sm:px-5"
               >
-                <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-3 items-start">
+                <div className="grid grid-cols-[minmax(0,1fr)_minmax(7rem,42%)] gap-3 items-start">
                   <div className="flex min-w-0 items-start gap-2">
                     <Badge
                       variant={isBuy ? "default" : "secondary"}
@@ -59,7 +59,7 @@ export function StockRecordDayList({
                       {transaction.stockName}
                     </span>
                   </div>
-                  <div className="shrink-0 text-right max-w-[42%]">
+                  <div className="shrink-0 text-right">
                     <AmountText
                       amount={transaction.price * transaction.quantity}
                       currency={transaction.currency}
@@ -68,7 +68,7 @@ export function StockRecordDayList({
                         transaction.currency,
                       )}
                       tone="neutral"
-                      className="text-sm font-medium"
+                      className="text-sm font-medium whitespace-nowrap"
                     />
                   </div>
                 </div>

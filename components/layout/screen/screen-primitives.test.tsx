@@ -182,4 +182,23 @@ describe("screen primitives", () => {
       screen.queryByRole("button", { name: "전체 금액 50,000원" }),
     ).not.toBeInTheDocument();
   });
+
+  it("passes amountClassName prop to the inner AmountText element", () => {
+    const { container: containerCompact } = render(
+      <AmountDisclosure
+        amount={1_250_000}
+        amountClassName="test-compact-style"
+      />,
+    );
+    const compactText = containerCompact.querySelector(".test-compact-style");
+    expect(compactText).toBeInTheDocument();
+    expect(compactText?.textContent).toContain("125만원");
+
+    const { container: containerPlain } = render(
+      <AmountDisclosure amount={50000} amountClassName="test-plain-style" />,
+    );
+    const plainText = containerPlain.querySelector(".test-plain-style");
+    expect(plainText).toBeInTheDocument();
+    expect(plainText?.textContent).toContain("50,000");
+  });
 });

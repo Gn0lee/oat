@@ -95,6 +95,7 @@ describe("LedgerEntryRow", () => {
     const expenseAmount = screen.getByText("-1,250,000원");
     expect(expenseAmount).toBeInTheDocument();
     expect(expenseAmount).toHaveClass("[overflow-wrap:anywhere]");
+    expect(expenseAmount).toHaveClass("whitespace-nowrap");
     expect(expenseAmount).toHaveAttribute("title", "-1,250,000원");
     expect(expenseAmount.textContent).not.toContain("만원");
     expect(expenseAmount.parentElement).toHaveClass("max-w-[42%]");

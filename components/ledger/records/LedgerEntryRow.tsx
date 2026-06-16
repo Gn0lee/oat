@@ -80,7 +80,7 @@ export function LedgerEntryRow({ entry, href }: LedgerEntryRowProps) {
           sign={amountSign}
           tone={isTransfer ? "neutral" : isIncome ? "income" : "expense"}
           title={`${amountSign}${formatCurrency(entry.amount)}`}
-          className="text-sm"
+          className="text-sm whitespace-nowrap"
         />
       </div>
     </Link>
