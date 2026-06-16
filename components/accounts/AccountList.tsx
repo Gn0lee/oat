@@ -289,15 +289,16 @@ export function AccountList({ filter, title, action }: AccountListProps) {
     );
   }
 
-  const bankAction = bankAccounts.length > 0 ? action : undefined;
-  const investmentAction = bankAccounts.length === 0 ? action : undefined;
-
   return (
-    <>
+    <ScreenSection>
+      <SectionHeader title={title ?? "계좌"} action={action} />
+
       <div className="space-y-6">
         {bankAccounts.length > 0 && (
-          <ScreenSection>
-            <SectionHeader title="은행 계좌" action={bankAction} />
+          <div className="space-y-2">
+            <h3 className="text-sm font-medium text-gray-500 px-1">
+              은행 계좌
+            </h3>
             <AccountCollection
               accounts={bankAccounts}
               currentUserId={currentUserId}
@@ -305,22 +306,22 @@ export function AccountList({ filter, title, action }: AccountListProps) {
               onEdit={handleEdit}
               onDelete={handleDelete}
             />
-          </ScreenSection>
+          </div>
         )}
 
         {investmentAccounts.length > 0 && (
-          <ScreenSection>
-            <ScreenSection>
-              <SectionHeader title="투자 계좌" action={investmentAction} />
-              <AccountCollection
-                accounts={investmentAccounts}
-                currentUserId={currentUserId}
-                category="investment"
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-              />
-            </ScreenSection>
-          </ScreenSection>
+          <div className="space-y-2">
+            <h3 className="text-sm font-medium text-gray-500 px-1">
+              투자 계좌
+            </h3>
+            <AccountCollection
+              accounts={investmentAccounts}
+              currentUserId={currentUserId}
+              category="investment"
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
+          </div>
         )}
       </div>
 
@@ -336,6 +337,6 @@ export function AccountList({ filter, title, action }: AccountListProps) {
         open={!!deletingAccount}
         onOpenChange={(open) => !open && setDeletingAccount(null)}
       />
-    </>
+    </ScreenSection>
   );
 }

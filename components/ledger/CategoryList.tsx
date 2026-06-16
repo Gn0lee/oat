@@ -11,11 +11,13 @@ import { useState } from "react";
 import {
   GroupedList,
   ScreenSection,
+  ScreenState,
   SectionHeader,
 } from "@/components/layout/screen";
 import { CategoryDeleteDialog } from "@/components/ledger/CategoryDeleteDialog";
 import { CategoryFormDialog } from "@/components/ledger/CategoryFormDialog";
 import { CategoryIcon } from "@/components/ledger/CategoryIcon";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -54,6 +56,16 @@ export function CategoryList() {
       );
     }
 
+    if (categories.length === 0) {
+      return (
+        <ScreenState
+          type="empty"
+          title="등록된 카테고리가 없습니다."
+          description="카테고리를 추가하여 거래를 분류해보세요."
+        />
+      );
+    }
+
     return (
       <GroupedList>
         {categories.map((category) => (
@@ -77,8 +89,16 @@ export function CategoryList() {
             </div>
 
             {category.is_system ? (
-              <div className="flex size-9 items-center justify-center text-gray-400">
-                <LockIcon data-testid="lock-icon" className="size-4" />
+              <div className="flex items-center gap-2 text-gray-400">
+                <Badge
+                  variant="outline"
+                  className="text-gray-400 border-gray-200 text-[10px] px-1.5 py-0 h-5"
+                >
+                  기본
+                </Badge>
+                <div className="flex size-9 items-center justify-center">
+                  <LockIcon data-testid="lock-icon" className="size-4" />
+                </div>
               </div>
             ) : (
               <DropdownMenu>

@@ -87,8 +87,9 @@ describe("CategoryList", () => {
 
     render(<CategoryList />);
 
-    // System category should show a lock/default indicator and no menus
+    // System category should show a lock/default indicator and status text
     expect(screen.getByTestId("lock-icon")).toBeInTheDocument();
+    expect(screen.getByText("기본")).toBeInTheDocument();
 
     // Custom category has menu trigger (e.g. MoreHorizontal or equivalent button)
     const menuButtons = screen.getAllByRole("button", { name: /메뉴 열기/i });
@@ -104,5 +105,14 @@ describe("CategoryList", () => {
     fireEvent.click(addButton);
 
     expect(screen.getByTestId("category-form-dialog")).toBeInTheDocument();
+  });
+
+  it("renders screen-state when empty", () => {
+    mocks.categories = [];
+
+    render(<CategoryList />);
+
+    expect(screen.getByTestId("screen-state")).toBeInTheDocument();
+    expect(screen.getByText("등록된 카테고리가 없습니다.")).toBeInTheDocument();
   });
 });
