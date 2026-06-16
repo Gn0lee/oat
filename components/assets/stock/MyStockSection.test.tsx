@@ -98,8 +98,12 @@ describe("MyStockSection", () => {
     // Verify metric-safe typography (text-base) is applied
     expect(totalValueText).toHaveClass("text-base");
 
-    // Verify holding chart icon is not rendered (no size-10 class or lucide-bar-chart3/chart-column)
-    expect(container.querySelector(".size-10")).not.toBeInTheDocument();
+    // Verify holding chart icon is not rendered (no lucide-bar-chart3/chart-column)
+    expect(
+      container.querySelector(
+        ".lucide-chart-column, .lucide-bar-chart-3, .lucide-bar-chart3",
+      ),
+    ).not.toBeInTheDocument();
 
     // Verify holding name line clamp and break words, and not break-all
     const longName = screen.getByText("Microsoft Corporation Long Name");

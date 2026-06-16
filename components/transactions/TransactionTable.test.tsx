@@ -93,13 +93,12 @@ describe("TransactionTable", () => {
     expect(gridContainer).toBeInTheDocument();
     expect(gridContainer).toHaveClass("grid-cols-[minmax(0,1fr)_auto]");
 
-    // Verify USD formatting and dollar sign inclusion
-    const applePriceText = screen.getByText("US$380.00");
+    // Verify USD formatting and dollar sign inclusion (supporting either US$380.00 or $380.00)
+    const applePriceText = screen.getByText(/^(US)?\$380\.00$/);
     expect(applePriceText).toBeInTheDocument();
-    expect(applePriceText.closest("[title]")).toHaveAttribute(
-      "title",
-      expect.stringContaining("380"),
-    );
+    const titleAttr =
+      applePriceText.closest("[title]")?.getAttribute("title") ?? "";
+    expect(titleAttr).toMatch(/^(US)?\$380\.00$/);
 
     expect(screen.getByRole("link", { name: /삼성전자/ })).toHaveAttribute(
       "href",

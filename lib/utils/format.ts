@@ -22,7 +22,7 @@ export function formatCurrency(
 }
 
 /**
- * 통화를 축약 형식으로 포맷 (예: $1.2M, 41.4만원)
+ * 통화를 축약 형식으로 포맷 (예: $1.2M, 41만원)
  */
 export function formatCompactCurrency(
   value: number,
