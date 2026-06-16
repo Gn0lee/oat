@@ -10,7 +10,7 @@ import {
   SectionHeader,
 } from "@/components/layout/screen";
 import { useStockAnalysis } from "@/hooks/use-stock-analysis";
-import { formatPercent } from "@/lib/utils/format";
+import { formatCurrency, formatPercent } from "@/lib/utils/format";
 import type { AggregatedStockHolding, StockHoldingWithReturn } from "@/types";
 import {
   type StockOverviewDetail,
@@ -53,17 +53,18 @@ function PerformerList({ title, items, type, onSelect }: PerformerListProps) {
               description={`${index + 1}위 · ${item.ticker}`}
               onClick={() => onSelect(item)}
               trailing={
-                <div className="space-y-0.5">
+                <div className="flex flex-col items-end gap-0.5 min-w-0">
                   <AmountText
-                    className="text-sm"
+                    className="text-sm font-semibold"
                     tone={isGainer ? "increase" : "decrease"}
                     value={formatPercent(item.returnRate)}
                   />
                   <AmountText
                     amount={item.returnAmount}
+                    currency={item.currency}
                     className="text-xs"
                     compact
-                    sign={item.returnAmount > 0 ? "+" : ""}
+                    title={formatCurrency(item.returnAmount, item.currency)}
                     tone={isGainer ? "increase" : "decrease"}
                   />
                 </div>

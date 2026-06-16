@@ -203,7 +203,7 @@ export function LedgerEntryChangeRequestDialog({
         {isUpdate ? (
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="request-amount">금액</Label>
+              <Label htmlFor="request-amount">금액 (원)</Label>
               <Input
                 id="request-amount"
                 type="number"

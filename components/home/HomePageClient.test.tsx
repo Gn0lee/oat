@@ -115,12 +115,12 @@ describe("HomePageClient", () => {
     render(<HomePageClient />);
 
     expect(
-      screen.getByText("이번 달은 아직 ₩2,200,000 남았어요"),
+      screen.getByText("이번 달은 아직 2,200,000원 남았어요"),
     ).toBeInTheDocument();
     expect(screen.getByText("투자원금")).toBeInTheDocument();
-    expect(screen.getByText("₩20,000,000")).toBeInTheDocument();
+    expect(screen.getByText("20,000,000원")).toBeInTheDocument();
     expect(screen.getByText("식비")).toBeInTheDocument();
-    expect(screen.getByText("₩2,800,000")).toBeInTheDocument();
+    expect(screen.getByText("2,800,000원")).toBeInTheDocument();
     expect(screen.getByText("바로가기")).toBeInTheDocument();
     expect(screen.queryByText("4종목 · 2,000만")).not.toBeInTheDocument();
     expect(

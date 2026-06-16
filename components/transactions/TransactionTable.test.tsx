@@ -79,6 +79,27 @@ describe("TransactionTable", () => {
     expect(screen.getByText("10주")).toBeInTheDocument();
     expect(screen.getByText("2주")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "메뉴 열기" })).toBeNull();
+
+    // Verify KRW formatting and title attribute
+    const samsungPriceText = screen.getByText("700,000원");
+    expect(samsungPriceText).toBeInTheDocument();
+    expect(samsungPriceText.closest("[title]")).toHaveAttribute(
+      "title",
+      "700,000원",
+    );
+
+    // Verify grid layout
+    const gridContainer = samsungPriceText.closest(".grid");
+    expect(gridContainer).toBeInTheDocument();
+    expect(gridContainer).toHaveClass("grid-cols-[minmax(0,1fr)_auto]");
+
+    // Verify USD formatting and dollar sign inclusion (supporting either US$380.00 or $380.00)
+    const applePriceText = screen.getByText(/^(US)?\$380\.00$/);
+    expect(applePriceText).toBeInTheDocument();
+    const titleAttr =
+      applePriceText.closest("[title]")?.getAttribute("title") ?? "";
+    expect(titleAttr).toMatch(/^(US)?\$380\.00$/);
+
     expect(screen.getByRole("link", { name: /삼성전자/ })).toHaveAttribute(
       "href",
       "/assets/stock/transactions/tx-1?from=transactions&page=2&type=buy",

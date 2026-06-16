@@ -30,27 +30,27 @@ describe("MyStockSection", () => {
       isLoading: false,
       data: {
         summary: {
-          totalValue: 1200000,
-          totalInvested: 1000000,
-          totalReturn: 200000,
-          returnRate: 20,
+          totalValue: 123456789,
+          totalInvested: 88888888,
+          totalReturn: 99999999,
+          returnRate: 123.45,
           holdingCount: 2,
           missingPriceCount: 0,
           stalePriceCount: 0,
         },
         holdings: [
           {
-            ticker: "005930",
-            name: "삼성전자",
-            market: "KR",
-            currency: "KRW",
+            ticker: "MSFT",
+            name: "Microsoft Corporation Long Name",
+            market: "US",
+            currency: "USD",
             quantity: 10,
-            avgPrice: 70000,
-            currentPrice: 80000,
-            totalInvested: 700000,
-            currentValue: 800000,
-            returnAmount: 100000,
-            returnRate: 14.2857,
+            avgPrice: 300,
+            currentPrice: 400,
+            totalInvested: 3000,
+            currentValue: 4000,
+            returnAmount: 1000,
+            returnRate: 33.33,
             allocationPercent: 66.67,
             account: {
               id: "account-1",
@@ -66,11 +66,11 @@ describe("MyStockSection", () => {
             currency: "USD",
             quantity: 2,
             avgPrice: 100000,
-            currentPrice: 200000,
+            currentPrice: 50000,
             totalInvested: 300000,
-            currentValue: 400000,
-            returnAmount: 100000,
-            returnRate: 33.3333,
+            currentValue: 100000,
+            returnAmount: -200000,
+            returnRate: -66.6667,
             allocationPercent: 33.33,
             account: {
               id: "account-2",
@@ -83,16 +83,52 @@ describe("MyStockSection", () => {
       },
     } as unknown as ReturnType<typeof useStockAnalysis>);
 
-    render(<MyStockSection />);
+    const { container } = render(<MyStockSection />);
 
     expect(screen.getByText("투자 현황")).toBeInTheDocument();
     expect(screen.getByText("평가금액")).toBeInTheDocument();
+    expect(screen.getByText("투자원금")).toBeInTheDocument();
     expect(screen.getByText("평가손익")).toBeInTheDocument();
-    expect(screen.getByText("삼성전자")).toBeInTheDocument();
-    expect(screen.getByText("Apple Inc.")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /종합 분석/ })).toHaveAttribute(
-      "href",
-      "/assets/stock/analysis/overview",
+    expect(screen.getByText("수익률")).toBeInTheDocument();
+
+    // Verify full metric amounts render with 원 and no ₩
+    const totalValueText = screen.getByText("123,456,789원");
+    expect(totalValueText).toBeInTheDocument();
+    expect(totalValueText).not.toHaveTextContent("₩");
+    // Verify metric-safe typography (text-base) is applied
+    expect(totalValueText).toHaveClass("text-base");
+
+    // Verify holding chart icon is not rendered (no lucide-bar-chart3/chart-column)
+    expect(
+      container.querySelector(
+        ".lucide-chart-column, .lucide-bar-chart-3, .lucide-bar-chart3",
+      ),
+    ).not.toBeInTheDocument();
+
+    // Verify holding name line clamp and break words, and not break-all
+    const longName = screen.getByText("Microsoft Corporation Long Name");
+    expect(longName).toHaveClass("line-clamp-2");
+    expect(longName).toHaveClass("break-words");
+    expect(longName).not.toHaveClass("[word-break:break-all]");
+
+    // Verify holding currentValue is compact and has full amount title
+    const microsoftValueCompact = screen.getByText("$4.00K");
+    expect(microsoftValueCompact).toBeInTheDocument();
+    expect(microsoftValueCompact.closest("[title]")).toHaveAttribute(
+      "title",
+      "US$4,000.00",
+    );
+
+    // Verify sign policy: positive has no +, negative has -
+    const positiveReturnCompact = screen.getByText("$1.00K");
+    expect(positiveReturnCompact).toBeInTheDocument();
+    expect(positiveReturnCompact.textContent).not.toContain("+");
+
+    const negativeReturnCompact = screen.getByText(/-\$200(\.00)?K/);
+    expect(negativeReturnCompact).toBeInTheDocument();
+    expect(negativeReturnCompact.closest("[title]")).toHaveAttribute(
+      "title",
+      expect.stringContaining("200,000"),
     );
   });
 

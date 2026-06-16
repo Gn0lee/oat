@@ -79,4 +79,67 @@ describe("LedgerEntryRow", () => {
       "ArrowLeftRight",
     );
   });
+
+  it("긴 타이틀과 큰 금액을 정책에 맞게 올바르게 렌더링한다", () => {
+    const longExpenseEntry: LedgerEntryWithDetails = {
+      ...baseEntry,
+      amount: 1250000,
+      title: "아주아주아주아주아주긴가계부제목",
+      type: "expense",
+    };
+    const { rerender } = renderRow(longExpenseEntry);
+
+    const titleElement = screen.getByText("아주아주아주아주아주긴가계부제목");
+    expect(titleElement).toHaveClass("line-clamp-2");
+
+    const expenseAmount = screen.getByText("-1,250,000원");
+    expect(expenseAmount).toBeInTheDocument();
+    expect(expenseAmount).toHaveClass("[overflow-wrap:anywhere]");
+    expect(expenseAmount).toHaveAttribute("title", "-1,250,000원");
+
+    // Add check for -42,000원
+    const midExpenseEntry: LedgerEntryWithDetails = {
+      ...baseEntry,
+      amount: 42000,
+      type: "expense",
+    };
+    rerender(
+      <LedgerEntryRow
+        entry={midExpenseEntry}
+        href={`/ledger/records/${midExpenseEntry.id}?from=records&date=2026-06-02`}
+      />,
+    );
+    const midExpenseAmount = screen.getByText("-42,000원");
+    expect(midExpenseAmount).toBeInTheDocument();
+
+    const incomeEntry: LedgerEntryWithDetails = {
+      ...baseEntry,
+      amount: 1250000,
+      type: "income",
+    };
+    rerender(
+      <LedgerEntryRow
+        entry={incomeEntry}
+        href={`/ledger/records/${incomeEntry.id}?from=records&date=2026-06-02`}
+      />,
+    );
+    const incomeAmount = screen.getByText("+1,250,000원");
+    expect(incomeAmount).toBeInTheDocument();
+    expect(incomeAmount).toHaveAttribute("title", "+1,250,000원");
+
+    const transferEntry: LedgerEntryWithDetails = {
+      ...baseEntry,
+      amount: 1250000,
+      type: "transfer",
+    };
+    rerender(
+      <LedgerEntryRow
+        entry={transferEntry}
+        href={`/ledger/records/${transferEntry.id}?from=records&date=2026-06-02`}
+      />,
+    );
+    const transferAmount = screen.getByText("1,250,000원");
+    expect(transferAmount).toBeInTheDocument();
+    expect(transferAmount).toHaveAttribute("title", "1,250,000원");
+  });
 });

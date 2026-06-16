@@ -260,7 +260,7 @@ export function ComposerFormStep({
 
         <div className="grid grid-cols-2 gap-2">
           <div className="space-y-1">
-            <Label className="text-sm text-gray-700">금액 *</Label>
+            <Label className="text-sm text-gray-700">금액 (원) *</Label>
             <Input
               type="number"
               inputMode="numeric"

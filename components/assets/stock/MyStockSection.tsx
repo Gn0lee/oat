@@ -1,11 +1,10 @@
 "use client";
 
-import { BarChart3 } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { useMemo } from "react";
 import {
   AmountText,
-  EntryRow,
   GroupedList,
   MetricBlock,
   MetricStrip,
@@ -13,7 +12,7 @@ import {
   SectionHeader,
 } from "@/components/layout/screen";
 import { useStockAnalysis } from "@/hooks/use-stock-analysis";
-import { formatPercent } from "@/lib/utils/format";
+import { formatCurrency, formatPercent } from "@/lib/utils/format";
 
 export function MyStockSection() {
   const { data, isLoading } = useStockAnalysis();
@@ -90,12 +89,24 @@ export function MyStockSection() {
       <MetricStrip columns={{ base: 2, lg: 4 }}>
         <MetricBlock
           label="평가금액"
-          value={<AmountText amount={summary.totalValue} align="left" />}
+          value={
+            <AmountText
+              amount={summary.totalValue}
+              align="left"
+              className="text-base sm:text-xl font-bold"
+            />
+          }
           emphasis
         />
         <MetricBlock
           label="투자원금"
-          value={<AmountText amount={summary.totalInvested} align="left" />}
+          value={
+            <AmountText
+              amount={summary.totalInvested}
+              align="left"
+              className="text-base sm:text-lg font-bold"
+            />
+          }
         />
         <MetricBlock
           label="평가손익"
@@ -105,6 +116,7 @@ export function MyStockSection() {
               align="left"
               sign={returnSign}
               tone={returnTone}
+              className="text-base sm:text-xl font-bold"
             />
           }
         />
@@ -115,33 +127,65 @@ export function MyStockSection() {
               align="left"
               tone={summary.returnRate >= 0 ? "increase" : "decrease"}
               value={formatPercent(summary.returnRate)}
+              className="text-base sm:text-lg font-bold"
             />
           }
         />
       </MetricStrip>
 
       <GroupedList>
-        {holdings.map((item) => (
-          <EntryRow
-            key={`${item.ticker}-${item.account.id ?? "none"}`}
-            icon={BarChart3}
-            title={item.name}
-            description={`${item.ticker} · ${item.quantity.toLocaleString()}주`}
-            href="/assets/stock/holdings"
-            trailing={
-              <div className="space-y-0.5">
-                <AmountText amount={item.currentValue} compact />
-                <AmountText
-                  amount={item.returnAmount}
-                  className="text-xs"
-                  compact
-                  sign={item.returnAmount > 0 ? "+" : ""}
-                  tone={item.returnAmount >= 0 ? "increase" : "decrease"}
-                />
+        {holdings.map((item) => {
+          const currentValueFull = formatCurrency(
+            item.currentValue,
+            item.currency,
+          );
+          const returnAmountFull = formatCurrency(
+            item.returnAmount,
+            item.currency,
+          );
+          return (
+            <Link
+              key={`${item.ticker}-${item.account.id ?? "none"}`}
+              href="/assets/stock/holdings"
+              className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-gray-50 active:bg-gray-100"
+            >
+              <div className="min-w-0 flex-1">
+                <p className="font-medium text-gray-900 line-clamp-2 break-words whitespace-normal">
+                  {item.name}
+                </p>
+                <p className="mt-0.5 truncate text-sm text-gray-500">
+                  {item.ticker} · {item.quantity.toLocaleString()}주
+                </p>
               </div>
-            }
-          />
-        ))}
+              <div className="flex shrink-0 items-center gap-2">
+                <div className="w-[7.5rem] max-w-[40vw] shrink-0 text-right space-y-0.5 min-w-0">
+                  <div className="block">
+                    <AmountText
+                      amount={item.currentValue}
+                      currency={item.currency}
+                      compact
+                      title={currentValueFull}
+                      align="right"
+                      className="text-sm font-semibold"
+                    />
+                  </div>
+                  <div className="block">
+                    <AmountText
+                      amount={item.returnAmount}
+                      currency={item.currency}
+                      compact
+                      title={returnAmountFull}
+                      tone={item.returnAmount >= 0 ? "increase" : "decrease"}
+                      align="right"
+                      className="text-xs"
+                    />
+                  </div>
+                </div>
+                <ChevronRight className="size-5 text-gray-400 shrink-0" />
+              </div>
+            </Link>
+          );
+        })}
       </GroupedList>
     </ScreenSection>
   );

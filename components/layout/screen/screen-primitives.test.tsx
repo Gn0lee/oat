@@ -123,20 +123,45 @@ describe("screen primitives", () => {
     expect(amount).toHaveClass("text-red-500");
     expect(amount).toHaveClass("tabular-nums");
     expect(amount).toHaveClass("[overflow-wrap:anywhere]");
-    expect(amount.textContent).toContain("₩");
+    expect(amount.textContent).toContain("125만원");
+    expect(amount.textContent).not.toContain("₩");
   });
 
-  it("renders MetricBlock and MetricStrip as a customizable metric layout", () => {
+  it("asserts AmountText sign policy when sign is omitted or when amount is negative", () => {
+    const { rerender } = render(<AmountText amount={10000} />);
+    expect(screen.getByText("10,000원")).toBeInTheDocument();
+
+    rerender(<AmountText amount={-10000} />);
+    expect(screen.getByText("-10,000원")).toBeInTheDocument();
+  });
+
+  it("keeps MetricBlock values layout-safe for large amounts", () => {
     render(
-      <MetricStrip columns={{ base: 2, md: 3 }} data-testid="metric-strip">
-        <MetricBlock label="수입" value="3,200,000원" />
-        <MetricBlock label="남은 금액" value="1,350,000원" emphasis />
+      <MetricStrip columns={{ base: 2, lg: 4 }} data-testid="metric-strip">
+        <MetricBlock label="평가금액" value="123,456,789원" />
+        <MetricBlock label="투자원금" value="88,888,888원" />
+        <MetricBlock label="평가손익" value="+99,999,999원" emphasis />
+        <MetricBlock label="수익률" value="+123.45%" />
       </MetricStrip>,
     );
 
-    expect(screen.getByTestId("metric-strip")).toHaveClass("grid-cols-2");
-    expect(screen.getByTestId("metric-strip")).toHaveClass("md:grid-cols-3");
-    expect(screen.getByText("수입")).toBeInTheDocument();
-    expect(screen.getByText("1,350,000원")).toHaveClass("text-xl");
+    const strip = screen.getByTestId("metric-strip");
+    expect(strip).toHaveClass("grid-cols-2");
+    expect(strip).toHaveClass("lg:grid-cols-4");
+
+    const values = [
+      screen.getByText("123,456,789원"),
+      screen.getByText("88,888,888원"),
+      screen.getByText("+99,999,999원"),
+      screen.getByText("+123.45%"),
+    ];
+
+    values.forEach((v) => {
+      expect(v).not.toHaveClass("truncate");
+      expect(v).toHaveClass("min-w-0");
+      expect(v).toHaveClass("tabular-nums");
+      expect(v).toHaveClass("[overflow-wrap:anywhere]");
+      expect(v.className).toMatch(/\btext-base\b/);
+    });
   });
 });
