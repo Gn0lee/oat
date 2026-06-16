@@ -41,7 +41,7 @@ const account: AccountWithOwner = {
 };
 
 describe("AccountList", () => {
-  it("renders accounts as grouped collection cards instead of a table", () => {
+  it("renders grouped account rows with bank/investment grouping", () => {
     mocks.accounts = [account];
 
     render(<AccountList />);
@@ -52,5 +52,14 @@ describe("AccountList", () => {
     expect(screen.getByText("NH투자증권")).toBeInTheDocument();
     expect(screen.getByText("ISA")).toBeInTheDocument();
     expect(screen.getByText("끝 1234")).toBeInTheDocument();
+  });
+
+  it("renders screen-state when empty", () => {
+    mocks.accounts = [];
+
+    render(<AccountList />);
+
+    expect(screen.getByTestId("screen-state")).toBeInTheDocument();
+    expect(screen.getByText("등록된 계좌가 없습니다.")).toBeInTheDocument();
   });
 });

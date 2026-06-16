@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ScreenSection, SectionHeader } from "@/components/layout/screen";
 import {
   Pagination,
   PaginationContent,
@@ -44,7 +45,9 @@ export function StockSettingsList({ initialData }: StockSettingsListProps) {
   };
 
   return (
-    <div className="space-y-4">
+    <ScreenSection>
+      <SectionHeader title="종목 설정" />
+
       <StockSettingsFilters
         filters={filters}
         onFiltersChange={handleFiltersChange}
@@ -85,6 +88,6 @@ export function StockSettingsList({ initialData }: StockSettingsListProps) {
           </PaginationContent>
         </Pagination>
       )}
-    </div>
+    </ScreenSection>
   );
 }

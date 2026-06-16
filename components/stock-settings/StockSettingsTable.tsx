@@ -2,6 +2,7 @@
 
 import { Pencil, Settings2 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { GroupedList, ScreenState } from "@/components/layout/screen";
 import { StockSettingEditDialog } from "@/components/stock-settings/StockSettingEditDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -38,7 +39,7 @@ export function StockSettingsTable({ data }: StockSettingsTableProps) {
   return (
     <>
       {sortedSettings.length > 0 ? (
-        <div className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-100">
+        <GroupedList>
           {sortedSettings.map((setting) => {
             const riskLabel = setting.riskLevel
               ? (RISK_LEVEL_LABELS[setting.riskLevel] ?? setting.riskLevel)
@@ -47,7 +48,7 @@ export function StockSettingsTable({ data }: StockSettingsTableProps) {
             return (
               <article
                 key={setting.id}
-                className="flex min-h-[84px] items-center gap-3 border-gray-100 border-t px-4 py-4 first:border-t-0 sm:px-5"
+                className="flex min-h-[84px] items-center gap-3 px-4 py-3.5 sm:px-5"
               >
                 <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-500">
                   <Settings2 className="size-5" />
@@ -97,15 +98,13 @@ export function StockSettingsTable({ data }: StockSettingsTableProps) {
               </article>
             );
           })}
-        </div>
+        </GroupedList>
       ) : (
-        <div className="rounded-2xl bg-white px-6 py-12 text-center shadow-sm ring-1 ring-gray-100">
-          <Settings2 className="mx-auto mb-3 size-8 text-gray-300" />
-          <p className="font-medium text-gray-700">등록된 종목이 없습니다.</p>
-          <p className="mt-1 text-gray-400 text-sm">
-            첫 거래를 등록하면 종목 설정이 자동으로 만들어집니다.
-          </p>
-        </div>
+        <ScreenState
+          type="empty"
+          title="등록된 종목이 없습니다."
+          description="첫 거래를 등록하면 종목 설정이 자동으로 만들어집니다."
+        />
       )}
 
       <StockSettingEditDialog

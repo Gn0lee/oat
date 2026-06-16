@@ -61,7 +61,7 @@ const transactions: TransactionWithDetails[] = [
 ];
 
 describe("TransactionTable", () => {
-  it("renders transactions as date-grouped collection items instead of a table", () => {
+  it("renders date-grouped transactions with grouped list grammar", () => {
     render(
       <TransactionTable
         data={transactions}
@@ -112,6 +112,7 @@ describe("TransactionTable", () => {
     );
 
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
+    expect(screen.getByTestId("screen-state")).toBeInTheDocument();
     expect(screen.getByText("거래 내역이 없습니다.")).toBeInTheDocument();
   });
 });

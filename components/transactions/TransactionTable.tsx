@@ -1,9 +1,15 @@
 "use client";
 
-import { CalendarDays, User, Wallet } from "lucide-react";
+import { User, Wallet } from "lucide-react";
 import Link from "next/link";
 import { useMemo } from "react";
-import { AmountText } from "@/components/layout/screen";
+import {
+  AmountText,
+  GroupedList,
+  ScreenSection,
+  ScreenState,
+  SectionHeader,
+} from "@/components/layout/screen";
 import { Badge } from "@/components/ui/badge";
 import type { TransactionWithDetails } from "@/lib/api/transaction";
 import { formatCurrency, formatDate, formatDateISO } from "@/lib/utils/format";
@@ -56,7 +62,7 @@ function TransactionItem({
   const detailHref = `/assets/stock/transactions/${transaction.id}?${detailQueryString}`;
 
   return (
-    <article className="border-gray-100 border-t first:border-t-0">
+    <article>
       <Link
         href={detailHref}
         className="flex min-h-[72px] flex-col justify-center px-4 py-3.5 transition-colors hover:bg-gray-50 sm:px-5"
@@ -113,22 +119,16 @@ export function TransactionTable({
   return (
     <>
       {groups.length > 0 ? (
-        <div className="space-y-4">
+        <div className="space-y-6">
           {groups.map((group) => (
-            <section
-              key={group.dateKey}
-              className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-100"
-            >
-              <div className="flex items-center justify-between gap-3 bg-gray-50/70 px-4 py-3 sm:px-5">
-                <div className="flex min-w-0 items-center gap-2">
-                  <CalendarDays className="size-4 shrink-0 text-gray-400" />
-                  <h3 className="truncate font-semibold text-gray-900 text-sm">
-                    {group.label}
-                  </h3>
-                </div>
-                <Badge variant="outline">{group.transactions.length}건</Badge>
-              </div>
-              <div>
+            <ScreenSection key={group.dateKey}>
+              <SectionHeader
+                title={group.label}
+                action={
+                  <Badge variant="outline">{group.transactions.length}건</Badge>
+                }
+              />
+              <GroupedList>
                 {group.transactions.map((transaction) => (
                   <TransactionItem
                     key={transaction.id}
@@ -136,18 +136,16 @@ export function TransactionTable({
                     detailQueryString={detailQueryString}
                   />
                 ))}
-              </div>
-            </section>
+              </GroupedList>
+            </ScreenSection>
           ))}
         </div>
       ) : (
-        <div className="rounded-2xl bg-white px-6 py-12 text-center shadow-sm ring-1 ring-gray-100">
-          <CalendarDays className="mx-auto mb-3 size-8 text-gray-300" />
-          <p className="font-medium text-gray-700">거래 내역이 없습니다.</p>
-          <p className="mt-1 text-gray-400 text-sm">
-            필터를 바꾸거나 새 거래를 추가해보세요.
-          </p>
-        </div>
+        <ScreenState
+          type="empty"
+          title="거래 내역이 없습니다."
+          description="필터를 바꾸거나 새 거래를 추가해보세요."
+        />
       )}
     </>
   );

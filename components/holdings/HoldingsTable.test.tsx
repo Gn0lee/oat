@@ -22,8 +22,8 @@ const holdings: HoldingWithDetails[] = [
 ];
 
 describe("HoldingsTable", () => {
-  it("renders holdings as collection cards instead of a table", () => {
-    render(<HoldingsTable data={holdings} />);
+  it("renders holdings as one grouped list, not a card grid", () => {
+    const { container } = render(<HoldingsTable data={holdings} />);
 
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
     expect(screen.getByText("삼성전자")).toBeInTheDocument();
@@ -31,12 +31,23 @@ describe("HoldingsTable", () => {
     expect(screen.getByText("10주")).toBeInTheDocument();
     expect(screen.getByText("ISA")).toBeInTheDocument();
     expect(screen.getByText("70만원")).toBeInTheDocument();
+
+    // Assert sort controls exist
+    expect(screen.getByText("투자금")).toBeInTheDocument();
+    expect(screen.getByText("수량")).toBeInTheDocument();
+    expect(screen.getByText("종목명")).toBeInTheDocument();
+
+    // Assert no desktop grid-cols-2 card-grid class
+    expect(
+      container.querySelector(".lg\\:grid-cols-2"),
+    ).not.toBeInTheDocument();
   });
 
   it("shows an empty collection state", () => {
     render(<HoldingsTable data={[]} />);
 
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
+    expect(screen.getByTestId("screen-state")).toBeInTheDocument();
     expect(screen.getByText("보유 종목이 없습니다.")).toBeInTheDocument();
   });
 });

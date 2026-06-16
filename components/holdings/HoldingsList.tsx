@@ -2,6 +2,11 @@
 
 import { useState } from "react";
 import {
+  ScreenSection,
+  ScreenState,
+  SectionHeader,
+} from "@/components/layout/screen";
+import {
   Pagination,
   PaginationContent,
   PaginationItem,
@@ -27,18 +32,18 @@ interface Account {
 interface HoldingsListProps {
   members: Member[];
   accounts: Account[];
+  action?: React.ReactNode;
 }
 
 function HoldingsListSkeleton() {
   return (
     <div className="space-y-3">
-      <Skeleton className="h-10 rounded-xl bg-gray-200" />
       <Skeleton className="h-64 rounded-xl bg-gray-200" />
     </div>
   );
 }
 
-export function HoldingsList({ members, accounts }: HoldingsListProps) {
+export function HoldingsList({ members, accounts, action }: HoldingsListProps) {
   const [filters, setFilters] = useState<Filters>({});
   const [page, setPage] = useState(1);
 
@@ -68,29 +73,27 @@ export function HoldingsList({ members, accounts }: HoldingsListProps) {
 
   if (isLoading) {
     return (
-      <div className="space-y-4">
+      <ScreenSection>
+        <SectionHeader title="보유 현황" action={action} />
         {filterControls}
         <HoldingsListSkeleton />
-      </div>
+      </ScreenSection>
     );
   }
 
   if (error || !data) {
     return (
-      <div className="space-y-4">
+      <ScreenSection>
+        <SectionHeader title="보유 현황" action={action} />
         {filterControls}
-        <div className="rounded-xl bg-white p-6 text-center shadow-sm">
-          <p className="text-sm text-gray-500">
-            보유 현황을 불러오지 못했습니다.
-          </p>
-        </div>
-      </div>
+        <ScreenState type="error" title="보유 현황을 불러오지 못했습니다" />
+      </ScreenSection>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <p className="text-sm text-gray-500">총 {data.total}개 종목 보유 중</p>
+    <ScreenSection>
+      <SectionHeader title="보유 현황" action={action} />
 
       {filterControls}
 
@@ -129,6 +132,6 @@ export function HoldingsList({ members, accounts }: HoldingsListProps) {
           </PaginationContent>
         </Pagination>
       )}
-    </div>
+    </ScreenSection>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ScreenSection, SectionHeader } from "@/components/layout/screen";
 import {
   Pagination,
   PaginationContent,
@@ -21,11 +22,13 @@ interface Member {
 interface TransactionListProps {
   members: Member[];
   currentUserId?: string;
+  action?: React.ReactNode;
 }
 
 export function TransactionList({
   members,
   currentUserId: _currentUserId,
+  action,
 }: TransactionListProps) {
   const [filters, setFilters] = useState<Filters>({});
   const [page, setPage] = useState(1);
@@ -50,7 +53,9 @@ export function TransactionList({
   const detailQueryString = buildTransactionDetailQueryString(filters, page);
 
   return (
-    <div className="space-y-4">
+    <ScreenSection>
+      <SectionHeader title="거래 내역" action={action} />
+
       <TransactionFilters
         filters={filters}
         onFiltersChange={handleFiltersChange}
@@ -95,7 +100,7 @@ export function TransactionList({
           </PaginationContent>
         </Pagination>
       )}
-    </div>
+    </ScreenSection>
   );
 }
 
