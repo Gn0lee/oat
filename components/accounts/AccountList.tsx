@@ -2,7 +2,6 @@
 
 import {
   Building2,
-  CreditCard,
   MoreHorizontal,
   Pencil,
   Trash2,
@@ -98,10 +97,6 @@ function AccountCollection({
               href={`/assets/accounts/${account.id}`}
               className="flex min-w-0 flex-1 items-center gap-3"
             >
-              <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-500">
-                <CreditCard className="size-5" />
-              </div>
-
               <div className="min-w-0 flex-1">
                 <div className="flex min-w-0 flex-wrap items-center gap-2">
                   <h4 className="truncate font-semibold text-gray-900">

@@ -61,7 +61,7 @@ describe("AccountList", () => {
   it("renders grouped account rows with bank/investment grouping", () => {
     mocks.accounts = [account];
 
-    render(<AccountList />);
+    const { container } = render(<AccountList />);
 
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
     expect(screen.getByText("투자 계좌")).toBeInTheDocument();
@@ -69,6 +69,11 @@ describe("AccountList", () => {
     expect(screen.getByText("NH투자증권")).toBeInTheDocument();
     expect(screen.getByText("ISA")).toBeInTheDocument();
     expect(screen.getByText("끝 1234")).toBeInTheDocument();
+
+    // Assert no credit card icon is rendered
+    expect(
+      container.querySelector(".lucide-credit-card"),
+    ).not.toBeInTheDocument();
   });
 
   it("renders a single section header for unfiltered list with both bank and investment subgroups", () => {

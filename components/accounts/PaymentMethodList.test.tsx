@@ -50,7 +50,7 @@ describe("PaymentMethodList", () => {
   it("renders payment methods as grouped rows with details", () => {
     mocks.paymentMethods = [paymentMethod];
 
-    render(<PaymentMethodList />);
+    const { container } = render(<PaymentMethodList />);
 
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
     expect(screen.getByText("현대카드")).toBeInTheDocument();
@@ -58,6 +58,11 @@ describe("PaymentMethodList", () => {
     expect(screen.getByText("Hyundai")).toBeInTheDocument();
     expect(screen.getByText("1234")).toBeInTheDocument();
     expect(screen.getByText("생활비 통장")).toBeInTheDocument();
+
+    // Assert no credit card icon is rendered
+    expect(
+      container.querySelector(".lucide-credit-card"),
+    ).not.toBeInTheDocument();
   });
 
   it("renders screen-state when empty", () => {
