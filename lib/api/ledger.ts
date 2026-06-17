@@ -179,6 +179,7 @@ interface LedgerFinancialSourceOwnershipInput {
   householdId: string;
   ownerId: string;
   accountIds?: Array<string | null | undefined>;
+  householdAccountIds?: Array<string | null | undefined>;
   paymentMethodIds?: Array<string | null | undefined>;
 }
 
@@ -191,15 +192,17 @@ export async function assertLedgerFinancialSourceOwnership(
   input: LedgerFinancialSourceOwnershipInput,
 ): Promise<void> {
   const accountIds = uniqueDefined(input.accountIds ?? []);
+  const householdAccountIds = uniqueDefined(input.householdAccountIds ?? []);
+  const allAccountIds = uniqueDefined([...accountIds, ...householdAccountIds]);
   const paymentMethodIds = uniqueDefined(input.paymentMethodIds ?? []);
 
   const [accountsResult, paymentMethodsResult] = await Promise.all([
-    accountIds.length > 0
+    allAccountIds.length > 0
       ? supabase
           .from("accounts")
           .select("id, owner_id")
           .eq("household_id", input.householdId)
-          .in("id", accountIds)
+          .in("id", allAccountIds)
       : Promise.resolve({ data: [], error: null }),
     paymentMethodIds.length > 0
       ? supabase
@@ -228,11 +231,18 @@ export async function assertLedgerFinancialSourceOwnership(
   const hasInvalidAccount = accountIds.some(
     (id) => accountMap.get(id) !== input.ownerId,
   );
+  const hasInvalidHouseholdAccount = householdAccountIds.some(
+    (id) => !accountMap.has(id),
+  );
   const hasInvalidPaymentMethod = paymentMethodIds.some(
     (id) => paymentMethodMap.get(id) !== input.ownerId,
   );
 
-  if (hasInvalidAccount || hasInvalidPaymentMethod) {
+  if (
+    hasInvalidAccount ||
+    hasInvalidHouseholdAccount ||
+    hasInvalidPaymentMethod
+  ) {
     throw new APIError(
       "LEDGER_FINANCIAL_SOURCE_FORBIDDEN",
       "본인의 계좌 또는 결제수단만 기록에 사용할 수 있습니다.",
@@ -887,10 +897,18 @@ export async function createLedgerEntryWithBalanceSync(
   supabase: SupabaseClient<Database>,
   params: CreateLedgerEntryParams,
 ): Promise<LedgerEntry> {
+  const ownerScopedAccountIds =
+    params.type === "transfer"
+      ? [params.fromAccountId]
+      : [params.fromAccountId, params.toAccountId];
+  const householdScopedAccountIds =
+    params.type === "transfer" ? [params.toAccountId] : [];
+
   await assertLedgerFinancialSourceOwnership(supabase, {
     householdId: params.householdId,
     ownerId: params.ownerId,
-    accountIds: [params.fromAccountId, params.toAccountId],
+    accountIds: ownerScopedAccountIds,
+    householdAccountIds: householdScopedAccountIds,
     paymentMethodIds: [params.fromPaymentMethodId, params.toPaymentMethodId],
   });
 

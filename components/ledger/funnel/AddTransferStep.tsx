@@ -224,6 +224,7 @@ export function AddTransferStep({
                 paymentMethods={paymentMethods}
                 accounts={accounts}
                 ownerId={userId}
+                accountOwnerScope="household"
                 includeClearOption={false}
                 excludedValues={fromValue ? [fromValue] : []}
                 placeholder="선택"

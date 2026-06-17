@@ -441,6 +441,38 @@ describe("assertLedgerFinancialSourceOwnership", () => {
       ),
     );
   });
+
+  it("household 계좌로 허용한 계좌는 기록 소유자가 달라도 허용한다", async () => {
+    const supabase = createFinancialSourceSupabaseMock({
+      accounts: [{ id: "acc-1", owner_id: "other-user" }],
+    });
+
+    await expect(
+      assertLedgerFinancialSourceOwnership(supabase as never, {
+        householdId: "household-1",
+        ownerId: "user-1",
+        householdAccountIds: ["acc-1"],
+      }),
+    ).resolves.toBeUndefined();
+    expect(supabase.accountsBuilder.in).toHaveBeenCalledWith("id", ["acc-1"]);
+  });
+
+  it("household 계좌 허용은 결제수단에는 적용하지 않는다", async () => {
+    const supabase = createFinancialSourceSupabaseMock({
+      paymentMethods: [{ id: "pm-1", owner_id: "other-user" }],
+    });
+
+    await expect(
+      assertLedgerFinancialSourceOwnership(supabase as never, {
+        householdId: "household-1",
+        ownerId: "user-1",
+        paymentMethodIds: ["pm-1"],
+      }),
+    ).rejects.toMatchObject({
+      code: "LEDGER_FINANCIAL_SOURCE_FORBIDDEN",
+      statusCode: 403,
+    });
+  });
 });
 
 describe("getOwnLedgerActivity", () => {

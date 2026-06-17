@@ -366,6 +366,7 @@ export function ComposerFormStep({
                   paymentMethods={paymentMethods}
                   accounts={accounts}
                   ownerId={userId}
+                  accountOwnerScope="household"
                   includeClearOption={false}
                   excludedValues={fromValue ? [fromValue] : []}
                   placeholder="선택"
@@ -520,6 +521,7 @@ export function ComposerFormStep({
                 paymentMethods={paymentMethods}
                 accounts={accounts}
                 ownerId={userId}
+                accountOwnerScope="household"
                 includeClearOption={false}
                 excludedValues={fromValue ? [fromValue] : []}
                 title="어디로"

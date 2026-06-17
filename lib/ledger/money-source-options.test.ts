@@ -4,11 +4,13 @@ import {
   getLedgerMoneySourceValue,
   type LedgerMoneySourceAccount,
   type LedgerMoneySourcePaymentMethod,
+  scopeLedgerMoneySources,
 } from "./money-source-options";
 
 const bankAccount: LedgerMoneySourceAccount = {
   id: "bank-1",
   name: "국민은행 생활비",
+  ownerId: "user-1",
   ownerName: "진호",
   broker: "국민은행",
   lastFour: "1222",
@@ -19,6 +21,7 @@ const bankAccount: LedgerMoneySourceAccount = {
 const legacyBankAccount: LedgerMoneySourceAccount = {
   id: "legacy-bank-1",
   name: "신한 적금",
+  ownerId: "user-1",
   ownerName: "진호",
   broker: "신한은행",
   lastFour: null,
@@ -29,6 +32,7 @@ const legacyBankAccount: LedgerMoneySourceAccount = {
 const investmentAccount: LedgerMoneySourceAccount = {
   id: "investment-1",
   name: "토스증권",
+  ownerId: "user-2",
   ownerName: "수진",
   broker: "토스증권",
   lastFour: "3444",
@@ -39,6 +43,7 @@ const investmentAccount: LedgerMoneySourceAccount = {
 const legacyInvestmentAccount: LedgerMoneySourceAccount = {
   id: "legacy-investment-1",
   name: "ISA 계좌",
+  ownerId: "user-2",
   ownerName: "수진",
   broker: "미래에셋",
   lastFour: null,
@@ -49,6 +54,7 @@ const legacyInvestmentAccount: LedgerMoneySourceAccount = {
 const creditCard: LedgerMoneySourcePaymentMethod = {
   id: "pm-card-1",
   name: "현대카드",
+  ownerId: "user-1",
   ownerName: "진호",
   type: "credit_card",
   issuer: "현대카드",
@@ -58,6 +64,7 @@ const creditCard: LedgerMoneySourcePaymentMethod = {
 const cash: LedgerMoneySourcePaymentMethod = {
   id: "pm-cash-1",
   name: "현금",
+  ownerId: "user-2",
   ownerName: "수진",
   type: "cash",
   issuer: null,
@@ -135,6 +142,28 @@ describe("buildLedgerMoneySourceGroups", () => {
       "legacy-investment-1",
       "pm-cash-1",
     ]);
+  });
+});
+
+describe("scopeLedgerMoneySources", () => {
+  it("account scope만 household로 풀면 모든 계좌와 본인 결제수단만 남긴다", () => {
+    const scoped = scopeLedgerMoneySources({
+      ownerId: "user-1",
+      accounts,
+      paymentMethods,
+      accountOwnerScope: "household",
+      paymentMethodOwnerScope: "owner",
+    });
+
+    expect(scoped.accounts.map((account) => account.id)).toEqual([
+      "bank-1",
+      "legacy-bank-1",
+      "investment-1",
+      "legacy-investment-1",
+    ]);
+    expect(
+      scoped.paymentMethods.map((paymentMethod) => paymentMethod.id),
+    ).toEqual(["pm-card-1"]);
   });
 });
 
