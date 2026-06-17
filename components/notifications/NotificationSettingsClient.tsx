@@ -1,6 +1,11 @@
 "use client";
 
 import { Bell, BellOff, Loader2, Smartphone } from "lucide-react";
+import { GroupedList } from "@/components/layout/screen/GroupedList";
+import {
+  ScreenSection,
+  SectionHeader,
+} from "@/components/layout/screen/ScreenSection";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -54,7 +59,7 @@ export function NotificationSettingsClient() {
       <div>
         <h1 className="text-xl font-semibold text-gray-900">알림 설정</h1>
         <p className="mt-1 text-sm text-gray-500">
-          알림 종류별 앱 내 알림과 Push 수신 여부를 설정합니다.
+          알림 종류별 앱 내 알림 and Push 수신 여부를 설정합니다.
         </p>
       </div>
 
@@ -74,21 +79,18 @@ export function NotificationSettingsClient() {
           }
 
           return (
-            <section key={group} className="space-y-2">
-              <h2 className="px-1 text-sm font-semibold text-gray-700">
-                {label}
-              </h2>
-              <div className="overflow-hidden rounded-2xl bg-white shadow-sm">
-                {items.map((preference, index) => (
+            <ScreenSection key={group}>
+              <SectionHeader title={label} />
+              <GroupedList data-testid="grouped-list">
+                {items.map((preference) => (
                   <PreferenceRow
                     key={preference.type}
                     preference={preference}
                     isPushSubscribed={pushSubscription.isSubscribed}
-                    showBorder={index > 0}
                   />
                 ))}
-              </div>
-            </section>
+              </GroupedList>
+            </ScreenSection>
           );
         },
       )}
@@ -129,8 +131,8 @@ function PushDeviceCard({
   const content = getPushDeviceCardContent(pushSubscription.deviceState);
 
   return (
-    <section className="rounded-2xl bg-white p-4 shadow-sm">
-      <div className="flex items-start gap-3">
+    <GroupedList data-testid="grouped-list">
+      <div className="flex items-start gap-3 p-4">
         <div
           className={cn(
             "flex size-10 shrink-0 items-center justify-center rounded-full",
@@ -213,7 +215,7 @@ function PushDeviceCard({
           )}
         </div>
       </div>
-    </section>
+    </GroupedList>
   );
 }
 
@@ -291,11 +293,9 @@ function getPushDeviceCardContent(
 function PreferenceRow({
   preference,
   isPushSubscribed,
-  showBorder,
 }: {
   preference: NotificationPreferenceView;
   isPushSubscribed: boolean;
-  showBorder: boolean;
 }) {
   const updatePreference = useUpdateNotificationPreference();
 
@@ -327,12 +327,7 @@ function PreferenceRow({
       : null;
 
   return (
-    <div
-      className={cn(
-        "flex items-start justify-between gap-4 p-4",
-        showBorder && "border-gray-100 border-t",
-      )}
-    >
+    <div className="flex items-start justify-between gap-4 p-4">
       <div className="min-w-0 flex-1">
         <p className="font-medium text-gray-900">{preference.label}</p>
         <p className="mt-1 text-sm text-gray-500">{preference.description}</p>

@@ -37,11 +37,23 @@ describe("MembersTable", () => {
       />,
     );
 
+    // 1. No role="table"
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
+
+    // 2. Members and pending invitations render
     expect(screen.getByText("진호")).toBeInTheDocument();
     expect(screen.getByText("jinho@example.com")).toBeInTheDocument();
     expect(screen.getByText("관리자")).toBeInTheDocument();
     expect(screen.getByText("대기 중 초대")).toBeInTheDocument();
     expect(screen.getByText("pending@example.com")).toBeInTheDocument();
+
+    // 3. Member and invitation sections both render as list/grouped row surfaces.
+    // We expect two GroupedLists (one for members, one for invitations).
+    const lists = screen.getAllByTestId("grouped-list");
+    expect(lists.length).toBe(2);
+
+    // 4. Owner cancel invitation button has accessible name "초대 취소"
+    const cancelBtn = screen.getByRole("button", { name: "초대 취소" });
+    expect(cancelBtn).toBeInTheDocument();
   });
 });

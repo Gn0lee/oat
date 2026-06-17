@@ -2,6 +2,8 @@
 
 import { Check, ChevronRight, Loader2 } from "lucide-react";
 import Link from "next/link";
+import { GroupedList } from "@/components/layout/screen/GroupedList";
+import { ScreenState } from "@/components/layout/screen/ScreenState";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -66,21 +68,20 @@ export function NotificationInboxClient() {
       </div>
 
       {notifications.length === 0 ? (
-        <div className="rounded-2xl bg-white p-8 text-center shadow-sm">
-          <p className="font-medium text-gray-900">아직 알림이 없습니다</p>
-          <p className="mt-2 text-sm text-gray-500">
-            협업 요청이나 공유 기록 변경이 생기면 여기에 표시됩니다.
-          </p>
-        </div>
+        <ScreenState
+          type="empty"
+          title="아직 알림이 없습니다"
+          description="협업 요청이나 공유 기록 변경이 생기면 여기에 표시됩니다."
+        />
       ) : (
-        <div className="space-y-3">
+        <GroupedList data-testid="grouped-list">
           {notifications.map((notification) => (
-            <NotificationItemCard
+            <NotificationItemRow
               key={notification.id}
               notification={notification}
             />
           ))}
-        </div>
+        </GroupedList>
       )}
 
       {hasNextPage && (
@@ -98,7 +99,7 @@ export function NotificationInboxClient() {
   );
 }
 
-function NotificationItemCard({
+function NotificationItemRow({
   notification,
 }: {
   notification: NotificationItem;
@@ -126,15 +127,15 @@ function NotificationItemCard({
   return (
     <div
       className={cn(
-        "relative rounded-2xl bg-white p-4 shadow-sm transition-colors",
-        isUnread && "ring-1 ring-primary/15",
+        "relative transition-colors hover:bg-gray-50",
+        isUnread && "bg-primary/[0.02] hover:bg-primary/[0.04]",
       )}
     >
-      <Link href={href} onClick={handleClick} className="block pr-8">
+      <Link href={href} onClick={handleClick} className="block p-4 pr-12">
         <div className="flex items-start gap-3">
           <span
             className={cn(
-              "mt-1 size-2.5 rounded-full",
+              "mt-1.5 size-2 shrink-0 rounded-full",
               isUnread ? "bg-primary" : "bg-gray-200",
             )}
           />
