@@ -2,6 +2,7 @@
 
 import type { Control, FieldValues, Path } from "react-hook-form";
 import { useController } from "react-hook-form";
+import { SegmentedChoiceGroup } from "@/components/layout";
 import { Label } from "@/components/ui/label";
 
 interface TransactionTypeSelectorProps<T extends FieldValues> {
@@ -21,34 +22,28 @@ export function TransactionTypeSelector<
     control,
     name,
   });
+  const selectedType = field.value as "buy" | "sell";
 
   const content = (
     <>
       <Label className="text-gray-700">거래 유형</Label>
-      <div className="grid grid-cols-2 gap-2">
-        <button
-          type="button"
-          onClick={() => field.onChange("buy")}
-          className={`h-11 rounded-xl font-medium transition-colors ${
-            field.value === "buy"
-              ? "bg-[#F04452] text-white"
-              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-          }`}
-        >
-          매수
-        </button>
-        <button
-          type="button"
-          onClick={() => field.onChange("sell")}
-          className={`h-11 rounded-xl font-medium transition-colors ${
-            field.value === "sell"
-              ? "bg-[#3182F6] text-white"
-              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-          }`}
-        >
-          매도
-        </button>
-      </div>
+      <SegmentedChoiceGroup
+        value={selectedType}
+        onValueChange={(nextValue) => field.onChange(nextValue)}
+        columns={2}
+        options={[
+          {
+            value: "buy",
+            label: "매수",
+            selectedClassName: "bg-[#F04452] text-white",
+          },
+          {
+            value: "sell",
+            label: "매도",
+            selectedClassName: "bg-[#3182F6] text-white",
+          },
+        ]}
+      />
     </>
   );
 

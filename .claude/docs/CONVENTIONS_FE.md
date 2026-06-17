@@ -158,6 +158,27 @@ lib/queries/index.ts  # 모든 쿼리 정의
 - 단순 검색 결과가 아니라 실제 화면 역할과 사용자 흐름 기준으로 묶습니다.
 - 인증/초대 화면은 전수조사에 포함하되, 로그인 후 메인 앱 개선 이슈와 별도 묶음으로 관리합니다.
 
+### 입력/제출 Task Surface
+
+사용자가 금융 데이터를 생성, 수정, 요청, 삭제 요청하거나 입력 중 참조 데이터를 인라인 생성하는 화면은 같은 task surface 문법을 따릅니다.
+
+적용 대상:
+
+- 가계부 기록 생성, 수정, 수정 요청, 삭제 요청
+- 주식 거래 생성, 수정, 수정 요청, 삭제 요청
+- 계좌/결제수단 신규 등록
+- 거래 입력 중 계좌, 결제수단, 카테고리 인라인 생성
+
+구현 기준:
+
+- 모바일에서 input이 있는 task flow는 full-screen drawer 또는 task screen을 우선합니다.
+- 모바일 input flow를 만들기 위해 `DialogContent`를 `100dvh`, `left-0`, `top-0`, `translate-x-0` 등으로 fullscreen처럼 강제하지 않습니다.
+- 데스크톱은 centered dialog를 사용할 수 있지만, 필드 구성, selector, footer action 문법은 모바일 task surface와 같은 순서를 유지합니다.
+- 계좌, 결제수단, 카테고리처럼 검색/생성이 필요한 선택은 plain `Select`보다 기존 combobox와 mobile picker drawer를 우선합니다.
+- 저장, 취소, 추가, 요청 보내기 같은 action은 화면 하단 task footer에 모으고, 모바일에서는 safe-area 여백을 고려합니다.
+- 금액 입력 label, prefix, preview는 `SCREEN_PRIMITIVES.md`의 `AmountText` 및 금액 포맷 정책과 충돌하지 않게 유지합니다.
+- 새 입력/요청 UI를 추가할 때는 기존 수정 drawer와 수정 요청 drawer의 모바일 keyboard, nested drawer, selector 흐름을 비교해 회귀를 확인합니다.
+
 ### 자산 유형별 계층 구조
 
 자산은 `/assets/[type]/...` 패턴으로 유형별 계층 구조를 따릅니다.

@@ -328,7 +328,7 @@ export function LedgerEntryEditDialog({
     <>
       {/* 금액 */}
       <div className="space-y-2">
-        <Label htmlFor="edit-amount">금액 (원) *</Label>
+        <Label htmlFor="edit-amount">금액 *</Label>
         <div className="relative">
           <Input
             id="edit-amount"
@@ -336,8 +336,12 @@ export function LedgerEntryEditDialog({
             inputMode="numeric"
             step="any"
             min="0"
+            className="pr-10"
             {...register("amount")}
           />
+          <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-gray-500">
+            원
+          </span>
         </div>
         {errors.amount && (
           <p className="text-sm text-destructive">{errors.amount.message}</p>

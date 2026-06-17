@@ -97,13 +97,13 @@ function CategoryCard({
     <button
       type="button"
       onClick={onClick}
-      className="w-full flex items-center gap-4 p-4 rounded-2xl border-2 border-gray-100 bg-white hover:border-primary/30 hover:bg-primary/5 transition-colors text-left"
+      className="w-full flex items-center gap-3 px-4 py-3 bg-white hover:bg-gray-50 transition-colors text-left"
     >
-      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+      <div className="size-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
         {icon}
       </div>
-      <div>
-        <p className="text-lg font-semibold text-gray-900">{title}</p>
+      <div className="min-w-0">
+        <p className="text-sm font-semibold text-gray-900">{title}</p>
         <p className="text-sm text-gray-500">{description}</p>
       </div>
     </button>
@@ -261,15 +261,21 @@ function DetailForm({ type, onBack }: DetailFormProps) {
       {showAuxiliaryBalance && (
         <div className="space-y-2">
           <Label htmlFor="pm-balance">보조잔액</Label>
-          <Input
-            id="pm-balance"
-            type="number"
-            inputMode="numeric"
-            min="0"
-            placeholder="예: 30000"
-            {...register("balanceStr")}
-            aria-invalid={!!errors.balanceStr}
-          />
+          <div className="relative">
+            <Input
+              id="pm-balance"
+              type="number"
+              inputMode="numeric"
+              min="0"
+              placeholder="예: 30000"
+              className="pr-10"
+              {...register("balanceStr")}
+              aria-invalid={!!errors.balanceStr}
+            />
+            <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-gray-500">
+              원
+            </span>
+          </div>
           {errors.balanceStr && (
             <p className="text-sm text-destructive">
               {errors.balanceStr.message}
@@ -348,7 +354,7 @@ function PaymentMethodNewFormInner() {
   return (
     <div className="space-y-6">
       <p className="text-gray-500">어떤 결제수단을 추가하시겠어요?</p>
-      <div className="space-y-3">
+      <div className="overflow-hidden rounded-xl bg-white ring-1 ring-gray-100 divide-y divide-gray-100">
         <CategoryCard
           onClick={() => setType("credit_card")}
           icon={<CreditCard className="w-6 h-6 text-primary" />}

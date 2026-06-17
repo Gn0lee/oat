@@ -4,6 +4,8 @@ import { PlusIcon, X } from "lucide-react";
 import { useRef, useState } from "react";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { toast } from "sonner";
+import { SegmentedChoiceGroup } from "@/components/layout/SegmentedChoiceGroup";
+import { AmountText } from "@/components/layout/screen";
 import { Button } from "@/components/ui/button";
 import { DatePickerInput } from "@/components/ui/date-picker";
 import {
@@ -15,13 +17,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useAccounts } from "@/hooks/use-accounts";
 import { useCategories } from "@/hooks/use-categories";
 import { usePaymentMethods } from "@/hooks/use-payment-methods";
@@ -158,54 +153,49 @@ export function ComposerListStep({
 
   return (
     <div className="space-y-5 pb-[calc(1rem+env(safe-area-inset-bottom))]">
-      <div className="rounded-2xl bg-white p-4 shadow-sm space-y-4">
+      <div className="rounded-xl border border-gray-100 bg-white p-4 space-y-4">
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-2">
-            <div className="min-w-0 space-y-1">
+          <div className="space-y-2">
+            <div className="min-w-0 space-y-2">
               <Label className="text-sm text-gray-700">유형</Label>
-              <Select
+              <SegmentedChoiceGroup
                 value={defaultType}
-                onValueChange={(value) => {
-                  form.setValue(
-                    "defaultType",
-                    value as
-                      | "expense"
-                      | "income"
-                      | "transfer"
-                      | "non_expense_withdrawal",
-                  );
-                }}
-              >
-                <SelectTrigger className="h-10 w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="expense">지출</SelectItem>
-                  <SelectItem value="income">수입</SelectItem>
-                  <SelectItem value="transfer">내부이체</SelectItem>
-                  <SelectItem value="non_expense_withdrawal">
-                    비지출 출금
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+                columns={4}
+                onValueChange={(value) => form.setValue("defaultType", value)}
+                options={[
+                  {
+                    value: "expense",
+                    label: "지출",
+                    selectedClassName: "bg-[#3182F6] text-white",
+                  },
+                  {
+                    value: "income",
+                    label: "수입",
+                    selectedClassName: "bg-[#F04452] text-white",
+                  },
+                  { value: "transfer", label: "내부이체" },
+                  {
+                    value: "non_expense_withdrawal",
+                    label: "비지출",
+                    selectedClassName: "bg-gray-800 text-white",
+                  },
+                ]}
+              />
             </div>
 
-            <div className="min-w-0 space-y-1">
+            <div className="min-w-0 space-y-2">
               <Label className="text-sm text-gray-700">공개범위</Label>
-              <Select
+              <SegmentedChoiceGroup
                 value={defaultIsShared ? "shared" : "private"}
+                columns={2}
                 onValueChange={(value) =>
                   form.setValue("defaultIsShared", value === "shared")
                 }
-              >
-                <SelectTrigger className="h-10 w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="shared">공용</SelectItem>
-                  <SelectItem value="private">개인</SelectItem>
-                </SelectContent>
-              </Select>
+                options={[
+                  { value: "shared", label: "공용" },
+                  { value: "private", label: "개인" },
+                ]}
+              />
             </div>
           </div>
           <div className="min-w-0 space-y-1">
@@ -234,91 +224,97 @@ export function ComposerListStep({
       </div>
 
       <div className="space-y-4">
-        <div className="space-y-2">
-          {fields.map((field, index) => {
-            const item = items[index];
-            if (!item) return null;
-            const typeLabel =
-              item.type === "income"
-                ? "수입"
-                : item.type === "transfer"
-                  ? "내부이체"
-                  : item.type === "non_expense_withdrawal"
-                    ? "비지출 출금"
-                    : "지출";
-            const typeColor =
-              item.type === "income"
-                ? "text-blue-600"
-                : item.type === "transfer"
-                  ? "text-gray-600"
-                  : item.type === "non_expense_withdrawal"
-                    ? "text-purple-600"
-                    : "text-red-600";
-            const hasError = !!form.formState.errors.items?.[index];
+        {fields.length > 0 && (
+          <div className="overflow-hidden rounded-xl bg-white ring-1 ring-gray-100 divide-y divide-gray-100">
+            {fields.map((field, index) => {
+              const item = items[index];
+              if (!item) return null;
+              const typeLabel =
+                item.type === "income"
+                  ? "수입"
+                  : item.type === "transfer"
+                    ? "내부이체"
+                    : item.type === "non_expense_withdrawal"
+                      ? "비지출 출금"
+                      : "지출";
+              const typeColor =
+                item.type === "income"
+                  ? "text-blue-600"
+                  : item.type === "transfer"
+                    ? "text-gray-600"
+                    : item.type === "non_expense_withdrawal"
+                      ? "text-purple-600"
+                      : "text-red-600";
+              const hasError = !!form.formState.errors.items?.[index];
 
-            return (
-              <div
-                key={field.id}
-                className={cn(
-                  "relative mt-2 flex items-center gap-2 rounded-2xl border p-4 shadow-sm transition-colors",
-                  hasError
-                    ? "border-red-200 bg-red-50/10 hover:border-red-300"
-                    : "border-gray-100 bg-white hover:border-gray-200",
-                )}
-              >
-                {/* biome-ignore lint/a11y/useKeyWithClickEvents: non-navigation item click */}
-                {/* biome-ignore lint/a11y/noStaticElementInteractions: list item wrapper click */}
+              return (
                 <div
-                  className="flex-1 flex items-center justify-between cursor-pointer"
-                  onClick={() => onEditItem(index)}
+                  key={field.id}
+                  className={cn(
+                    "flex items-center gap-3 p-4 transition-colors",
+                    hasError ? "bg-red-50/60" : "bg-white hover:bg-gray-50/70",
+                  )}
                 >
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className={`text-xs font-semibold ${typeColor}`}>
-                        {typeLabel}
-                      </span>
-                      <span
-                        className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${item.isShared ? "bg-indigo-50 text-indigo-600" : "bg-gray-100 text-gray-600"}`}
-                      >
-                        {item.isShared ? "공유" : "개인"}
-                      </span>
-                      <span className="text-sm font-medium text-gray-900">
-                        {item.title || "내용을 입력해주세요"}
-                      </span>
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      {getCategoryName(item.type, item.categoryId)}
-                    </div>
-                    {hasError && (
-                      <div className="text-[11px] text-red-500 mt-1 font-medium">
-                        필수 입력 사항이 누락되었습니다.
+                  <button
+                    type="button"
+                    className="min-w-0 flex-1 flex items-center justify-between gap-3 text-left"
+                    onClick={() => onEditItem(index)}
+                  >
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className={`text-xs font-semibold ${typeColor}`}>
+                          {typeLabel}
+                        </span>
+                        <span
+                          className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${item.isShared ? "bg-indigo-50 text-indigo-600" : "bg-gray-100 text-gray-600"}`}
+                        >
+                          {item.isShared ? "공유" : "개인"}
+                        </span>
+                        <span className="text-sm font-medium text-gray-900">
+                          {item.title || "내용을 입력해주세요"}
+                        </span>
                       </div>
-                    )}
-                  </div>
-                  <div className="text-right flex items-center gap-3">
-                    <span className="text-sm font-bold text-gray-900">
-                      {item.amount
-                        ? formatCurrency(Number(item.amount))
-                        : "0원"}
-                    </span>
-                  </div>
-                </div>
+                      <div className="text-xs text-gray-500">
+                        {getCategoryName(item.type, item.categoryId)}
+                      </div>
+                      {hasError && (
+                        <div className="text-[11px] text-red-500 mt-1 font-medium">
+                          필수 입력 사항이 누락되었습니다.
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-right flex items-center gap-3">
+                      <AmountText
+                        amount={Number(item.amount) || 0}
+                        tone={
+                          item.type === "income"
+                            ? "income"
+                            : item.type === "expense"
+                              ? "expense"
+                              : "neutral"
+                        }
+                        className="text-sm font-bold"
+                      />
+                    </div>
+                  </button>
 
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    remove(index);
-                  }}
-                  className="absolute -top-2.5 -right-2.5 flex h-6 w-6 items-center justify-center rounded-full bg-gray-400 text-white shadow-md hover:bg-red-500 transition-colors z-10"
-                >
-                  <X className="h-3 w-3" strokeWidth={3} />
-                </button>
-              </div>
-            );
-          })}
-        </div>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      remove(index);
+                    }}
+                    className="flex size-9 shrink-0 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500"
+                    aria-label="내역 삭제"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
 
         <Button
           type="button"

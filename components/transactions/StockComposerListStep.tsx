@@ -68,7 +68,7 @@ export function StockComposerListStep({
 
   return (
     <div className="space-y-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
-      <div className="bg-white rounded-2xl shadow-sm p-4 space-y-4">
+      <div className="rounded-xl border border-gray-100 bg-white p-4 space-y-4">
         <TransactionTypeSelector control={form.control} variant="inline" />
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -112,7 +112,7 @@ export function StockComposerListStep({
       </div>
 
       {fields.length === 0 ? (
-        <div className="bg-white rounded-2xl shadow-sm p-8 flex flex-col items-center justify-center text-center space-y-4">
+        <div className="rounded-xl border border-dashed border-gray-200 bg-white p-8 flex flex-col items-center justify-center text-center space-y-4">
           <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center">
             <PackagePlusIcon className="h-8 w-8 text-gray-400" />
           </div>
@@ -128,7 +128,7 @@ export function StockComposerListStep({
         </div>
       ) : (
         <div className="space-y-4">
-          <div className="space-y-2">
+          <div className="overflow-hidden rounded-xl bg-white ring-1 ring-gray-100 divide-y divide-gray-100">
             {fields.map((field, index) => {
               const item = watchItems[index];
               if (!item) return null;
@@ -143,21 +143,18 @@ export function StockComposerListStep({
                 <div
                   key={field.id}
                   className={cn(
-                    "relative mt-2 flex items-center gap-2 rounded-2xl border p-4 shadow-sm transition-colors",
-                    hasError
-                      ? "border-red-200 bg-red-50/10 hover:border-red-300"
-                      : "border-gray-100 bg-white hover:border-gray-200",
+                    "flex items-center gap-3 p-4 transition-colors",
+                    hasError ? "bg-red-50/60" : "bg-white hover:bg-gray-50/70",
                   )}
                 >
-                  {/* biome-ignore lint/a11y/useKeyWithClickEvents: non-navigation item click */}
-                  {/* biome-ignore lint/a11y/noStaticElementInteractions: list item wrapper click */}
-                  <div
-                    className="flex-1 flex items-center justify-between cursor-pointer"
+                  <button
+                    type="button"
+                    className="min-w-0 flex-1 flex items-center justify-between gap-3 text-left"
                     onClick={() => onEditItem(index)}
                   >
-                    <div>
+                    <div className="min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-sm font-medium text-gray-900">
+                        <span className="truncate text-sm font-medium text-gray-900">
                           {label}
                         </span>
                       </div>
@@ -188,7 +185,7 @@ export function StockComposerListStep({
                         className="text-sm font-bold"
                       />
                     </div>
-                  </div>
+                  </button>
 
                   <button
                     type="button"
@@ -197,9 +194,10 @@ export function StockComposerListStep({
                       e.stopPropagation();
                       remove(index);
                     }}
-                    className="absolute -top-2.5 -right-2.5 flex h-6 w-6 items-center justify-center rounded-full bg-gray-400 text-white shadow-md hover:bg-red-500 transition-colors z-10"
+                    className="flex size-9 shrink-0 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500"
+                    aria-label="종목 삭제"
                   >
-                    <X className="h-3 w-3" strokeWidth={3} />
+                    <X className="h-4 w-4" />
                   </button>
                 </div>
               );

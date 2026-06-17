@@ -3,6 +3,7 @@
 import { XIcon } from "lucide-react";
 import { useState } from "react";
 import { useFormContext } from "react-hook-form";
+import { SegmentedChoiceGroup } from "@/components/layout";
 import {
   LedgerCategoryCombobox,
   LedgerCategoryPickerPanel,
@@ -20,13 +21,6 @@ import { DatePickerInput } from "@/components/ui/date-picker";
 import { Drawer, DrawerContent } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useAccounts } from "@/hooks/use-accounts";
 import { useCategories } from "@/hooks/use-categories";
@@ -135,50 +129,46 @@ export function ComposerFormStep({
       {/* Form Content */}
       <div className="flex-1 overflow-y-auto px-4 pt-16 pb-[calc(1rem+env(safe-area-inset-bottom))] space-y-4">
         <div className="grid grid-cols-2 gap-2">
-          <div className="min-w-0 space-y-1">
+          <div className="min-w-0 space-y-2 col-span-2">
             <Label className="text-sm text-gray-700">유형</Label>
-            <Select
+            <SegmentedChoiceGroup
               value={itemType}
-              onValueChange={(value) =>
-                handleTypeChange(
-                  value as
-                    | "expense"
-                    | "income"
-                    | "transfer"
-                    | "non_expense_withdrawal",
-                )
-              }
-            >
-              <SelectTrigger className="h-10 w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="expense">지출</SelectItem>
-                <SelectItem value="income">수입</SelectItem>
-                <SelectItem value="transfer">내부이체</SelectItem>
-                <SelectItem value="non_expense_withdrawal">
-                  비지출 출금
-                </SelectItem>
-              </SelectContent>
-            </Select>
+              columns={4}
+              onValueChange={handleTypeChange}
+              options={[
+                {
+                  value: "expense",
+                  label: "지출",
+                  selectedClassName: "bg-[#3182F6] text-white",
+                },
+                {
+                  value: "income",
+                  label: "수입",
+                  selectedClassName: "bg-[#F04452] text-white",
+                },
+                { value: "transfer", label: "내부이체" },
+                {
+                  value: "non_expense_withdrawal",
+                  label: "비지출",
+                  selectedClassName: "bg-gray-800 text-white",
+                },
+              ]}
+            />
           </div>
 
-          <div className="min-w-0 space-y-1">
+          <div className="min-w-0 space-y-2 col-span-2">
             <Label className="text-sm text-gray-700">공개범위</Label>
-            <Select
+            <SegmentedChoiceGroup
               value={itemIsShared ? "shared" : "private"}
+              columns={2}
               onValueChange={(value) =>
                 form.setValue(`items.${index}.isShared`, value === "shared")
               }
-            >
-              <SelectTrigger className="h-10 w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="shared">공용</SelectItem>
-                <SelectItem value="private">개인</SelectItem>
-              </SelectContent>
-            </Select>
+              options={[
+                { value: "shared", label: "공용" },
+                { value: "private", label: "개인" },
+              ]}
+            />
           </div>
         </div>
 
@@ -260,13 +250,19 @@ export function ComposerFormStep({
 
         <div className="grid grid-cols-2 gap-2">
           <div className="space-y-1">
-            <Label className="text-sm text-gray-700">금액 (원) *</Label>
-            <Input
-              type="number"
-              inputMode="numeric"
-              placeholder="0"
-              {...form.register(`items.${index}.amount`)}
-            />
+            <Label className="text-sm text-gray-700">금액 *</Label>
+            <div className="relative">
+              <Input
+                type="number"
+                inputMode="numeric"
+                placeholder="0"
+                className="pr-10"
+                {...form.register(`items.${index}.amount`)}
+              />
+              <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-gray-500">
+                원
+              </span>
+            </div>
             {errors?.amount && (
               <p className="text-xs text-red-500">{errors.amount.message}</p>
             )}
