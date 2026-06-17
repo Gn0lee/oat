@@ -1,29 +1,28 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { TaskFormSurface } from "@/components/layout";
+import {
+  LedgerCategoryCombobox,
+  LedgerCategoryPickerPanel,
+  LedgerCategoryTrigger,
+} from "@/components/ledger/LedgerCategoryCombobox";
+import {
+  getLedgerMoneySourceLabel,
+  LedgerMoneySourceCombobox,
+  LedgerMoneySourcePickerPanel,
+  LedgerMoneySourceTrigger,
+} from "@/components/ledger/LedgerMoneySourceCombobox";
 import { Button } from "@/components/ui/button";
 import { DatePickerInput } from "@/components/ui/date-picker";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Drawer, DrawerContent } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useAccounts } from "@/hooks/use-accounts";
 import { useCategories } from "@/hooks/use-categories";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import { usePaymentMethods } from "@/hooks/use-payment-methods";
 import { useCreateRecordChangeRequest } from "@/hooks/use-record-change-requests";
 import type { LedgerEntryWithDetails } from "@/lib/api/ledger";
@@ -36,6 +35,7 @@ import { formatCurrency } from "@/lib/utils/format";
 import type { CategoryType } from "@/types";
 
 type RequestMode = "update" | "delete";
+type MobileRequestView = "form" | "categoryPicker" | "moneySourcePicker";
 
 interface LedgerEntryChangeRequestDialogProps {
   entry: LedgerEntryWithDetails | null;
@@ -79,9 +79,11 @@ export function LedgerEntryChangeRequestDialog({
   onOpenChange,
 }: LedgerEntryChangeRequestDialogProps) {
   const createMutation = useCreateRecordChangeRequest();
+  const isDesktop = useMediaQuery("(min-width: 768px)");
   const [values, setValues] =
     useState<LedgerRecordUpdateRequestFormValues | null>(null);
   const [message, setMessage] = useState("");
+  const [mobileView, setMobileView] = useState<MobileRequestView>("form");
 
   const categoryType =
     entry?.type === "transfer" || entry?.type === "non_expense_withdrawal"
@@ -96,26 +98,8 @@ export function LedgerEntryChangeRequestDialog({
     if (!entry || !open) return;
     setValues(getInitialValues(entry));
     setMessage("");
+    setMobileView("form");
   }, [entry, open]);
-
-  const moneySourceOptions = useMemo(
-    () => [
-      { value: "none", label: "선택 안함" },
-      ...paymentMethods
-        .filter((item) => item.ownerId === entry?.ownerId)
-        .map((item) => ({
-          value: `pm:${item.id}`,
-          label: item.name,
-        })),
-      ...accounts
-        .filter((item) => item.ownerId === entry?.ownerId)
-        .map((item) => ({
-          value: `acc:${item.id}`,
-          label: item.name,
-        })),
-    ],
-    [accounts, paymentMethods, entry?.ownerId],
-  );
 
   if (!entry || !values) return null;
 
@@ -175,17 +159,38 @@ export function LedgerEntryChangeRequestDialog({
   ) =>
     setValues((current) => (current ? { ...current, [key]: value } : current));
 
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        className="left-0 top-0 flex h-[100dvh] max-h-[100dvh] w-full max-w-full translate-x-0 translate-y-0 flex-col overflow-y-auto rounded-none border-0 p-5 sm:left-[50%] sm:top-[50%] sm:h-auto sm:max-h-[85dvh] sm:max-w-md sm:translate-x-[-50%] sm:translate-y-[-50%] sm:rounded-lg sm:border sm:p-6"
-        onOpenAutoFocus={(event) => event.preventDefault()}
-      >
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
-        </DialogHeader>
+  const moneySourceMode =
+    entry.type === "expense" || entry.type === "non_expense_withdrawal"
+      ? "expense"
+      : "income";
+  const moneySourcePlaceholder =
+    entry.type === "non_expense_withdrawal" ? "선택" : "선택 안함";
+  const moneySourceLabel = getLedgerMoneySourceLabel({
+    mode: moneySourceMode,
+    value: values.moneySourceId === "none" ? "" : values.moneySourceId,
+    paymentMethods,
+    accounts,
+    ownerId: entry.ownerId,
+    placeholder: moneySourcePlaceholder,
+  });
+  const selectedCategoryLabel =
+    categories.find((category) => category.id === values.categoryId)?.name ??
+    "선택";
+  const handleMoneySourceChange = (value: string) => {
+    updateValue("moneySourceId", value || "none");
+  };
+  const canEditCategory =
+    entry.type !== "transfer" && entry.type !== "non_expense_withdrawal";
+  const canEditMoneySource = entry.type !== "transfer";
 
+  return (
+    <>
+      <TaskFormSurface
+        open={open}
+        onOpenChange={onOpenChange}
+        title={title}
+        description={description}
+      >
         <div className="rounded-md border p-3 text-sm">
           <div className="flex items-center justify-between gap-3">
             <span className="font-medium">
@@ -203,17 +208,23 @@ export function LedgerEntryChangeRequestDialog({
         {isUpdate ? (
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="request-amount">금액 (원)</Label>
-              <Input
-                id="request-amount"
-                type="number"
-                inputMode="numeric"
-                min="0"
-                value={values.amount}
-                onChange={(event) =>
-                  updateValue("amount", Number(event.target.value))
-                }
-              />
+              <Label htmlFor="request-amount">금액</Label>
+              <div className="relative">
+                <Input
+                  id="request-amount"
+                  type="number"
+                  inputMode="numeric"
+                  min="0"
+                  className="pr-10"
+                  value={values.amount}
+                  onChange={(event) =>
+                    updateValue("amount", Number(event.target.value))
+                  }
+                />
+                <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-gray-500">
+                  원
+                </span>
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -225,62 +236,71 @@ export function LedgerEntryChangeRequestDialog({
               />
             </div>
 
-            <div
-              className={
-                entry.type === "non_expense_withdrawal"
-                  ? "grid grid-cols-1"
-                  : "grid grid-cols-2 gap-3"
-              }
-            >
-              {entry.type !== "non_expense_withdrawal" && (
-                <div className="space-y-2">
-                  <Label>카테고리</Label>
-                  <Select
-                    value={values.categoryId ?? "none"}
-                    onValueChange={(value) =>
-                      updateValue("categoryId", value === "none" ? null : value)
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">선택 안함</SelectItem>
-                      {categories.map((category) => (
-                        <SelectItem key={category.id} value={category.id}>
-                          {category.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
+            {(canEditCategory || canEditMoneySource) && (
+              <div
+                className={
+                  entry.type === "non_expense_withdrawal"
+                    ? "grid grid-cols-1"
+                    : "grid grid-cols-2 gap-3"
+                }
+              >
+                {canEditCategory && (
+                  <div className="space-y-2">
+                    <Label>카테고리</Label>
+                    {isDesktop ? (
+                      <LedgerCategoryCombobox
+                        value={values.categoryId ?? ""}
+                        categories={categories}
+                        type={categoryType as CategoryType}
+                        placeholder="선택"
+                        onValueChange={(value) =>
+                          updateValue("categoryId", value)
+                        }
+                      />
+                    ) : (
+                      <LedgerCategoryTrigger
+                        label={selectedCategoryLabel}
+                        placeholder="선택"
+                        onClick={() => setMobileView("categoryPicker")}
+                      />
+                    )}
+                  </div>
+                )}
 
-              <div className="space-y-2">
-                <Label>
-                  {entry.type === "expense"
-                    ? "결제 방법"
-                    : entry.type === "non_expense_withdrawal"
-                      ? "출금처"
-                      : "입금 계좌"}
-                </Label>
-                <Select
-                  value={values.moneySourceId}
-                  onValueChange={(value) => updateValue("moneySourceId", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {moneySourceOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {canEditMoneySource && (
+                  <div className="space-y-2">
+                    <Label>
+                      {entry.type === "expense"
+                        ? "결제 방법"
+                        : entry.type === "non_expense_withdrawal"
+                          ? "출금처"
+                          : "입금 계좌"}
+                    </Label>
+                    {isDesktop ? (
+                      <LedgerMoneySourceCombobox
+                        mode={moneySourceMode}
+                        value={
+                          values.moneySourceId === "none"
+                            ? ""
+                            : values.moneySourceId
+                        }
+                        paymentMethods={paymentMethods}
+                        accounts={accounts}
+                        ownerId={entry.ownerId}
+                        placeholder={moneySourcePlaceholder}
+                        onValueChange={handleMoneySourceChange}
+                      />
+                    ) : (
+                      <LedgerMoneySourceTrigger
+                        label={moneySourceLabel}
+                        placeholder={moneySourcePlaceholder}
+                        onClick={() => setMobileView("moneySourcePicker")}
+                      />
+                    )}
+                  </div>
+                )}
               </div>
-            </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="request-date">날짜</Label>
@@ -322,7 +342,7 @@ export function LedgerEntryChangeRequestDialog({
           />
         </div>
 
-        <DialogFooter className="mt-auto">
+        <div className="flex flex-col-reverse gap-2 pt-4 sm:flex-row sm:justify-end">
           <Button
             type="button"
             variant="outline"
@@ -338,8 +358,72 @@ export function LedgerEntryChangeRequestDialog({
           >
             {createMutation.isPending ? "요청 중..." : "요청 보내기"}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </div>
+      </TaskFormSurface>
+
+      {!isDesktop && canEditCategory && (
+        <Drawer
+          open={open && mobileView === "categoryPicker"}
+          onOpenChange={(nextOpen) => {
+            if (!nextOpen) setMobileView("form");
+          }}
+        >
+          <DrawerContent
+            className="h-[85dvh] max-h-[85dvh] p-0 flex flex-col data-[vaul-drawer-direction=bottom]:mt-0 data-[vaul-drawer-direction=bottom]:max-h-[85dvh]"
+            onOpenAutoFocus={(event) => event.preventDefault()}
+          >
+            <LedgerCategoryPickerPanel
+              value={values.categoryId ?? ""}
+              categories={categories}
+              type={categoryType as CategoryType}
+              title="카테고리 선택"
+              searchPlaceholder="카테고리 이름 검색"
+              onBack={() => setMobileView("form")}
+              onValueChange={(value) => {
+                updateValue("categoryId", value);
+                setMobileView("form");
+              }}
+            />
+          </DrawerContent>
+        </Drawer>
+      )}
+
+      {!isDesktop && canEditMoneySource && (
+        <Drawer
+          open={open && mobileView === "moneySourcePicker"}
+          onOpenChange={(nextOpen) => {
+            if (!nextOpen) setMobileView("form");
+          }}
+        >
+          <DrawerContent
+            className="h-[85dvh] max-h-[85dvh] p-0 flex flex-col data-[vaul-drawer-direction=bottom]:mt-0 data-[vaul-drawer-direction=bottom]:max-h-[85dvh]"
+            onOpenAutoFocus={(event) => event.preventDefault()}
+          >
+            <LedgerMoneySourcePickerPanel
+              mode={moneySourceMode}
+              value={
+                values.moneySourceId === "none" ? "" : values.moneySourceId
+              }
+              paymentMethods={paymentMethods}
+              accounts={accounts}
+              ownerId={entry.ownerId}
+              title={
+                entry.type === "expense"
+                  ? "결제 방법 선택"
+                  : entry.type === "non_expense_withdrawal"
+                    ? "출금처 선택"
+                    : "입금 계좌 선택"
+              }
+              searchPlaceholder="이름, 기관, 소유자 검색"
+              onBack={() => setMobileView("form")}
+              onValueChange={(value) => {
+                handleMoneySourceChange(value);
+                setMobileView("form");
+              }}
+            />
+          </DrawerContent>
+        </Drawer>
+      )}
+    </>
   );
 }

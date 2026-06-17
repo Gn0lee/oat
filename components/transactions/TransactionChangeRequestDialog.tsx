@@ -6,18 +6,11 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+import { TaskFormSurface } from "@/components/layout";
 import { AccountSelector } from "@/components/transactions/AccountSelector";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DatePickerInput } from "@/components/ui/date-picker";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -165,181 +158,178 @@ export function TransactionChangeRequestDialog({
     }
   };
 
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        className="left-0 top-0 flex h-[100dvh] max-h-[100dvh] w-full max-w-full translate-x-0 translate-y-0 flex-col overflow-y-auto rounded-none border-0 p-5 sm:left-[50%] sm:top-[50%] sm:h-auto sm:max-h-[85dvh] sm:max-w-md sm:translate-x-[-50%] sm:translate-y-[-50%] sm:rounded-lg sm:border sm:p-6"
-        onOpenAutoFocus={(event) => event.preventDefault()}
-      >
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            {!isUpdate && (
-              <AlertTriangleIcon className="h-5 w-5 text-destructive" />
-            )}
-            {isUpdate ? "거래 수정 요청" : "거래 삭제 요청"}
-          </DialogTitle>
-          <DialogDescription>
-            거래 소유자에게 요청 내용이 전달됩니다.
-          </DialogDescription>
-        </DialogHeader>
+  const surfaceTitle = isUpdate ? "거래 수정 요청" : "거래 삭제 요청";
+  const surfaceDescription = "거래 소유자에게 요청 내용이 전달됩니다.";
 
-        <div className="rounded-md border p-4 space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="font-medium">{transaction.stockName}</span>
-            <Badge variant={typeVariant}>{typeLabel}</Badge>
+  return (
+    <TaskFormSurface
+      open={open}
+      onOpenChange={onOpenChange}
+      title={surfaceTitle}
+      description={surfaceDescription}
+    >
+      {!isUpdate && (
+        <div className="flex items-start gap-2 rounded-md bg-destructive/10 p-3 text-destructive text-sm">
+          <AlertTriangleIcon className="mt-0.5 h-4 w-4 shrink-0" />
+          <p>삭제 요청은 소유자가 승인하면 거래가 삭제됩니다.</p>
+        </div>
+      )}
+      <div className="rounded-md border p-4 space-y-2">
+        <div className="flex items-center justify-between">
+          <span className="font-medium">{transaction.stockName}</span>
+          <Badge variant={typeVariant}>{typeLabel}</Badge>
+        </div>
+        <div className="space-y-1 text-muted-foreground text-sm">
+          <div className="flex justify-between">
+            <span>수량</span>
+            <span>{transaction.quantity.toLocaleString()}주</span>
           </div>
-          <div className="space-y-1 text-muted-foreground text-sm">
-            <div className="flex justify-between">
-              <span>수량</span>
-              <span>{transaction.quantity.toLocaleString()}주</span>
-            </div>
-            <div className="flex justify-between">
-              <span>단가</span>
-              <span>
-                {formatCurrency(transaction.price, transaction.currency)}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span>소유자</span>
-              <span>{transaction.owner.name}</span>
-            </div>
+          <div className="flex justify-between">
+            <span>단가</span>
+            <span>
+              {formatCurrency(transaction.price, transaction.currency)}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span>소유자</span>
+            <span>{transaction.owner.name}</span>
           </div>
         </div>
+      </div>
 
-        {isUpdate ? (
-          <form onSubmit={handleUpdateSubmit} className="space-y-4">
-            <div className="flex items-start gap-2 rounded-md bg-muted/50 p-3 text-muted-foreground text-sm">
-              <InfoIcon className="mt-0.5 h-4 w-4 shrink-0" />
-              <p>종목이나 매수/매도 유형 변경은 삭제 요청으로 처리해주세요.</p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label htmlFor="request-quantity">수량</Label>
-                <Input
-                  id="request-quantity"
-                  type="number"
-                  inputMode="numeric"
-                  step="any"
-                  min="0"
-                  {...form.register("quantity")}
-                />
-                {form.formState.errors.quantity && (
-                  <p className="text-destructive text-sm">
-                    {form.formState.errors.quantity.message}
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="request-price">
-                  단가 ({transaction.currency === "KRW" ? "원" : "$"})
-                </Label>
-                <Input
-                  id="request-price"
-                  type="number"
-                  inputMode="decimal"
-                  step="any"
-                  min="0"
-                  {...form.register("price")}
-                />
-                {form.formState.errors.price && (
-                  <p className="text-destructive text-sm">
-                    {form.formState.errors.price.message}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="request-transacted-at">거래일</Label>
-              <DatePickerInput
-                id="request-transacted-at"
-                value={watchTransactedAt ?? ""}
-                onChange={(value) =>
-                  form.setValue("transactedAt", value, {
-                    shouldValidate: true,
-                  })
-                }
-              />
-            </div>
-
-            <AccountSelector
-              control={form.control}
-              name="accountId"
-              variant="inline"
-              placeholder="계좌 선택"
-              ownerId={transaction.owner.id}
-            />
-
-            <div className="space-y-2">
-              <Label htmlFor="request-memo">메모</Label>
-              <Textarea
-                id="request-memo"
-                rows={2}
-                className="resize-none"
-                {...form.register("memo")}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="request-message">요청 메시지 (선택)</Label>
-              <Textarea
-                id="request-message"
-                rows={3}
-                className="resize-none"
-                placeholder="소유자가 확인할 수 있는 설명을 남겨주세요."
-                {...form.register("message")}
-              />
-            </div>
-
-            <DialogFooter className="mt-auto">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                disabled={createMutation.isPending}
-              >
-                취소
-              </Button>
-              <Button type="submit" disabled={createMutation.isPending}>
-                {createMutation.isPending ? "요청 중..." : "요청 보내기"}
-              </Button>
-            </DialogFooter>
-          </form>
-        ) : (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="delete-request-message">삭제 사유</Label>
-              <Textarea
-                id="delete-request-message"
-                rows={3}
-                className="resize-none"
-                placeholder="삭제가 필요한 이유를 입력해주세요."
-                {...form.register("message")}
-              />
-            </div>
-
-            <DialogFooter className="mt-auto">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                disabled={createMutation.isPending}
-              >
-                취소
-              </Button>
-              <Button
-                type="button"
-                onClick={handleDeleteSubmit}
-                disabled={createMutation.isPending}
-              >
-                {createMutation.isPending ? "요청 중..." : "요청 보내기"}
-              </Button>
-            </DialogFooter>
+      {isUpdate ? (
+        <form onSubmit={handleUpdateSubmit} className="space-y-4">
+          <div className="flex items-start gap-2 rounded-md bg-muted/50 p-3 text-muted-foreground text-sm">
+            <InfoIcon className="mt-0.5 h-4 w-4 shrink-0" />
+            <p>종목이나 매수/매도 유형 변경은 삭제 요청으로 처리해주세요.</p>
           </div>
-        )}
-      </DialogContent>
-    </Dialog>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label htmlFor="request-quantity">수량</Label>
+              <Input
+                id="request-quantity"
+                type="number"
+                inputMode="numeric"
+                step="any"
+                min="0"
+                {...form.register("quantity")}
+              />
+              {form.formState.errors.quantity && (
+                <p className="text-destructive text-sm">
+                  {form.formState.errors.quantity.message}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="request-price">
+                단가 ({transaction.currency === "KRW" ? "원" : "$"})
+              </Label>
+              <Input
+                id="request-price"
+                type="number"
+                inputMode="decimal"
+                step="any"
+                min="0"
+                {...form.register("price")}
+              />
+              {form.formState.errors.price && (
+                <p className="text-destructive text-sm">
+                  {form.formState.errors.price.message}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="request-transacted-at">거래일</Label>
+            <DatePickerInput
+              id="request-transacted-at"
+              value={watchTransactedAt ?? ""}
+              onChange={(value) =>
+                form.setValue("transactedAt", value, {
+                  shouldValidate: true,
+                })
+              }
+            />
+          </div>
+
+          <AccountSelector
+            control={form.control}
+            name="accountId"
+            variant="inline"
+            placeholder="계좌 선택"
+            ownerId={transaction.owner.id}
+          />
+
+          <div className="space-y-2">
+            <Label htmlFor="request-memo">메모</Label>
+            <Textarea
+              id="request-memo"
+              rows={2}
+              className="resize-none"
+              {...form.register("memo")}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="request-message">요청 메시지 (선택)</Label>
+            <Textarea
+              id="request-message"
+              rows={3}
+              className="resize-none"
+              placeholder="소유자가 확인할 수 있는 설명을 남겨주세요."
+              {...form.register("message")}
+            />
+          </div>
+
+          <div className="flex flex-col-reverse gap-2 pt-4 sm:flex-row sm:justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={createMutation.isPending}
+            >
+              취소
+            </Button>
+            <Button type="submit" disabled={createMutation.isPending}>
+              {createMutation.isPending ? "요청 중..." : "요청 보내기"}
+            </Button>
+          </div>
+        </form>
+      ) : (
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="delete-request-message">삭제 사유</Label>
+            <Textarea
+              id="delete-request-message"
+              rows={3}
+              className="resize-none"
+              placeholder="삭제가 필요한 이유를 입력해주세요."
+              {...form.register("message")}
+            />
+          </div>
+
+          <div className="flex flex-col-reverse gap-2 pt-4 sm:flex-row sm:justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={createMutation.isPending}
+            >
+              취소
+            </Button>
+            <Button
+              type="button"
+              onClick={handleDeleteSubmit}
+              disabled={createMutation.isPending}
+            >
+              {createMutation.isPending ? "요청 중..." : "요청 보내기"}
+            </Button>
+          </div>
+        </div>
+      )}
+    </TaskFormSurface>
   );
 }

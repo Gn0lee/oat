@@ -38,6 +38,16 @@ export interface LedgerMoneySourceGroup {
   options: LedgerMoneySourceOption[];
 }
 
+export type LedgerMoneySourceOwnerScope = "owner" | "household";
+
+interface ScopeLedgerMoneySourcesParams {
+  ownerId?: string | null;
+  paymentMethods: LedgerMoneySourcePaymentMethod[];
+  accounts: LedgerMoneySourceAccount[];
+  paymentMethodOwnerScope?: LedgerMoneySourceOwnerScope;
+  accountOwnerScope?: LedgerMoneySourceOwnerScope;
+}
+
 interface BuildLedgerMoneySourceGroupsParams {
   mode: LedgerMoneySourceMode;
   paymentMethods: LedgerMoneySourcePaymentMethod[];
@@ -147,6 +157,27 @@ export function getLedgerMoneySourceValue({
   if (paymentMethodId) return `pm:${paymentMethodId}`;
   if (accountId) return `acc:${accountId}`;
   return "";
+}
+
+export function scopeLedgerMoneySources({
+  ownerId,
+  paymentMethods,
+  accounts,
+  paymentMethodOwnerScope = "owner",
+  accountOwnerScope = "owner",
+}: ScopeLedgerMoneySourcesParams) {
+  if (!ownerId) return { paymentMethods, accounts };
+
+  return {
+    paymentMethods:
+      paymentMethodOwnerScope === "household"
+        ? paymentMethods
+        : paymentMethods.filter((item) => item.ownerId === ownerId),
+    accounts:
+      accountOwnerScope === "household"
+        ? accounts
+        : accounts.filter((item) => item.ownerId === ownerId),
+  };
 }
 
 export function buildLedgerMoneySourceGroups({

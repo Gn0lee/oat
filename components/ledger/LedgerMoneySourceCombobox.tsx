@@ -52,7 +52,9 @@ import {
   type LedgerMoneySourceAccount,
   type LedgerMoneySourceGroup,
   type LedgerMoneySourceMode,
+  type LedgerMoneySourceOwnerScope,
   type LedgerMoneySourcePaymentMethod,
+  scopeLedgerMoneySources,
 } from "@/lib/ledger/money-source-options";
 import { cn } from "@/lib/utils/cn";
 import type { Account, PaymentMethod, PaymentMethodType } from "@/types";
@@ -65,6 +67,8 @@ interface LedgerMoneySourceBaseProps {
   ownerId?: string | null;
   includeClearOption?: boolean;
   excludedValues?: string[];
+  accountOwnerScope?: LedgerMoneySourceOwnerScope;
+  paymentMethodOwnerScope?: LedgerMoneySourceOwnerScope;
 }
 
 interface LedgerMoneySourceComboboxProps extends LedgerMoneySourceBaseProps {
@@ -108,15 +112,19 @@ function useMoneySourceGroups({
   ownerId,
   includeClearOption = true,
   excludedValues = [],
+  accountOwnerScope,
+  paymentMethodOwnerScope,
 }: LedgerMoneySourceBaseProps): LedgerMoneySourceGroup[] {
   return useMemo(() => {
     const excluded = new Set(excludedValues);
-    const scopedPaymentMethods = ownerId
-      ? paymentMethods.filter((item) => item.ownerId === ownerId)
-      : paymentMethods;
-    const scopedAccounts = ownerId
-      ? accounts.filter((item) => item.ownerId === ownerId)
-      : accounts;
+    const { paymentMethods: scopedPaymentMethods, accounts: scopedAccounts } =
+      scopeLedgerMoneySources({
+        ownerId,
+        paymentMethods,
+        accounts,
+        accountOwnerScope,
+        paymentMethodOwnerScope,
+      });
     return buildLedgerMoneySourceGroups({
       mode,
       paymentMethods: scopedPaymentMethods,
@@ -135,6 +143,8 @@ function useMoneySourceGroups({
     ownerId,
     includeClearOption,
     excludedValues,
+    accountOwnerScope,
+    paymentMethodOwnerScope,
   ]);
 }
 
@@ -555,6 +565,8 @@ export function LedgerMoneySourceCombobox({
   ownerId,
   includeClearOption = true,
   excludedValues,
+  accountOwnerScope,
+  paymentMethodOwnerScope,
   placeholder,
   onValueChange,
 }: LedgerMoneySourceComboboxProps) {
@@ -562,9 +574,11 @@ export function LedgerMoneySourceCombobox({
   const [search, setSearch] = useState("");
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [createInitialName, setCreateInitialName] = useState("");
-  const scopedAccounts = ownerId
-    ? accounts.filter((account) => account.ownerId === ownerId)
-    : accounts;
+  const { accounts: createScopedAccounts } = scopeLedgerMoneySources({
+    ownerId,
+    paymentMethods,
+    accounts,
+  });
   const groups = useMoneySourceGroups({
     mode,
     value,
@@ -573,6 +587,8 @@ export function LedgerMoneySourceCombobox({
     ownerId,
     includeClearOption,
     excludedValues,
+    accountOwnerScope,
+    paymentMethodOwnerScope,
   });
   const selectedLabel = findSelectedLabel(groups, value) ?? placeholder;
   const createQuery = search.trim();
@@ -642,7 +658,7 @@ export function LedgerMoneySourceCombobox({
         open={createDialogOpen}
         mode={mode}
         initialName={createInitialName}
-        accounts={scopedAccounts}
+        accounts={createScopedAccounts}
         onOpenChange={setCreateDialogOpen}
         onCreated={onValueChange}
       />
@@ -658,6 +674,8 @@ export function LedgerMoneySourcePickerPanel({
   ownerId,
   includeClearOption = true,
   excludedValues,
+  accountOwnerScope,
+  paymentMethodOwnerScope,
   searchPlaceholder,
   onValueChange,
 }: LedgerMoneySourcePickerPanelProps) {
@@ -665,9 +683,11 @@ export function LedgerMoneySourcePickerPanel({
   const [target, setTarget] = useState<MoneySourceCreateTarget | null>(null);
   const shouldReduceMotion = useReducedMotion();
   const [createInitialName, setCreateInitialName] = useState("");
-  const scopedAccounts = ownerId
-    ? accounts.filter((account) => account.ownerId === ownerId)
-    : accounts;
+  const { accounts: createScopedAccounts } = scopeLedgerMoneySources({
+    ownerId,
+    paymentMethods,
+    accounts,
+  });
   const groups = useMoneySourceGroups({
     mode,
     value,
@@ -676,6 +696,8 @@ export function LedgerMoneySourcePickerPanel({
     ownerId,
     includeClearOption,
     excludedValues,
+    accountOwnerScope,
+    paymentMethodOwnerScope,
   });
   const createQuery = search.trim();
   const createLabel = createQuery
@@ -843,7 +865,7 @@ export function LedgerMoneySourcePickerPanel({
                   initialName={createInitialName}
                   type={target.type}
                   typeLabel={target.label}
-                  accounts={scopedAccounts}
+                  accounts={createScopedAccounts}
                   onCreated={(paymentMethod) =>
                     onValueChange(`pm:${paymentMethod.id}`)
                   }

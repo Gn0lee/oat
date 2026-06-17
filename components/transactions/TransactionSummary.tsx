@@ -32,7 +32,7 @@ export function TransactionSummary({ items, type }: TransactionSummaryProps) {
   const typeText = type === "buy" ? "매수" : "매도";
 
   return (
-    <div className="bg-gray-50 rounded-2xl p-5 space-y-3">
+    <div className="rounded-xl border border-gray-100 bg-white p-4 space-y-3">
       <div className="flex items-center justify-between">
         <span className="text-gray-500">등록할 거래</span>
         <span className="font-medium text-gray-900">{validCount}건</span>
