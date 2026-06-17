@@ -90,6 +90,9 @@ describe("TaskFormSurface", () => {
     expect(content).toHaveAttribute("data-slot", "drawer-content");
     expect(content).toHaveAttribute("data-show-handle", "false");
     expect(content).toHaveClass("h-[100dvh]");
+    expect(
+      screen.getByRole("heading", { name: "거래 수정 요청", level: 2 }),
+    ).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "닫기" }));
 

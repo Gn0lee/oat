@@ -61,23 +61,25 @@ export function TaskFormSurface({
         showHandle={false}
         onOpenAutoFocus={(event) => event.preventDefault()}
       >
-        <Button
-          type="button"
-          variant="ghost"
-          aria-label="닫기"
-          onClick={() => onOpenChange(false)}
-          className="absolute right-2 top-2 z-10 inline-flex size-11 items-center justify-center rounded-full text-gray-700 transition-colors hover:bg-gray-100"
-        >
-          <XIcon className="size-5" />
-        </Button>
+        <div className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-gray-100 px-4">
+          <h2 className="min-w-0 truncate text-base font-semibold text-gray-900">
+            {title}
+          </h2>
+          <Button
+            type="button"
+            variant="ghost"
+            aria-label="닫기"
+            onClick={() => onOpenChange(false)}
+            className="-mr-2 inline-flex size-11 shrink-0 items-center justify-center rounded-full text-gray-700 transition-colors hover:bg-gray-100"
+          >
+            <XIcon className="size-5" />
+          </Button>
+        </div>
 
-        <div className="flex-1 overflow-y-auto px-4 pt-16 pb-[calc(1rem+env(safe-area-inset-bottom))] space-y-4">
-          <div className="space-y-1">
-            <h3 className="text-lg font-bold text-gray-900">{title}</h3>
-            {description ? (
-              <div className="text-sm text-gray-500">{description}</div>
-            ) : null}
-          </div>
+        <div className="flex-1 overflow-y-auto px-4 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))] space-y-4">
+          {description ? (
+            <div className="text-sm text-gray-500">{description}</div>
+          ) : null}
           {children}
         </div>
       </DrawerContent>
