@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { AuthShell } from "@/components/auth/AuthShell";
 import { ResetPasswordVerify } from "@/components/auth/ResetPasswordVerify";
 
 interface VerifyPageProps {
@@ -13,8 +14,8 @@ export default async function VerifyPage({ searchParams }: VerifyPageProps) {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <AuthShell title="비밀번호 재설정" contentClassName="mt-0">
       <ResetPasswordVerify email={email} />
-    </div>
+    </AuthShell>
   );
 }
