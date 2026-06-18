@@ -340,14 +340,12 @@ function PreferenceRow({
           label="앱"
           enabled={preference.inAppEnabled}
           disabled={updatePreference.isPending}
-          pending={updatePreference.isPending}
           onClick={() => handleToggle("inAppEnabled")}
         />
         <ToggleButton
           label="Push"
           enabled={preference.pushEnabled}
           disabled={pushDisabled}
-          pending={updatePreference.isPending}
           onClick={() => handleToggle("pushEnabled")}
         />
       </div>
@@ -359,13 +357,11 @@ function ToggleButton({
   label,
   enabled,
   disabled,
-  pending,
   onClick,
 }: {
   label: string;
   enabled: boolean;
   disabled: boolean;
-  pending: boolean;
   onClick: () => void;
 }) {
   return (
@@ -380,7 +376,6 @@ function ToggleButton({
         enabled ? "bg-primary text-white" : "bg-gray-100 text-gray-500",
       )}
     >
-      {pending && <Loader2 className="size-3 animate-spin" />}
       {label}
     </button>
   );

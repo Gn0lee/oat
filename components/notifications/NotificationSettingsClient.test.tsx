@@ -50,7 +50,7 @@ describe("NotificationSettingsClient", () => {
     vi.mocked(useNotificationPreferences).mockReturnValue({
       data: mockPreferences,
       isLoading: false,
-    } as any);
+    } as unknown as ReturnType<typeof useNotificationPreferences>);
 
     vi.mocked(usePushSubscription).mockReturnValue({
       deviceState: "subscribed",
@@ -58,17 +58,17 @@ describe("NotificationSettingsClient", () => {
       isPending: false,
       subscribe: vi.fn(),
       unsubscribe: vi.fn(),
-    } as any);
+    } as unknown as ReturnType<typeof usePushSubscription>);
 
     vi.mocked(useUpdateNotificationPreference).mockReturnValue({
       mutate: vi.fn(),
       isPending: false,
-    } as any);
+    } as unknown as ReturnType<typeof useUpdateNotificationPreference>);
 
     vi.mocked(useUpdateNotificationPreferencesBatch).mockReturnValue({
       mutateAsync: vi.fn(),
       isPending: false,
-    } as any);
+    } as unknown as ReturnType<typeof useUpdateNotificationPreferencesBatch>);
 
     render(<NotificationSettingsClient />);
 
@@ -100,7 +100,7 @@ describe("NotificationSettingsClient", () => {
     vi.mocked(useNotificationPreferences).mockReturnValue({
       data: mockPreferences,
       isLoading: false,
-    } as any);
+    } as unknown as ReturnType<typeof useNotificationPreferences>);
 
     vi.mocked(usePushSubscription).mockReturnValue({
       deviceState: "unsupported",
@@ -108,17 +108,17 @@ describe("NotificationSettingsClient", () => {
       isPending: false,
       subscribe: vi.fn(),
       unsubscribe: vi.fn(),
-    } as any);
+    } as unknown as ReturnType<typeof usePushSubscription>);
 
     vi.mocked(useUpdateNotificationPreference).mockReturnValue({
       mutate: vi.fn(),
       isPending: false,
-    } as any);
+    } as unknown as ReturnType<typeof useUpdateNotificationPreference>);
 
     vi.mocked(useUpdateNotificationPreferencesBatch).mockReturnValue({
       mutateAsync: vi.fn(),
       isPending: false,
-    } as any);
+    } as unknown as ReturnType<typeof useUpdateNotificationPreferencesBatch>);
 
     render(<NotificationSettingsClient />);
 
@@ -137,7 +137,7 @@ describe("NotificationSettingsClient", () => {
     vi.mocked(useNotificationPreferences).mockReturnValue({
       data: mockPreferences,
       isLoading: false,
-    } as any);
+    } as unknown as ReturnType<typeof useNotificationPreferences>);
 
     vi.mocked(usePushSubscription).mockReturnValue({
       deviceState: "blocked",
@@ -145,17 +145,17 @@ describe("NotificationSettingsClient", () => {
       isPending: false,
       subscribe: vi.fn(),
       unsubscribe: vi.fn(),
-    } as any);
+    } as unknown as ReturnType<typeof usePushSubscription>);
 
     vi.mocked(useUpdateNotificationPreference).mockReturnValue({
       mutate: vi.fn(),
       isPending: false,
-    } as any);
+    } as unknown as ReturnType<typeof useUpdateNotificationPreference>);
 
     vi.mocked(useUpdateNotificationPreferencesBatch).mockReturnValue({
       mutateAsync: vi.fn(),
       isPending: false,
-    } as any);
+    } as unknown as ReturnType<typeof useUpdateNotificationPreferencesBatch>);
 
     render(<NotificationSettingsClient />);
 
@@ -164,5 +164,39 @@ describe("NotificationSettingsClient", () => {
         "브라우저 또는 OS 설정에서 oat 알림을 허용한 뒤 다시 시도하세요.",
       ),
     ).toBeInTheDocument();
+  });
+
+  it("keeps toggle buttons clean of inline loader spinners even when mutation is pending", () => {
+    vi.mocked(useNotificationPreferences).mockReturnValue({
+      data: mockPreferences,
+      isLoading: false,
+    } as unknown as ReturnType<typeof useNotificationPreferences>);
+
+    vi.mocked(usePushSubscription).mockReturnValue({
+      deviceState: "subscribed",
+      isSubscribed: true,
+      isPending: false,
+      subscribe: vi.fn(),
+      unsubscribe: vi.fn(),
+    } as unknown as ReturnType<typeof usePushSubscription>);
+
+    vi.mocked(useUpdateNotificationPreference).mockReturnValue({
+      mutate: vi.fn(),
+      isPending: true,
+    } as unknown as ReturnType<typeof useUpdateNotificationPreference>);
+
+    vi.mocked(useUpdateNotificationPreferencesBatch).mockReturnValue({
+      mutateAsync: vi.fn(),
+      isPending: false,
+    } as unknown as ReturnType<typeof useUpdateNotificationPreferencesBatch>);
+
+    render(<NotificationSettingsClient />);
+
+    const switches = screen.getAllByRole("switch");
+    expect(switches.length).toBeGreaterThan(0);
+    for (const toggle of switches) {
+      expect(toggle).toBeDisabled();
+      expect(toggle.querySelector("svg")).not.toBeInTheDocument();
+    }
   });
 });
