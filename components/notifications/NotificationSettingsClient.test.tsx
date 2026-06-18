@@ -76,6 +76,9 @@ describe("NotificationSettingsClient", () => {
     expect(
       screen.getByText("이 기기에서 Push를 받을 수 있어요"),
     ).toBeInTheDocument();
+    expect(
+      screen.getByText("알림 종류별 앱 내 알림과 Push 수신 여부를 설정합니다."),
+    ).toBeInTheDocument();
 
     // 2. Preference labels from at least two groups are visible.
     expect(screen.getByText("가계부 수정/삭제 요청")).toBeInTheDocument();

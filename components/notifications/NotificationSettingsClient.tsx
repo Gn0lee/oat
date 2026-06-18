@@ -59,7 +59,7 @@ export function NotificationSettingsClient() {
       <div>
         <h1 className="text-xl font-semibold text-gray-900">알림 설정</h1>
         <p className="mt-1 text-sm text-gray-500">
-          알림 종류별 앱 내 알림 and Push 수신 여부를 설정합니다.
+          알림 종류별 앱 내 알림과 Push 수신 여부를 설정합니다.
         </p>
       </div>
 
