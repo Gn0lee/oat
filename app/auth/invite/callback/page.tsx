@@ -1,8 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Spinner } from "@/components/ui/spinner";
+import { AuthNotice } from "@/components/auth/AuthNotice";
+import { AuthShell } from "@/components/auth/AuthShell";
+import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 
 export default function InviteCallbackPage() {
@@ -62,24 +65,28 @@ export default function InviteCallbackPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center space-y-4">
-          <p className="text-red-600">{error}</p>
-          <button
-            type="button"
-            onClick={() => router.replace("/login")}
-            className="text-blue-600 hover:underline"
-          >
-            로그인 페이지로 이동
-          </button>
-        </div>
-      </div>
+      <AuthShell title="초대 확인">
+        <AuthNotice
+          tone="error"
+          title="초대 링크를 처리하지 못했습니다"
+          description={error}
+          primaryAction={
+            <Button asChild className="w-full h-12 rounded-xl">
+              <Link href="/login">로그인 페이지로 이동</Link>
+            </Button>
+          }
+        />
+      </AuthShell>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <Spinner className="size-6 sm:size-8 md:size-10 text-gray-400" />
-    </div>
+    <AuthShell title="초대 확인">
+      <AuthNotice
+        tone="loading"
+        title="초대 링크를 확인하고 있어요"
+        description="잠시만 기다려주세요."
+      />
+    </AuthShell>
   );
 }

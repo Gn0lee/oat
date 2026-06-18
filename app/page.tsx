@@ -81,7 +81,7 @@ function FeatureCard({
   description: string;
 }) {
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-sm">
+    <div className="bg-white rounded-xl p-6 border border-gray-100">
       <h3 className="font-semibold text-gray-900 mb-2">{title}</h3>
       <p className="text-sm text-gray-600 leading-relaxed">{description}</p>
     </div>
