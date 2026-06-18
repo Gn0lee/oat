@@ -1,6 +1,8 @@
 "use client";
 
 import { Crown, Loader2, Mail, Trash2, User } from "lucide-react";
+import { GroupedList } from "@/components/layout/screen/GroupedList";
+import { ScreenState } from "@/components/layout/screen/ScreenState";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { HouseholdMemberInfo } from "@/lib/api/household";
@@ -27,11 +29,11 @@ export function MembersTable({
   return (
     <div className="space-y-4">
       {members.length > 0 && (
-        <div className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-100">
+        <GroupedList data-testid="grouped-list">
           {members.map((member) => (
             <article
               key={member.userId}
-              className="flex min-h-[76px] items-center gap-3 border-gray-100 border-t px-4 py-4 first:border-t-0"
+              className="flex min-h-[76px] items-center gap-3 px-4 py-4"
             >
               <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-gray-100">
                 {member.role === "owner" ? (
@@ -61,19 +63,19 @@ export function MembersTable({
               </div>
             </article>
           ))}
-        </div>
+        </GroupedList>
       )}
 
       {invitations.length > 0 && (
-        <div>
-          <h3 className="mb-2 px-1 font-medium text-gray-500 text-sm">
+        <div className="space-y-2">
+          <h3 className="px-1 font-medium text-gray-500 text-sm">
             대기 중 초대
           </h3>
-          <div className="overflow-hidden rounded-2xl bg-gray-50 shadow-sm ring-1 ring-gray-100">
+          <GroupedList data-testid="grouped-list">
             {invitations.map((invitation) => (
               <article
                 key={invitation.id}
-                className="flex min-h-[76px] items-center gap-3 border-gray-100 border-t px-4 py-4 first:border-t-0"
+                className="flex min-h-[76px] items-center gap-3 px-4 py-4"
               >
                 <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-white text-gray-400">
                   <Mail className="size-5" />
@@ -109,15 +111,16 @@ export function MembersTable({
                 )}
               </article>
             ))}
-          </div>
+          </GroupedList>
         </div>
       )}
 
       {members.length === 0 && invitations.length === 0 && (
-        <div className="rounded-2xl bg-white px-6 py-10 text-center shadow-sm ring-1 ring-gray-100">
-          <User className="mx-auto mb-3 size-8 text-gray-300" />
-          <p className="font-medium text-gray-700">구성원이 없습니다</p>
-        </div>
+        <ScreenState
+          type="empty"
+          title="구성원이 없습니다"
+          description="가구에 구성원을 초대해 보세요."
+        />
       )}
     </div>
   );

@@ -1,15 +1,12 @@
 "use client";
 
-import { User, UserPlus } from "lucide-react";
+import { UserPlus } from "lucide-react";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  ScreenSection,
+  SectionHeader,
+} from "@/components/layout/screen/ScreenSection";
+import { Button } from "@/components/ui/button";
 import { MAX_HOUSEHOLD_MEMBERS } from "@/constants/household";
 import {
   useCancelInvitation,
@@ -54,21 +51,17 @@ export function HouseholdMembersCard({
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <User className="size-5" />
-              구성원
-            </CardTitle>
-            <CardDescription>
-              {members.length}명 / 최대 {MAX_HOUSEHOLD_MEMBERS}명
-              {pendingInvitations.length > 0 &&
-                ` (대기 중 ${pendingInvitations.length}명)`}
-            </CardDescription>
-          </div>
-          {canInvite && !showInviteForm && (
+    <ScreenSection>
+      <SectionHeader
+        title="구성원"
+        description={`${members.length}명 / 최대 ${MAX_HOUSEHOLD_MEMBERS}명${
+          pendingInvitations.length > 0
+            ? ` (대기 중 ${pendingInvitations.length}명)`
+            : ""
+        }`}
+        action={
+          canInvite &&
+          !showInviteForm && (
             <Button
               variant="outline"
               size="sm"
@@ -77,10 +70,10 @@ export function HouseholdMembersCard({
               <UserPlus className="size-4 mr-2" />
               초대
             </Button>
-          )}
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
+          )
+        }
+      />
+      <div className="space-y-4">
         {showInviteForm && (
           <InviteFormInline
             onSubmit={handleSendInvite}
@@ -99,7 +92,7 @@ export function HouseholdMembersCard({
           onCancelInvitation={(id) => cancelMutation.mutate(id)}
           isCancelling={cancelMutation.isPending}
         />
-      </CardContent>
-    </Card>
+      </div>
+    </ScreenSection>
   );
 }
