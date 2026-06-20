@@ -2,7 +2,7 @@
 
 import { XIcon } from "lucide-react";
 import { useState } from "react";
-import { useFormContext } from "react-hook-form";
+import { Controller, useFormContext } from "react-hook-form";
 import { SegmentedChoiceGroup } from "@/components/layout";
 import {
   LedgerCategoryCombobox,
@@ -15,6 +15,7 @@ import {
   LedgerMoneySourcePickerPanel,
   LedgerMoneySourceTrigger,
 } from "@/components/ledger/LedgerMoneySourceCombobox";
+import { LedgerTagInput } from "@/components/ledger/LedgerTagInput";
 import { LedgerTitleCombobox } from "@/components/ledger/LedgerTitleCombobox";
 import { Button } from "@/components/ui/button";
 import { DatePickerInput } from "@/components/ui/date-picker";
@@ -25,6 +26,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAccounts } from "@/hooks/use-accounts";
 import { useCategories } from "@/hooks/use-categories";
 import { useCurrentUserId } from "@/hooks/use-current-user";
+import { useLedgerTags } from "@/hooks/use-ledger-tags";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { usePaymentMethods } from "@/hooks/use-payment-methods";
 import { getLedgerMoneySourceValue } from "@/lib/ledger/money-source-options";
@@ -65,6 +67,7 @@ export function ComposerFormStep({
   const { data: paymentMethods = [] } = usePaymentMethods();
   const { data: accounts = [] } = useAccounts();
   const { userId } = useCurrentUserId();
+  const { data: availableTags = [] } = useLedgerTags();
 
   const itemType = form.watch(`items.${index}.type`);
   const itemIsShared = form.watch(`items.${index}.isShared`);
@@ -391,6 +394,23 @@ export function ComposerFormStep({
             </div>
           </div>
         )}
+
+        <div className="space-y-1">
+          <Label className="text-sm text-gray-700">태그</Label>
+          <Controller
+            control={form.control}
+            name={`items.${index}.tags`}
+            render={({ field }) => (
+              <LedgerTagInput
+                value={field.value || []}
+                onValueChange={field.onChange}
+                availableTags={availableTags}
+                placeholder="태그를 입력하세요 (예: #데이트)"
+                error={errors?.tags?.message}
+              />
+            )}
+          />
+        </div>
 
         <div className="space-y-1">
           <Label className="text-sm text-gray-700">메모</Label>

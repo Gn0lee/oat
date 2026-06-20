@@ -5,7 +5,7 @@ import { addMonths, getYear, startOfMonth, subMonths } from "date-fns";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   AmountDisclosure,
   MetricBlock,
@@ -13,6 +13,7 @@ import {
   ScreenSection,
   SectionHeader,
 } from "@/components/layout/screen";
+import { LedgerTagFilter } from "@/components/ledger/LedgerTagFilter";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -23,6 +24,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLedgerEntries } from "@/hooks/use-ledger-entries";
+import { useLedgerTags } from "@/hooks/use-ledger-tags";
 import {
   calculateLedgerSummary,
   type LedgerEntryWithDetails,
@@ -58,6 +60,34 @@ export function LedgerRecordsClient({
   );
   const [selectedDate, setSelectedDate] = useState<Date>(initial);
   const [scope, setScopeState] = useState<"shared" | "personal">(initialScope);
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>(() => {
+    return searchParams.getAll("tagId");
+  });
+
+  const { data: availableTags = [] } = useLedgerTags({ scope });
+
+  const handleTagIdsChange = useCallback(
+    (nextTagIds: string[]) => {
+      setSelectedTagIds(nextTagIds);
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete("tagId");
+      for (const tagId of nextTagIds) {
+        params.append("tagId", tagId);
+      }
+      router.replace(`${pathname}?${params.toString()}`);
+    },
+    [searchParams, router, pathname],
+  );
+
+  useEffect(() => {
+    if (selectedTagIds.length > 0 && availableTags.length > 0) {
+      const availableIds = new Set(availableTags.map((t) => t.id));
+      const nextTagIds = selectedTagIds.filter((id) => availableIds.has(id));
+      if (nextTagIds.length !== selectedTagIds.length) {
+        handleTagIdsChange(nextTagIds);
+      }
+    }
+  }, [availableTags, selectedTagIds, handleTagIdsChange]);
 
   const handleScopeChange = (nextScope: "shared" | "personal") => {
     setScopeState(nextScope);
@@ -75,16 +105,19 @@ export function LedgerRecordsClient({
     year: prevMonth.getFullYear(),
     month: prevMonth.getMonth() + 1,
     scope,
+    tagIds: selectedTagIds,
   });
   const { data: entries = [], isLoading } = useLedgerEntries({
     year: currentMonth.getFullYear(),
     month: currentMonth.getMonth() + 1,
     scope,
+    tagIds: selectedTagIds,
   });
   const { data: nextEntries = [] } = useLedgerEntries({
     year: nextMonth.getFullYear(),
     month: nextMonth.getMonth() + 1,
     scope,
+    tagIds: selectedTagIds,
   });
 
   const summary = useMemo(() => calculateLedgerSummary(entries), [entries]);
@@ -216,14 +249,25 @@ export function LedgerRecordsClient({
   const calendarSection = isLoading ? (
     <Skeleton className="h-72 rounded-2xl" />
   ) : (
-    <LedgerCalendar
-      currentMonth={currentMonth}
-      onMonthChange={handleMonthChange}
-      selectedDate={selectedDate}
-      onDateSelect={handleDateSelect}
-      entriesByDate={entriesByDate}
-      onRefresh={handleRefresh}
-    />
+    <div className="space-y-4">
+      {availableTags.length > 0 && (
+        <div className="flex justify-end px-1">
+          <LedgerTagFilter
+            tags={availableTags}
+            selectedIds={selectedTagIds}
+            onSelectedIdsChange={handleTagIdsChange}
+          />
+        </div>
+      )}
+      <LedgerCalendar
+        currentMonth={currentMonth}
+        onMonthChange={handleMonthChange}
+        selectedDate={selectedDate}
+        onDateSelect={handleDateSelect}
+        entriesByDate={entriesByDate}
+        onRefresh={handleRefresh}
+      />
+    </div>
   );
 
   return (

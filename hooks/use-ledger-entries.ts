@@ -42,6 +42,7 @@ interface LedgerEntriesParams {
   month?: number;
   date?: string;
   scope?: "shared" | "personal";
+  tagIds?: string[];
 }
 
 async function fetchLedgerEntries(
@@ -52,6 +53,11 @@ async function fetchLedgerEntries(
   if (params?.month) searchParams.set("month", String(params.month));
   if (params?.date) searchParams.set("date", params.date);
   if (params?.scope) searchParams.set("scope", params.scope);
+  if (params?.tagIds) {
+    for (const tagId of params.tagIds) {
+      searchParams.append("tagId", tagId);
+    }
+  }
 
   const url = `/api/ledger-entries${searchParams.toString() ? `?${searchParams}` : ""}`;
   const response = await fetch(url);
@@ -132,6 +138,7 @@ function invalidateLedgerBalanceQueries(
   queryClient.invalidateQueries({ queryKey: queries.ledgerEntries._def });
   queryClient.invalidateQueries({ queryKey: queries.accounts._def });
   queryClient.invalidateQueries({ queryKey: queries.paymentMethods._def });
+  queryClient.invalidateQueries({ queryKey: queries.ledgerTags._def });
 }
 
 export function useCreateLedgerEntry() {

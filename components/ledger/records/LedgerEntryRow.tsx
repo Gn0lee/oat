@@ -87,6 +87,23 @@ export function LedgerEntryRow({ entry, href }: LedgerEntryRowProps) {
             )}
           </div>
         )}
+        {entry.tags && entry.tags.length > 0 && (
+          <div className="mt-1.5 flex flex-wrap items-center gap-1">
+            {entry.tags.slice(0, 3).map((tag) => (
+              <span
+                key={tag.id}
+                className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-gray-50 text-gray-600 border border-gray-100"
+              >
+                #{tag.name}
+              </span>
+            ))}
+            {entry.tags.length > 3 && (
+              <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-gray-50 text-gray-500 border border-gray-100">
+                +{entry.tags.length - 3}
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="flex max-w-[42%] flex-shrink-0 items-center gap-1.5 text-right">

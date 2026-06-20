@@ -7,6 +7,10 @@ import type {
   LedgerEntryType,
   PaymentMethodType,
 } from "@/types";
+import {
+  attachTagsToLedgerEntries,
+  replaceLedgerEntryTags,
+} from "./ledger-tags";
 
 export interface LedgerItemFormData {
   amount: string;
@@ -16,6 +20,7 @@ export interface LedgerItemFormData {
   accountId?: string;
   transactedAt: string;
   memo?: string;
+  tagNames?: string[];
 }
 
 export type TransferLocation =
@@ -29,6 +34,7 @@ export interface TransferItemFormData {
   to: TransferLocation;
   transactedAt: string;
   memo?: string;
+  tagNames?: string[];
 }
 
 const TRANSFER_CAPABLE_PAYMENT_METHOD_TYPES = new Set<PaymentMethodType>([
@@ -57,6 +63,7 @@ export function buildLedgerEntryPayload(
     title: item.title,
     isShared,
     memo: item.memo || undefined,
+    tags: item.tagNames || undefined,
   };
 
   if (item.categoryId && type !== "non_expense_withdrawal") {
@@ -87,6 +94,7 @@ export function buildTransferLedgerEntryPayload(
     title: item.title,
     isShared,
     memo: item.memo || undefined,
+    tags: item.tagNames || undefined,
   };
 
   if (item.from.kind === "account") base.fromAccountId = item.from.id;
@@ -123,6 +131,7 @@ export interface LedgerEntryWithDetails {
   transactedAt: string;
   createdAt: string;
   updatedAt: string;
+  tags?: Array<{ id: string; name: string }>;
 }
 
 export interface LedgerEntrySummary {
@@ -142,6 +151,7 @@ export interface GetLedgerEntriesOptions {
   date?: string;
   scope?: "shared" | "personal";
   userId?: string;
+  tagIds?: string[];
 }
 
 export interface CreateLedgerEntryParams {
@@ -158,6 +168,7 @@ export interface CreateLedgerEntryParams {
   toPaymentMethodId?: string;
   isShared?: boolean;
   memo?: string;
+  tags?: string[];
 }
 
 export interface UpdateLedgerEntryParams {
@@ -171,6 +182,7 @@ export interface UpdateLedgerEntryParams {
   toAccountId?: string | null;
   toPaymentMethodId?: string | null;
   memo?: string | null;
+  tags?: string[] | null;
 }
 
 type LedgerEntryRow = LedgerEntry;
@@ -410,6 +422,7 @@ async function attachLedgerEntryDetails(
     { data: categories },
     { data: accounts },
     { data: paymentMethods },
+    tagMap,
   ] = await Promise.all([
     ownerIds.length > 0
       ? supabase.from("profiles").select("id, name").in("id", ownerIds)
@@ -429,6 +442,7 @@ async function attachLedgerEntryDetails(
           .select("id, name")
           .in("id", paymentMethodIds)
       : Promise.resolve({ data: [] }),
+    attachTagsToLedgerEntries(supabase, rows),
   ]);
 
   const ownerMap = new Map((profiles ?? []).map((p) => [p.id, p.name]));
@@ -476,6 +490,7 @@ async function attachLedgerEntryDetails(
     transactedAt: r.transacted_at,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
+    tags: tagMap.get(r.id) ?? [],
   }));
 }
 
@@ -515,12 +530,54 @@ export async function getLedgerEntries(
 ): Promise<LedgerEntryWithDetails[]> {
   const { from, to } = getDateRange(options ?? {});
 
-  const { data, error } = await supabase
+  let matchingIds: string[] | null = null;
+  if (options?.tagIds && options.tagIds.length > 0) {
+    const { data: tagMappings, error: tagErr } = await supabase
+      .from("ledger_entry_tags")
+      .select("ledger_entry_id, tag_id")
+      .in("tag_id", options.tagIds);
+
+    if (tagErr) {
+      console.error("Ledger tag mappings fetch error:", tagErr);
+      throw new APIError(
+        "LEDGER_TAG_FETCH_ERROR",
+        "태그 매핑 조회에 실패했습니다.",
+        500,
+      );
+    }
+
+    const entryTagCount = new Map<string, number>();
+    for (const m of tagMappings || []) {
+      entryTagCount.set(
+        m.ledger_entry_id,
+        (entryTagCount.get(m.ledger_entry_id) || 0) + 1,
+      );
+    }
+
+    matchingIds = [];
+    for (const [entryId, count] of entryTagCount.entries()) {
+      if (count === options.tagIds.length) {
+        matchingIds.push(entryId);
+      }
+    }
+
+    if (matchingIds.length === 0) {
+      return [];
+    }
+  }
+
+  const query = supabase
     .from("ledger_entries")
     .select("*")
     .eq("household_id", householdId)
     .gte("transacted_at", from)
-    .lte("transacted_at", to)
+    .lte("transacted_at", to);
+
+  if (matchingIds !== null) {
+    query.in("id", matchingIds);
+  }
+
+  const { data, error } = await query
     .order("transacted_at", { ascending: false })
     .order("created_at", { ascending: false });
 
@@ -923,7 +980,16 @@ export async function createLedgerEntryWithBalanceSync(
   );
 
   try {
-    return await createLedgerEntry(supabase, params);
+    const created = await createLedgerEntry(supabase, params);
+    if (params.tags) {
+      await replaceLedgerEntryTags(supabase, {
+        householdId: params.householdId,
+        ledgerEntryId: created.id,
+        ownerId: params.ownerId,
+        tagNames: params.tags,
+      });
+    }
+    return created;
   } catch (error) {
     if (effects.length > 0) {
       await applyLedgerBalanceEffects(
@@ -1111,7 +1177,16 @@ export async function updateLedgerEntryWithBalanceSync(
   );
 
   try {
-    return await updateLedgerEntry(supabase, entryId, ownerId, params);
+    const updated = await updateLedgerEntry(supabase, entryId, ownerId, params);
+    if (params.tags !== undefined) {
+      await replaceLedgerEntryTags(supabase, {
+        householdId: existing.household_id,
+        ledgerEntryId: existing.id,
+        ownerId,
+        tagNames: params.tags,
+      });
+    }
+    return updated;
   } catch (error) {
     if (balanceEffects.length > 0) {
       await applyLedgerBalanceEffects(

@@ -66,6 +66,7 @@ export async function POST(request: Request) {
         toPaymentMethodId: entry.toPaymentMethodId,
         isShared: entry.isShared,
         memo: entry.memo,
+        tags: entry.tags,
       });
       created.push(ledgerEntry);
     }

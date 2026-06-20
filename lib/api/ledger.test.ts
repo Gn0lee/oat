@@ -119,6 +119,17 @@ describe("getLedgerEntryById", () => {
         .fn()
         .mockResolvedValue({ data: [{ id: "pm-1", name: "체크카드" }] }),
     };
+    const ledgerEntryTagsBuilder = {
+      select: vi.fn().mockReturnThis(),
+      in: vi.fn().mockResolvedValue({
+        data: [
+          {
+            ledger_entry_id: "entry-1",
+            ledger_tags: { id: "tag-1", name: "여행" },
+          },
+        ],
+      }),
+    };
 
     return {
       from: vi.fn((table: string) => {
@@ -126,9 +137,11 @@ describe("getLedgerEntryById", () => {
         if (table === "profiles") return profilesBuilder;
         if (table === "categories") return categoriesBuilder;
         if (table === "accounts") return accountsBuilder;
+        if (table === "ledger_entry_tags") return ledgerEntryTagsBuilder;
         return paymentMethodsBuilder;
       }),
       ledgerBuilder,
+      ledgerEntryTagsBuilder,
     };
   }
 
@@ -166,6 +179,7 @@ describe("getLedgerEntryById", () => {
       categoryName: "식비",
       fromPaymentMethodName: "체크카드",
       memo: "메모 전체",
+      tags: [{ id: "tag-1", name: "여행" }],
     });
     expect(supabase.ledgerBuilder.eq).toHaveBeenCalledWith("id", "entry-1");
     expect(supabase.ledgerBuilder.eq).toHaveBeenCalledWith(
@@ -275,6 +289,17 @@ describe("buildLedgerEntryPayload", () => {
     });
     expect(result.memo).toBe("이마트 장보기");
   });
+
+  it("tagNames가 있으면 tags로 전달된다", () => {
+    const result = buildLedgerEntryPayload("expense", true, {
+      amount: "10000",
+      title: "이마트 장보기",
+      categoryId: "cat-1",
+      transactedAt: validDate,
+      tagNames: ["여행", "마트"],
+    });
+    expect(result.tags).toEqual(["여행", "마트"]);
+  });
 });
 
 describe("transfer helpers", () => {
@@ -301,6 +326,18 @@ describe("transfer helpers", () => {
     expect(result.fromAccountId).toBe("acc-1");
     expect(result.toPaymentMethodId).toBe("pm-1");
     expect(result.categoryId).toBeUndefined();
+  });
+
+  it("이체 payload는 tagNames가 있으면 tags로 전달한다", () => {
+    const result = buildTransferLedgerEntryPayload(true, {
+      amount: "30000",
+      title: "카카오페이 충전",
+      from: { kind: "account", id: "acc-1" },
+      to: { kind: "paymentMethod", id: "pm-1" },
+      transactedAt: "2026-05-08",
+      tagNames: ["이체태그"],
+    });
+    expect(result.tags).toEqual(["이체태그"]);
   });
 });
 

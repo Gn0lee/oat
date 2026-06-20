@@ -25,6 +25,28 @@ describe("LedgerEntryComposer schema", () => {
     expect(result.success).toBe(true);
   });
 
+  it("태그가 6개이면 검증에 실패한다", () => {
+    const result = ledgerComposerSchema.safeParse({
+      defaultType: "expense",
+      defaultIsShared: true,
+      defaultDate: "2026-06-05",
+      items: [
+        {
+          type: "expense",
+          isShared: true,
+          amount: "12000",
+          title: "점심",
+          categoryId: "category-1",
+          transactedAt: "2026-06-05",
+          memo: "",
+          tags: ["#t1", "#t2", "#t3", "#t4", "#t5", "#t6"],
+        },
+      ],
+    });
+
+    expect(result.success).toBe(false);
+  });
+
   it("이체 item의 from/to가 같으면 검증에 실패한다", () => {
     const result = ledgerComposerSchema.safeParse({
       defaultType: "transfer",
@@ -80,6 +102,7 @@ describe("LedgerEntryComposer schema", () => {
       categoryId: "",
       fromValue: "",
       toValue: "",
+      tags: [],
     });
   });
   it("createDefaultItem은 isShared 매개변수를 생성되는 객체에 정확히 매핑한다", () => {

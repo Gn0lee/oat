@@ -130,6 +130,7 @@ export const queries = createQueryKeyStore({
       month?: number;
       date?: string;
       scope?: "shared" | "personal";
+      tagIds?: string[];
     }) => ({
       queryKey: [params],
     }),
@@ -190,5 +191,11 @@ export const queries = createQueryKeyStore({
       paymentMethodId?: string | null;
       limit?: number;
     }) => ({ queryKey: [params] }),
+  },
+  ledgerTags: {
+    all: null,
+    list: (params?: { scope?: "shared" | "personal" }) => ({
+      queryKey: [params],
+    }),
   },
 });

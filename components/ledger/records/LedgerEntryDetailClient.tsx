@@ -258,6 +258,23 @@ export function LedgerEntryDetailClient({
               label="거래일"
               value={new Date(entry.transactedAt).toLocaleDateString("ko-KR")}
             />
+            {entry.tags && entry.tags.length > 0 && (
+              <DetailInfoRow
+                label="태그"
+                value={
+                  <div className="flex flex-wrap gap-1.5 justify-end">
+                    {entry.tags.map((tag) => (
+                      <span
+                        key={tag.id}
+                        className="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-semibold bg-gray-50 text-gray-600 border border-gray-100"
+                      >
+                        #{tag.name}
+                      </span>
+                    ))}
+                  </div>
+                }
+              />
+            )}
             {entry.memo?.trim() && (
               <DetailInfoRow label="메모" value={entry.memo.trim()} multiline />
             )}

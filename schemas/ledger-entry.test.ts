@@ -173,6 +173,48 @@ describe("createLedgerEntrySchema", () => {
       expect(result.success).toBe(false);
     });
   });
+
+  describe("tags validation", () => {
+    it("유효한 태그 목록을 허용한다", () => {
+      const result = createLedgerEntrySchema.safeParse({
+        ...validMinInput,
+        tags: ["#여행", "회사정산"],
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it("태그 개수가 5개를 초과하면 실패한다", () => {
+      const result = createLedgerEntrySchema.safeParse({
+        ...validMinInput,
+        tags: ["#일", "#이", "#삼", "#사", "#오", "#육"],
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("태그 이름이 (샵 제외하고) 15자를 초과하면 실패한다", () => {
+      const result = createLedgerEntrySchema.safeParse({
+        ...validMinInput,
+        tags: ["#일이삼사오육칠팔구십일이삼사오육"], // 16자
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("공백이 포함된 태그 이름은 실패한다", () => {
+      const result = createLedgerEntrySchema.safeParse({
+        ...validMinInput,
+        tags: ["#일 이"],
+      });
+      expect(result.success).toBe(false);
+    });
+
+    it("허용되지 않는 특수문자가 포함되면 실패한다", () => {
+      const result = createLedgerEntrySchema.safeParse({
+        ...validMinInput,
+        tags: ["카페!"],
+      });
+      expect(result.success).toBe(false);
+    });
+  });
 });
 
 describe("updateLedgerEntrySchema", () => {
@@ -216,6 +258,16 @@ describe("updateLedgerEntrySchema", () => {
       memo: "a".repeat(501),
     });
     expect(result.success).toBe(false);
+  });
+
+  it("tags를 null로 설정하여 태그를 초기화할 수 있다", () => {
+    const result = updateLedgerEntrySchema.safeParse({ tags: null });
+    expect(result.success).toBe(true);
+  });
+
+  it("tags에 유효한 태그 배열을 전달할 수 있다", () => {
+    const result = updateLedgerEntrySchema.safeParse({ tags: ["#여행"] });
+    expect(result.success).toBe(true);
   });
 });
 

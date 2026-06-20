@@ -524,6 +524,87 @@ export type Database = {
           },
         ];
       };
+      ledger_entry_tags: {
+        Row: {
+          created_at: string;
+          household_id: string;
+          ledger_entry_id: string;
+          tag_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          household_id: string;
+          ledger_entry_id: string;
+          tag_id: string;
+        };
+        Update: {
+          created_at?: string;
+          household_id?: string;
+          ledger_entry_id?: string;
+          tag_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "ledger_entry_tags_household_id_fkey";
+            columns: ["household_id"];
+            isOneToOne: false;
+            referencedRelation: "households";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "ledger_entry_tags_ledger_entry_id_fkey";
+            columns: ["ledger_entry_id"];
+            isOneToOne: false;
+            referencedRelation: "ledger_entries";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "ledger_entry_tags_tag_id_fkey";
+            columns: ["tag_id"];
+            isOneToOne: false;
+            referencedRelation: "ledger_tags";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      ledger_tags: {
+        Row: {
+          created_at: string;
+          household_id: string;
+          id: string;
+          last_used_at: string | null;
+          name: string;
+          name_normalized: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          household_id: string;
+          id?: string;
+          last_used_at?: string | null;
+          name: string;
+          name_normalized: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          household_id?: string;
+          id?: string;
+          last_used_at?: string | null;
+          name?: string;
+          name_normalized?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "ledger_tags_household_id_fkey";
+            columns: ["household_id"];
+            isOneToOne: false;
+            referencedRelation: "households";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       mcp_audit_logs: {
         Row: {
           created_at: string;
@@ -1343,13 +1424,13 @@ export type Database = {
         | "non_expense_withdrawal";
       market_type: "KR" | "US" | "OTHER";
       notification_link_kind:
-        | "ledger_record_detail"
         | "ledger_record_date"
-        | "stock_transaction_detail"
         | "stock_record_date"
         | "record_change_request_detail"
         | "household_settings"
-        | "notification_settings";
+        | "notification_settings"
+        | "ledger_record_detail"
+        | "stock_transaction_detail";
       notification_type:
         | "ledger_record_change_request"
         | "stock_transaction_change_request"
@@ -1560,13 +1641,13 @@ export const Constants = {
       ],
       market_type: ["KR", "US", "OTHER"],
       notification_link_kind: [
-        "ledger_record_detail",
         "ledger_record_date",
-        "stock_transaction_detail",
         "stock_record_date",
         "record_change_request_detail",
         "household_settings",
         "notification_settings",
+        "ledger_record_detail",
+        "stock_transaction_detail",
       ],
       notification_type: [
         "ledger_record_change_request",

@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { InfoIcon, XIcon } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import {
@@ -17,6 +17,7 @@ import {
   LedgerMoneySourcePickerPanel,
   LedgerMoneySourceTrigger,
 } from "@/components/ledger/LedgerMoneySourceCombobox";
+import { LedgerTagInput } from "@/components/ledger/LedgerTagInput";
 import { LedgerTitleCombobox } from "@/components/ledger/LedgerTitleCombobox";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -36,6 +37,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAccounts } from "@/hooks/use-accounts";
 import { useCategories } from "@/hooks/use-categories";
 import { useUpdateLedgerEntry } from "@/hooks/use-ledger-entries";
+import { useLedgerTags } from "@/hooks/use-ledger-tags";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { usePaymentMethods } from "@/hooks/use-payment-methods";
 import type { LedgerEntryWithDetails } from "@/lib/api/ledger";
@@ -64,6 +66,10 @@ const editFormSchema = z.object({
   accountId: z.string().optional(),
   transactedAt: z.string().min(1, "날짜를 선택해주세요."),
   memo: z.string().max(500, "메모는 500자 이내여야 합니다.").optional(),
+  tags: z
+    .array(z.string())
+    .max(5, "태그는 최대 5개까지 지정할 수 있습니다.")
+    .optional(),
 });
 
 type EditFormValues = z.infer<typeof editFormSchema>;
@@ -85,6 +91,7 @@ export function LedgerEntryEditDialog({
   const { data: categories = [] } = useCategories(categoryType);
   const { data: paymentMethods = [] } = usePaymentMethods();
   const { data: accounts = [] } = useAccounts();
+  const { data: availableTags = [] } = useLedgerTags();
 
   const dynamicSchema = editFormSchema.superRefine((data, ctx) => {
     if (entry?.type === "non_expense_withdrawal") {
@@ -112,6 +119,7 @@ export function LedgerEntryEditDialog({
     reset,
     watch,
     setValue,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<EditFormValues>({
     resolver: zodResolver(dynamicSchema),
@@ -139,6 +147,7 @@ export function LedgerEntryEditDialog({
             : (entry.toAccountId ?? undefined),
         transactedAt: formattedDate,
         memo: entry.memo ?? "",
+        tags: entry.tags ? entry.tags.map((tag) => tag.name) : [],
       });
     }
   }, [entry, reset]);
@@ -157,6 +166,7 @@ export function LedgerEntryEditDialog({
         transactedAt,
         categoryId: data.categoryId || null,
         memo: data.memo || null,
+        tags: data.tags || null,
       };
 
       // 유형에 따라 결제수단/계좌 필드 설정
@@ -450,6 +460,24 @@ export function LedgerEntryEditDialog({
             {errors.transactedAt.message}
           </p>
         )}
+      </div>
+
+      {/* 태그 */}
+      <div className="space-y-2">
+        <Label>태그</Label>
+        <Controller
+          control={control}
+          name="tags"
+          render={({ field }) => (
+            <LedgerTagInput
+              value={field.value || []}
+              onValueChange={field.onChange}
+              availableTags={availableTags}
+              placeholder="태그를 입력하세요 (예: #데이트)"
+              error={errors.tags?.message}
+            />
+          )}
+        />
       </div>
 
       {/* 메모 */}

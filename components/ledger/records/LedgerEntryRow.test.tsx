@@ -151,4 +151,36 @@ describe("LedgerEntryRow", () => {
     expect(transferAmount).toBeInTheDocument();
     expect(transferAmount).toHaveAttribute("title", "1,250,000원");
   });
+
+  it("태그가 있으면 #형식으로 화면에 보여준다 (최대 3개)", () => {
+    renderRow({
+      ...baseEntry,
+      tags: [
+        { id: "1", name: "여행" },
+        { id: "2", name: "데이트" },
+      ],
+    });
+
+    expect(screen.getByText("#여행")).toBeInTheDocument();
+    expect(screen.getByText("#데이트")).toBeInTheDocument();
+  });
+
+  it("태그가 3개를 초과하면 3개까지만 보여주고 +N을 표시한다", () => {
+    renderRow({
+      ...baseEntry,
+      tags: [
+        { id: "1", name: "태그1" },
+        { id: "2", name: "태그2" },
+        { id: "3", name: "태그3" },
+        { id: "4", name: "태그4" },
+        { id: "5", name: "태그5" },
+      ],
+    });
+
+    expect(screen.getByText("#태그1")).toBeInTheDocument();
+    expect(screen.getByText("#태그2")).toBeInTheDocument();
+    expect(screen.getByText("#태그3")).toBeInTheDocument();
+    expect(screen.queryByText("#태그4")).toBeNull();
+    expect(screen.getByText("+2")).toBeInTheDocument();
+  });
 });

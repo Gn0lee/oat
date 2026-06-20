@@ -118,6 +118,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
         toAccountId: input.toAccountId,
         toPaymentMethodId: input.toPaymentMethodId,
         memo: input.memo,
+        tags: input.tags,
       },
     );
 
