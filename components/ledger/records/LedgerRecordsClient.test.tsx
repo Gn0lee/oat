@@ -2,17 +2,25 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { useLedgerEntries } from "@/hooks/use-ledger-entries";
+import { useLedgerTags } from "@/hooks/use-ledger-tags";
 import type { LedgerEntryWithDetails } from "@/lib/api/ledger";
 import { LedgerRecordsClient } from "./LedgerRecordsClient";
 
+const mockReplace = vi.fn();
+const mockSearchParams = vi.fn(() => new URLSearchParams("date=2026-06-16"));
+
 vi.mock("next/navigation", () => ({
   usePathname: () => "/ledger/records",
-  useRouter: () => ({ replace: vi.fn() }),
-  useSearchParams: () => new URLSearchParams("date=2026-06-16"),
+  useRouter: () => ({ replace: mockReplace }),
+  useSearchParams: () => mockSearchParams(),
 }));
 
 vi.mock("@/hooks/use-ledger-entries", () => ({
   useLedgerEntries: vi.fn(),
+}));
+
+vi.mock("@/hooks/use-ledger-tags", () => ({
+  useLedgerTags: vi.fn(),
 }));
 
 vi.mock("@/components/ledger/CategoryIcon", () => ({
@@ -51,6 +59,11 @@ const mockEntries: LedgerEntryWithDetails[] = [
 
 describe("LedgerRecordsClient", () => {
   it("restores selected date, shows scope switch, summary metrics, links row and add button with date query", () => {
+    vi.mocked(useLedgerTags).mockReturnValue({
+      data: [],
+      isSuccess: true,
+    } as any);
+
     // mock useLedgerEntries to return data only for current month (June)
     vi.mocked(useLedgerEntries).mockImplementation((params) => {
       if (params?.month === 6) {
@@ -100,6 +113,11 @@ describe("LedgerRecordsClient", () => {
   });
 
   it("initialScope가 personal일 때 daily add 버튼 링크에 scope=personal 쿼리가 포함된다", () => {
+    vi.mocked(useLedgerTags).mockReturnValue({
+      data: [],
+      isSuccess: true,
+    } as any);
+
     vi.mocked(useLedgerEntries).mockReturnValue({
       data: [],
       isLoading: false,
@@ -119,5 +137,33 @@ describe("LedgerRecordsClient", () => {
       "href",
       "/ledger/records/new/daily?date=2026-06-16&scope=personal",
     );
+  });
+
+  it("availableTags가 없을 때 stale tagId 필터가 URL과 selectedTagIds 상태에서 지워진다", () => {
+    mockSearchParams.mockReturnValue(
+      new URLSearchParams("date=2026-06-16&tagId=stale-tag"),
+    );
+
+    vi.mocked(useLedgerTags).mockReturnValue({
+      data: [],
+      isSuccess: true,
+    } as any);
+
+    vi.mocked(useLedgerEntries).mockReturnValue({
+      data: [],
+      isLoading: false,
+    } as any);
+
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <LedgerRecordsClient initialDate="2026-06-16" />
+      </QueryClientProvider>,
+    );
+
+    expect(mockReplace).toHaveBeenCalledWith("/ledger/records?date=2026-06-16");
   });
 });

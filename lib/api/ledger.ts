@@ -1012,7 +1012,9 @@ export async function updateLedgerEntry(
 ): Promise<LedgerEntry> {
   const { data: existing } = await supabase
     .from("ledger_entries")
-    .select("id, owner_id, type")
+    .select(
+      "id, owner_id, type, amount, title, transacted_at, category_id, from_account_id, from_payment_method_id, to_account_id, to_payment_method_id, memo",
+    )
     .eq("id", entryId)
     .single();
 
@@ -1033,11 +1035,31 @@ export async function updateLedgerEntry(
   }
 
   if (existing.type === "transfer") {
-    throw new APIError(
-      "LEDGER_TRANSFER_EDIT_UNSUPPORTED",
-      "이체 기록은 삭제 후 다시 등록해주세요.",
-      400,
-    );
+    const hasOtherChanges =
+      (params.amount !== undefined && params.amount !== existing.amount) ||
+      (params.title !== undefined && params.title !== existing.title) ||
+      (params.transactedAt !== undefined &&
+        params.transactedAt !== existing.transacted_at) ||
+      (params.categoryId !== undefined &&
+        params.categoryId !== existing.category_id) ||
+      (params.fromAccountId !== undefined &&
+        params.fromAccountId !== existing.from_account_id) ||
+      (params.fromPaymentMethodId !== undefined &&
+        params.fromPaymentMethodId !== existing.from_payment_method_id) ||
+      (params.toAccountId !== undefined &&
+        params.toAccountId !== existing.to_account_id) ||
+      (params.toPaymentMethodId !== undefined &&
+        params.toPaymentMethodId !== existing.to_payment_method_id) ||
+      (params.memo !== undefined && params.memo !== existing.memo) ||
+      (params.type !== undefined && params.type !== existing.type);
+
+    if (hasOtherChanges) {
+      throw new APIError(
+        "LEDGER_TRANSFER_EDIT_UNSUPPORTED",
+        "이체 기록은 태그 외의 정보를 수정할 수 없습니다. 삭제 후 다시 등록해주세요.",
+        400,
+      );
+    }
   }
 
   const { data, error } = await supabase
@@ -1114,11 +1136,31 @@ export async function updateLedgerEntryWithBalanceSync(
   }
 
   if (existing.type === "transfer") {
-    throw new APIError(
-      "LEDGER_TRANSFER_EDIT_UNSUPPORTED",
-      "이체 기록은 삭제 후 다시 등록해주세요.",
-      400,
-    );
+    const hasOtherChanges =
+      (params.amount !== undefined && params.amount !== existing.amount) ||
+      (params.title !== undefined && params.title !== existing.title) ||
+      (params.transactedAt !== undefined &&
+        params.transactedAt !== existing.transacted_at) ||
+      (params.categoryId !== undefined &&
+        params.categoryId !== existing.category_id) ||
+      (params.fromAccountId !== undefined &&
+        params.fromAccountId !== existing.from_account_id) ||
+      (params.fromPaymentMethodId !== undefined &&
+        params.fromPaymentMethodId !== existing.from_payment_method_id) ||
+      (params.toAccountId !== undefined &&
+        params.toAccountId !== existing.to_account_id) ||
+      (params.toPaymentMethodId !== undefined &&
+        params.toPaymentMethodId !== existing.to_payment_method_id) ||
+      (params.memo !== undefined && params.memo !== existing.memo) ||
+      (params.type !== undefined && params.type !== existing.type);
+
+    if (hasOtherChanges) {
+      throw new APIError(
+        "LEDGER_TRANSFER_EDIT_UNSUPPORTED",
+        "이체 기록은 태그 외의 정보를 수정할 수 없습니다. 삭제 후 다시 등록해주세요.",
+        400,
+      );
+    }
   }
 
   const nextType = params.type ?? existing.type;

@@ -115,7 +115,7 @@ export function LedgerEntryDetailClient({
   }
 
   const isOwner = Boolean(userId && entry.ownerId === userId);
-  const canUpdate = entry.type !== "transfer";
+  const canUpdate = isOwner || entry.type !== "transfer";
   const canRequest = Boolean(userId && !isOwner && entry.isShared);
   const hasActions = isOwner || canRequest;
   const showUpdateAction = hasActions && canUpdate;

@@ -153,4 +153,64 @@ describe("LedgerEntryDetailClient", () => {
 
     expect(screen.getByText("기록을 찾을 수 없습니다")).toBeInTheDocument();
   });
+
+  it("소유자 뷰: 이체(transfer) 기록의 경우에도 소유자용 수정(태그 수정) 버튼이 렌더링된다", () => {
+    const transferEntry: LedgerEntryWithDetails = {
+      ...mockEntry,
+      type: "transfer",
+      amount: 50000,
+      fromAccountId: "acc-1",
+      fromAccountName: "통장A",
+      toAccountId: "acc-2",
+      toAccountName: "통장B",
+      fromPaymentMethodId: null,
+      fromPaymentMethodName: null,
+    };
+
+    vi.mocked(useCurrentUserId).mockReturnValue({
+      userId: "owner-1",
+      isLoading: false,
+    });
+    vi.mocked(useLedgerEntry).mockReturnValue({
+      data: transferEntry,
+      isLoading: false,
+      error: null,
+    } as any);
+
+    render(<LedgerEntryDetailClient entryId="entry-1" />);
+
+    expect(
+      screen.getByRole("button", { name: "기록 수정" }),
+    ).toBeInTheDocument();
+  });
+
+  it("비소유자 뷰: 이체(transfer) 기록의 경우 수정 요청 버튼이 렌더링되지 않는다", () => {
+    const transferEntry: LedgerEntryWithDetails = {
+      ...mockEntry,
+      type: "transfer",
+      amount: 50000,
+      fromAccountId: "acc-1",
+      fromAccountName: "통장A",
+      toAccountId: "acc-2",
+      toAccountName: "통장B",
+      fromPaymentMethodId: null,
+      fromPaymentMethodName: null,
+    };
+
+    vi.mocked(useCurrentUserId).mockReturnValue({
+      userId: "non-owner",
+      isLoading: false,
+    });
+    vi.mocked(useLedgerEntry).mockReturnValue({
+      data: transferEntry,
+      isLoading: false,
+      error: null,
+    } as any);
+
+    render(<LedgerEntryDetailClient entryId="entry-1" />);
+
+    expect(
+      screen.queryByRole("button", { name: "기록 수정 요청" }),
+    ).not.toBeInTheDocument();
+  });
 });

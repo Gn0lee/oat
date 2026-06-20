@@ -9,6 +9,7 @@ import {
   getLedgerEntryById,
   getOwnLedgerActivity,
   isTransferCapablePaymentMethod,
+  updateLedgerEntry,
 } from "./ledger";
 
 describe("calculateLedgerSummary", () => {
@@ -590,5 +591,82 @@ describe("getOwnLedgerActivity", () => {
       hasRecentOwnLedgerActivity: false,
       lastOwnLedgerEntryCreatedAt: null,
     });
+  });
+});
+
+describe("updateLedgerEntry & updateLedgerEntryWithBalanceSync", () => {
+  it("소유한 transfer 레코드에 대해 tag-only 업데이트 시 성공한다", async () => {
+    const existingEntry = {
+      id: "entry-1",
+      owner_id: "user-1",
+      type: "transfer",
+      amount: 10000,
+      title: "이체",
+      transacted_at: "2026-06-20",
+      from_account_id: "acc-1",
+      to_account_id: "acc-2",
+    };
+
+    const updatedEntry = {
+      ...existingEntry,
+      updated_at: "2026-06-20T12:00:00.000Z",
+    };
+
+    const singleMock = vi
+      .fn()
+      .mockResolvedValueOnce({ data: existingEntry, error: null }) // select in updateLedgerEntry
+      .mockResolvedValueOnce({ data: updatedEntry, error: null }); // update in updateLedgerEntry
+
+    const builder = {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      single: singleMock,
+      update: vi.fn().mockReturnThis(),
+    };
+
+    const supabase = {
+      from: vi.fn(() => builder),
+    };
+
+    const result = await updateLedgerEntry(
+      supabase as any,
+      "entry-1",
+      "user-1",
+      { tags: ["#태그"] },
+    );
+
+    expect(result).toEqual(updatedEntry);
+    expect(builder.update).toHaveBeenCalled();
+  });
+
+  it("소유한 transfer 레코드에 대해 태그 이외의 정보를 변경하려 하면 실패한다", async () => {
+    const existingEntry = {
+      id: "entry-1",
+      owner_id: "user-1",
+      type: "transfer",
+      amount: 10000,
+      title: "이체",
+      transacted_at: "2026-06-20",
+      from_account_id: "acc-1",
+      to_account_id: "acc-2",
+    };
+
+    const builder = {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      single: vi.fn().mockResolvedValue({ data: existingEntry, error: null }),
+      update: vi.fn().mockReturnThis(),
+    };
+
+    const supabase = {
+      from: vi.fn(() => builder),
+    };
+
+    await expect(
+      updateLedgerEntry(supabase as any, "entry-1", "user-1", {
+        amount: 20000,
+        tags: ["#태그"],
+      }),
+    ).rejects.toThrowError("이체 기록은 태그 외의 정보를 수정할 수 없습니다.");
   });
 });

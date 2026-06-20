@@ -64,7 +64,9 @@ export function LedgerRecordsClient({
     return searchParams.getAll("tagId");
   });
 
-  const { data: availableTags = [] } = useLedgerTags({ scope });
+  const { data: availableTags = [], isSuccess: isTagsLoaded } = useLedgerTags({
+    scope,
+  });
 
   const handleTagIdsChange = useCallback(
     (nextTagIds: string[]) => {
@@ -80,14 +82,14 @@ export function LedgerRecordsClient({
   );
 
   useEffect(() => {
-    if (selectedTagIds.length > 0 && availableTags.length > 0) {
+    if (isTagsLoaded && selectedTagIds.length > 0) {
       const availableIds = new Set(availableTags.map((t) => t.id));
       const nextTagIds = selectedTagIds.filter((id) => availableIds.has(id));
       if (nextTagIds.length !== selectedTagIds.length) {
         handleTagIdsChange(nextTagIds);
       }
     }
-  }, [availableTags, selectedTagIds, handleTagIdsChange]);
+  }, [isTagsLoaded, availableTags, selectedTagIds, handleTagIdsChange]);
 
   const handleScopeChange = (nextScope: "shared" | "personal") => {
     setScopeState(nextScope);
