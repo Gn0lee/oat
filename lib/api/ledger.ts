@@ -1161,6 +1161,18 @@ export async function updateLedgerEntryWithBalanceSync(
         400,
       );
     }
+
+    // Early return for tag-only transfer updates (avoids ownership checks and balance sync on unchanged accounts)
+    const updated = await updateLedgerEntry(supabase, entryId, ownerId, params);
+    if (params.tags !== undefined) {
+      await replaceLedgerEntryTags(supabase, {
+        householdId: existing.household_id,
+        ledgerEntryId: existing.id,
+        ownerId,
+        tagNames: params.tags,
+      });
+    }
+    return updated;
   }
 
   const nextType = params.type ?? existing.type;

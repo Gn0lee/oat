@@ -9,7 +9,7 @@ import {
   getLedgerEntryById,
   getOwnLedgerActivity,
   isTransferCapablePaymentMethod,
-  updateLedgerEntry,
+  updateLedgerEntryWithBalanceSync,
 } from "./ledger";
 
 describe("calculateLedgerSummary", () => {
@@ -595,9 +595,10 @@ describe("getOwnLedgerActivity", () => {
 });
 
 describe("updateLedgerEntry & updateLedgerEntryWithBalanceSync", () => {
-  it("소유한 transfer 레코드에 대해 tag-only 업데이트 시 성공한다", async () => {
+  it("소유한 transfer 레코드에 대해 tag-only 업데이트 시 성공하며, 계좌 소유권 검증 및 balance sync가 수행되지 않는다", async () => {
     const existingEntry = {
       id: "entry-1",
+      household_id: "household-1",
       owner_id: "user-1",
       type: "transfer",
       amount: 10000,
@@ -612,23 +613,51 @@ describe("updateLedgerEntry & updateLedgerEntryWithBalanceSync", () => {
       updated_at: "2026-06-20T12:00:00.000Z",
     };
 
-    const singleMock = vi
+    const ledgerEntriesSingleMock = vi
       .fn()
+      .mockResolvedValueOnce({ data: existingEntry, error: null }) // select in updateLedgerEntryWithBalanceSync
       .mockResolvedValueOnce({ data: existingEntry, error: null }) // select in updateLedgerEntry
       .mockResolvedValueOnce({ data: updatedEntry, error: null }); // update in updateLedgerEntry
 
-    const builder = {
-      select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      single: singleMock,
-      update: vi.fn().mockReturnThis(),
-    };
-
     const supabase = {
-      from: vi.fn(() => builder),
+      from: vi.fn((table: string) => {
+        if (table === "ledger_entries") {
+          return {
+            select: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockReturnThis(),
+            single: ledgerEntriesSingleMock,
+            maybeSingle: vi.fn().mockResolvedValue({
+              data: existingEntry,
+              error: null,
+            }),
+            update: vi.fn().mockReturnThis(),
+          } as any;
+        }
+        if (table === "ledger_tags") {
+          return {
+            upsert: vi.fn().mockReturnThis(),
+            select: vi.fn().mockResolvedValue({
+              data: [{ id: "tag-1", name: "태그" }],
+              error: null,
+            }),
+          } as any;
+        }
+        if (table === "ledger_entry_tags") {
+          return {
+            delete: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockResolvedValue({ error: null }),
+            insert: vi.fn().mockResolvedValue({ error: null }),
+          } as any;
+        }
+        return {
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          single: vi.fn().mockResolvedValue({ data: null, error: null }),
+        } as any;
+      }),
     };
 
-    const result = await updateLedgerEntry(
+    const result = await updateLedgerEntryWithBalanceSync(
       supabase as any,
       "entry-1",
       "user-1",
@@ -636,12 +665,16 @@ describe("updateLedgerEntry & updateLedgerEntryWithBalanceSync", () => {
     );
 
     expect(result).toEqual(updatedEntry);
-    expect(builder.update).toHaveBeenCalled();
+
+    // assertLedgerFinancialSourceOwnership is bypassed, so accounts / payment_methods should not be queried.
+    expect(supabase.from).not.toHaveBeenCalledWith("accounts");
+    expect(supabase.from).not.toHaveBeenCalledWith("payment_methods");
   });
 
   it("소유한 transfer 레코드에 대해 태그 이외의 정보를 변경하려 하면 실패한다", async () => {
     const existingEntry = {
       id: "entry-1",
+      household_id: "household-1",
       owner_id: "user-1",
       type: "transfer",
       amount: 10000,
@@ -663,7 +696,7 @@ describe("updateLedgerEntry & updateLedgerEntryWithBalanceSync", () => {
     };
 
     await expect(
-      updateLedgerEntry(supabase as any, "entry-1", "user-1", {
+      updateLedgerEntryWithBalanceSync(supabase as any, "entry-1", "user-1", {
         amount: 20000,
         tags: ["#태그"],
       }),
