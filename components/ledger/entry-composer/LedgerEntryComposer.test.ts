@@ -47,6 +47,28 @@ describe("LedgerEntryComposer schema", () => {
     expect(result.success).toBe(false);
   });
 
+  it("태그가 정확히 5개이면 검증에 성공한다", () => {
+    const result = ledgerComposerSchema.safeParse({
+      defaultType: "expense",
+      defaultIsShared: true,
+      defaultDate: "2026-06-05",
+      items: [
+        {
+          type: "expense",
+          isShared: true,
+          amount: "12000",
+          title: "점심",
+          categoryId: "category-1",
+          transactedAt: "2026-06-05",
+          memo: "",
+          tags: ["#t1", "#t2", "#t3", "#t4", "#t5"],
+        },
+      ],
+    });
+
+    expect(result.success).toBe(true);
+  });
+
   it("이체 item의 from/to가 같으면 검증에 실패한다", () => {
     const result = ledgerComposerSchema.safeParse({
       defaultType: "transfer",
