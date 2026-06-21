@@ -41,6 +41,18 @@ export interface CategoryStatItem {
   amount: number;
   percentage: number;
   entryCount: number;
+  directAmount?: number;
+  directEntryCount?: number;
+  children?: CategoryStatChildItem[];
+}
+
+export interface CategoryStatChildItem {
+  categoryId: string;
+  categoryName: string;
+  categoryIcon: string | null;
+  amount: number;
+  percentage: number;
+  entryCount: number;
 }
 
 export interface LedgerStatsByCategoryResult {
@@ -306,26 +318,113 @@ export async function getLedgerStatsByCategory(
     categoryIds.length > 0
       ? await supabase
           .from("categories")
-          .select("id, name, icon")
+          .select("id, name, icon, parent_id")
           .in("id", categoryIds)
       : { data: [] };
 
   const categoryMap = new Map(
-    (categories ?? []).map((c) => [c.id, { name: c.name, icon: c.icon }]),
+    (categories ?? []).map((c) => [
+      c.id,
+      {
+        id: c.id,
+        name: c.name,
+        icon: c.icon,
+        parent_id: c.parent_id as string | null,
+      },
+    ]),
   );
 
-  const items: CategoryStatItem[] = [...aggregateMap.entries()]
-    .map(([categoryId, { amount, count }]) => {
-      const cat = categoryId ? categoryMap.get(categoryId) : undefined;
-      return {
+  const parentIds = [
+    ...new Set(
+      [...categoryMap.values()]
+        .map((category) => category.parent_id)
+        .filter(Boolean) as string[],
+    ),
+  ].filter((id) => !categoryMap.has(id));
+
+  if (parentIds.length > 0) {
+    const { data: parents } = await supabase
+      .from("categories")
+      .select("id, name, icon, parent_id")
+      .in("id", parentIds);
+    for (const parent of parents ?? []) {
+      categoryMap.set(parent.id, {
+        id: parent.id,
+        name: parent.name,
+        icon: parent.icon,
+        parent_id: parent.parent_id as string | null,
+      });
+    }
+  }
+
+  const parentStats = new Map<string | null, CategoryStatItem>();
+  const ensureParent = (parentId: string | null, categoryName: string) => {
+    const existing = parentStats.get(parentId);
+    if (existing) return existing;
+    const parent = parentId ? categoryMap.get(parentId) : undefined;
+    const item: CategoryStatItem = {
+      categoryId: parentId,
+      categoryName: parent?.name ?? categoryName,
+      categoryIcon: parent?.icon ?? null,
+      amount: 0,
+      percentage: 0,
+      entryCount: 0,
+      directAmount: 0,
+      directEntryCount: 0,
+      children: [],
+    };
+    parentStats.set(parentId, item);
+    return item;
+  };
+
+  for (const [categoryId, { amount, count }] of aggregateMap.entries()) {
+    if (!categoryId) {
+      const uncategorized = ensureParent(null, "미분류");
+      uncategorized.amount += amount;
+      uncategorized.entryCount += count;
+      uncategorized.directAmount = (uncategorized.directAmount ?? 0) + amount;
+      uncategorized.directEntryCount =
+        (uncategorized.directEntryCount ?? 0) + count;
+      continue;
+    }
+
+    const category = categoryMap.get(categoryId);
+    const parentId = category?.parent_id ?? categoryId;
+    const parent = ensureParent(parentId, category?.name ?? "미분류");
+    parent.amount += amount;
+    parent.entryCount += count;
+
+    if (category?.parent_id) {
+      parent.children?.push({
         categoryId,
-        categoryName: cat?.name ?? "미분류",
-        categoryIcon: cat?.icon ?? null,
+        categoryName: category.name,
+        categoryIcon: category.icon ?? parent.categoryIcon,
         amount,
-        percentage: total > 0 ? Math.round((amount / total) * 10000) / 100 : 0,
+        percentage: 0,
         entryCount: count,
-      };
-    })
+      });
+    } else {
+      parent.directAmount = (parent.directAmount ?? 0) + amount;
+      parent.directEntryCount = (parent.directEntryCount ?? 0) + count;
+      parent.categoryIcon = category?.icon ?? parent.categoryIcon;
+    }
+  }
+
+  const items: CategoryStatItem[] = [...parentStats.values()]
+    .map((item) => ({
+      ...item,
+      percentage:
+        total > 0 ? Math.round((item.amount / total) * 10000) / 100 : 0,
+      children: (item.children ?? [])
+        .map((child) => ({
+          ...child,
+          percentage:
+            item.amount > 0
+              ? Math.round((child.amount / item.amount) * 10000) / 100
+              : 0,
+        }))
+        .sort((a, b) => b.amount - a.amount),
+    }))
     .sort((a, b) => b.amount - a.amount);
 
   return { type, scope, total, items };
@@ -567,6 +666,8 @@ export interface LedgerStatsDetailParams {
   type?: "expense" | "income";
   scope: StatsScope;
   categoryId?: string | null;
+  childCategoryId?: string | null;
+  categoryBreakdown?: "direct";
   paymentMethodId?: string | null;
   limit?: number;
 }
@@ -598,6 +699,12 @@ function buildLedgerStatsDetailViewAllHref(
     "categoryId",
     params.categoryId === null ? "__none__" : params.categoryId,
   );
+  appendParam(
+    searchParams,
+    "childCategoryId",
+    params.childCategoryId ?? undefined,
+  );
+  appendParam(searchParams, "categoryBreakdown", params.categoryBreakdown);
   appendParam(
     searchParams,
     "paymentMethodId",
@@ -682,7 +789,7 @@ export async function getLedgerStatsDetail(
       created_at,
       updated_at,
       profiles!ledger_entries_owner_id_fkey ( id, name ),
-      categories ( id, name, icon ),
+      categories ( id, name, icon, parent_id ),
       from_account:accounts!ledger_entries_from_account_id_fkey ( id, name ),
       to_account:accounts!ledger_entries_to_account_id_fkey ( id, name ),
       from_payment_method:payment_methods!ledger_entries_from_payment_method_id_fkey ( id, name ),
@@ -704,8 +811,20 @@ export async function getLedgerStatsDetail(
     query = query.eq("type", params.type ?? "expense");
     if (params.categoryId === "__none__" || params.categoryId === null) {
       query = query.is("category_id", null);
-    } else if (params.categoryId) {
+    } else if (params.childCategoryId) {
+      query = query.eq("category_id", params.childCategoryId);
+    } else if (params.categoryId && params.categoryBreakdown === "direct") {
       query = query.eq("category_id", params.categoryId);
+    } else if (params.categoryId) {
+      const { data: children } = await supabase
+        .from("categories")
+        .select("id")
+        .eq("parent_id", params.categoryId);
+      const categoryIds = [
+        params.categoryId,
+        ...(children ?? []).map((c) => c.id),
+      ];
+      query = query.in("category_id", categoryIds);
     }
   }
 

@@ -152,6 +152,9 @@ export interface GetLedgerEntriesOptions {
   scope?: "shared" | "personal";
   userId?: string;
   tagIds?: string[];
+  categoryId?: string | null;
+  childCategoryId?: string | null;
+  categoryBreakdown?: "direct";
 }
 
 export interface CreateLedgerEntryParams {
@@ -430,7 +433,7 @@ async function attachLedgerEntryDetails(
     categoryIds.length > 0
       ? supabase
           .from("categories")
-          .select("id, name, icon")
+          .select("id, name, icon, parent_id")
           .in("id", categoryIds)
       : Promise.resolve({ data: [] }),
     accountIds.length > 0
@@ -446,8 +449,28 @@ async function attachLedgerEntryDetails(
   ]);
 
   const ownerMap = new Map((profiles ?? []).map((p) => [p.id, p.name]));
+  const categoryRows = categories ?? [];
+  const parentCategoryIds = [
+    ...new Set(
+      categoryRows.map((c) => c.parent_id).filter(Boolean) as string[],
+    ),
+  ].filter((id) => !categoryRows.some((c) => c.id === id));
+  const { data: parentCategories } =
+    parentCategoryIds.length > 0
+      ? await supabase
+          .from("categories")
+          .select("id, name, icon, parent_id")
+          .in("id", parentCategoryIds)
+      : { data: [] };
   const categoryMap = new Map(
-    (categories ?? []).map((c) => [c.id, { name: c.name, icon: c.icon }]),
+    [...categoryRows, ...(parentCategories ?? [])].map((c) => [
+      c.id,
+      {
+        name: c.name,
+        icon: c.icon,
+        parentId: c.parent_id as string | null,
+      },
+    ]),
   );
   const accountMap = new Map((accounts ?? []).map((a) => [a.id, a.name]));
   const paymentMethodMap = new Map(
@@ -464,10 +487,24 @@ async function attachLedgerEntryDetails(
     title: r.title,
     categoryId: r.category_id,
     categoryName: r.category_id
-      ? (categoryMap.get(r.category_id)?.name ?? null)
+      ? (() => {
+          const category = categoryMap.get(r.category_id);
+          const parent = category?.parentId
+            ? categoryMap.get(category.parentId)
+            : undefined;
+          return parent && category
+            ? `${parent.name} > ${category.name}`
+            : (category?.name ?? null);
+        })()
       : null,
     categoryIcon: r.category_id
-      ? (categoryMap.get(r.category_id)?.icon ?? null)
+      ? (() => {
+          const category = categoryMap.get(r.category_id);
+          const parent = category?.parentId
+            ? categoryMap.get(category.parentId)
+            : undefined;
+          return category?.icon ?? parent?.icon ?? null;
+        })()
       : null,
     fromAccountId: r.from_account_id,
     fromAccountName: r.from_account_id
@@ -566,6 +603,32 @@ export async function getLedgerEntries(
     }
   }
 
+  let categoryFilterIds: string[] | null = null;
+  if (options?.childCategoryId) {
+    categoryFilterIds = [options.childCategoryId];
+  } else if (options?.categoryId && options.categoryId !== "__none__") {
+    if (options.categoryBreakdown === "direct") {
+      categoryFilterIds = [options.categoryId];
+    } else {
+      const { data: children, error: childrenError } = await supabase
+        .from("categories")
+        .select("id")
+        .eq("parent_id", options.categoryId);
+      if (childrenError) {
+        console.error("Category children fetch error:", childrenError);
+        throw new APIError(
+          "LEDGER_CATEGORY_FETCH_ERROR",
+          "카테고리 조회에 실패했습니다.",
+          500,
+        );
+      }
+      categoryFilterIds = [
+        options.categoryId,
+        ...(children ?? []).map((child) => child.id),
+      ];
+    }
+  }
+
   const query = supabase
     .from("ledger_entries")
     .select("*")
@@ -575,6 +638,12 @@ export async function getLedgerEntries(
 
   if (matchingIds !== null) {
     query.in("id", matchingIds);
+  }
+
+  if (options?.categoryId === "__none__" || options?.categoryId === null) {
+    query.is("category_id", null);
+  } else if (categoryFilterIds) {
+    query.in("category_id", categoryFilterIds);
   }
 
   const { data, error } = await query

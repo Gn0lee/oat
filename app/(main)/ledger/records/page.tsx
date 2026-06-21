@@ -8,6 +8,9 @@ interface LedgerRecordsPageProps {
   searchParams: Promise<{
     date?: string;
     scope?: string;
+    categoryId?: string;
+    childCategoryId?: string;
+    categoryBreakdown?: string;
   }>;
 }
 

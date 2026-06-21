@@ -7,6 +7,7 @@ export interface CreateCategoryParams {
   type: CategoryType;
   name: string;
   icon?: string | null;
+  parentId?: string | null;
 }
 
 export interface UpdateCategoryParams {
@@ -17,6 +18,15 @@ export interface UpdateCategoryParams {
 export interface ReorderItem {
   id: string;
   displayOrder: number;
+}
+
+interface CategorySiblingRow {
+  id: string;
+  parent_id: string | null;
+}
+
+interface CategoryNameRow extends CategorySiblingRow {
+  name: string;
 }
 
 /**
@@ -38,10 +48,52 @@ export function validateReorderIds(
   return requestedIds.every((id) => householdCategoryIds.has(id));
 }
 
+export function validateReorderSiblingSet(
+  rows: CategorySiblingRow[],
+  parentId: string | null,
+): boolean {
+  return rows.every((row) => row.parent_id === parentId);
+}
+
+export function isDuplicateCategoryName(
+  rows: CategoryNameRow[],
+  input: { name: string; parentId?: string | null; excludeId?: string },
+): boolean {
+  const parentId = input.parentId ?? null;
+  const nextName = input.name.trim().toLocaleLowerCase("ko-KR");
+  return rows.some(
+    (row) =>
+      row.id !== input.excludeId &&
+      row.parent_id === parentId &&
+      row.name.trim().toLocaleLowerCase("ko-KR") === nextName,
+  );
+}
+
+export function categoryLabel(category: {
+  name: string;
+  parent?: { name: string | null } | null;
+}): string {
+  return category.parent?.name
+    ? `${category.parent.name} > ${category.name}`
+    : category.name;
+}
+
+function applyParentFilter<
+  T extends {
+    is: (column: string, value: null) => T;
+    eq: (column: string, value: string) => T;
+  },
+>(query: T, parentId?: string | null): T {
+  return parentId
+    ? query.eq("parent_id", parentId)
+    : query.is("parent_id", null);
+}
+
 export async function getCategories(
   supabase: SupabaseClient<Database>,
   householdId: string,
   type?: CategoryType,
+  parentId?: string | null,
 ): Promise<Category[]> {
   let query = supabase
     .from("categories")
@@ -51,6 +103,10 @@ export async function getCategories(
 
   if (type) {
     query = query.eq("type", type);
+  }
+
+  if (parentId !== undefined) {
+    query = applyParentFilter(query, parentId);
   }
 
   const { data, error } = await query;
@@ -67,15 +123,55 @@ export async function createCategory(
   supabase: SupabaseClient<Database>,
   params: CreateCategoryParams,
 ): Promise<Category> {
-  const { householdId, type, name, icon } = params;
+  const { householdId, type, name, icon, parentId = null } = params;
 
-  const { data: duplicate } = await supabase
+  let parent: Category | null = null;
+  if (parentId) {
+    const { data, error } = await supabase
+      .from("categories")
+      .select("*")
+      .eq("id", parentId)
+      .eq("household_id", householdId)
+      .eq("type", type)
+      .is("parent_id", null)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Parent category fetch error:", error);
+      throw new APIError(
+        "INTERNAL_ERROR",
+        "상위 카테고리 조회에 실패했습니다.",
+        500,
+      );
+    }
+    if (!data) {
+      throw new APIError(
+        "CATEGORY_PARENT_INVALID",
+        "상위 카테고리를 찾을 수 없습니다.",
+        400,
+      );
+    }
+    if (
+      data.name.trim().toLocaleLowerCase("ko-KR") ===
+      name.trim().toLocaleLowerCase("ko-KR")
+    ) {
+      throw new APIError(
+        "CATEGORY_DUPLICATE_NAME",
+        "상위 카테고리와 같은 이름은 사용할 수 없습니다.",
+        400,
+      );
+    }
+    parent = data;
+  }
+
+  let duplicateQuery = supabase
     .from("categories")
     .select("id")
     .eq("household_id", householdId)
     .eq("type", type)
-    .eq("name", name)
-    .maybeSingle();
+    .eq("name", name);
+  duplicateQuery = applyParentFilter(duplicateQuery, parentId);
+  const { data: duplicate } = await duplicateQuery.maybeSingle();
 
   if (duplicate) {
     throw new APIError(
@@ -85,11 +181,13 @@ export async function createCategory(
     );
   }
 
-  const { data: existing } = await supabase
+  let existingQuery = supabase
     .from("categories")
     .select("display_order")
     .eq("household_id", householdId)
     .eq("type", type);
+  existingQuery = applyParentFilter(existingQuery, parentId);
+  const { data: existing } = await existingQuery;
 
   const orders = (existing ?? []).map((row) => row.display_order);
   const displayOrder = nextDisplayOrder(orders);
@@ -101,6 +199,7 @@ export async function createCategory(
       type,
       name,
       icon: icon ?? null,
+      parent_id: parent?.id ?? null,
       display_order: displayOrder,
       is_system: false,
     })
@@ -150,13 +249,35 @@ export async function updateCategory(
   }
 
   if (params.name && params.name !== existing.name) {
-    const { data: duplicate } = await supabase
+    if (
+      existing.parent_id &&
+      params.name.trim().toLocaleLowerCase("ko-KR") ===
+        (
+          await supabase
+            .from("categories")
+            .select("name")
+            .eq("id", existing.parent_id)
+            .maybeSingle()
+        ).data?.name
+          ?.trim()
+          .toLocaleLowerCase("ko-KR")
+    ) {
+      throw new APIError(
+        "CATEGORY_DUPLICATE_NAME",
+        "상위 카테고리와 같은 이름은 사용할 수 없습니다.",
+        400,
+      );
+    }
+
+    let duplicateQuery = supabase
       .from("categories")
       .select("id")
       .eq("household_id", householdId)
       .eq("type", existing.type)
       .eq("name", params.name)
-      .maybeSingle();
+      .neq("id", id);
+    duplicateQuery = applyParentFilter(duplicateQuery, existing.parent_id);
+    const { data: duplicate } = await duplicateQuery.maybeSingle();
 
     if (duplicate) {
       throw new APIError(
@@ -219,6 +340,29 @@ export async function deleteCategory(
     );
   }
 
+  const { data: children, error: childFetchError } = await supabase
+    .from("categories")
+    .select("id")
+    .eq("parent_id", id)
+    .limit(1);
+
+  if (childFetchError) {
+    console.error("Category children fetch error:", childFetchError);
+    throw new APIError(
+      "INTERNAL_ERROR",
+      "하위 카테고리 조회에 실패했습니다.",
+      500,
+    );
+  }
+
+  if ((children ?? []).length > 0) {
+    throw new APIError(
+      "CATEGORY_HAS_CHILDREN",
+      "세부 카테고리가 있는 카테고리는 삭제할 수 없습니다.",
+      400,
+    );
+  }
+
   const { error } = await supabase.from("categories").delete().eq("id", id);
 
   if (error) {
@@ -231,12 +375,13 @@ export async function reorderCategories(
   supabase: SupabaseClient<Database>,
   householdId: string,
   orders: ReorderItem[],
+  parentId: string | null = null,
 ): Promise<void> {
   const requestedIds = orders.map((o) => o.id);
 
   const { data: existing, error: fetchError } = await supabase
     .from("categories")
-    .select("id")
+    .select("id, parent_id")
     .eq("household_id", householdId)
     .in("id", requestedIds);
 
@@ -252,6 +397,14 @@ export async function reorderCategories(
       "CATEGORY_NOT_FOUND",
       "일부 카테고리를 찾을 수 없습니다.",
       404,
+    );
+  }
+
+  if (!validateReorderSiblingSet(existing ?? [], parentId)) {
+    throw new APIError(
+      "CATEGORY_REORDER_MIXED_SIBLINGS",
+      "같은 단계의 카테고리만 순서를 변경할 수 있습니다.",
+      400,
     );
   }
 

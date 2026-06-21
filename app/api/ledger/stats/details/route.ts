@@ -69,6 +69,11 @@ export async function GET(request: NextRequest) {
       type,
       scope: parseScope(searchParams.get("scope")),
       categoryId: searchParams.get("categoryId") ?? undefined,
+      childCategoryId: searchParams.get("childCategoryId") ?? undefined,
+      categoryBreakdown:
+        searchParams.get("categoryBreakdown") === "direct"
+          ? "direct"
+          : undefined,
       paymentMethodId: searchParams.get("paymentMethodId") ?? undefined,
       limit: Number(searchParams.get("limit") ?? 20),
     });

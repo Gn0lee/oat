@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { nextDisplayOrder, validateReorderIds } from "./category";
+import {
+  isDuplicateCategoryName,
+  nextDisplayOrder,
+  validateReorderIds,
+  validateReorderSiblingSet,
+} from "./category";
 
 describe("nextDisplayOrder", () => {
   it("기존 순서가 없으면 0을 반환한다", () => {
@@ -58,5 +63,63 @@ describe("validateReorderIds", () => {
   it("모든 가구 카테고리를 포함한 전체 재정렬도 통과한다", () => {
     const ids = new Set(["id-1", "id-2", "id-3"]);
     expect(validateReorderIds(["id-3", "id-1", "id-2"], ids)).toBe(true);
+  });
+});
+
+describe("validateReorderSiblingSet", () => {
+  it("하나의 parent sibling set이면 true를 반환한다", () => {
+    expect(
+      validateReorderSiblingSet(
+        [
+          { id: "cat-1", parent_id: null },
+          { id: "cat-2", parent_id: null },
+        ],
+        null,
+      ),
+    ).toBe(true);
+  });
+
+  it("parent와 child가 섞이면 false를 반환한다", () => {
+    expect(
+      validateReorderSiblingSet(
+        [
+          { id: "cat-1", parent_id: null },
+          { id: "cat-2", parent_id: "parent-1" },
+        ],
+        null,
+      ),
+    ).toBe(false);
+  });
+
+  it("서로 다른 child parent ID가 섞이면 false를 반환한다", () => {
+    expect(
+      validateReorderSiblingSet(
+        [
+          { id: "cat-1", parent_id: "parent-1" },
+          { id: "cat-2", parent_id: "parent-2" },
+        ],
+        "parent-1",
+      ),
+    ).toBe(false);
+  });
+});
+
+describe("isDuplicateCategoryName", () => {
+  it("서로 다른 parent 아래 같은 child 이름은 허용한다", () => {
+    expect(
+      isDuplicateCategoryName(
+        [{ id: "cat-1", name: "기타", parent_id: "parent-1" }],
+        { name: "기타", parentId: "parent-2" },
+      ),
+    ).toBe(false);
+  });
+
+  it("같은 parent 아래 같은 child 이름은 중복이다", () => {
+    expect(
+      isDuplicateCategoryName(
+        [{ id: "cat-1", name: "기타", parent_id: "parent-1" }],
+        { name: "기타", parentId: "parent-1" },
+      ),
+    ).toBe(true);
   });
 });

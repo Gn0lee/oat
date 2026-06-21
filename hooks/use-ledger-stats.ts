@@ -110,6 +110,12 @@ export function useLedgerStatsDetail(params: LedgerStatsDetailParams | null) {
       if (params.date) searchParams.set("date", params.date);
       if (params.type) searchParams.set("type", params.type);
       if (params.categoryId) searchParams.set("categoryId", params.categoryId);
+      if (params.childCategoryId) {
+        searchParams.set("childCategoryId", params.childCategoryId);
+      }
+      if (params.categoryBreakdown) {
+        searchParams.set("categoryBreakdown", params.categoryBreakdown);
+      }
       if (params.paymentMethodId) {
         searchParams.set("paymentMethodId", params.paymentMethodId);
       }

@@ -7,6 +7,7 @@ import {
   Plus,
   Trash2Icon,
 } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 import {
   GroupedList,
@@ -37,6 +38,7 @@ export function CategoryList() {
   const [deleteTarget, setDeleteTarget] = useState<Category | null>(null);
 
   const { data: categories = [], isLoading } = useCategories(activeTab);
+  const parentCategories = categories.filter((category) => !category.parent_id);
 
   const renderList = () => {
     if (isLoading) {
@@ -56,7 +58,7 @@ export function CategoryList() {
       );
     }
 
-    if (categories.length === 0) {
+    if (parentCategories.length === 0) {
       return (
         <ScreenState
           type="empty"
@@ -68,12 +70,15 @@ export function CategoryList() {
 
     return (
       <GroupedList>
-        {categories.map((category) => (
+        {parentCategories.map((category) => (
           <article
             key={category.id}
             className="flex items-center justify-between gap-3 px-4 py-3.5 sm:px-5"
           >
-            <div className="flex items-center gap-3 min-w-0">
+            <Link
+              href={`/ledger/categories/${category.id}`}
+              className="flex min-w-0 flex-1 items-center gap-3"
+            >
               <div
                 className={`flex size-10 shrink-0 items-center justify-center rounded-full ${
                   category.is_system
@@ -86,7 +91,10 @@ export function CategoryList() {
               <span className="font-semibold text-gray-900 text-sm truncate">
                 {category.name}
               </span>
-            </div>
+              <span className="ml-auto hidden text-xs text-gray-400 sm:inline">
+                세부 카테고리 관리
+              </span>
+            </Link>
 
             {category.is_system ? (
               <div className="flex items-center gap-2 text-gray-400">
@@ -137,6 +145,7 @@ export function CategoryList() {
     <ScreenSection>
       <SectionHeader
         title="카테고리"
+        description="세부 카테고리 관리는 parent row에서 열 수 있습니다."
         action={
           <Button size="sm" onClick={() => setIsCreateOpen(true)}>
             <Plus className="mr-1 size-4" />

@@ -28,11 +28,62 @@ describe("LedgerCategoryCombobox", () => {
     type: "expense" as const,
     name: "식비",
     icon: "utensils",
+    parent_id: null,
     display_order: 1,
     is_system: true,
     created_at: "2026-01-01T00:00:00.000Z",
     updated_at: "2026-01-01T00:00:00.000Z",
   };
+
+  const childCategory = {
+    ...category,
+    id: "cat-child",
+    name: "외식",
+    icon: "store",
+    parent_id: "cat-1",
+    display_order: 0,
+    is_system: false,
+  };
+
+  it("child option은 Parent > Child label로 렌더링하고 선택할 수 있다", async () => {
+    const user = userEvent.setup();
+    const onValueChange = vi.fn();
+
+    render(
+      <LedgerCategoryCombobox
+        value=""
+        categories={[category, childCategory]}
+        type="expense"
+        placeholder="선택"
+        onValueChange={onValueChange}
+      />,
+    );
+
+    await user.click(screen.getByRole("combobox"));
+    await user.click(screen.getByText("식비 > 외식"));
+
+    expect(onValueChange).toHaveBeenCalledWith("cat-child");
+  });
+
+  it("inline creation UI links to category management for child categories", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <LedgerCategoryCombobox
+        value=""
+        categories={[category]}
+        type="expense"
+        placeholder="선택"
+        onValueChange={() => undefined}
+      />,
+    );
+
+    await user.click(screen.getByRole("combobox"));
+
+    expect(
+      screen.getByRole("link", { name: "세부 카테고리 관리" }),
+    ).toHaveAttribute("href", "/ledger/categories");
+  });
 
   it("검색어가 있으면 새 카테고리 추가 dialog를 열 수 있다", async () => {
     const user = userEvent.setup();

@@ -7,6 +7,7 @@ import {
   ChevronsUpDownIcon,
   PlusIcon,
 } from "lucide-react";
+import Link from "next/link";
 import type { ComponentPropsWithoutRef, FormEvent } from "react";
 import { forwardRef, useEffect, useState } from "react";
 import { CategoryIcon } from "@/components/ledger/CategoryIcon";
@@ -37,6 +38,26 @@ import {
 import { useCreateCategory } from "@/hooks/use-categories";
 import { cn } from "@/lib/utils/cn";
 import type { Category, CategoryType } from "@/types";
+
+function buildCategoryOptions(categories: Category[]) {
+  const parentById = new Map(
+    categories
+      .filter((category) => !category.parent_id)
+      .map((category) => [category.id, category]),
+  );
+
+  return categories.map((category) => {
+    const parent = category.parent_id
+      ? parentById.get(category.parent_id)
+      : undefined;
+    return {
+      category,
+      label: parent ? `${parent.name} > ${category.name}` : category.name,
+      icon: category.icon ?? parent?.icon ?? null,
+      isChild: Boolean(parent),
+    };
+  });
+}
 
 interface LedgerCategoryBaseProps {
   value: string;
@@ -111,6 +132,8 @@ function CategoryCommandList({
   onCreate?: () => void;
   className?: string;
 }) {
+  const options = buildCategoryOptions(categories);
+
   return (
     <CommandList className={cn("max-h-[320px]", className)}>
       <CommandEmpty>
@@ -125,10 +148,10 @@ function CategoryCommandList({
         </div>
       </CommandEmpty>
       <CommandGroup heading="카테고리 선택">
-        {categories.map((category) => (
+        {options.map(({ category, label, icon, isChild }) => (
           <CommandItem
             key={category.id}
-            value={category.name}
+            value={label}
             onSelect={() => onValueChange(category.id)}
             className="cursor-pointer py-2.5"
           >
@@ -140,14 +163,27 @@ function CategoryCommandList({
             />
             <div className="flex items-center gap-2 min-w-0 flex-1">
               <CategoryIcon
-                iconName={category.icon}
+                iconName={icon}
                 className="size-4 text-gray-500 shrink-0"
               />
-              <span className="truncate font-medium">{category.name}</span>
+              <span className={cn("truncate font-medium", isChild && "pl-3")}>
+                {label}
+              </span>
             </div>
           </CommandItem>
         ))}
       </CommandGroup>
+      <div className="border-t p-2">
+        <Button
+          asChild
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="w-full justify-start"
+        >
+          <Link href="/ledger/categories">세부 카테고리 관리</Link>
+        </Button>
+      </div>
     </CommandList>
   );
 }
@@ -278,7 +314,10 @@ export function LedgerCategoryCombobox({
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [createInitialName, setCreateInitialName] = useState("");
   const selectedCategory = categories.find((cat) => cat.id === value);
-  const selectedLabel = selectedCategory ? selectedCategory.name : placeholder;
+  const selectedLabel =
+    buildCategoryOptions(categories).find(
+      (option) => option.category.id === selectedCategory?.id,
+    )?.label ?? placeholder;
   const createQuery = search.trim();
   const createLabel = createQuery
     ? `"${createQuery}" 새 카테고리 추가`

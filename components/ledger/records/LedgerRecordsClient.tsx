@@ -63,6 +63,17 @@ export function LedgerRecordsClient({
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>(() => {
     return searchParams.getAll("tagId");
   });
+  const categoryFilter = useMemo(
+    () => ({
+      categoryId: searchParams.get("categoryId"),
+      childCategoryId: searchParams.get("childCategoryId"),
+      categoryBreakdown:
+        searchParams.get("categoryBreakdown") === "direct"
+          ? ("direct" as const)
+          : undefined,
+    }),
+    [searchParams],
+  );
 
   const { data: availableTags = [], isSuccess: isTagsLoaded } = useLedgerTags({
     scope,
@@ -108,18 +119,21 @@ export function LedgerRecordsClient({
     month: prevMonth.getMonth() + 1,
     scope,
     tagIds: selectedTagIds,
+    ...categoryFilter,
   });
   const { data: entries = [], isLoading } = useLedgerEntries({
     year: currentMonth.getFullYear(),
     month: currentMonth.getMonth() + 1,
     scope,
     tagIds: selectedTagIds,
+    ...categoryFilter,
   });
   const { data: nextEntries = [] } = useLedgerEntries({
     year: nextMonth.getFullYear(),
     month: nextMonth.getMonth() + 1,
     scope,
     tagIds: selectedTagIds,
+    ...categoryFilter,
   });
 
   const summary = useMemo(() => calculateLedgerSummary(entries), [entries]);

@@ -31,6 +31,24 @@ describe("createCategorySchema", () => {
     expect(result.success).toBe(true);
   });
 
+  it("parentId가 있으면 child category 생성 입력으로 파싱된다", () => {
+    const result = createCategorySchema.safeParse({
+      type: "expense",
+      name: "외식",
+      parentId: "550e8400-e29b-41d4-a716-446655440000",
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("parentId가 UUID 형식이 아니면 실패한다", () => {
+    const result = createCategorySchema.safeParse({
+      type: "expense",
+      name: "외식",
+      parentId: "not-a-uuid",
+    });
+    expect(result.success).toBe(false);
+  });
+
   it("유효하지 않은 type이면 실패한다", () => {
     const result = createCategorySchema.safeParse({
       type: "transfer",
@@ -98,6 +116,14 @@ describe("updateCategorySchema", () => {
     const result = updateCategorySchema.safeParse({ name: "a".repeat(21) });
     expect(result.success).toBe(false);
   });
+
+  it("parentId를 move operation으로 받지 않는다", () => {
+    const result = updateCategorySchema.safeParse({
+      name: "새이름",
+      parentId: "550e8400-e29b-41d4-a716-446655440000",
+    });
+    expect(result.success).toBe(false);
+  });
 });
 
 describe("reorderCategoriesSchema", () => {
@@ -132,6 +158,14 @@ describe("reorderCategoriesSchema", () => {
   it("displayOrder가 0이면 파싱된다", () => {
     const result = reorderCategoriesSchema.safeParse({
       orders: [{ id: validUuid, displayOrder: 0 }],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("parentId가 있으면 child sibling reorder 입력으로 파싱된다", () => {
+    const result = reorderCategoriesSchema.safeParse({
+      parentId: validUuid,
+      orders: [{ id: "550e8400-e29b-41d4-a716-446655440001", displayOrder: 0 }],
     });
     expect(result.success).toBe(true);
   });

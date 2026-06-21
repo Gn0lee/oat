@@ -43,6 +43,9 @@ interface LedgerEntriesParams {
   date?: string;
   scope?: "shared" | "personal";
   tagIds?: string[];
+  categoryId?: string | null;
+  childCategoryId?: string | null;
+  categoryBreakdown?: "direct";
 }
 
 async function fetchLedgerEntries(
@@ -53,6 +56,13 @@ async function fetchLedgerEntries(
   if (params?.month) searchParams.set("month", String(params.month));
   if (params?.date) searchParams.set("date", params.date);
   if (params?.scope) searchParams.set("scope", params.scope);
+  if (params?.categoryId) searchParams.set("categoryId", params.categoryId);
+  if (params?.childCategoryId) {
+    searchParams.set("childCategoryId", params.childCategoryId);
+  }
+  if (params?.categoryBreakdown) {
+    searchParams.set("categoryBreakdown", params.categoryBreakdown);
+  }
   if (params?.tagIds) {
     for (const tagId of params.tagIds) {
       searchParams.append("tagId", tagId);

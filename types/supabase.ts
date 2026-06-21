@@ -183,6 +183,7 @@ export type Database = {
           id: string;
           is_system: boolean;
           name: string;
+          parent_id: string | null;
           type: Database["public"]["Enums"]["category_type"];
           updated_at: string;
         };
@@ -194,6 +195,7 @@ export type Database = {
           id?: string;
           is_system?: boolean;
           name: string;
+          parent_id?: string | null;
           type: Database["public"]["Enums"]["category_type"];
           updated_at?: string;
         };
@@ -205,10 +207,18 @@ export type Database = {
           id?: string;
           is_system?: boolean;
           name?: string;
+          parent_id?: string | null;
           type?: Database["public"]["Enums"]["category_type"];
           updated_at?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: "categories_parent_id_fkey";
+            columns: ["parent_id"];
+            isOneToOne: false;
+            referencedRelation: "categories";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "categories_household_id_fkey";
             columns: ["household_id"];

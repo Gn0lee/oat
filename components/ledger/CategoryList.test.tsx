@@ -50,6 +50,7 @@ const systemCategory: Category = {
   name: "식비",
   type: "expense",
   icon: "food",
+  parent_id: null,
   is_system: true,
   display_order: 0,
   created_at: "2026-05-01T00:00:00.000Z",
@@ -62,15 +63,23 @@ const customCategory: Category = {
   name: "배달",
   type: "expense",
   icon: "delivery",
+  parent_id: null,
   is_system: false,
   display_order: 1,
   created_at: "2026-05-01T00:00:00.000Z",
   updated_at: "2026-05-01T00:00:00.000Z",
 };
 
+const childCategory: Category = {
+  ...customCategory,
+  id: "cat-child",
+  name: "외식",
+  parent_id: "cat-sys",
+};
+
 describe("CategoryList", () => {
   it("renders categories as grouped list rows", () => {
-    mocks.categories = [systemCategory, customCategory];
+    mocks.categories = [systemCategory, customCategory, childCategory];
 
     render(<CategoryList />);
 
@@ -78,8 +87,21 @@ describe("CategoryList", () => {
     expect(screen.getByText("수입")).toBeInTheDocument();
     expect(screen.getByText("식비")).toBeInTheDocument();
     expect(screen.getByText("배달")).toBeInTheDocument();
+    expect(screen.queryByText("외식")).toBeNull();
     expect(screen.getByText("Icon: food")).toBeInTheDocument();
     expect(screen.getByText("Icon: delivery")).toBeInTheDocument();
+  });
+
+  it("parent rows link to child category management", () => {
+    mocks.categories = [systemCategory];
+
+    render(<CategoryList />);
+
+    expect(screen.getByRole("link", { name: /식비/ })).toHaveAttribute(
+      "href",
+      "/ledger/categories/cat-sys",
+    );
+    expect(screen.getByText("세부 카테고리 관리")).toBeInTheDocument();
   });
 
   it("shows custom category edit and delete actions but keeps system category locked", () => {

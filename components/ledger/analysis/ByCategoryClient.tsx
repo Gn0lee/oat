@@ -57,6 +57,8 @@ export function ByCategoryClient({ scope }: ByCategoryClientProps) {
   const [detail, setDetail] = useState<{
     title: string;
     categoryId: string;
+    childCategoryId?: string;
+    categoryBreakdown?: "direct";
   } | null>(null);
 
   const year = currentMonth.getFullYear();
@@ -108,6 +110,12 @@ export function ByCategoryClient({ scope }: ByCategoryClientProps) {
         amount: otherAmount,
         percentage: otherPct,
         entryCount: others.reduce((s, o) => s + o.entryCount, 0),
+        directAmount: others.reduce((s, o) => s + (o.directAmount ?? 0), 0),
+        directEntryCount: others.reduce(
+          (s, o) => s + (o.directEntryCount ?? 0),
+          0,
+        ),
+        children: [],
         fill: "#8B95A1",
       },
     ];
@@ -390,10 +398,7 @@ export function ByCategoryClient({ scope }: ByCategoryClientProps) {
           </h3>
           <ul className="space-y-3">
             {data.items.map((item) => (
-              <li
-                key={item.categoryId ?? "null"}
-                className="flex items-center gap-3"
-              >
+              <li key={item.categoryId ?? "null"} className="space-y-2">
                 <button
                   type="button"
                   onClick={() =>
@@ -434,6 +439,41 @@ export function ByCategoryClient({ scope }: ByCategoryClientProps) {
                     </div>
                   </div>
                 </button>
+                {item.categoryId && (
+                  <div className="ml-11 flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() =>
+                        setDetail({
+                          title: `${item.categoryName} 직접 기록`,
+                          categoryId: item.categoryId ?? "__none__",
+                          categoryBreakdown: "direct",
+                        })
+                      }
+                    >
+                      직접 {item.directEntryCount ?? 0}건
+                    </Button>
+                    {(item.children ?? []).map((child) => (
+                      <Button
+                        key={child.categoryId}
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() =>
+                          setDetail({
+                            title: `${item.categoryName} > ${child.categoryName} 기록`,
+                            categoryId: item.categoryId ?? "__none__",
+                            childCategoryId: child.categoryId,
+                          })
+                        }
+                      >
+                        {child.categoryName} {child.entryCount}건
+                      </Button>
+                    ))}
+                  </div>
+                )}
               </li>
             ))}
           </ul>
@@ -451,6 +491,8 @@ export function ByCategoryClient({ scope }: ByCategoryClientProps) {
                 type: entryType,
                 scope,
                 categoryId: detail.categoryId,
+                childCategoryId: detail.childCategoryId,
+                categoryBreakdown: detail.categoryBreakdown,
               }
             : null
         }
