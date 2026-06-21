@@ -145,7 +145,7 @@ export function CategoryList() {
     <ScreenSection>
       <SectionHeader
         title="카테고리"
-        description="세부 카테고리 관리는 parent row에서 열 수 있습니다."
+        description="상위 카테고리를 선택해 세부 카테고리를 관리할 수 있습니다."
         action={
           <Button size="sm" onClick={() => setIsCreateOpen(true)}>
             <Plus className="mr-1 size-4" />

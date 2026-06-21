@@ -102,6 +102,11 @@ describe("CategoryList", () => {
       "/ledger/categories/cat-sys",
     );
     expect(screen.getByText("세부 카테고리 관리")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "상위 카테고리를 선택해 세부 카테고리를 관리할 수 있습니다.",
+      ),
+    ).toBeInTheDocument();
   });
 
   it("shows custom category edit and delete actions but keeps system category locked", () => {
