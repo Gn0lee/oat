@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { InfoIcon, XIcon } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import {
@@ -17,6 +17,7 @@ import {
   LedgerMoneySourcePickerPanel,
   LedgerMoneySourceTrigger,
 } from "@/components/ledger/LedgerMoneySourceCombobox";
+import { LedgerTagInput } from "@/components/ledger/LedgerTagInput";
 import { LedgerTitleCombobox } from "@/components/ledger/LedgerTitleCombobox";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -36,6 +37,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAccounts } from "@/hooks/use-accounts";
 import { useCategories } from "@/hooks/use-categories";
 import { useUpdateLedgerEntry } from "@/hooks/use-ledger-entries";
+import { useLedgerTags } from "@/hooks/use-ledger-tags";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { usePaymentMethods } from "@/hooks/use-payment-methods";
 import type { LedgerEntryWithDetails } from "@/lib/api/ledger";
@@ -49,21 +51,17 @@ interface LedgerEntryEditDialogProps {
 }
 
 const editFormSchema = z.object({
-  amount: z
-    .string()
-    .min(1, "금액을 입력해주세요.")
-    .refine((val) => !Number.isNaN(Number(val)) && Number(val) > 0, {
-      message: "금액은 0보다 커야 합니다.",
-    }),
-  title: z
-    .string()
-    .min(1, "내용을 입력해주세요.")
-    .max(100, "내용은 100자 이내여야 합니다."),
+  amount: z.string().optional(),
+  title: z.string().max(100, "내용은 100자 이내여야 합니다.").optional(),
   categoryId: z.string().optional(),
   paymentMethodId: z.string().optional(),
   accountId: z.string().optional(),
-  transactedAt: z.string().min(1, "날짜를 선택해주세요."),
+  transactedAt: z.string().optional(),
   memo: z.string().max(500, "메모는 500자 이내여야 합니다.").optional(),
+  tags: z
+    .array(z.string())
+    .max(5, "태그는 최대 5개까지 지정할 수 있습니다.")
+    .optional(),
 });
 
 type EditFormValues = z.infer<typeof editFormSchema>;
@@ -85,8 +83,43 @@ export function LedgerEntryEditDialog({
   const { data: categories = [] } = useCategories(categoryType);
   const { data: paymentMethods = [] } = usePaymentMethods();
   const { data: accounts = [] } = useAccounts();
+  const { data: availableTags = [] } = useLedgerTags();
 
   const dynamicSchema = editFormSchema.superRefine((data, ctx) => {
+    if (entry?.type === "transfer") {
+      return;
+    }
+
+    if (!data.amount) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["amount"],
+        message: "금액을 입력해주세요.",
+      });
+    } else if (Number.isNaN(Number(data.amount)) || Number(data.amount) <= 0) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["amount"],
+        message: "금액은 0보다 커야 합니다.",
+      });
+    }
+
+    if (!data.title || data.title.trim() === "") {
+      ctx.addIssue({
+        code: "custom",
+        path: ["title"],
+        message: "내용을 입력해주세요.",
+      });
+    }
+
+    if (!data.transactedAt) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["transactedAt"],
+        message: "날짜를 선택해주세요.",
+      });
+    }
+
     if (entry?.type === "non_expense_withdrawal") {
       if (!data.accountId && !data.paymentMethodId) {
         ctx.addIssue({
@@ -95,7 +128,7 @@ export function LedgerEntryEditDialog({
           message: "출금처를 선택해주세요.",
         });
       }
-    } else if (entry?.type !== "transfer") {
+    } else {
       if (!data.categoryId) {
         ctx.addIssue({
           code: "custom",
@@ -112,6 +145,7 @@ export function LedgerEntryEditDialog({
     reset,
     watch,
     setValue,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<EditFormValues>({
     resolver: zodResolver(dynamicSchema),
@@ -139,6 +173,7 @@ export function LedgerEntryEditDialog({
             : (entry.toAccountId ?? undefined),
         transactedAt: formattedDate,
         memo: entry.memo ?? "",
+        tags: entry.tags ? entry.tags.map((tag) => tag.name) : [],
       });
     }
   }, [entry, reset]);
@@ -147,24 +182,34 @@ export function LedgerEntryEditDialog({
     if (!entry) return;
 
     try {
-      const transactedAt = data.transactedAt.includes("T")
+      const transactedAt = data.transactedAt?.includes("T")
         ? data.transactedAt
-        : `${data.transactedAt}T00:00:00.000Z`;
+        : data.transactedAt
+          ? `${data.transactedAt}T00:00:00.000Z`
+          : undefined;
 
-      const updateData: Record<string, unknown> = {
-        amount: Number(data.amount),
-        title: data.title,
-        transactedAt,
-        categoryId: data.categoryId || null,
-        memo: data.memo || null,
-      };
+      const updateData: Record<string, unknown> = isTransfer
+        ? { tags: data.tags || null }
+        : {
+            amount: Number(data.amount),
+            title: data.title,
+            transactedAt,
+            categoryId: data.categoryId || null,
+            memo: data.memo || null,
+            tags: data.tags || null,
+          };
 
       // 유형에 따라 결제수단/계좌 필드 설정
-      if (entry.type === "expense" || entry.type === "non_expense_withdrawal") {
-        updateData.fromPaymentMethodId = data.paymentMethodId || null;
-        updateData.fromAccountId = data.accountId || null;
-      } else if (entry.type === "income") {
-        updateData.toAccountId = data.accountId || null;
+      if (!isTransfer) {
+        if (
+          entry.type === "expense" ||
+          entry.type === "non_expense_withdrawal"
+        ) {
+          updateData.fromPaymentMethodId = data.paymentMethodId || null;
+          updateData.fromAccountId = data.accountId || null;
+        } else if (entry.type === "income") {
+          updateData.toAccountId = data.accountId || null;
+        }
       }
 
       await updateMutation.mutateAsync({
@@ -245,7 +290,7 @@ export function LedgerEntryEditDialog({
     </div>
   );
 
-  const infoBanner = (
+  const infoBanner = !isTransfer && (
     <div className="flex items-start gap-2 rounded-md bg-muted/50 p-3 text-sm text-muted-foreground">
       <InfoIcon className="mt-0.5 h-4 w-4 shrink-0" />
       <p>유형이나 공개범위를 변경하려면 이 기록을 삭제 후 다시 등록해주세요.</p>
@@ -255,217 +300,200 @@ export function LedgerEntryEditDialog({
   const transferEditNotice = (
     <div className="flex items-start gap-2 rounded-md bg-muted/50 p-3 text-sm text-muted-foreground">
       <InfoIcon className="mt-0.5 h-4 w-4 shrink-0" />
-      <p>내부이체 기록은 삭제 후 다시 등록해주세요.</p>
+      <p>
+        내부이체 기록은 태그 외의 정보를 수정할 수 없습니다. 삭제 후 다시
+        등록해주세요.
+      </p>
     </div>
   );
 
-  if (isTransfer) {
-    if (isDesktop) {
-      return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>내부이체 기록</DialogTitle>
-
-              <DialogDescription asChild>
-                {descriptionContent}
-              </DialogDescription>
-            </DialogHeader>
-
-            {transferEditNotice}
-
-            <DialogFooter>
-              <Button type="button" onClick={() => onOpenChange(false)}>
-                확인
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      );
-    }
-
-    return (
-      <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent
-          className="h-[100dvh] max-h-[100dvh] rounded-none border-t-0 p-0 flex flex-col data-[vaul-drawer-direction=bottom]:mt-0 data-[vaul-drawer-direction=bottom]:max-h-[100dvh] data-[vaul-drawer-direction=bottom]:rounded-none data-[vaul-drawer-direction=bottom]:border-t-0"
-          showHandle={false}
-          onOpenAutoFocus={(event) => event.preventDefault()}
-        >
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => onOpenChange(false)}
-            className="absolute right-2 top-2 z-10 inline-flex size-11 items-center justify-center rounded-full text-gray-700 transition-colors hover:bg-gray-100"
-          >
-            <XIcon className="size-5" />
-          </Button>
-
-          <div className="flex-1 overflow-y-auto px-4 pt-16 space-y-4">
-            <div className="space-y-1">
-              <h3 className="text-lg font-bold text-gray-900">내부이체 기록</h3>
-
-              <div className="text-sm text-gray-500">{descriptionContent}</div>
-            </div>
-
-            <div className="py-2">{transferEditNotice}</div>
-
-            <div className="pt-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
-              <Button
-                type="button"
-                onClick={() => onOpenChange(false)}
-                className="w-full h-12 rounded-xl text-base font-semibold"
-              >
-                확인
-              </Button>
-            </div>
-          </div>
-        </DrawerContent>
-      </Drawer>
-    );
-  }
-
   const formFields = (
     <>
-      {/* 금액 */}
-      <div className="space-y-2">
-        <Label htmlFor="edit-amount">금액 *</Label>
-        <div className="relative">
-          <Input
-            id="edit-amount"
-            type="number"
-            inputMode="numeric"
-            step="any"
-            min="0"
-            className="pr-10"
-            {...register("amount")}
-          />
-          <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-gray-500">
-            원
-          </span>
-        </div>
-        {errors.amount && (
-          <p className="text-sm text-destructive">{errors.amount.message}</p>
-        )}
-      </div>
-
-      {/* 내용 */}
-      <div className="space-y-2">
-        <Label htmlFor="edit-title">내용 *</Label>
-        <LedgerTitleCombobox
-          id="edit-title"
-          value={watchTitle ?? ""}
-          onValueChange={(value) =>
-            setValue("title", value, { shouldValidate: true })
-          }
-          placeholder="예: 이마트 장보기, 스타벅스 아메리카노"
-        />
-        {errors.title && (
-          <p className="text-sm text-destructive">{errors.title.message}</p>
-        )}
-      </div>
-
-      {/* 카테고리 + 결제수단/계좌 — 2컬럼 그리드 */}
-      <div
-        className={
-          entry.type === "non_expense_withdrawal"
-            ? "grid grid-cols-1"
-            : "grid grid-cols-2 gap-3"
-        }
-      >
-        {entry.type !== "non_expense_withdrawal" && (
+      {isTransfer ? (
+        <>
+          {transferEditNotice}
+          {/* 태그 */}
           <div className="space-y-2">
-            <Label>카테고리 *</Label>
-            {isDesktop ? (
-              <LedgerCategoryCombobox
-                value={watchCategoryId ?? ""}
-                categories={categories}
-                placeholder="선택"
-                onValueChange={(v) =>
-                  setValue("categoryId", v, { shouldValidate: true })
-                }
+            <Label>태그</Label>
+            <Controller
+              control={control}
+              name="tags"
+              render={({ field }) => (
+                <LedgerTagInput
+                  value={field.value || []}
+                  onValueChange={field.onChange}
+                  availableTags={availableTags}
+                  placeholder="태그를 입력하세요 (예: #데이트)"
+                  error={errors.tags?.message}
+                />
+              )}
+            />
+          </div>
+        </>
+      ) : (
+        <>
+          {/* 금액 */}
+          <div className="space-y-2">
+            <Label htmlFor="edit-amount">금액 *</Label>
+            <div className="relative">
+              <Input
+                id="edit-amount"
+                type="number"
+                inputMode="numeric"
+                step="any"
+                min="0"
+                className="pr-10"
+                {...register("amount")}
               />
-            ) : (
-              <LedgerCategoryTrigger
-                label={
-                  categories.find((cat) => cat.id === watchCategoryId)?.name ??
-                  "선택"
-                }
-                placeholder="선택"
-                onClick={() => setMobileView("categoryPicker")}
-              />
-            )}
-            {errors.categoryId && (
+              <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-gray-500">
+                원
+              </span>
+            </div>
+            {errors.amount && (
               <p className="text-sm text-destructive">
-                {errors.categoryId.message}
+                {errors.amount.message}
               </p>
             )}
           </div>
-        )}
 
-        <div className="space-y-2">
-          <Label>
-            {entry.type === "expense"
-              ? "결제 방법"
-              : entry.type === "non_expense_withdrawal"
-                ? "출금처 *"
-                : "입금 계좌"}
-          </Label>
-          {isDesktop ? (
-            <LedgerMoneySourceCombobox
-              mode={moneySourceMode}
-              value={paymentValue}
-              paymentMethods={paymentMethods}
-              accounts={accounts}
-              ownerId={entry.ownerId}
-              placeholder={moneySourcePlaceholder}
-              onValueChange={handlePaymentChange}
+          {/* 내용 */}
+          <div className="space-y-2">
+            <Label htmlFor="edit-title">내용 *</Label>
+            <LedgerTitleCombobox
+              id="edit-title"
+              value={watchTitle ?? ""}
+              onValueChange={(value) =>
+                setValue("title", value, { shouldValidate: true })
+              }
+              placeholder="예: 이마트 장보기, 스타벅스 아메리카노"
             />
-          ) : (
-            <LedgerMoneySourceTrigger
-              label={moneySourceLabel}
-              placeholder={moneySourcePlaceholder}
-              onClick={() => setMobileView("moneySourcePicker")}
+            {errors.title && (
+              <p className="text-sm text-destructive">{errors.title.message}</p>
+            )}
+          </div>
+
+          {/* 카테고리 + 결제수단/계좌 — 2컬럼 그리드 */}
+          <div
+            className={
+              entry.type === "non_expense_withdrawal"
+                ? "grid grid-cols-1"
+                : "grid grid-cols-2 gap-3"
+            }
+          >
+            {entry.type !== "non_expense_withdrawal" && (
+              <div className="space-y-2">
+                <Label>카테고리 *</Label>
+                {isDesktop ? (
+                  <LedgerCategoryCombobox
+                    value={watchCategoryId ?? ""}
+                    categories={categories}
+                    placeholder="선택"
+                    onValueChange={(v) =>
+                      setValue("categoryId", v, { shouldValidate: true })
+                    }
+                  />
+                ) : (
+                  <LedgerCategoryTrigger
+                    label={
+                      categories.find((cat) => cat.id === watchCategoryId)
+                        ?.name ?? "선택"
+                    }
+                    placeholder="선택"
+                    onClick={() => setMobileView("categoryPicker")}
+                  />
+                )}
+                {errors.categoryId && (
+                  <p className="text-sm text-destructive">
+                    {errors.categoryId.message}
+                  </p>
+                )}
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label>
+                {entry.type === "expense"
+                  ? "결제 방법"
+                  : entry.type === "non_expense_withdrawal"
+                    ? "출금처 *"
+                    : "입금 계좌"}
+              </Label>
+              {isDesktop ? (
+                <LedgerMoneySourceCombobox
+                  mode={moneySourceMode}
+                  value={paymentValue}
+                  paymentMethods={paymentMethods}
+                  accounts={accounts}
+                  ownerId={entry.ownerId}
+                  placeholder={moneySourcePlaceholder}
+                  onValueChange={handlePaymentChange}
+                />
+              ) : (
+                <LedgerMoneySourceTrigger
+                  label={moneySourceLabel}
+                  placeholder={moneySourcePlaceholder}
+                  onClick={() => setMobileView("moneySourcePicker")}
+                />
+              )}
+              {(errors.accountId || errors.paymentMethodId) && (
+                <p className="text-sm text-destructive">
+                  {errors.accountId?.message || errors.paymentMethodId?.message}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* 날짜 */}
+          <div className="space-y-2">
+            <Label htmlFor="edit-transactedAt">날짜</Label>
+            <DatePickerInput
+              id="edit-transactedAt"
+              value={watchTransactedAt ?? ""}
+              onChange={(v) =>
+                setValue("transactedAt", v, { shouldValidate: true })
+              }
             />
-          )}
-          {(errors.accountId || errors.paymentMethodId) && (
-            <p className="text-sm text-destructive">
-              {errors.accountId?.message || errors.paymentMethodId?.message}
-            </p>
-          )}
-        </div>
-      </div>
+            {errors.transactedAt && (
+              <p className="text-sm text-destructive">
+                {errors.transactedAt.message}
+              </p>
+            )}
+          </div>
 
-      {/* 날짜 */}
-      <div className="space-y-2">
-        <Label htmlFor="edit-transactedAt">날짜</Label>
-        <DatePickerInput
-          id="edit-transactedAt"
-          value={watchTransactedAt ?? ""}
-          onChange={(v) =>
-            setValue("transactedAt", v, { shouldValidate: true })
-          }
-        />
-        {errors.transactedAt && (
-          <p className="text-sm text-destructive">
-            {errors.transactedAt.message}
-          </p>
-        )}
-      </div>
+          {/* 태그 */}
+          <div className="space-y-2">
+            <Label>태그</Label>
+            <Controller
+              control={control}
+              name="tags"
+              render={({ field }) => (
+                <LedgerTagInput
+                  value={field.value || []}
+                  onValueChange={field.onChange}
+                  availableTags={availableTags}
+                  placeholder="태그를 입력하세요 (예: #데이트)"
+                  error={errors.tags?.message}
+                />
+              )}
+            />
+          </div>
 
-      {/* 메모 */}
-      <div className="space-y-2">
-        <Label htmlFor="edit-memo">메모 (선택)</Label>
-        <Textarea
-          id="edit-memo"
-          placeholder="추가로 남기고 싶은 내용을 입력하세요"
-          rows={2}
-          className="resize-none"
-          {...register("memo")}
-        />
-        {errors.memo && (
-          <p className="text-sm text-destructive">{errors.memo.message}</p>
-        )}
-      </div>
+          {/* 메모 */}
+          <div className="space-y-2">
+            <Label htmlFor="edit-memo">메모 (선택)</Label>
+            <Textarea
+              id="edit-memo"
+              placeholder="추가로 남기고 싶은 내용을 입력하세요"
+              rows={2}
+              className="resize-none"
+              {...register("memo")}
+            />
+            {errors.memo && (
+              <p className="text-sm text-destructive">{errors.memo.message}</p>
+            )}
+          </div>
+        </>
+      )}
     </>
   );
 

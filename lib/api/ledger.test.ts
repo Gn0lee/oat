@@ -9,6 +9,7 @@ import {
   getLedgerEntryById,
   getOwnLedgerActivity,
   isTransferCapablePaymentMethod,
+  updateLedgerEntryWithBalanceSync,
 } from "./ledger";
 
 describe("calculateLedgerSummary", () => {
@@ -119,6 +120,17 @@ describe("getLedgerEntryById", () => {
         .fn()
         .mockResolvedValue({ data: [{ id: "pm-1", name: "체크카드" }] }),
     };
+    const ledgerEntryTagsBuilder = {
+      select: vi.fn().mockReturnThis(),
+      in: vi.fn().mockResolvedValue({
+        data: [
+          {
+            ledger_entry_id: "entry-1",
+            ledger_tags: { id: "tag-1", name: "여행" },
+          },
+        ],
+      }),
+    };
 
     return {
       from: vi.fn((table: string) => {
@@ -126,9 +138,11 @@ describe("getLedgerEntryById", () => {
         if (table === "profiles") return profilesBuilder;
         if (table === "categories") return categoriesBuilder;
         if (table === "accounts") return accountsBuilder;
+        if (table === "ledger_entry_tags") return ledgerEntryTagsBuilder;
         return paymentMethodsBuilder;
       }),
       ledgerBuilder,
+      ledgerEntryTagsBuilder,
     };
   }
 
@@ -166,6 +180,7 @@ describe("getLedgerEntryById", () => {
       categoryName: "식비",
       fromPaymentMethodName: "체크카드",
       memo: "메모 전체",
+      tags: [{ id: "tag-1", name: "여행" }],
     });
     expect(supabase.ledgerBuilder.eq).toHaveBeenCalledWith("id", "entry-1");
     expect(supabase.ledgerBuilder.eq).toHaveBeenCalledWith(
@@ -275,6 +290,17 @@ describe("buildLedgerEntryPayload", () => {
     });
     expect(result.memo).toBe("이마트 장보기");
   });
+
+  it("tagNames가 있으면 tags로 전달된다", () => {
+    const result = buildLedgerEntryPayload("expense", true, {
+      amount: "10000",
+      title: "이마트 장보기",
+      categoryId: "cat-1",
+      transactedAt: validDate,
+      tagNames: ["여행", "마트"],
+    });
+    expect(result.tags).toEqual(["여행", "마트"]);
+  });
 });
 
 describe("transfer helpers", () => {
@@ -301,6 +327,18 @@ describe("transfer helpers", () => {
     expect(result.fromAccountId).toBe("acc-1");
     expect(result.toPaymentMethodId).toBe("pm-1");
     expect(result.categoryId).toBeUndefined();
+  });
+
+  it("이체 payload는 tagNames가 있으면 tags로 전달한다", () => {
+    const result = buildTransferLedgerEntryPayload(true, {
+      amount: "30000",
+      title: "카카오페이 충전",
+      from: { kind: "account", id: "acc-1" },
+      to: { kind: "paymentMethod", id: "pm-1" },
+      transactedAt: "2026-05-08",
+      tagNames: ["이체태그"],
+    });
+    expect(result.tags).toEqual(["이체태그"]);
   });
 });
 
@@ -553,5 +591,115 @@ describe("getOwnLedgerActivity", () => {
       hasRecentOwnLedgerActivity: false,
       lastOwnLedgerEntryCreatedAt: null,
     });
+  });
+});
+
+describe("updateLedgerEntry & updateLedgerEntryWithBalanceSync", () => {
+  it("소유한 transfer 레코드에 대해 tag-only 업데이트 시 성공하며, 계좌 소유권 검증 및 balance sync가 수행되지 않는다", async () => {
+    const existingEntry = {
+      id: "entry-1",
+      household_id: "household-1",
+      owner_id: "user-1",
+      type: "transfer",
+      amount: 10000,
+      title: "이체",
+      transacted_at: "2026-06-20",
+      from_account_id: "acc-1",
+      to_account_id: "acc-2",
+    };
+
+    const updatedEntry = {
+      ...existingEntry,
+      updated_at: "2026-06-20T12:00:00.000Z",
+    };
+
+    const ledgerEntriesSingleMock = vi
+      .fn()
+      .mockResolvedValueOnce({ data: existingEntry, error: null }) // select in updateLedgerEntryWithBalanceSync
+      .mockResolvedValueOnce({ data: existingEntry, error: null }) // select in updateLedgerEntry
+      .mockResolvedValueOnce({ data: updatedEntry, error: null }); // update in updateLedgerEntry
+
+    const supabase = {
+      from: vi.fn((table: string) => {
+        if (table === "ledger_entries") {
+          return {
+            select: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockReturnThis(),
+            single: ledgerEntriesSingleMock,
+            maybeSingle: vi.fn().mockResolvedValue({
+              data: existingEntry,
+              error: null,
+            }),
+            update: vi.fn().mockReturnThis(),
+          } as any;
+        }
+        if (table === "ledger_tags") {
+          return {
+            upsert: vi.fn().mockReturnThis(),
+            select: vi.fn().mockResolvedValue({
+              data: [{ id: "tag-1", name: "태그" }],
+              error: null,
+            }),
+          } as any;
+        }
+        if (table === "ledger_entry_tags") {
+          return {
+            delete: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockResolvedValue({ error: null }),
+            insert: vi.fn().mockResolvedValue({ error: null }),
+          } as any;
+        }
+        return {
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          single: vi.fn().mockResolvedValue({ data: null, error: null }),
+        } as any;
+      }),
+    };
+
+    const result = await updateLedgerEntryWithBalanceSync(
+      supabase as any,
+      "entry-1",
+      "user-1",
+      { tags: ["#태그"] },
+    );
+
+    expect(result).toEqual(updatedEntry);
+
+    // assertLedgerFinancialSourceOwnership is bypassed, so accounts / payment_methods should not be queried.
+    expect(supabase.from).not.toHaveBeenCalledWith("accounts");
+    expect(supabase.from).not.toHaveBeenCalledWith("payment_methods");
+  });
+
+  it("소유한 transfer 레코드에 대해 태그 이외의 정보를 변경하려 하면 실패한다", async () => {
+    const existingEntry = {
+      id: "entry-1",
+      household_id: "household-1",
+      owner_id: "user-1",
+      type: "transfer",
+      amount: 10000,
+      title: "이체",
+      transacted_at: "2026-06-20",
+      from_account_id: "acc-1",
+      to_account_id: "acc-2",
+    };
+
+    const builder = {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      single: vi.fn().mockResolvedValue({ data: existingEntry, error: null }),
+      update: vi.fn().mockReturnThis(),
+    };
+
+    const supabase = {
+      from: vi.fn(() => builder),
+    };
+
+    await expect(
+      updateLedgerEntryWithBalanceSync(supabase as any, "entry-1", "user-1", {
+        amount: 20000,
+        tags: ["#태그"],
+      }),
+    ).rejects.toThrowError("이체 기록은 태그 외의 정보를 수정할 수 없습니다.");
   });
 });

@@ -52,12 +52,15 @@ export async function GET(request: NextRequest) {
         ? scopeParam
         : undefined;
 
+    const tagIdParams = searchParams.getAll("tagId");
+
     const options = {
       year: yearParam ? Number(yearParam) : undefined,
       month: monthParam ? Number(monthParam) : undefined,
       date: dateParam ?? undefined,
       scope,
       userId: user.id,
+      tagIds: tagIdParams.length > 0 ? tagIdParams : undefined,
     };
 
     const entries = await getLedgerEntries(supabase, householdId, options);
@@ -135,6 +138,7 @@ export async function POST(request: Request) {
       toPaymentMethodId: input.toPaymentMethodId,
       isShared: input.isShared,
       memo: input.memo,
+      tags: input.tags,
     });
 
     await notifyLedgerEntryCreated(supabase, {

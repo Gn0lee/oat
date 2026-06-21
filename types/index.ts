@@ -59,6 +59,9 @@ export type LedgerEntryInsert = TablesInsert<"ledger_entries">;
 export type LedgerEntryUpdate = TablesUpdate<"ledger_entries">;
 export type BalanceAdjustmentInsert = TablesInsert<"balance_adjustments">;
 export type Category = Tables<"categories">;
+export type LedgerTag = Tables<"ledger_tags">;
+export type LedgerTagInsert = TablesInsert<"ledger_tags">;
+export type LedgerEntryTag = Tables<"ledger_entry_tags">;
 
 // View 타입
 export type Holding = Tables<"holdings">;

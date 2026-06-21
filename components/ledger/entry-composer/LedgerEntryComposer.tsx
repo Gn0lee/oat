@@ -38,6 +38,10 @@ export const ledgerComposerItemSchema = z
     toValue: z.string().optional(),
     transactedAt: z.string().min(1, "날짜를 선택해주세요."),
     memo: z.string().max(500, "메모는 500자 이내여야 합니다.").optional(),
+    tags: z
+      .array(z.string())
+      .max(5, "태그는 최대 5개까지 지정할 수 있습니다.")
+      .optional(),
   })
   .superRefine((value, ctx) => {
     if (value.type === "transfer") {
@@ -131,6 +135,7 @@ export function createDefaultItem({
     toValue: "",
     transactedAt: date,
     memo: "",
+    tags: [],
   };
 }
 
@@ -199,6 +204,7 @@ export function LedgerEntryComposer({
             to: parseTransferLocation(item.toValue ?? ""),
             transactedAt: item.transactedAt,
             memo: item.memo,
+            tagNames: item.tags,
           });
         }
 
@@ -210,6 +216,7 @@ export function LedgerEntryComposer({
           accountId: item.accountId,
           transactedAt: item.transactedAt,
           memo: item.memo,
+          tagNames: item.tags,
         });
       });
       const result = await createBatch.mutateAsync(entries);

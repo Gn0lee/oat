@@ -1,4 +1,19 @@
 import { z } from "zod";
+import { normalizeLedgerTagName } from "../lib/api/ledger-tags";
+
+const ledgerTagNameSchema = z.string().refine(
+  (val) => {
+    const normalized = normalizeLedgerTagName(val);
+    if (!normalized) return false;
+    if (normalized.length > 15) return false;
+    if (/\s/.test(normalized)) return false;
+    const regex = /^[0-9A-Za-z_가-힣]+$/u;
+    return regex.test(normalized);
+  },
+  {
+    message: "태그 이름이 올바르지 않습니다.",
+  },
+);
 
 const ledgerEntryTypeValues = [
   "expense",
@@ -24,6 +39,10 @@ const createLedgerEntryBaseSchema = z.object({
   toPaymentMethodId: z.string().uuid().optional(),
   isShared: z.boolean().default(true),
   memo: z.string().max(500, "메모는 500자 이내여야 합니다.").optional(),
+  tags: z
+    .array(ledgerTagNameSchema)
+    .max(5, "태그는 최대 5개까지 지정할 수 있습니다.")
+    .optional(),
 });
 
 export const createLedgerEntrySchema = createLedgerEntryBaseSchema.superRefine(
@@ -115,6 +134,11 @@ export const updateLedgerEntrySchema = z.object({
   memo: z
     .string()
     .max(500, "메모는 500자 이내여야 합니다.")
+    .nullable()
+    .optional(),
+  tags: z
+    .array(ledgerTagNameSchema)
+    .max(5, "태그는 최대 5개까지 지정할 수 있습니다.")
     .nullable()
     .optional(),
 });
