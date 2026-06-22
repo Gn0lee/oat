@@ -149,6 +149,8 @@ function invalidateLedgerBalanceQueries(
   queryClient.invalidateQueries({ queryKey: queries.accounts._def });
   queryClient.invalidateQueries({ queryKey: queries.paymentMethods._def });
   queryClient.invalidateQueries({ queryKey: queries.ledgerTags._def });
+  queryClient.invalidateQueries({ queryKey: queries.ledgerStats._def });
+  queryClient.invalidateQueries({ queryKey: queries.home._def });
 }
 
 export function useCreateLedgerEntry() {

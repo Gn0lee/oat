@@ -163,6 +163,7 @@ describe("ByCategoryClient", () => {
       name: /의료비.*15,800원.*1건/,
     });
     expect(medical).not.toHaveAttribute("aria-expanded");
+    expect(medical.querySelector(".lucide-chevron-right")).toBeInTheDocument();
 
     await user.click(medical);
 

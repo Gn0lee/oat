@@ -461,6 +461,12 @@ export function ByCategoryClient({ scope }: ByCategoryClientProps) {
                             aria-hidden="true"
                           />
                         )}
+                        {!hasChildren && (
+                          <ChevronRight
+                            className="size-4 text-gray-400"
+                            aria-hidden="true"
+                          />
+                        )}
                       </span>
                     </div>
                   </button>
