@@ -90,6 +90,12 @@ export function getPageTransitionRules(
         },
         {
           kind: "drill",
+          enter: "/ledger/categories/*",
+          exit: "/ledger/categories",
+          type: "parallax",
+        },
+        {
+          kind: "drill",
           enter: "/assets/*",
           exit: "/assets",
           type: "parallax",

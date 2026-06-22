@@ -109,18 +109,20 @@ describe("CategoryList", () => {
     ).toBeInTheDocument();
   });
 
-  it("shows custom category edit and delete actions but keeps system category locked", () => {
+  it("shows default status, custom actions, and navigation disclosures", () => {
     mocks.categories = [systemCategory, customCategory];
 
     render(<CategoryList />);
 
-    // System category should show a lock/default indicator and status text
-    expect(screen.getByTestId("lock-icon")).toBeInTheDocument();
     expect(screen.getByText("기본")).toBeInTheDocument();
-
-    // Custom category has menu trigger (e.g. MoreHorizontal or equivalent button)
+    expect(screen.queryByTestId("lock-icon")).not.toBeInTheDocument();
+    expect(screen.getAllByTestId("category-disclosure")).toHaveLength(2);
     const menuButtons = screen.getAllByRole("button", { name: /메뉴 열기/i });
-    expect(menuButtons).toHaveLength(1); // Only 1 custom category menu button
+    expect(menuButtons).toHaveLength(1);
+    expect(screen.getByRole("link", { name: /배달/ })).toHaveAttribute(
+      "href",
+      "/ledger/categories/cat-cust",
+    );
   });
 
   it("opens create dialog from the section header add action", () => {

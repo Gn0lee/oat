@@ -7,7 +7,6 @@ import {
   Plus,
   Trash2Icon,
 } from "lucide-react";
-import Link from "next/link";
 import { useState } from "react";
 import {
   GroupedList,
@@ -41,11 +40,6 @@ export function CategoryChildrenPage({ parent }: { parent: Category }) {
 
   return (
     <ScreenSection>
-      <div className="px-1">
-        <Button asChild variant="ghost" size="sm" className="-ml-2">
-          <Link href="/ledger/categories">카테고리</Link>
-        </Button>
-      </div>
       <SectionHeader
         title={parent.name}
         description="세부 카테고리 관리"

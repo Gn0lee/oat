@@ -40,13 +40,37 @@ import { cn } from "@/lib/utils/cn";
 import type { Category, CategoryType } from "@/types";
 
 function buildCategoryOptions(categories: Category[]) {
+  const parents = categories
+    .filter((category) => !category.parent_id)
+    .sort((a, b) => a.display_order - b.display_order);
   const parentById = new Map(
-    categories
-      .filter((category) => !category.parent_id)
-      .map((category) => [category.id, category]),
+    parents.map((category) => [category.id, category]),
+  );
+  const childrenByParent = new Map<string, Category[]>();
+  const orphans: Category[] = [];
+
+  for (const category of categories) {
+    if (!category.parent_id) continue;
+    if (!parentById.has(category.parent_id)) {
+      orphans.push(category);
+      continue;
+    }
+    const siblings = childrenByParent.get(category.parent_id) ?? [];
+    siblings.push(category);
+    childrenByParent.set(category.parent_id, siblings);
+  }
+
+  const orderedCategories = parents.flatMap((parent) => [
+    parent,
+    ...(childrenByParent.get(parent.id) ?? []).sort(
+      (a, b) => a.display_order - b.display_order,
+    ),
+  ]);
+  orderedCategories.push(
+    ...orphans.sort((a, b) => a.display_order - b.display_order),
   );
 
-  return categories.map((category) => {
+  return orderedCategories.map((category) => {
     const parent = category.parent_id
       ? parentById.get(category.parent_id)
       : undefined;
@@ -148,7 +172,7 @@ function CategoryCommandList({
         </div>
       </CommandEmpty>
       <CommandGroup heading="카테고리 선택">
-        {options.map(({ category, label, icon, isChild }) => (
+        {options.map(({ category, label, icon }) => (
           <CommandItem
             key={category.id}
             value={label}
@@ -166,9 +190,7 @@ function CategoryCommandList({
                 iconName={icon}
                 className="size-4 text-gray-500 shrink-0"
               />
-              <span className={cn("truncate font-medium", isChild && "pl-3")}>
-                {label}
-              </span>
+              <span className="truncate font-medium">{label}</span>
             </div>
           </CommandItem>
         ))}

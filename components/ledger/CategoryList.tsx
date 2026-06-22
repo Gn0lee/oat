@@ -1,7 +1,7 @@
 "use client";
 
 import {
-  LockIcon,
+  ChevronRight,
   MoreHorizontal,
   PencilIcon,
   Plus,
@@ -104,36 +104,43 @@ export function CategoryList() {
                 >
                   기본
                 </Badge>
-                <div className="flex size-9 items-center justify-center">
-                  <LockIcon data-testid="lock-icon" className="size-4" />
-                </div>
+                <ChevronRight
+                  data-testid="category-disclosure"
+                  className="size-5"
+                />
               </div>
             ) : (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="size-9"
-                    aria-label="메뉴 열기"
-                  >
-                    <MoreHorizontal className="size-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => setEditTarget(category)}>
-                    <PencilIcon className="w-4 h-4 mr-2" />
-                    수정
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    className="text-red-500 focus:text-red-500 focus:bg-red-50"
-                    onClick={() => setDeleteTarget(category)}
-                  >
-                    <Trash2Icon className="w-4 h-4 mr-2" />
-                    삭제
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <div className="flex items-center gap-1">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="size-9"
+                      aria-label="메뉴 열기"
+                    >
+                      <MoreHorizontal className="size-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => setEditTarget(category)}>
+                      <PencilIcon className="w-4 h-4 mr-2" />
+                      수정
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="text-red-500 focus:text-red-500 focus:bg-red-50"
+                      onClick={() => setDeleteTarget(category)}
+                    >
+                      <Trash2Icon className="w-4 h-4 mr-2" />
+                      삭제
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <ChevronRight
+                  data-testid="category-disclosure"
+                  className="size-5 text-gray-400"
+                />
+              </div>
             )}
           </article>
         ))}

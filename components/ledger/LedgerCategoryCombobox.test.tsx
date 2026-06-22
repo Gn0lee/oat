@@ -45,6 +45,52 @@ describe("LedgerCategoryCombobox", () => {
     is_system: false,
   };
 
+  it("parent 순서대로 각 child를 sibling 순서로 묶는다", async () => {
+    const user = userEvent.setup();
+    const transport = {
+      ...category,
+      id: "cat-2",
+      name: "교통비",
+      display_order: 2,
+    };
+    const grocery = {
+      ...childCategory,
+      id: "cat-grocery",
+      name: "장보기",
+      display_order: 1,
+    };
+    const taxi = {
+      ...childCategory,
+      id: "cat-taxi",
+      name: "택시",
+      parent_id: "cat-2",
+      display_order: 0,
+    };
+    const dining = { ...childCategory, display_order: 2 };
+
+    render(
+      <LedgerCategoryCombobox
+        value=""
+        categories={[taxi, transport, dining, category, grocery]}
+        type="expense"
+        placeholder="선택"
+        onValueChange={() => undefined}
+      />,
+    );
+
+    await user.click(screen.getByRole("combobox"));
+
+    expect(
+      screen.getAllByRole("option").map((option) => option.textContent),
+    ).toEqual([
+      "식비",
+      "식비 > 장보기",
+      "식비 > 외식",
+      "교통비",
+      "교통비 > 택시",
+    ]);
+  });
+
   it("child option은 Parent > Child label로 렌더링하고 선택할 수 있다", async () => {
     const user = userEvent.setup();
     const onValueChange = vi.fn();
@@ -63,6 +109,24 @@ describe("LedgerCategoryCombobox", () => {
     await user.click(screen.getByText("식비 > 외식"));
 
     expect(onValueChange).toHaveBeenCalledWith("cat-child");
+  });
+
+  it("child option도 들여쓰기 없이 Parent > Child label로 정렬한다", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <LedgerCategoryCombobox
+        value=""
+        categories={[category, childCategory]}
+        type="expense"
+        placeholder="선택"
+        onValueChange={() => undefined}
+      />,
+    );
+
+    await user.click(screen.getByRole("combobox"));
+
+    expect(screen.getByText("식비 > 외식")).not.toHaveClass("pl-3");
   });
 
   it("inline creation UI links to category management for child categories", async () => {

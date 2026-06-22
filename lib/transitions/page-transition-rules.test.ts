@@ -96,6 +96,12 @@ describe("page transition rules", () => {
     });
     expect(getPageTransitionRules("mobile")).toContainEqual({
       kind: "drill",
+      enter: "/ledger/categories/*",
+      exit: "/ledger/categories",
+      type: "parallax",
+    });
+    expect(getPageTransitionRules("mobile")).toContainEqual({
+      kind: "drill",
       enter: "/assets/stock/transactions/*",
       exit: "/assets/stock/records",
       type: "parallax",

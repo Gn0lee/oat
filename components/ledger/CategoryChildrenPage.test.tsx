@@ -65,6 +65,7 @@ describe("CategoryChildrenPage", () => {
 
     expect(screen.getByText("식비")).toBeInTheDocument();
     expect(screen.getByText("외식")).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "카테고리" })).toBeNull();
   });
 
   it("child create dialog를 parentId와 함께 연다", () => {

@@ -85,7 +85,17 @@ export function getServiceRouteTree(options?: {
             },
           ],
         },
-        { href: "/ledger/categories", label: "카테고리 관리" },
+        {
+          href: "/ledger/categories",
+          label: "카테고리 관리",
+          children: [
+            {
+              href: "/ledger/categories/[parentId]",
+              pattern: "/ledger/categories/[parentId]",
+              label: "세부 카테고리",
+            },
+          ],
+        },
         {
           href: "/ledger/analysis",
           label: "통계",
