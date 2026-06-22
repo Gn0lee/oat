@@ -21,8 +21,14 @@ interface CategoryError {
 
 // ─── fetch 함수 ───
 
-async function fetchCategories(type?: CategoryType): Promise<Category[]> {
-  const url = type ? `/api/categories?type=${type}` : "/api/categories";
+async function fetchCategories(
+  type?: CategoryType,
+  parentId?: string | null,
+): Promise<Category[]> {
+  const params = new URLSearchParams();
+  if (type) params.set("type", type);
+  if (parentId !== undefined) params.set("parentId", parentId ?? "__root__");
+  const url = params.size ? `/api/categories?${params}` : "/api/categories";
   const response = await fetch(url);
   const json = await response.json();
 
@@ -38,6 +44,7 @@ async function createCategoryFn(params: {
   type: CategoryType;
   name: string;
   icon?: string | null;
+  parentId?: string | null;
 }): Promise<Category> {
   const response = await fetch("/api/categories", {
     method: "POST",
@@ -87,13 +94,14 @@ async function deleteCategoryFn(id: string): Promise<void> {
   }
 }
 
-async function reorderCategoriesFn(
-  orders: { id: string; displayOrder: number }[],
-): Promise<void> {
+async function reorderCategoriesFn(params: {
+  parentId?: string | null;
+  orders: { id: string; displayOrder: number }[];
+}): Promise<void> {
   const response = await fetch("/api/categories/reorder", {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ orders }),
+    body: JSON.stringify(params),
   });
 
   if (!response.ok) {
@@ -105,10 +113,13 @@ async function reorderCategoriesFn(
 
 // ─── Query 훅 ───
 
-export function useCategories(type?: CategoryType) {
+export function useCategories(type?: CategoryType, parentId?: string | null) {
   return useQuery({
-    queryKey: queries.categories.list(type).queryKey,
-    queryFn: () => fetchCategories(type),
+    queryKey: queries.categories.list(
+      type,
+      parentId === null ? "__root__" : parentId,
+    ).queryKey,
+    queryFn: () => fetchCategories(type, parentId),
     staleTime: 1000 * 60 * 5,
   });
 }

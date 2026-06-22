@@ -1,5 +1,50 @@
 import { describe, expect, it, vi } from "vitest";
-import { getLedgerStatsDetail } from "./ledger-stats";
+import { getLedgerStatsByCategory, getLedgerStatsDetail } from "./ledger-stats";
+
+function createByCategorySupabaseMock() {
+  const ledgerBuilder = {
+    select: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    gte: vi.fn().mockReturnThis(),
+    lt: vi.fn().mockReturnThis(),
+    in: vi.fn().mockReturnThis(),
+    data: [
+      { amount: 10000, category_id: "parent-food" },
+      { amount: 20000, category_id: "child-dining" },
+      { amount: 5000, category_id: null },
+    ],
+    error: null,
+  };
+  const categoryBuilder = {
+    select: vi.fn().mockReturnThis(),
+    in: vi.fn().mockResolvedValue({
+      data: [
+        {
+          id: "parent-food",
+          name: "식비",
+          icon: "Utensils",
+          parent_id: null,
+        },
+        {
+          id: "child-dining",
+          name: "외식",
+          icon: "Store",
+          parent_id: "parent-food",
+        },
+      ],
+      error: null,
+    }),
+  };
+
+  return {
+    from: vi
+      .fn()
+      .mockReturnValueOnce(ledgerBuilder)
+      .mockReturnValueOnce(categoryBuilder),
+    ledgerBuilder,
+    categoryBuilder,
+  };
+}
 
 function createLedgerDetailSupabaseMock(rows: unknown[]) {
   const builder = {
@@ -77,10 +122,27 @@ describe("getLedgerStatsDetail", () => {
       "transacted_at",
       "2026-05-31T15:00:00.000Z",
     );
-    expect(supabase.builder.eq).toHaveBeenCalledWith("category_id", "cat-1");
+    expect(supabase.builder.in).toHaveBeenCalledWith("category_id", ["cat-1"]);
     expect(supabase.builder.eq).toHaveBeenCalledWith("type", "expense");
     expect(supabase.builder.eq).toHaveBeenCalledWith("is_shared", true);
     expect(supabase.builder.range).toHaveBeenCalledWith(0, 19);
+  });
+
+  it("parent category detail은 parent와 child ID를 함께 필터링한다", async () => {
+    const supabase = createLedgerDetailSupabaseMock([]);
+
+    await getLedgerStatsDetail(supabase as never, "household-1", "user-1", {
+      kind: "category",
+      year: 2026,
+      month: 5,
+      type: "expense",
+      scope: "shared",
+      categoryId: "parent-food",
+    });
+
+    expect(supabase.builder.in).toHaveBeenCalledWith("category_id", [
+      "parent-food",
+    ]);
   });
 
   it("filters null payment-method groups explicitly", async () => {
@@ -101,5 +163,38 @@ describe("getLedgerStatsDetail", () => {
       "from_payment_method_id",
       null,
     );
+  });
+});
+
+describe("getLedgerStatsByCategory", () => {
+  it("child records를 parent total로 집계하고 direct/children breakdown을 포함한다", async () => {
+    const supabase = createByCategorySupabaseMock();
+
+    const result = await getLedgerStatsByCategory(
+      supabase as never,
+      "household-1",
+      "user-1",
+      2026,
+      5,
+      "expense",
+      "all",
+    );
+
+    const food = result.items.find((item) => item.categoryId === "parent-food");
+    expect(food).toMatchObject({
+      categoryName: "식비",
+      amount: 30000,
+      entryCount: 2,
+      directAmount: 10000,
+      directEntryCount: 1,
+    });
+    expect(food?.children).toEqual([
+      expect.objectContaining({
+        categoryId: "child-dining",
+        categoryName: "외식",
+        amount: 20000,
+        entryCount: 1,
+      }),
+    ]);
   });
 });

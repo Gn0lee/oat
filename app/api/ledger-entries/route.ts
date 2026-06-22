@@ -54,6 +54,11 @@ export async function GET(request: NextRequest) {
 
     const tagIdParams = searchParams.getAll("tagId");
 
+    const categoryBreakdown =
+      searchParams.get("categoryBreakdown") === "direct"
+        ? ("direct" as const)
+        : undefined;
+
     const options = {
       year: yearParam ? Number(yearParam) : undefined,
       month: monthParam ? Number(monthParam) : undefined,
@@ -61,6 +66,9 @@ export async function GET(request: NextRequest) {
       scope,
       userId: user.id,
       tagIds: tagIdParams.length > 0 ? tagIdParams : undefined,
+      categoryId: searchParams.get("categoryId") ?? undefined,
+      childCategoryId: searchParams.get("childCategoryId") ?? undefined,
+      categoryBreakdown,
     };
 
     const entries = await getLedgerEntries(supabase, householdId, options);

@@ -48,6 +48,8 @@ interface CategoryFormDialogProps {
   type: CategoryType;
   mode: "create" | "edit";
   category?: Category;
+  parentId?: string | null;
+  parentName?: string;
 }
 
 export function CategoryFormDialog({
@@ -56,6 +58,8 @@ export function CategoryFormDialog({
   type,
   mode,
   category,
+  parentId = null,
+  parentName,
 }: CategoryFormDialogProps) {
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const createMutation = useCreateCategory();
@@ -101,6 +105,7 @@ export function CategoryFormDialog({
           type,
           name: data.name,
           icon: data.icon,
+          parentId,
         });
         toast.success("카테고리가 추가되었습니다.");
       } else if (category) {
@@ -125,8 +130,16 @@ export function CategoryFormDialog({
     }
   };
 
-  const title = mode === "create" ? "카테고리 추가" : "카테고리 수정";
+  const title =
+    mode === "create"
+      ? parentId
+        ? "세부 카테고리 추가"
+        : "카테고리 추가"
+      : "카테고리 수정";
   const typeLabel = type === "expense" ? "지출" : "수입";
+  const description = parentName
+    ? `${typeLabel} 카테고리 - ${parentName}`
+    : `${typeLabel} 카테고리`;
   const isPending = createMutation.isPending || updateMutation.isPending;
 
   const iconPicker = (
@@ -207,7 +220,7 @@ export function CategoryFormDialog({
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{title}</DialogTitle>
-            <DialogDescription>{typeLabel} 카테고리</DialogDescription>
+            <DialogDescription>{description}</DialogDescription>
           </DialogHeader>
 
           <form
@@ -242,7 +255,7 @@ export function CategoryFormDialog({
       <DrawerContent>
         <DrawerHeader>
           <DrawerTitle>{title}</DrawerTitle>
-          <DrawerDescription>{typeLabel} 카테고리</DrawerDescription>
+          <DrawerDescription>{description}</DrawerDescription>
         </DrawerHeader>
 
         <div className="overflow-y-auto flex-1 px-4">

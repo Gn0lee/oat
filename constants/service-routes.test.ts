@@ -1,5 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { isMcpEnabled } from "@/lib/mcp/feature-flags";
+import { describe, expect, it } from "vitest";
 import {
   getServiceRouteMeta,
   resolveServiceParentHref,
@@ -25,6 +24,26 @@ describe("getServiceRouteMeta", () => {
         { href: "/assets", label: "자산" },
         { href: "/assets/stock", label: "주식" },
         { href: "/assets/stock/holdings", label: "보유 종목" },
+      ],
+    });
+  });
+
+  it("카테고리 상세 화면의 parent와 breadcrumb를 계산한다", () => {
+    expect(
+      getServiceRouteMeta("/ledger/categories/parent-1", {
+        mcpEnabled: true,
+      }),
+    ).toMatchObject({
+      label: "세부 카테고리",
+      mobileVariant: "child",
+      parentHref: "/ledger/categories",
+      breadcrumb: [
+        { href: "/ledger", label: "가계부" },
+        { href: "/ledger/categories", label: "카테고리 관리" },
+        {
+          href: "/ledger/categories/[parentId]",
+          label: "세부 카테고리",
+        },
       ],
     });
   });

@@ -14,6 +14,7 @@ import type { CategoryType } from "@/types";
  * Query params:
  *   ?type=expense   → 지출 카테고리만
  *   ?type=income    → 수입 카테고리만
+ *   ?parentId=...  → 특정 parent의 child만
  *   (없음)          → 전체
  */
 export async function GET(request: NextRequest) {
@@ -44,8 +45,20 @@ export async function GET(request: NextRequest) {
       typeParam === "expense" || typeParam === "income"
         ? (typeParam as CategoryType)
         : undefined;
+    const parentIdParam = request.nextUrl.searchParams.get("parentId");
+    const parentId =
+      parentIdParam === null
+        ? undefined
+        : parentIdParam === "__root__"
+          ? null
+          : parentIdParam;
 
-    const categories = await getCategories(supabase, householdId, type);
+    const categories = await getCategories(
+      supabase,
+      householdId,
+      type,
+      parentId,
+    );
 
     return NextResponse.json({ data: categories });
   } catch (error) {
@@ -109,6 +122,7 @@ export async function POST(request: Request) {
       type: result.data.type,
       name: result.data.name,
       icon: result.data.icon,
+      parentId: result.data.parentId,
     });
 
     return NextResponse.json({ data: category }, { status: 201 });

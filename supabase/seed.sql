@@ -145,6 +145,18 @@ VALUES
 -- 테스트 가구 기본 카테고리 생성 (#236)
 SELECT public.seed_household_categories('00000000-0000-4000-8000-000000000010');
 
+INSERT INTO public.categories (
+  id, household_id, type, name, icon, display_order, is_system, parent_id
+) VALUES
+('00000000-0000-4000-8000-000000000901', '00000000-0000-4000-8000-000000000010', 'expense', '배달', 'Bike', 0, false, (select id from public.categories where household_id = '00000000-0000-4000-8000-000000000010' and type = 'expense' and name = '식비' and parent_id is null)),
+('00000000-0000-4000-8000-000000000902', '00000000-0000-4000-8000-000000000010', 'expense', '장보기', 'ShoppingBasket', 1, false, (select id from public.categories where household_id = '00000000-0000-4000-8000-000000000010' and type = 'expense' and name = '식비' and parent_id is null)),
+('00000000-0000-4000-8000-000000000903', '00000000-0000-4000-8000-000000000010', 'expense', '외식', 'Store', 2, false, (select id from public.categories where household_id = '00000000-0000-4000-8000-000000000010' and type = 'expense' and name = '식비' and parent_id is null)),
+('00000000-0000-4000-8000-000000000904', '00000000-0000-4000-8000-000000000010', 'expense', '택시', 'Taxi', 0, false, (select id from public.categories where household_id = '00000000-0000-4000-8000-000000000010' and type = 'expense' and name = '교통비' and parent_id is null)),
+('00000000-0000-4000-8000-000000000905', '00000000-0000-4000-8000-000000000010', 'expense', '대중교통', 'Train', 1, false, (select id from public.categories where household_id = '00000000-0000-4000-8000-000000000010' and type = 'expense' and name = '교통비' and parent_id is null)),
+('00000000-0000-4000-8000-000000000906', '00000000-0000-4000-8000-000000000010', 'expense', '카페', 'Coffee', 0, false, (select id from public.categories where household_id = '00000000-0000-4000-8000-000000000010' and type = 'expense' and name = '여가/문화' and parent_id is null)),
+('00000000-0000-4000-8000-000000000907', '00000000-0000-4000-8000-000000000010', 'income', '본업', 'BriefcaseBusiness', 0, false, (select id from public.categories where household_id = '00000000-0000-4000-8000-000000000010' and type = 'income' and name = '급여' and parent_id is null)),
+('00000000-0000-4000-8000-000000000908', '00000000-0000-4000-8000-000000000010', 'income', '프리랜스', 'Laptop', 0, false, (select id from public.categories where household_id = '00000000-0000-4000-8000-000000000010' and type = 'income' and name = '부수입' and parent_id is null));
+
 -- ============================================================================
 -- 환율 초기 데이터
 -- ============================================================================
@@ -189,14 +201,14 @@ INSERT INTO public.ledger_entries (
   id, household_id, owner_id, amount, title, type, is_shared, memo, transacted_at, 
   from_payment_method_id, to_account_id, from_account_id, category_id, to_payment_method_id
 ) VALUES
-('00000000-0000-4000-8000-000000000301', '00000000-0000-4000-8000-000000000010', '00000000-0000-4000-8000-000000000001', 18500, '점심 식사', 'expense', true, '오늘 공유 지출 상세 확인용', now(), '00000000-0000-4000-8000-000000000201', null, null, (select id from public.categories where household_id = '00000000-0000-4000-8000-000000000010' and type = 'expense' and name = '식비'), null),
+('00000000-0000-4000-8000-000000000301', '00000000-0000-4000-8000-000000000010', '00000000-0000-4000-8000-000000000001', 18500, '점심 식사', 'expense', true, '오늘 공유 지출 상세 확인용', now(), '00000000-0000-4000-8000-000000000201', null, null, '00000000-0000-4000-8000-000000000903', null),
 ('00000000-0000-4000-8000-000000000302', '00000000-0000-4000-8000-000000000010', '00000000-0000-4000-8000-000000000001', 9900, '개인 구독', 'expense', false, '개인 기록 노출 범위 확인용', now() - interval '2 hours', '00000000-0000-4000-8000-000000000201', null, null, (select id from public.categories where household_id = '00000000-0000-4000-8000-000000000010' and type = 'expense' and name = '구독/정기결제'), null),
-('00000000-0000-4000-8000-000000000303', '00000000-0000-4000-8000-000000000010', '00000000-0000-4000-8000-000000000002', 42000, '장보기', 'expense', true, null, now() - interval '1 day', '00000000-0000-4000-8000-000000000203', null, null, (select id from public.categories where household_id = '00000000-0000-4000-8000-000000000010' and type = 'expense' and name = '식비'), null),
-('00000000-0000-4000-8000-000000000304', '00000000-0000-4000-8000-000000000010', '00000000-0000-4000-8000-000000000001', 3200000, '월급', 'income', true, '수입 상세 확인용', now() - interval '3 days', null, '00000000-0000-4000-8000-000000000101', null, (select id from public.categories where household_id = '00000000-0000-4000-8000-000000000010' and type = 'income' and name = '급여'), null),
-('00000000-0000-4000-8000-000000000305', '00000000-0000-4000-8000-000000000010', '00000000-0000-4000-8000-000000000002', 250000, '부수입 정산', 'income', false, '과거 개인 수입', now() - interval '35 days', null, '00000000-0000-4000-8000-000000000103', null, (select id from public.categories where household_id = '00000000-0000-4000-8000-000000000010' and type = 'income' and name = '부수입'), null),
+('00000000-0000-4000-8000-000000000303', '00000000-0000-4000-8000-000000000010', '00000000-0000-4000-8000-000000000002', 42000, '장보기', 'expense', true, null, now() - interval '1 day', '00000000-0000-4000-8000-000000000203', null, null, '00000000-0000-4000-8000-000000000902', null),
+('00000000-0000-4000-8000-000000000304', '00000000-0000-4000-8000-000000000010', '00000000-0000-4000-8000-000000000001', 3200000, '월급', 'income', true, '수입 상세 확인용', now() - interval '3 days', null, '00000000-0000-4000-8000-000000000101', null, '00000000-0000-4000-8000-000000000907', null),
+('00000000-0000-4000-8000-000000000305', '00000000-0000-4000-8000-000000000010', '00000000-0000-4000-8000-000000000002', 250000, '부수입 정산', 'income', false, '과거 개인 수입', now() - interval '35 days', null, '00000000-0000-4000-8000-000000000103', null, '00000000-0000-4000-8000-000000000908', null),
 ('00000000-0000-4000-8000-000000000306', '00000000-0000-4000-8000-000000000010', '00000000-0000-4000-8000-000000000001', 500000, '투자금 이체', 'transfer', true, '계좌 간 이체 검증', now() - interval '5 days', null, '00000000-0000-4000-8000-000000000102', '00000000-0000-4000-8000-000000000101', null, null),
 ('00000000-0000-4000-8000-000000000307', '00000000-0000-4000-8000-000000000010', '00000000-0000-4000-8000-000000000001', 50000, '현금 인출', 'transfer', true, null, now() - interval '6 days', null, null, '00000000-0000-4000-8000-000000000101', null, '00000000-0000-4000-8000-000000000202'),
-('00000000-0000-4000-8000-000000000308', '00000000-0000-4000-8000-000000000010', '00000000-0000-4000-8000-000000000002', 15800, '카페', 'expense', true, '일간조회 과거 날짜 상세 진입 확인용', now() - interval '14 days', '00000000-0000-4000-8000-000000000203', null, null, (select id from public.categories where household_id = '00000000-0000-4000-8000-000000000010' and type = 'expense' and name = '여가/문화'), null);
+('00000000-0000-4000-8000-000000000308', '00000000-0000-4000-8000-000000000010', '00000000-0000-4000-8000-000000000002', 15800, '카페', 'expense', true, '일간조회 과거 날짜 상세 진입 확인용', now() - interval '14 days', '00000000-0000-4000-8000-000000000203', null, null, '00000000-0000-4000-8000-000000000906', null);
 
 -- Stock Transactions
 INSERT INTO public.transactions (

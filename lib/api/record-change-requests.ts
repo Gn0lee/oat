@@ -45,6 +45,31 @@ interface LedgerEntryTargetRow {
   profiles: { name: string | null } | null;
 }
 
+async function getCategoryDisplay(
+  supabase: SupabaseClient<Database>,
+  categoryId: string | null,
+): Promise<{ name: string | null; icon: string | null }> {
+  if (!categoryId) return { name: null, icon: null };
+  const { data: category } = await supabase
+    .from("categories")
+    .select("id, name, icon, parent_id")
+    .eq("id", categoryId)
+    .maybeSingle();
+  if (!category) return { name: null, icon: null };
+  if (!category.parent_id) {
+    return { name: category.name, icon: category.icon };
+  }
+  const { data: parent } = await supabase
+    .from("categories")
+    .select("name, icon")
+    .eq("id", category.parent_id)
+    .maybeSingle();
+  return {
+    name: parent?.name ? `${parent.name} > ${category.name}` : category.name,
+    icon: category.icon ?? parent?.icon ?? null,
+  };
+}
+
 interface StockTransactionTargetRow {
   id: string;
   household_id: string;
@@ -170,6 +195,8 @@ export async function validateRecordChangeRequestTarget(
       );
     }
 
+    const category = await getCategoryDisplay(supabase, row.category_id);
+
     return {
       householdId: row.household_id,
       targetOwnerId: row.owner_id,
@@ -180,7 +207,7 @@ export async function validateRecordChangeRequestTarget(
         title: row.title,
         amount: Number(row.amount),
         type: row.type,
-        categoryName: row.categories?.name ?? null,
+        categoryName: category.name ?? row.categories?.name ?? null,
         isShared: row.is_shared,
       },
     };

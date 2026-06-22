@@ -68,6 +68,15 @@ describe("LedgerEntryRow", () => {
     expect(screen.getByText("현대카드")).toBeInTheDocument();
   });
 
+  it("child category label을 API가 제공한 Parent > Child 그대로 렌더링한다", () => {
+    renderRow({
+      ...baseEntry,
+      categoryName: "식비 > 외식",
+    });
+
+    expect(screen.getByText("식비 > 외식")).toBeInTheDocument();
+  });
+
   it("이체 기록에는 카테고리 기본 아이콘 대신 이체 아이콘을 보여준다", () => {
     renderRow({
       ...baseEntry,

@@ -15,26 +15,38 @@ export const createCategorySchema = z.object({
     .max(50, "아이콘명은 50자 이내여야 합니다.")
     .nullable()
     .optional(),
-});
-
-export type CreateCategoryInput = z.infer<typeof createCategorySchema>;
-
-export const updateCategorySchema = z.object({
-  name: z
+  parentId: z
     .string()
-    .min(1, "카테고리명을 입력해주세요.")
-    .max(20, "카테고리명은 20자 이내여야 합니다.")
-    .optional(),
-  icon: z
-    .string()
-    .max(50, "아이콘명은 50자 이내여야 합니다.")
+    .uuid("유효하지 않은 상위 카테고리 ID입니다.")
     .nullable()
     .optional(),
 });
 
+export type CreateCategoryInput = z.infer<typeof createCategorySchema>;
+
+export const updateCategorySchema = z
+  .object({
+    name: z
+      .string()
+      .min(1, "카테고리명을 입력해주세요.")
+      .max(20, "카테고리명은 20자 이내여야 합니다.")
+      .optional(),
+    icon: z
+      .string()
+      .max(50, "아이콘명은 50자 이내여야 합니다.")
+      .nullable()
+      .optional(),
+  })
+  .strict();
+
 export type UpdateCategoryInput = z.infer<typeof updateCategorySchema>;
 
 export const reorderCategoriesSchema = z.object({
+  parentId: z
+    .string()
+    .uuid("유효하지 않은 상위 카테고리 ID입니다.")
+    .nullable()
+    .optional(),
   orders: z
     .array(
       z.object({

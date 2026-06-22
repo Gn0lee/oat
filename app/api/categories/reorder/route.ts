@@ -9,7 +9,7 @@ import { reorderCategoriesSchema } from "@/schemas/category";
  * PATCH /api/categories/reorder
  * 카테고리 순서 변경 (display_order 배치 업데이트)
  *
- * Body: { orders: [{ id: string, displayOrder: number }] }
+ * Body: { parentId?: string | null, orders: [{ id: string, displayOrder: number }] }
  */
 export async function PATCH(request: Request) {
   try {
@@ -53,6 +53,7 @@ export async function PATCH(request: Request) {
         id: o.id,
         displayOrder: o.displayOrder,
       })),
+      result.data.parentId ?? null,
     );
 
     return NextResponse.json({ success: true });

@@ -119,7 +119,9 @@ export const queries = createQueryKeyStore({
 
   categories: {
     all: null,
-    list: (type?: "expense" | "income") => ({ queryKey: [type] }),
+    list: (type?: "expense" | "income", parentId?: string) => ({
+      queryKey: [type, parentId],
+    }),
   },
 
   ledgerEntries: {
@@ -131,6 +133,9 @@ export const queries = createQueryKeyStore({
       date?: string;
       scope?: "shared" | "personal";
       tagIds?: string[];
+      categoryId?: string | null;
+      childCategoryId?: string | null;
+      categoryBreakdown?: string;
     }) => ({
       queryKey: [params],
     }),
@@ -188,6 +193,8 @@ export const queries = createQueryKeyStore({
       type?: string;
       scope?: string;
       categoryId?: string | null;
+      childCategoryId?: string | null;
+      categoryBreakdown?: string;
       paymentMethodId?: string | null;
       limit?: number;
     }) => ({ queryKey: [params] }),
