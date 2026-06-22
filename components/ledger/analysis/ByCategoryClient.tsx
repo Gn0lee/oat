@@ -1,8 +1,8 @@
 "use client";
 
 import { startOfMonth } from "date-fns";
-import { AnimatePresence, motion } from "framer-motion";
-import { Check, ChevronDown, Search } from "lucide-react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { Check, ChevronDown, ChevronRight, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Bar, BarChart, Cell, Pie, PieChart, XAxis, YAxis } from "recharts";
 import { CategoryIcon } from "@/components/ledger/CategoryIcon";
@@ -47,6 +47,7 @@ interface ByCategoryClientProps {
 }
 
 export function ByCategoryClient({ scope }: ByCategoryClientProps) {
+  const shouldReduceMotion = useReducedMotion();
   const [currentMonth, setCurrentMonth] = useState<Date>(() =>
     startOfMonth(getKstNow()),
   );
@@ -54,11 +55,15 @@ export function ByCategoryClient({ scope }: ByCategoryClientProps) {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
+  const [expandedCategoryId, setExpandedCategoryId] = useState<string | null>(
+    null,
+  );
   const [detail, setDetail] = useState<{
     title: string;
     categoryId: string;
     childCategoryId?: string;
     categoryBreakdown?: "direct";
+    expectedCount: number;
   } | null>(null);
 
   const year = currentMonth.getFullYear();
@@ -397,91 +402,172 @@ export function ByCategoryClient({ scope }: ByCategoryClientProps) {
             상세 내역
           </h3>
           <ul className="space-y-3">
-            {data.items.map((item) => (
-              <li key={item.categoryId ?? "null"} className="space-y-2">
-                <button
-                  type="button"
-                  onClick={() =>
-                    setDetail({
-                      title: `${item.categoryName} 기록`,
-                      categoryId: item.categoryId ?? "__none__",
-                    })
-                  }
-                  className="flex w-full items-center gap-3 rounded-xl text-left transition-colors hover:bg-gray-50"
-                >
-                  <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
-                    <CategoryIcon
-                      iconName={item.categoryIcon}
-                      className="w-4 h-4 text-gray-600"
-                    />
-                  </div>
-                  <div className="flex-1 min-w-0 py-1">
-                    <div className="flex justify-between items-center text-sm mb-1">
-                      <span className="text-gray-700 truncate">
+            {data.items.map((item) => {
+              const categoryId = item.categoryId ?? "__none__";
+              const children = item.children ?? [];
+              const hasChildren = children.length > 0;
+              const isExpanded = expandedCategoryId === categoryId;
+              const breakdownId = `category-breakdown-${categoryId}`;
+              const parentPercentage = (amount: number) =>
+                item.amount > 0
+                  ? ((amount / item.amount) * 100).toFixed(1)
+                  : "0.0";
+
+              return (
+                <li key={item.categoryId ?? "null"} className="space-y-2">
+                  <button
+                    type="button"
+                    aria-expanded={hasChildren ? isExpanded : undefined}
+                    aria-controls={hasChildren ? breakdownId : undefined}
+                    onClick={() => {
+                      if (hasChildren) {
+                        setExpandedCategoryId((current) =>
+                          current === categoryId ? null : categoryId,
+                        );
+                        return;
+                      }
+                      setDetail({
+                        title: `${item.categoryName} 기록`,
+                        categoryId,
+                        expectedCount: item.entryCount,
+                      });
+                    }}
+                    className="flex w-full items-center gap-3 rounded-lg py-1 text-left transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
+                      <CategoryIcon
+                        iconName={item.categoryIcon}
+                        className="w-4 h-4 text-gray-600"
+                      />
+                    </div>
+                    <div className="flex min-w-0 flex-1 items-center justify-between py-1">
+                      <span className="truncate text-sm text-gray-700">
                         {item.categoryName}
                       </span>
-                      <span className="font-medium text-gray-900 shrink-0 ml-2">
-                        {formatCurrency(item.amount)}
+                      <span className="ml-2 flex shrink-0 items-center gap-1.5">
+                        <span className="text-right">
+                          <span className="block text-sm font-medium text-gray-900">
+                            {formatCurrency(item.amount)}
+                          </span>
+                          <span className="block text-xs text-gray-400">
+                            {item.entryCount}건
+                          </span>
+                        </span>
+                        {hasChildren && (
+                          <ChevronDown
+                            className={`size-4 text-gray-400 transition-transform ${
+                              isExpanded ? "rotate-180" : ""
+                            }`}
+                            aria-hidden="true"
+                          />
+                        )}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-primary/60 rounded-full"
-                          style={{
-                            width: `${Math.min(item.percentage, 100)}%`,
-                          }}
-                        />
-                      </div>
-                      <span className="text-xs text-gray-400 shrink-0">
-                        {item.entryCount}건
-                      </span>
-                    </div>
-                  </div>
-                </button>
-                {item.categoryId && (
-                  <div className="ml-11 flex flex-wrap gap-2">
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={() =>
-                        setDetail({
-                          title: `${item.categoryName} 직접 기록`,
-                          categoryId: item.categoryId ?? "__none__",
-                          categoryBreakdown: "direct",
-                        })
-                      }
-                    >
-                      직접 {item.directEntryCount ?? 0}건
-                    </Button>
-                    {(item.children ?? []).map((child) => (
-                      <Button
-                        key={child.categoryId}
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        onClick={() =>
-                          setDetail({
-                            title: `${item.categoryName} > ${child.categoryName} 기록`,
-                            categoryId: item.categoryId ?? "__none__",
-                            childCategoryId: child.categoryId,
-                          })
+                  </button>
+
+                  <AnimatePresence initial={false}>
+                    {hasChildren && isExpanded && (
+                      <motion.div
+                        id={breakdownId}
+                        initial={
+                          shouldReduceMotion ? false : { height: 0, opacity: 0 }
                         }
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: shouldReduceMotion ? 0 : 0.2 }}
+                        className="ml-11 overflow-hidden border-l border-gray-200 pl-4"
                       >
-                        {child.categoryName} {child.entryCount}건
-                      </Button>
-                    ))}
-                  </div>
-                )}
-              </li>
-            ))}
+                        <div className="space-y-1">
+                          {(item.directEntryCount ?? 0) > 0 && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setDetail({
+                                  title: `${item.categoryName} 직접 기록`,
+                                  categoryId,
+                                  categoryBreakdown: "direct",
+                                  expectedCount: item.directEntryCount ?? 0,
+                                })
+                              }
+                              className="flex w-full items-center justify-between gap-3 rounded-md px-2 py-2 text-left hover:bg-gray-50"
+                            >
+                              <span className="min-w-0">
+                                <span className="block truncate text-sm text-gray-700">
+                                  {item.categoryName}로 기록
+                                </span>
+                                <span className="block text-xs text-gray-400">
+                                  {item.categoryName}의{" "}
+                                  {parentPercentage(item.directAmount ?? 0)}% ·{" "}
+                                  {item.directEntryCount}건
+                                </span>
+                              </span>
+                              <span className="shrink-0 text-sm font-medium text-gray-900">
+                                {formatCurrency(item.directAmount ?? 0)}
+                              </span>
+                            </button>
+                          )}
+
+                          {children.map((child) => (
+                            <button
+                              key={child.categoryId}
+                              type="button"
+                              onClick={() =>
+                                setDetail({
+                                  title: `${item.categoryName} > ${child.categoryName} 기록`,
+                                  categoryId,
+                                  childCategoryId: child.categoryId,
+                                  expectedCount: child.entryCount,
+                                })
+                              }
+                              className="flex w-full items-center justify-between gap-3 rounded-md px-2 py-2 text-left hover:bg-gray-50"
+                            >
+                              <span className="min-w-0">
+                                <span className="block truncate text-sm text-gray-700">
+                                  {child.categoryName}
+                                </span>
+                                <span className="block text-xs text-gray-400">
+                                  {item.categoryName}의{" "}
+                                  {parentPercentage(child.amount)}% ·{" "}
+                                  {child.entryCount}건
+                                </span>
+                              </span>
+                              <span className="shrink-0 text-sm font-medium text-gray-900">
+                                {formatCurrency(child.amount)}
+                              </span>
+                            </button>
+                          ))}
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setDetail({
+                                title: `${item.categoryName} 기록`,
+                                categoryId,
+                                expectedCount: item.entryCount,
+                              })
+                            }
+                            className="mt-1 flex w-full items-center justify-between border-t border-gray-100 px-2 py-2 text-xs font-medium text-gray-600 hover:text-gray-900"
+                          >
+                            전체 {item.entryCount}건 보기
+                            <ChevronRight
+                              className="size-4"
+                              aria-hidden="true"
+                            />
+                          </button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </li>
+              );
+            })}
           </ul>
         </div>
       )}
       <LedgerStatsDetailDrawer
         open={!!detail}
         title={detail?.title ?? ""}
+        expectedCount={detail?.expectedCount}
         params={
           detail
             ? {

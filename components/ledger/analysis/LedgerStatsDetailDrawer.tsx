@@ -19,6 +19,7 @@ interface LedgerStatsDetailDrawerProps {
   open: boolean;
   title: string;
   params: LedgerStatsDetailParams | null;
+  expectedCount?: number;
   onOpenChange: (open: boolean) => void;
 }
 
@@ -26,11 +27,13 @@ export function LedgerStatsDetailDrawer({
   open,
   title,
   params,
+  expectedCount,
   onOpenChange,
 }: LedgerStatsDetailDrawerProps) {
   const { data, isLoading } = useLedgerStatsDetail(open ? params : null);
   const items = data?.items ?? [];
   const hasMore = (data?.totalCount ?? 0) > items.length;
+  const skeletonCount = Math.min(Math.max(expectedCount ?? 3, 1), 5);
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
@@ -45,7 +48,7 @@ export function LedgerStatsDetailDrawer({
         <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-2">
           {isLoading ? (
             <div className="space-y-3">
-              {[1, 2, 3].map((item) => (
+              {[1, 2, 3, 4, 5].slice(0, skeletonCount).map((item) => (
                 <Skeleton key={item} className="h-16 rounded-xl" />
               ))}
             </div>
