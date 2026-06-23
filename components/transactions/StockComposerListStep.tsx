@@ -139,66 +139,80 @@ export function StockComposerListStep({
               const currency = item.stock?.market === "US" ? "USD" : "KRW";
               const hasError = !!form.formState.errors.items?.[index];
 
+              const typeLabel = watchType === "buy" ? "매수" : "매도";
+              const typeColor =
+                watchType === "buy" ? "text-blue-600" : "text-red-600";
+              const detailText = `${item.quantity || 0}주 x ${formatCurrency(Number(item.price) || 0, currency)}`;
+
               return (
                 <div
                   key={field.id}
                   className={cn(
-                    "flex items-center gap-3 p-4 transition-colors",
+                    "relative flex flex-col gap-1.5 p-4 transition-colors",
                     hasError ? "bg-red-50/60" : "bg-white hover:bg-gray-50/70",
                   )}
                 >
+                  {/* The main click target for editing */}
                   <button
                     type="button"
-                    className="min-w-0 flex-1 flex items-center justify-between gap-3 text-left"
+                    className="absolute inset-0 h-full w-full cursor-pointer text-left focus:outline-none"
                     onClick={() => onEditItem(index)}
-                  >
+                  />
+
+                  {/* Top Row: Type on top-left, delete button on top-right */}
+                  <div className="relative flex items-center justify-between z-10 pointer-events-none">
+                    <span className={`text-xs font-semibold ${typeColor}`}>
+                      {typeLabel}
+                    </span>
+
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        remove(index);
+                      }}
+                      className="flex size-11 shrink-0 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500 pointer-events-auto"
+                      aria-label="종목 삭제"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+
+                  {/* Title Row */}
+                  <div className="relative z-10 pointer-events-none min-w-0">
+                    <span className="line-clamp-2 min-w-0 break-words text-sm font-semibold text-gray-900">
+                      {label}
+                    </span>
+                  </div>
+
+                  {/* Detail Row: quantity x unit price */}
+                  <div className="relative z-10 pointer-events-none text-xs text-gray-500">
+                    {detailText}
+                  </div>
+
+                  {/* Bottom Row: error on bottom-left, non-compact subtotal on bottom-right */}
+                  <div className="relative z-10 pointer-events-none mt-1 flex flex-wrap items-end justify-between gap-x-3 gap-y-1 text-xs text-gray-500">
                     <div className="min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="truncate text-sm font-medium text-gray-900">
-                          {label}
-                        </span>
-                      </div>
-                      <div className="text-xs text-gray-500 flex gap-2">
-                        <span>수량 {item.quantity || 0}</span>
-                        <span>
-                          단가{" "}
-                          {formatCurrency(Number(item.price) || 0, currency)}
-                        </span>
-                      </div>
                       {hasError && (
-                        <div className="text-[11px] text-red-500 mt-1 font-medium">
+                        <span className="text-[11px] text-red-500 font-medium">
                           종목, 수량, 단가를 확인해주세요.
-                        </div>
+                        </span>
                       )}
                     </div>
-                    <div className="text-right flex items-center gap-3">
-                      <AmountText
-                        amount={subtotal}
-                        currency={currency}
-                        compact
-                        title={
-                          subtotal > 0
-                            ? formatCurrency(subtotal, currency)
-                            : "0원"
-                        }
-                        tone="neutral"
-                        className="text-sm font-bold"
-                      />
-                    </div>
-                  </button>
 
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      remove(index);
-                    }}
-                    className="flex size-9 shrink-0 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500"
-                    aria-label="종목 삭제"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
+                    <AmountText
+                      amount={subtotal}
+                      currency={currency}
+                      title={
+                        subtotal > 0
+                          ? formatCurrency(subtotal, currency)
+                          : "0원"
+                      }
+                      tone="neutral"
+                      className="text-sm font-bold whitespace-nowrap text-right ml-auto"
+                    />
+                  </div>
                 </div>
               );
             })}

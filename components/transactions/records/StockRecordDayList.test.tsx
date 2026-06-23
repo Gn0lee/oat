@@ -30,22 +30,22 @@ describe("StockRecordDayList", () => {
 
     expect(screen.getByText("2026년 5월 31일")).toBeInTheDocument();
     expect(screen.getByText("매수")).toBeInTheDocument();
-    expect(screen.getByText("12주")).toBeInTheDocument();
+    expect(screen.getByText(/12주/)).toBeInTheDocument();
 
     const amountText = screen.getByText("414,000원");
     expect(amountText).toBeInTheDocument();
     expect(amountText.closest("[title]")).toHaveAttribute("title", "414,000원");
 
-    // Verify stable two-column layout classes
-    const gridContainer = amountText.closest(".grid");
-    expect(gridContainer).toBeInTheDocument();
-    expect(gridContainer).toHaveClass("grid-cols-[minmax(0,1fr)_auto]");
+    // Verify vertical layout is used instead of two-column grid
+    const containerLink = amountText.closest("a");
+    expect(containerLink).toBeInTheDocument();
+    expect(containerLink).not.toHaveClass("grid-cols-[minmax(0,1fr)_auto]");
     expect(
       screen.getAllByTestId("stock-transaction-row-chevron").length,
     ).toBeGreaterThan(0);
     expect(amountText).toHaveClass("whitespace-nowrap");
 
-    expect(screen.getByText("삼성증권")).toBeInTheDocument();
+    expect(screen.getByText(/삼성증권/)).toBeInTheDocument();
     expect(
       screen.queryByText("목록에서는 보이면 안 되는 메모"),
     ).not.toBeInTheDocument();

@@ -48,16 +48,30 @@ const paymentMethod: PaymentMethodWithDetails = {
 
 describe("PaymentMethodList", () => {
   it("renders payment methods as grouped rows with details", () => {
-    mocks.paymentMethods = [paymentMethod];
+    mocks.paymentMethods = [
+      {
+        ...paymentMethod,
+        name: "생활비와 공과금용 공동 주거래 카드 아주아주아주긴카드이름",
+        type: "prepaid",
+        balance: 1234567890,
+      },
+    ];
 
     const { container } = render(<PaymentMethodList />);
 
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
-    expect(screen.getByText("현대카드")).toBeInTheDocument();
-    expect(screen.getByText("신용카드")).toBeInTheDocument();
-    expect(screen.getByText("Hyundai")).toBeInTheDocument();
-    expect(screen.getByText("1234")).toBeInTheDocument();
-    expect(screen.getByText("생활비 통장")).toBeInTheDocument();
+
+    const nameElement = screen.getByText(
+      "생활비와 공과금용 공동 주거래 카드 아주아주아주긴카드이름",
+    );
+    expect(nameElement).toBeInTheDocument();
+    expect(nameElement).toHaveClass("line-clamp-2");
+
+    expect(screen.getByText("선불페이")).toBeInTheDocument();
+    expect(screen.getByText(/Hyundai/)).toBeInTheDocument();
+    expect(screen.getByText(/1234/)).toBeInTheDocument();
+    expect(screen.getByText(/생활비 통장/)).toBeInTheDocument();
+    expect(screen.getByText("1,234,567,890원")).toBeInTheDocument();
 
     // Assert no credit card icon is rendered
     expect(

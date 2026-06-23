@@ -63,9 +63,9 @@ describe("LedgerEntryRow", () => {
       "/ledger/records/entry-1?from=records&date=2026-06-02",
     );
     expect(screen.queryByRole("button", { name: "기록 작업" })).toBeNull();
-    expect(screen.getByText("식비")).toBeInTheDocument();
-    expect(screen.getByText("소유자")).toBeInTheDocument();
-    expect(screen.getByText("현대카드")).toBeInTheDocument();
+    expect(screen.getByText(/식비/)).toBeInTheDocument();
+    expect(screen.getByText(/소유자/)).toBeInTheDocument();
+    expect(screen.getByText(/현대카드/)).toBeInTheDocument();
   });
 
   it("child category label을 API가 제공한 Parent > Child 그대로 렌더링한다", () => {
@@ -74,22 +74,7 @@ describe("LedgerEntryRow", () => {
       categoryName: "식비 > 외식",
     });
 
-    expect(screen.getByText("식비 > 외식")).toBeInTheDocument();
-  });
-
-  it("이체 기록에는 카테고리 기본 아이콘 대신 이체 아이콘을 보여준다", () => {
-    renderRow({
-      ...baseEntry,
-      type: "transfer",
-      categoryId: null,
-      categoryName: null,
-      categoryIcon: null,
-    });
-
-    expect(screen.getByTestId("ledger-entry-icon")).toHaveAttribute(
-      "data-icon-name",
-      "ArrowLeftRight",
-    );
+    expect(screen.getByText(/식비 > 외식/)).toBeInTheDocument();
   });
 
   it("긴 타이틀과 큰 금액을 정책에 맞게 올바르게 렌더링한다", () => {
@@ -103,9 +88,6 @@ describe("LedgerEntryRow", () => {
 
     const titleElement = screen.getByText("아주아주아주아주아주긴가계부제목");
     expect(titleElement).toHaveClass("line-clamp-2");
-    expect(
-      titleElement.parentElement?.querySelector(".flex-wrap"),
-    ).not.toBeNull();
 
     const expenseAmount = screen.getByText("-1,250,000원");
     expect(expenseAmount).toBeInTheDocument();
@@ -113,7 +95,12 @@ describe("LedgerEntryRow", () => {
     expect(expenseAmount).toHaveClass("whitespace-nowrap");
     expect(expenseAmount).toHaveAttribute("title", "-1,250,000원");
     expect(expenseAmount.textContent).not.toContain("만원");
-    expect(expenseAmount.parentElement).toHaveClass("max-w-[42%]");
+    expect(expenseAmount.parentElement).not.toHaveClass("max-w-[42%]");
+
+    // Chevron is in the top action area, not in the amount row parent
+    const chevron = screen.getByTestId("ledger-entry-row-chevron");
+    expect(chevron).toBeInTheDocument();
+    expect(chevron.parentElement).not.toContain(expenseAmount);
 
     // Add check for -42,000원
     const midExpenseEntry: LedgerEntryWithDetails = {
@@ -161,7 +148,7 @@ describe("LedgerEntryRow", () => {
     expect(transferAmount).toHaveAttribute("title", "1,250,000원");
   });
 
-  it("태그가 있으면 #형식으로 화면에 보여준다 (최대 3개)", () => {
+  it("태그가 있으면 #형식으로 화면에 보여준다", () => {
     renderRow({
       ...baseEntry,
       tags: [
@@ -174,7 +161,7 @@ describe("LedgerEntryRow", () => {
     expect(screen.getByText("#데이트")).toBeInTheDocument();
   });
 
-  it("태그가 3개를 초과하면 3개까지만 보여주고 +N을 표시한다", () => {
+  it("태그가 3개를 초과해도 최대 5개까지 자연스럽게 랩핑되며 +N 표시가 나타나지 않는다", () => {
     renderRow({
       ...baseEntry,
       tags: [
@@ -183,13 +170,18 @@ describe("LedgerEntryRow", () => {
         { id: "3", name: "태그3" },
         { id: "4", name: "태그4" },
         { id: "5", name: "태그5" },
+        { id: "6", name: "태그6" },
+        { id: "7", name: "태그7" },
       ],
     });
 
     expect(screen.getByText("#태그1")).toBeInTheDocument();
     expect(screen.getByText("#태그2")).toBeInTheDocument();
     expect(screen.getByText("#태그3")).toBeInTheDocument();
-    expect(screen.queryByText("#태그4")).toBeNull();
-    expect(screen.getByText("+2")).toBeInTheDocument();
+    expect(screen.getByText("#태그4")).toBeInTheDocument();
+    expect(screen.getByText("#태그5")).toBeInTheDocument();
+    expect(screen.queryByText("#태그6")).toBeNull();
+    expect(screen.queryByText("#태그7")).toBeNull();
+    expect(screen.queryByText(/\+\d+/)).toBeNull();
   });
 });

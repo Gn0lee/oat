@@ -59,16 +59,29 @@ const bankAccount: AccountWithOwner = {
 
 describe("AccountList", () => {
   it("renders grouped account rows with bank/investment grouping", () => {
-    mocks.accounts = [account];
+    mocks.accounts = [
+      {
+        ...account,
+        name: "생활비와 공과금용 공동 주거래 계좌 아주아주아주긴계좌이름",
+        balance: 1234567890,
+      },
+    ];
 
     const { container } = render(<AccountList />);
 
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
     expect(screen.getByText("투자 계좌")).toBeInTheDocument();
-    expect(screen.getByText("NH ISA")).toBeInTheDocument();
-    expect(screen.getByText("NH투자증권")).toBeInTheDocument();
+
+    const nameElement = screen.getByText(
+      "생활비와 공과금용 공동 주거래 계좌 아주아주아주긴계좌이름",
+    );
+    expect(nameElement).toBeInTheDocument();
+    expect(nameElement).toHaveClass("line-clamp-2");
+
+    expect(screen.getByText("1,234,567,890원")).toBeInTheDocument();
+    expect(screen.getByText(/NH투자증권/)).toBeInTheDocument();
     expect(screen.getByText("ISA")).toBeInTheDocument();
-    expect(screen.getByText("끝 1234")).toBeInTheDocument();
+    expect(screen.getByText(/끝 1234/)).toBeInTheDocument();
 
     // Assert no credit card icon is rendered
     expect(
