@@ -71,6 +71,9 @@ describe("ComposerListStep", () => {
       </FormWrapper>,
     );
 
+    // Assert settled scope label "공용" appears
+    expect(screen.getAllByText("공용").length).toBeGreaterThanOrEqual(2);
+
     // Assert all five tags are present
     expect(screen.getByText("#급여")).toBeInTheDocument();
     expect(screen.getByText("#외주")).toBeInTheDocument();

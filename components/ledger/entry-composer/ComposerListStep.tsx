@@ -271,7 +271,7 @@ export function ComposerListStep({
                       <span
                         className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${item.isShared ? "bg-indigo-50 text-indigo-600" : "bg-gray-100 text-gray-600"}`}
                       >
-                        {item.isShared ? "공유" : "개인"}
+                        {item.isShared ? "공용" : "개인"}
                       </span>
                     </div>
 

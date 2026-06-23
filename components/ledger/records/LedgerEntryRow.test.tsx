@@ -170,6 +170,8 @@ describe("LedgerEntryRow", () => {
         { id: "3", name: "태그3" },
         { id: "4", name: "태그4" },
         { id: "5", name: "태그5" },
+        { id: "6", name: "태그6" },
+        { id: "7", name: "태그7" },
       ],
     });
 
@@ -178,6 +180,8 @@ describe("LedgerEntryRow", () => {
     expect(screen.getByText("#태그3")).toBeInTheDocument();
     expect(screen.getByText("#태그4")).toBeInTheDocument();
     expect(screen.getByText("#태그5")).toBeInTheDocument();
-    expect(screen.queryByText("+2")).toBeNull();
+    expect(screen.queryByText("#태그6")).toBeNull();
+    expect(screen.queryByText("#태그7")).toBeNull();
+    expect(screen.queryByText(/\+\d+/)).toBeNull();
   });
 });
