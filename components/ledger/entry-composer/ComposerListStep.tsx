@@ -251,65 +251,96 @@ export function ComposerListStep({
                 <div
                   key={field.id}
                   className={cn(
-                    "flex items-center gap-3 p-4 transition-colors",
+                    "relative flex flex-col gap-1.5 p-4 transition-colors",
                     hasError ? "bg-red-50/60" : "bg-white hover:bg-gray-50/70",
                   )}
                 >
+                  {/* The main click target for editing */}
                   <button
                     type="button"
-                    className="min-w-0 flex-1 flex items-center justify-between gap-3 text-left"
+                    className="absolute inset-0 h-full w-full cursor-pointer text-left focus:outline-none"
                     onClick={() => onEditItem(index)}
-                  >
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className={`text-xs font-semibold ${typeColor}`}>
-                          {typeLabel}
-                        </span>
+                  />
+
+                  {/* Top Row: Type & share scope on top-left, delete button on top-right */}
+                  <div className="relative flex items-center justify-between z-10 pointer-events-none">
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs font-semibold ${typeColor}`}>
+                        {typeLabel}
+                      </span>
+                      <span
+                        className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${item.isShared ? "bg-indigo-50 text-indigo-600" : "bg-gray-100 text-gray-600"}`}
+                      >
+                        {item.isShared ? "공유" : "개인"}
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        remove(index);
+                      }}
+                      className="flex size-11 shrink-0 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500 pointer-events-auto"
+                      aria-label="내역 삭제"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+
+                  {/* Title Row */}
+                  <div className="relative z-10 pointer-events-none min-w-0">
+                    <span className="line-clamp-2 min-w-0 break-words text-sm font-semibold text-gray-900">
+                      {item.title || "내용을 입력해주세요"}
+                    </span>
+                  </div>
+
+                  {/* Tag Row: show up to 5 tags, wrapping, no +N */}
+                  {item.tags && item.tags.length > 0 && (
+                    <div className="relative z-10 pointer-events-none mt-0.5 flex flex-wrap items-center gap-1">
+                      {item.tags.slice(0, 5).map((tag) => (
                         <span
-                          className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${item.isShared ? "bg-indigo-50 text-indigo-600" : "bg-gray-100 text-gray-600"}`}
+                          key={tag}
+                          className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-gray-50 text-gray-600 border border-gray-100"
                         >
-                          {item.isShared ? "공유" : "개인"}
+                          #{tag}
                         </span>
-                        <span className="text-sm font-medium text-gray-900">
-                          {item.title || "내용을 입력해주세요"}
-                        </span>
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {getCategoryName(item.type, item.categoryId)}
-                      </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Bottom Row: category context on bottom-left, signed full amount on bottom-right */}
+                  <div className="relative z-10 pointer-events-none mt-1 flex flex-wrap items-end justify-between gap-x-3 gap-y-1 text-xs text-gray-500">
+                    <div className="min-w-0 flex flex-col gap-0.5">
+                      <span>{getCategoryName(item.type, item.categoryId)}</span>
                       {hasError && (
-                        <div className="text-[11px] text-red-500 mt-1 font-medium">
+                        <span className="text-[11px] text-red-500 font-medium">
                           필수 입력 사항이 누락되었습니다.
-                        </div>
+                        </span>
                       )}
                     </div>
-                    <div className="text-right flex items-center gap-3">
-                      <AmountText
-                        amount={Number(item.amount) || 0}
-                        tone={
-                          item.type === "income"
-                            ? "income"
-                            : item.type === "expense"
-                              ? "expense"
-                              : "neutral"
-                        }
-                        className="text-sm font-bold"
-                      />
-                    </div>
-                  </button>
 
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      remove(index);
-                    }}
-                    className="flex size-9 shrink-0 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500"
-                    aria-label="내역 삭제"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
+                    <AmountText
+                      amount={Number(item.amount) || 0}
+                      sign={
+                        item.type === "transfer"
+                          ? ""
+                          : item.type === "income"
+                            ? "+"
+                            : "-"
+                      }
+                      tone={
+                        item.type === "income"
+                          ? "income"
+                          : item.type === "expense"
+                            ? "expense"
+                            : "neutral"
+                      }
+                      title={`${item.type === "transfer" ? "" : item.type === "income" ? "+" : "-"}${formatCurrency(Number(item.amount) || 0)}`}
+                      className="text-sm font-bold whitespace-nowrap text-right ml-auto"
+                    />
+                  </div>
                 </div>
               );
             })}

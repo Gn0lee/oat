@@ -76,8 +76,8 @@ describe("TransactionTable", () => {
     expect(screen.getByText("삼성전자")).toBeInTheDocument();
     expect(screen.getByText("Apple")).toBeInTheDocument();
     expect(screen.getByText("Tesla")).toBeInTheDocument();
-    expect(screen.getByText("10주")).toBeInTheDocument();
-    expect(screen.getByText("2주")).toBeInTheDocument();
+    expect(screen.getByText(/10주/)).toBeInTheDocument();
+    expect(screen.getByText(/2주/)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "메뉴 열기" })).toBeNull();
 
     // Verify KRW formatting and title attribute
@@ -88,10 +88,10 @@ describe("TransactionTable", () => {
       "700,000원",
     );
 
-    // Verify grid layout
-    const gridContainer = samsungPriceText.closest(".grid");
-    expect(gridContainer).toBeInTheDocument();
-    expect(gridContainer).toHaveClass("grid-cols-[minmax(0,1fr)_auto]");
+    // Verify vertical layout is used instead of two-column grid
+    const containerLink = samsungPriceText.closest("a");
+    expect(containerLink).toBeInTheDocument();
+    expect(containerLink).not.toHaveClass("grid-cols-[minmax(0,1fr)_auto]");
     expect(
       screen.getAllByTestId("stock-transaction-row-chevron").length,
     ).toBeGreaterThan(0);

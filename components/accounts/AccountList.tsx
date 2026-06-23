@@ -1,6 +1,6 @@
 "use client";
 
-import { Building2, UserRound } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 import {
   GroupedList,
@@ -8,7 +8,6 @@ import {
   ScreenState,
   SectionHeader,
 } from "@/components/layout/screen";
-import { Badge } from "@/components/ui/badge";
 import { useAccounts } from "@/hooks/use-accounts";
 import { useCurrentUserId } from "@/hooks/use-current-user";
 import type { AccountWithOwner } from "@/lib/api/account";
@@ -49,18 +48,16 @@ interface AccountListProps {
 interface AccountCollectionProps {
   accounts: AccountWithOwner[];
   currentUserId: string | null;
-  category?: "bank" | "investment";
 }
 
 function AccountCollection({
   accounts,
   currentUserId,
-  category,
 }: AccountCollectionProps) {
   return (
     <GroupedList>
       {accounts.map((account) => {
-        const isOwner = currentUserId === account.ownerId;
+        const _isOwner = currentUserId === account.ownerId;
         const accountTypeLabel = account.accountType
           ? (ACCOUNT_TYPE_LABELS[account.accountType] ?? account.accountType)
           : "-";
@@ -68,50 +65,47 @@ function AccountCollection({
           ? "예수금"
           : "잔액";
 
+        const detailSegments: string[] = [];
+        if (account.ownerName) detailSegments.push(account.ownerName);
+        if (account.broker) detailSegments.push(account.broker);
+        if (account.lastFour) detailSegments.push(`끝 ${account.lastFour}`);
+        const detailText = detailSegments.join(" · ");
+
         return (
           <article
             key={account.id}
-            className="flex min-h-[96px] items-center gap-3 px-4 py-3.5 sm:px-5"
+            className="border-b last:border-b-0 transition-colors hover:bg-gray-50 active:bg-gray-100"
           >
             <Link
               href={`/assets/accounts/${account.id}`}
-              className="flex min-w-0 flex-1 items-center gap-3"
+              className="group flex flex-col gap-1 px-4 py-3 sm:px-5"
             >
-              <div className="min-w-0 flex-1">
-                <div className="flex min-w-0 flex-wrap items-center gap-2">
-                  <h4 className="truncate font-semibold text-gray-900">
-                    {account.name}
-                  </h4>
-                  <Badge variant="outline">{accountTypeLabel}</Badge>
-                </div>
-                <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-gray-500 text-sm">
-                  <span className="inline-flex items-center gap-1">
-                    <UserRound className="size-4" />
-                    {account.ownerName}
-                  </span>
-                  <span className="inline-flex items-center gap-1">
-                    <Building2 className="size-4" />
-                    {account.broker || "기관 미입력"}
-                  </span>
-                  {account.lastFour && (
-                    <span className="text-gray-400">끝 {account.lastFour}</span>
-                  )}
-                </div>
-                <p className="mt-2 font-semibold text-gray-900 text-sm sm:hidden">
-                  {balanceLabel}{" "}
-                  {account.balance === null
-                    ? "-"
-                    : formatCurrency(account.balance)}
-                </p>
+              {/* Top Row: accountTypeLabel on left, chevron on right */}
+              <div className="flex items-center justify-between text-xs text-gray-500 font-medium">
+                <span>{accountTypeLabel}</span>
+                <ChevronRight className="h-4 w-4 flex-shrink-0 text-gray-300 transition-colors group-hover:text-gray-500" />
               </div>
 
-              <div className="hidden shrink-0 text-right sm:block">
-                <p className="text-gray-400 text-xs">{balanceLabel}</p>
-                <p className="font-semibold text-gray-900">
+              {/* Title/Name Row */}
+              <div className="mt-0.5">
+                <h4 className="line-clamp-2 min-w-0 break-words font-semibold text-gray-900 text-sm leading-5">
+                  {account.name}
+                </h4>
+              </div>
+
+              {/* Detail Row: text-only */}
+              <div className="mt-1 text-xs text-gray-500 break-words">
+                {detailText}
+              </div>
+
+              {/* Bottom Row: balance label + full balance */}
+              <div className="mt-1 flex items-end justify-between gap-x-3 gap-y-1 text-xs text-gray-500">
+                <span>{balanceLabel}</span>
+                <span className="text-sm font-semibold text-gray-900 whitespace-nowrap text-right ml-auto">
                   {account.balance === null
                     ? "-"
                     : formatCurrency(account.balance)}
-                </p>
+                </span>
               </div>
             </Link>
           </article>
@@ -206,7 +200,6 @@ export function AccountList({ filter, title, action }: AccountListProps) {
             <AccountCollection
               accounts={bankAccounts}
               currentUserId={currentUserId}
-              category="bank"
             />
           </div>
         )}
@@ -219,7 +212,6 @@ export function AccountList({ filter, title, action }: AccountListProps) {
             <AccountCollection
               accounts={investmentAccounts}
               currentUserId={currentUserId}
-              category="investment"
             />
           </div>
         )}

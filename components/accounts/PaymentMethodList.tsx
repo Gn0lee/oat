@@ -1,6 +1,6 @@
 "use client";
 
-import { Link2, UserRound } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 import {
   GroupedList,
@@ -10,7 +10,6 @@ import {
 } from "@/components/layout/screen";
 import { useCurrentUserId } from "@/hooks/use-current-user";
 import { usePaymentMethods } from "@/hooks/use-payment-methods";
-import type { PaymentMethodWithDetails } from "@/lib/api/payment-method";
 import { formatCurrency } from "@/lib/utils/format";
 
 const PAYMENT_METHOD_TYPE_LABELS: Record<string, string> = {
@@ -74,64 +73,64 @@ export function PaymentMethodList({ action }: PaymentMethodListProps) {
       <SectionHeader title="결제수단" action={action} />
       <GroupedList>
         {paymentMethods.map((method) => {
-          const isOwner = currentUserId === method.ownerId;
+          const _isOwner = currentUserId === method.ownerId;
           const hasBalance = AUXILIARY_PAYMENT_METHOD_TYPES.has(method.type);
+          const typeLabel =
+            PAYMENT_METHOD_TYPE_LABELS[method.type] || method.type;
+
+          const detailSegments: string[] = [];
+          if (method.ownerName) detailSegments.push(method.ownerName);
+          if (method.issuer) detailSegments.push(method.issuer);
+          if (method.lastFour) detailSegments.push(`끝 ${method.lastFour}`);
+          if (method.linkedAccountName) {
+            detailSegments.push(method.linkedAccountName);
+          } else {
+            detailSegments.push("연결 계좌 없음");
+          }
+          const detailText = detailSegments.join(" · ");
+
+          const balanceLabel = hasBalance ? "보조잔액" : "자체 잔액 없음";
+          const balanceText = hasBalance
+            ? method.balance === null
+              ? "-"
+              : formatCurrency(method.balance)
+            : null;
+
           return (
             <article
               key={method.id}
-              className="flex min-h-[96px] items-center gap-3 px-4 py-3.5 sm:px-5"
+              className="border-b last:border-b-0 transition-colors hover:bg-gray-50 active:bg-gray-100"
             >
               <Link
                 href={`/ledger/payment-methods/${method.id}`}
-                className="flex min-w-0 flex-1 items-center gap-3"
+                className="group flex flex-col gap-1 px-4 py-3 sm:px-5"
               >
-                <div className="min-w-0 flex-1">
-                  <div className="flex min-w-0 flex-wrap items-center gap-2">
-                    <h4 className="truncate font-semibold text-gray-900">
-                      {method.name}
-                    </h4>
-                    {method.lastFour && (
-                      <span className="text-gray-400 text-xs">
-                        {method.lastFour}
-                      </span>
-                    )}
-                  </div>
-                  <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-gray-500 text-sm">
-                    <span>
-                      {PAYMENT_METHOD_TYPE_LABELS[method.type] || method.type}
-                    </span>
-                    <span className="inline-flex items-center gap-1">
-                      <UserRound className="size-4" />
-                      {method.ownerName}
-                    </span>
-                    <span>{method.issuer || "발급사 미입력"}</span>
-                    <span className="inline-flex items-center gap-1">
-                      <Link2 className="size-4" />
-                      {method.linkedAccountName || "연결 계좌 없음"}
-                    </span>
-                  </div>
-                  <p className="mt-2 font-semibold text-gray-900 text-sm sm:hidden">
-                    {hasBalance
-                      ? `보조잔액 ${
-                          method.balance === null
-                            ? "-"
-                            : formatCurrency(method.balance)
-                        }`
-                      : "자체 잔액 없음"}
-                  </p>
+                {/* Top Row: type label on left, chevron on right */}
+                <div className="flex items-center justify-between text-xs text-gray-500 font-medium">
+                  <span>{typeLabel}</span>
+                  <ChevronRight className="h-4 w-4 flex-shrink-0 text-gray-300 transition-colors group-hover:text-gray-500" />
                 </div>
 
-                <div className="hidden shrink-0 text-right sm:block">
-                  <p className="text-gray-400 text-xs">
-                    {hasBalance ? "보조잔액" : "잔액"}
-                  </p>
-                  <p className="font-semibold text-gray-900">
-                    {hasBalance
-                      ? method.balance === null
-                        ? "-"
-                        : formatCurrency(method.balance)
-                      : "-"}
-                  </p>
+                {/* Title/Name Row */}
+                <div className="mt-0.5">
+                  <h4 className="line-clamp-2 min-w-0 break-words font-semibold text-gray-900 text-sm leading-5">
+                    {method.name}
+                  </h4>
+                </div>
+
+                {/* Detail Row: text-only */}
+                <div className="mt-1 text-xs text-gray-500 break-words">
+                  {detailText}
+                </div>
+
+                {/* Bottom Row: balance info */}
+                <div className="mt-1 flex items-end justify-between gap-x-3 gap-y-1 text-xs text-gray-500">
+                  <span>{balanceLabel}</span>
+                  {balanceText !== null && (
+                    <span className="text-sm font-semibold text-gray-900 whitespace-nowrap text-right ml-auto">
+                      {balanceText}
+                    </span>
+                  )}
                 </div>
               </Link>
             </article>
