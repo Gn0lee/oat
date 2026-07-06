@@ -193,8 +193,8 @@ type LedgerEntryRow = LedgerEntry;
 interface LedgerFinancialSourceOwnershipInput {
   householdId: string;
   ownerId: string;
+  isShared?: boolean;
   accountIds?: Array<string | null | undefined>;
-  householdAccountIds?: Array<string | null | undefined>;
   paymentMethodIds?: Array<string | null | undefined>;
 }
 
@@ -207,22 +207,20 @@ export async function assertLedgerFinancialSourceOwnership(
   input: LedgerFinancialSourceOwnershipInput,
 ): Promise<void> {
   const accountIds = uniqueDefined(input.accountIds ?? []);
-  const householdAccountIds = uniqueDefined(input.householdAccountIds ?? []);
-  const allAccountIds = uniqueDefined([...accountIds, ...householdAccountIds]);
   const paymentMethodIds = uniqueDefined(input.paymentMethodIds ?? []);
 
   const [accountsResult, paymentMethodsResult] = await Promise.all([
-    allAccountIds.length > 0
+    accountIds.length > 0
       ? supabase
           .from("accounts")
-          .select("id, owner_id")
+          .select("id, owner_id, is_household_usable")
           .eq("household_id", input.householdId)
-          .in("id", allAccountIds)
+          .in("id", accountIds)
       : Promise.resolve({ data: [], error: null }),
     paymentMethodIds.length > 0
       ? supabase
           .from("payment_methods")
-          .select("id, owner_id")
+          .select("id, owner_id, is_household_usable")
           .eq("household_id", input.householdId)
           .in("id", paymentMethodIds)
       : Promise.resolve({ data: [], error: null }),
@@ -237,27 +235,34 @@ export async function assertLedgerFinancialSourceOwnership(
   }
 
   const accountMap = new Map(
-    (accountsResult.data ?? []).map((row) => [row.id, row.owner_id]),
+    (accountsResult.data ?? []).map((row) => [row.id, row]),
   );
   const paymentMethodMap = new Map(
-    (paymentMethodsResult.data ?? []).map((row) => [row.id, row.owner_id]),
+    (paymentMethodsResult.data ?? []).map((row) => [row.id, row]),
   );
 
   const hasInvalidAccount = accountIds.some(
-    (id) => accountMap.get(id) !== input.ownerId,
-  );
-  const hasInvalidHouseholdAccount = householdAccountIds.some(
-    (id) => !accountMap.has(id),
+    (id) => {
+      const row = accountMap.get(id);
+      return (
+        !row ||
+        (row.owner_id !== input.ownerId &&
+          !(input.isShared && row.is_household_usable))
+      );
+    },
   );
   const hasInvalidPaymentMethod = paymentMethodIds.some(
-    (id) => paymentMethodMap.get(id) !== input.ownerId,
+    (id) => {
+      const row = paymentMethodMap.get(id);
+      return (
+        !row ||
+        (row.owner_id !== input.ownerId &&
+          !(input.isShared && row.is_household_usable))
+      );
+    },
   );
 
-  if (
-    hasInvalidAccount ||
-    hasInvalidHouseholdAccount ||
-    hasInvalidPaymentMethod
-  ) {
+  if (hasInvalidAccount || hasInvalidPaymentMethod) {
     throw new APIError(
       "LEDGER_FINANCIAL_SOURCE_FORBIDDEN",
       "본인의 계좌 또는 결제수단만 기록에 사용할 수 있습니다.",
@@ -892,7 +897,6 @@ async function applyLedgerBalanceEffects(
   householdId: string,
   entryType: LedgerEntryType,
   effects: LedgerBalanceEffect[],
-  ownerId?: string,
 ): Promise<void> {
   const combinedEffects = combineBalanceEffects(effects);
   const accountIds = combinedEffects
@@ -916,14 +920,6 @@ async function applyLedgerBalanceEffects(
         "LEDGER_INVALID_TRANSFER_TARGET",
         "이체할 계좌를 찾을 수 없습니다.",
         400,
-      );
-    }
-
-    if (ownerId && account.owner_id !== ownerId) {
-      throw new APIError(
-        "LEDGER_FINANCIAL_SOURCE_FORBIDDEN",
-        "본인의 계좌 또는 결제수단만 기록에 사용할 수 있습니다.",
-        403,
       );
     }
 
@@ -1023,18 +1019,11 @@ export async function createLedgerEntryWithBalanceSync(
   supabase: SupabaseClient<Database>,
   params: CreateLedgerEntryParams,
 ): Promise<LedgerEntry> {
-  const ownerScopedAccountIds =
-    params.type === "transfer"
-      ? [params.fromAccountId]
-      : [params.fromAccountId, params.toAccountId];
-  const householdScopedAccountIds =
-    params.type === "transfer" ? [params.toAccountId] : [];
-
   await assertLedgerFinancialSourceOwnership(supabase, {
     householdId: params.householdId,
     ownerId: params.ownerId,
-    accountIds: ownerScopedAccountIds,
-    householdAccountIds: householdScopedAccountIds,
+    isShared: params.isShared ?? true,
+    accountIds: [params.fromAccountId, params.toAccountId],
     paymentMethodIds: [params.fromPaymentMethodId, params.toPaymentMethodId],
   });
 
@@ -1045,7 +1034,6 @@ export async function createLedgerEntryWithBalanceSync(
     params.householdId,
     params.type,
     effects,
-    params.ownerId,
   );
 
   try {
@@ -1066,7 +1054,6 @@ export async function createLedgerEntryWithBalanceSync(
         params.householdId,
         params.type,
         effects.map((effect) => ({ ...effect, delta: -effect.delta })),
-        params.ownerId,
       );
     }
     throw error;
@@ -1263,13 +1250,6 @@ export async function updateLedgerEntryWithBalanceSync(
       ? params.toPaymentMethodId
       : existing.to_payment_method_id;
 
-  await assertLedgerFinancialSourceOwnership(supabase, {
-    householdId: existing.household_id,
-    ownerId,
-    accountIds: [nextFromAccountId, nextToAccountId],
-    paymentMethodIds: [nextFromPaymentMethodId, nextToPaymentMethodId],
-  });
-
   const oldEffects = getLedgerBalanceEffects({
     type: existing.type,
     amount: existing.amount,
@@ -1291,12 +1271,21 @@ export async function updateLedgerEntryWithBalanceSync(
     ...newEffects,
   ];
 
+  if (combineBalanceEffects(balanceEffects).length > 0) {
+    await assertLedgerFinancialSourceOwnership(supabase, {
+      householdId: existing.household_id,
+      ownerId,
+      isShared: existing.is_shared,
+      accountIds: [nextFromAccountId, nextToAccountId],
+      paymentMethodIds: [nextFromPaymentMethodId, nextToPaymentMethodId],
+    });
+  }
+
   await applyLedgerBalanceEffects(
     supabase,
     existing.household_id,
     nextType,
     balanceEffects,
-    ownerId,
   );
 
   try {
@@ -1317,7 +1306,6 @@ export async function updateLedgerEntryWithBalanceSync(
         existing.household_id,
         existing.type,
         balanceEffects.map((effect) => ({ ...effect, delta: -effect.delta })),
-        ownerId,
       );
     }
     throw error;
@@ -1413,7 +1401,6 @@ export async function deleteLedgerEntryWithBalanceSync(
     existing.household_id,
     existing.type,
     reversedEffects,
-    ownerId,
   );
 
   const { error } = await supabase
@@ -1428,7 +1415,6 @@ export async function deleteLedgerEntryWithBalanceSync(
         existing.household_id,
         existing.type,
         effects,
-        ownerId,
       );
     }
     console.error("Ledger entry delete error:", error);
