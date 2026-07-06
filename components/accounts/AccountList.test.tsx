@@ -116,4 +116,12 @@ describe("AccountList", () => {
     expect(screen.getByTestId("screen-state")).toBeInTheDocument();
     expect(screen.getByText("등록된 계좌가 없습니다.")).toBeInTheDocument();
   });
+
+  it("가구원 사용 허용 상태를 표시한다", () => {
+    mocks.accounts = [{ ...account, isHouseholdUsable: true }];
+
+    render(<AccountList />);
+
+    expect(screen.getByText("가구원 사용 허용")).toBeInTheDocument();
+  });
 });

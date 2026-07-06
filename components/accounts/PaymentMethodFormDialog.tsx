@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -102,6 +103,7 @@ const paymentMethodFormSchema = z.object({
     .refine((value) => value === "" || !Number.isNaN(Number(value)), {
       message: "숫자로 입력해주세요.",
     }),
+  isHouseholdUsable: z.boolean(),
   memo: z.string().max(500, "메모는 500자 이내여야 합니다.").optional(),
 });
 
@@ -140,6 +142,7 @@ export function PaymentMethodFormDialog({
       lastFour: "",
       paymentDay: undefined,
       balanceStr: "",
+      isHouseholdUsable: false,
       memo: "",
     },
   });
@@ -163,6 +166,7 @@ export function PaymentMethodFormDialog({
           paymentDay: paymentMethod.paymentDay ?? undefined,
           balanceStr:
             paymentMethod.balance !== null ? String(paymentMethod.balance) : "",
+          isHouseholdUsable: paymentMethod.isHouseholdUsable,
           memo: paymentMethod.memo ?? "",
         });
       } else {
@@ -174,6 +178,7 @@ export function PaymentMethodFormDialog({
           lastFour: "",
           paymentDay: undefined,
           balanceStr: "",
+          isHouseholdUsable: false,
           memo: "",
         });
       }
@@ -196,6 +201,7 @@ export function PaymentMethodFormDialog({
         ? undefined
         : (data.paymentDay as number | undefined),
       memo: data.memo || undefined,
+      isHouseholdUsable: data.isHouseholdUsable,
       ...(shouldSubmitBalance && { balance }),
     };
 
@@ -369,6 +375,26 @@ export function PaymentMethodFormDialog({
             ))}
           </SelectContent>
         </Select>
+      </div>
+
+      <div className="space-y-2">
+        <div className="flex items-start gap-3">
+          <Checkbox
+            id="payment-method-household-usable"
+            checked={watch("isHouseholdUsable")}
+            onCheckedChange={(checked) =>
+              setValue("isHouseholdUsable", checked === true)
+            }
+          />
+          <div>
+            <Label htmlFor="payment-method-household-usable">
+              가구원 사용 허용
+            </Label>
+            <p className="text-sm text-muted-foreground">
+              공용 가계부 기록에서 모든 가구원이 사용할 수 있어요.
+            </p>
+          </div>
+        </div>
       </div>
 
       <div className="space-y-2">

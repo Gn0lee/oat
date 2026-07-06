@@ -127,4 +127,19 @@ describe("AccountNewForm", () => {
     await userEvent.click(screen.getByRole("button", { name: /저장/ }));
     expect(mockPush).toHaveBeenCalledWith("/assets/accounts");
   });
+
+  it("가구원 사용 허용을 선택하면 생성 요청에 포함한다", async () => {
+    mockMutateAsync.mockClear();
+    render(<AccountNewForm />);
+    await userEvent.click(screen.getByText("은행 계좌"));
+    await userEvent.type(screen.getByLabelText(/계좌명/), "가족 통장");
+    await userEvent.click(
+      screen.getByRole("checkbox", { name: "가구원 사용 허용" }),
+    );
+    await userEvent.click(screen.getByRole("button", { name: /저장/ }));
+
+    expect(mockMutateAsync).toHaveBeenCalledWith(
+      expect.objectContaining({ isHouseholdUsable: true }),
+    );
+  });
 });
