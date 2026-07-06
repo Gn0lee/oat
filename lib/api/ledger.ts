@@ -241,26 +241,22 @@ export async function assertLedgerFinancialSourceOwnership(
     (paymentMethodsResult.data ?? []).map((row) => [row.id, row]),
   );
 
-  const hasInvalidAccount = accountIds.some(
-    (id) => {
-      const row = accountMap.get(id);
-      return (
-        !row ||
-        (row.owner_id !== input.ownerId &&
-          !(input.isShared && row.is_household_usable))
-      );
-    },
-  );
-  const hasInvalidPaymentMethod = paymentMethodIds.some(
-    (id) => {
-      const row = paymentMethodMap.get(id);
-      return (
-        !row ||
-        (row.owner_id !== input.ownerId &&
-          !(input.isShared && row.is_household_usable))
-      );
-    },
-  );
+  const hasInvalidAccount = accountIds.some((id) => {
+    const row = accountMap.get(id);
+    return (
+      !row ||
+      (row.owner_id !== input.ownerId &&
+        !(input.isShared && row.is_household_usable))
+    );
+  });
+  const hasInvalidPaymentMethod = paymentMethodIds.some((id) => {
+    const row = paymentMethodMap.get(id);
+    return (
+      !row ||
+      (row.owner_id !== input.ownerId &&
+        !(input.isShared && row.is_household_usable))
+    );
+  });
 
   if (hasInvalidAccount || hasInvalidPaymentMethod) {
     throw new APIError(

@@ -90,9 +90,7 @@ describe("PaymentMethodList", () => {
   });
 
   it("가구원 사용 허용 상태를 표시한다", () => {
-    mocks.paymentMethods = [
-      { ...paymentMethod, isHouseholdUsable: true },
-    ];
+    mocks.paymentMethods = [{ ...paymentMethod, isHouseholdUsable: true }];
 
     render(<PaymentMethodList />);
 

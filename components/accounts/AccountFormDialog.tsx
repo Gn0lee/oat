@@ -314,9 +314,7 @@ export function AccountFormDialog({
             }
           />
           <div>
-            <Label htmlFor="account-household-usable">
-              가구원 사용 허용
-            </Label>
+            <Label htmlFor="account-household-usable">가구원 사용 허용</Label>
             <p className="text-sm text-muted-foreground">
               공용 가계부 기록에서 모든 가구원이 사용할 수 있어요.
             </p>

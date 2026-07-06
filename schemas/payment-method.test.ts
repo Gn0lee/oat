@@ -189,8 +189,7 @@ describe("payment method household access", () => {
 
   it("가구원 사용 허용 여부는 boolean만 받는다", () => {
     expect(
-      updatePaymentMethodSchema.safeParse({ isHouseholdUsable: "yes" })
-        .success,
+      updatePaymentMethodSchema.safeParse({ isHouseholdUsable: "yes" }).success,
     ).toBe(false);
   });
 });
