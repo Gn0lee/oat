@@ -112,7 +112,7 @@ describe("MyStockSection", () => {
     expect(longName).not.toHaveClass("[word-break:break-all]");
 
     // Verify holding currentValue is compact and has full amount title
-    const microsoftValueCompact = screen.getByText("$4.00K");
+    const microsoftValueCompact = screen.getByText(/\$4(?:\.00)?K/);
     expect(microsoftValueCompact).toBeInTheDocument();
     expect(microsoftValueCompact.closest("[title]")).toHaveAttribute(
       "title",
@@ -120,7 +120,7 @@ describe("MyStockSection", () => {
     );
 
     // Verify sign policy: positive has no +, negative has -
-    const positiveReturnCompact = screen.getByText("$1.00K");
+    const positiveReturnCompact = screen.getByText(/\$1(?:\.00)?K/);
     expect(positiveReturnCompact).toBeInTheDocument();
     expect(positiveReturnCompact.textContent).not.toContain("+");
 

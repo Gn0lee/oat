@@ -49,6 +49,7 @@ function createTargetSupabaseMock(row: unknown) {
     select: vi.fn().mockReturnThis(),
     eq: vi.fn().mockReturnThis(),
     single: vi.fn().mockResolvedValue({ data: row, error: null }),
+    maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
   };
 
   return {
