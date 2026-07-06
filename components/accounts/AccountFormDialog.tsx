@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -52,6 +53,7 @@ const bankAccountFormSchema = z.object({
   accountType: z.enum(BANK_ACCOUNT_TYPES, {
     message: "계좌 유형을 선택해주세요.",
   }),
+  isHouseholdUsable: z.boolean(),
   memo: z.string().max(500, "메모는 500자 이내여야 합니다."),
 });
 
@@ -65,6 +67,7 @@ const investmentAccountFormSchema = z.object({
   accountType: z.enum(INVESTMENT_ACCOUNT_TYPES, {
     message: "계좌 유형을 선택해주세요.",
   }),
+  isHouseholdUsable: z.boolean(),
   memo: z.string().max(500, "메모는 500자 이내여야 합니다."),
 });
 
@@ -130,6 +133,7 @@ export function AccountFormDialog({
       lastFour: "",
       accountType: defaultAccountType as BankAccountType &
         InvestmentAccountType,
+      isHouseholdUsable: false,
       memo: "",
     },
   });
@@ -149,6 +153,7 @@ export function AccountFormDialog({
           broker: account.broker || "",
           lastFour: account.lastFour || "",
           accountType: resolvedType as BankAccountType & InvestmentAccountType,
+          isHouseholdUsable: account.isHouseholdUsable,
           memo: account.memo || "",
         });
       } else {
@@ -158,6 +163,7 @@ export function AccountFormDialog({
           lastFour: "",
           accountType: defaultAccountType as BankAccountType &
             InvestmentAccountType,
+          isHouseholdUsable: false,
           memo: "",
         });
       }
@@ -175,6 +181,7 @@ export function AccountFormDialog({
             lastFour: data.lastFour || null,
             accountType: data.accountType,
             category: isBank ? "bank" : "investment",
+            isHouseholdUsable: data.isHouseholdUsable,
             memo: data.memo || null,
           },
         });
@@ -193,6 +200,7 @@ export function AccountFormDialog({
             broker: data.broker,
             lastFour: "",
             accountType: data.accountType,
+            isHouseholdUsable: false,
             memo: "",
           });
         } else {
@@ -294,6 +302,24 @@ export function AccountFormDialog({
         {errors.lastFour && (
           <p className="text-sm text-destructive">{errors.lastFour.message}</p>
         )}
+      </div>
+
+      <div className="space-y-2">
+        <div className="flex items-start gap-3">
+          <Checkbox
+            id="account-household-usable"
+            checked={watch("isHouseholdUsable")}
+            onCheckedChange={(checked) =>
+              setValue("isHouseholdUsable", checked === true)
+            }
+          />
+          <div>
+            <Label htmlFor="account-household-usable">가구원 사용 허용</Label>
+            <p className="text-sm text-muted-foreground">
+              공용 가계부 기록에서 모든 가구원이 사용할 수 있어요.
+            </p>
+          </div>
+        </div>
       </div>
 
       <div className="space-y-2">

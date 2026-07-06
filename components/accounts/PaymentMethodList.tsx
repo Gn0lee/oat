@@ -107,7 +107,14 @@ export function PaymentMethodList({ action }: PaymentMethodListProps) {
               >
                 {/* Top Row: type label on left, chevron on right */}
                 <div className="flex items-center justify-between text-xs text-gray-500 font-medium">
-                  <span>{typeLabel}</span>
+                  <div className="flex items-center gap-2">
+                    <span>{typeLabel}</span>
+                    <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] text-gray-600">
+                      {method.isHouseholdUsable
+                        ? "가구원 사용 허용"
+                        : "소유자 전용"}
+                    </span>
+                  </div>
                   <ChevronRight className="h-4 w-4 flex-shrink-0 text-gray-300 transition-colors group-hover:text-gray-500" />
                 </div>
 

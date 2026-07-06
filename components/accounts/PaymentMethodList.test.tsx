@@ -40,6 +40,7 @@ const paymentMethod: PaymentMethodWithDetails = {
   lastFour: "1234",
   paymentDay: 25,
   balance: null,
+  isHouseholdUsable: false,
   balanceUpdatedAt: null,
   memo: null,
   createdAt: "2026-05-01T00:00:00.000Z",
@@ -86,5 +87,13 @@ describe("PaymentMethodList", () => {
 
     expect(screen.getByTestId("screen-state")).toBeInTheDocument();
     expect(screen.getByText("등록된 결제수단이 없습니다.")).toBeInTheDocument();
+  });
+
+  it("가구원 사용 허용 상태를 표시한다", () => {
+    mocks.paymentMethods = [{ ...paymentMethod, isHouseholdUsable: true }];
+
+    render(<PaymentMethodList />);
+
+    expect(screen.getByText("가구원 사용 허용")).toBeInTheDocument();
   });
 });

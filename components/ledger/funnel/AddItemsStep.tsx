@@ -44,12 +44,13 @@ type FormValues = z.infer<typeof formSchema>;
 
 interface AddItemsStepProps {
   type: "expense" | "income";
+  isShared: boolean;
   onNext: (items: LedgerItemFormData[]) => void;
 }
 
 const today = getKstToday();
 
-export function AddItemsStep({ type, onNext }: AddItemsStepProps) {
+export function AddItemsStep({ type, isShared, onNext }: AddItemsStepProps) {
   const categoryType = type as CategoryType;
   const { data: categories = [], isLoading: isLoadingCategories } =
     useCategories(categoryType);
@@ -221,6 +222,7 @@ export function AddItemsStep({ type, onNext }: AddItemsStepProps) {
                     paymentMethods={paymentMethods}
                     accounts={accounts}
                     ownerId={userId}
+                    isShared={isShared}
                     placeholder="선택 안함"
                     onValueChange={handlePaymentChange}
                   />

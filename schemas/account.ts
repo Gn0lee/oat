@@ -32,6 +32,7 @@ export const createAccountSchema = z.object({
   }),
   category: z.enum(accountCategoryValues).optional(),
   balance: z.number().optional(),
+  isHouseholdUsable: z.boolean().optional(),
   memo: z.string().max(500, "메모는 500자 이내여야 합니다.").optional(),
 });
 
@@ -61,6 +62,7 @@ export const updateAccountSchema = z.object({
     .optional(),
   category: z.enum(accountCategoryValues).nullable().optional(),
   balance: z.number().nullable().optional(),
+  isHouseholdUsable: z.boolean().optional(),
   memo: z
     .string()
     .max(500, "메모는 500자 이내여야 합니다.")

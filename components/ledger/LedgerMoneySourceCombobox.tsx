@@ -52,7 +52,6 @@ import {
   type LedgerMoneySourceAccount,
   type LedgerMoneySourceGroup,
   type LedgerMoneySourceMode,
-  type LedgerMoneySourceOwnerScope,
   type LedgerMoneySourcePaymentMethod,
   scopeLedgerMoneySources,
 } from "@/lib/ledger/money-source-options";
@@ -65,10 +64,9 @@ interface LedgerMoneySourceBaseProps {
   paymentMethods: LedgerMoneySourcePaymentMethod[];
   accounts: LedgerMoneySourceAccount[];
   ownerId?: string | null;
+  isShared?: boolean;
   includeClearOption?: boolean;
   excludedValues?: string[];
-  accountOwnerScope?: LedgerMoneySourceOwnerScope;
-  paymentMethodOwnerScope?: LedgerMoneySourceOwnerScope;
 }
 
 interface LedgerMoneySourceComboboxProps extends LedgerMoneySourceBaseProps {
@@ -110,20 +108,18 @@ function useMoneySourceGroups({
   paymentMethods,
   accounts,
   ownerId,
+  isShared,
   includeClearOption = true,
   excludedValues = [],
-  accountOwnerScope,
-  paymentMethodOwnerScope,
 }: LedgerMoneySourceBaseProps): LedgerMoneySourceGroup[] {
   return useMemo(() => {
     const excluded = new Set(excludedValues);
     const { paymentMethods: scopedPaymentMethods, accounts: scopedAccounts } =
       scopeLedgerMoneySources({
         ownerId,
+        isShared,
         paymentMethods,
         accounts,
-        accountOwnerScope,
-        paymentMethodOwnerScope,
       });
     return buildLedgerMoneySourceGroups({
       mode,
@@ -141,10 +137,9 @@ function useMoneySourceGroups({
     paymentMethods,
     accounts,
     ownerId,
+    isShared,
     includeClearOption,
     excludedValues,
-    accountOwnerScope,
-    paymentMethodOwnerScope,
   ]);
 }
 
@@ -563,10 +558,9 @@ export function LedgerMoneySourceCombobox({
   paymentMethods,
   accounts,
   ownerId,
+  isShared,
   includeClearOption = true,
   excludedValues,
-  accountOwnerScope,
-  paymentMethodOwnerScope,
   placeholder,
   onValueChange,
 }: LedgerMoneySourceComboboxProps) {
@@ -585,12 +579,19 @@ export function LedgerMoneySourceCombobox({
     paymentMethods,
     accounts,
     ownerId,
+    isShared,
     includeClearOption,
     excludedValues,
-    accountOwnerScope,
-    paymentMethodOwnerScope,
   });
-  const selectedLabel = findSelectedLabel(groups, value) ?? placeholder;
+  const selectedLabel =
+    findSelectedLabel(groups, value) ??
+    getLedgerMoneySourceLabel({
+      mode,
+      value,
+      paymentMethods,
+      accounts,
+      placeholder,
+    });
   const createQuery = search.trim();
   const createLabel = createQuery
     ? mode === "income"
@@ -672,10 +673,9 @@ export function LedgerMoneySourcePickerPanel({
   paymentMethods,
   accounts,
   ownerId,
+  isShared,
   includeClearOption = true,
   excludedValues,
-  accountOwnerScope,
-  paymentMethodOwnerScope,
   searchPlaceholder,
   onValueChange,
 }: LedgerMoneySourcePickerPanelProps) {
@@ -694,10 +694,9 @@ export function LedgerMoneySourcePickerPanel({
     paymentMethods,
     accounts,
     ownerId,
+    isShared,
     includeClearOption,
     excludedValues,
-    accountOwnerScope,
-    paymentMethodOwnerScope,
   });
   const createQuery = search.trim();
   const createLabel = createQuery

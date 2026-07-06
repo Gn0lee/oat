@@ -8,6 +8,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -42,6 +43,7 @@ const detailFormSchema = z.object({
     message: "계좌 유형을 선택해주세요.",
   }),
   balanceStr: z.string(),
+  isHouseholdUsable: z.boolean(),
   memo: z.string().max(500, "메모는 500자 이내여야 합니다."),
 });
 
@@ -118,6 +120,7 @@ function DetailForm({ category, onBack }: DetailFormProps) {
       lastFour: "",
       accountType: defaultAccountType,
       balanceStr: "",
+      isHouseholdUsable: false,
       memo: "",
     },
   });
@@ -138,6 +141,7 @@ function DetailForm({ category, onBack }: DetailFormProps) {
         accountType: data.accountType,
         category,
         balance,
+        isHouseholdUsable: data.isHouseholdUsable,
         memo: data.memo || undefined,
       });
       toast.success(`${data.name} 계좌가 추가되었습니다.`);
@@ -252,6 +256,24 @@ function DetailForm({ category, onBack }: DetailFormProps) {
             {errors.balanceStr.message}
           </p>
         )}
+      </div>
+
+      <div className="space-y-2">
+        <div className="flex items-start gap-3">
+          <Checkbox
+            id="isHouseholdUsable"
+            checked={watch("isHouseholdUsable")}
+            onCheckedChange={(checked) =>
+              setValue("isHouseholdUsable", checked === true)
+            }
+          />
+          <div>
+            <Label htmlFor="isHouseholdUsable">가구원 사용 허용</Label>
+            <p className="text-sm text-muted-foreground">
+              공용 가계부 기록에서 모든 가구원이 사용할 수 있어요.
+            </p>
+          </div>
+        </div>
       </div>
 
       <div className="space-y-2">

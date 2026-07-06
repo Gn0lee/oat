@@ -46,6 +46,7 @@ type TransferFormValues = z.infer<typeof transferFormSchema>;
 
 interface AddTransferStepProps {
   onNext: (item: TransferItemFormData) => void;
+  isShared?: boolean;
   defaultDate?: string;
   submitLabel?: string;
 }
@@ -66,6 +67,7 @@ interface NegativeBalanceWarning {
 
 export function AddTransferStep({
   onNext,
+  isShared = false,
   defaultDate = today,
   submitLabel = "다음",
 }: AddTransferStepProps) {
@@ -199,6 +201,7 @@ export function AddTransferStep({
                 paymentMethods={paymentMethods}
                 accounts={accounts}
                 ownerId={userId}
+                isShared={isShared}
                 includeClearOption={false}
                 excludedValues={toValue ? [toValue] : []}
                 placeholder="선택"
@@ -224,7 +227,7 @@ export function AddTransferStep({
                 paymentMethods={paymentMethods}
                 accounts={accounts}
                 ownerId={userId}
-                accountOwnerScope="household"
+                isShared={isShared}
                 includeClearOption={false}
                 excludedValues={fromValue ? [fromValue] : []}
                 placeholder="선택"

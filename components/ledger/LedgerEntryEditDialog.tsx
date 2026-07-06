@@ -280,6 +280,8 @@ export function LedgerEntryEditDialog({
     value: paymentValue,
     paymentMethods,
     accounts,
+    ownerId: entry.ownerId,
+    isShared: entry.isShared,
     placeholder: moneySourcePlaceholder,
   });
 
@@ -425,6 +427,7 @@ export function LedgerEntryEditDialog({
                   paymentMethods={paymentMethods}
                   accounts={accounts}
                   ownerId={entry.ownerId}
+                  isShared={entry.isShared}
                   placeholder={moneySourcePlaceholder}
                   onValueChange={handlePaymentChange}
                 />
@@ -634,6 +637,7 @@ export function LedgerEntryEditDialog({
               paymentMethods={paymentMethods}
               accounts={accounts}
               ownerId={entry.ownerId}
+              isShared={entry.isShared}
               title={
                 entry.type === "expense"
                   ? "결제 방법 선택"

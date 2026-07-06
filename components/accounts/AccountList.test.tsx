@@ -34,6 +34,7 @@ const account: AccountWithOwner = {
   accountType: "isa",
   category: "investment",
   balance: null,
+  isHouseholdUsable: false,
   balanceUpdatedAt: null,
   memo: null,
   createdAt: "2026-05-01T00:00:00.000Z",
@@ -51,6 +52,7 @@ const bankAccount: AccountWithOwner = {
   accountType: "checking",
   category: "bank",
   balance: null,
+  isHouseholdUsable: false,
   balanceUpdatedAt: null,
   memo: null,
   createdAt: "2026-05-01T00:00:00.000Z",
@@ -113,5 +115,13 @@ describe("AccountList", () => {
 
     expect(screen.getByTestId("screen-state")).toBeInTheDocument();
     expect(screen.getByText("등록된 계좌가 없습니다.")).toBeInTheDocument();
+  });
+
+  it("가구원 사용 허용 상태를 표시한다", () => {
+    mocks.accounts = [{ ...account, isHouseholdUsable: true }];
+
+    render(<AccountList />);
+
+    expect(screen.getByText("가구원 사용 허용")).toBeInTheDocument();
   });
 });

@@ -108,6 +108,28 @@ export function ComposerFormStep({
     form.setValue(`items.${index}.toValue`, "");
   };
 
+  const handlePrivacyChange = (value: string) => {
+    const isShared = value === "shared";
+    if (!isShared) {
+      const ownedValues = new Set([
+        ...accounts
+          .filter((account) => account.ownerId === userId)
+          .map((account) => `acc:${account.id}`),
+        ...paymentMethods
+          .filter((method) => method.ownerId === userId)
+          .map((method) => `pm:${method.id}`),
+      ]);
+      if (!ownedValues.has(moneySourceValue)) handleMoneySourceChange("");
+      if (!ownedValues.has(fromValue)) {
+        form.setValue(`items.${index}.fromValue`, "");
+      }
+      if (!ownedValues.has(toValue)) {
+        form.setValue(`items.${index}.toValue`, "");
+      }
+    }
+    form.setValue(`items.${index}.isShared`, isShared);
+  };
+
   const handleFromValueChange = (value: string) => {
     form.setValue(`items.${index}.fromValue`, value, { shouldValidate: true });
     if (value === form.watch(`items.${index}.toValue`)) {
@@ -164,9 +186,7 @@ export function ComposerFormStep({
             <SegmentedChoiceGroup
               value={itemIsShared ? "shared" : "private"}
               columns={2}
-              onValueChange={(value) =>
-                form.setValue(`items.${index}.isShared`, value === "shared")
-              }
+              onValueChange={handlePrivacyChange}
               options={[
                 { value: "shared", label: "공용" },
                 { value: "private", label: "개인" },
@@ -289,6 +309,7 @@ export function ComposerFormStep({
                   paymentMethods={paymentMethods}
                   accounts={accounts}
                   ownerId={userId}
+                  isShared={itemIsShared}
                   placeholder={
                     itemType === "non_expense_withdrawal" ? "선택" : "선택 안함"
                   }
@@ -304,6 +325,8 @@ export function ComposerFormStep({
                     value: moneySourceValue,
                     paymentMethods,
                     accounts,
+                    ownerId: userId,
+                    isShared: itemIsShared,
                     placeholder:
                       itemType === "non_expense_withdrawal"
                         ? "선택"
@@ -335,6 +358,7 @@ export function ComposerFormStep({
                   paymentMethods={paymentMethods}
                   accounts={accounts}
                   ownerId={userId}
+                  isShared={itemIsShared}
                   includeClearOption={false}
                   excludedValues={toValue ? [toValue] : []}
                   placeholder="선택"
@@ -347,6 +371,8 @@ export function ComposerFormStep({
                     value: fromValue,
                     paymentMethods,
                     accounts,
+                    ownerId: userId,
+                    isShared: itemIsShared,
                     placeholder: "선택",
                   })}
                   placeholder="선택"
@@ -369,7 +395,7 @@ export function ComposerFormStep({
                   paymentMethods={paymentMethods}
                   accounts={accounts}
                   ownerId={userId}
-                  accountOwnerScope="household"
+                  isShared={itemIsShared}
                   includeClearOption={false}
                   excludedValues={fromValue ? [fromValue] : []}
                   placeholder="선택"
@@ -382,6 +408,8 @@ export function ComposerFormStep({
                     value: toValue,
                     paymentMethods,
                     accounts,
+                    ownerId: userId,
+                    isShared: itemIsShared,
                     placeholder: "선택",
                   })}
                   placeholder="선택"
@@ -479,6 +507,7 @@ export function ComposerFormStep({
                 paymentMethods={paymentMethods}
                 accounts={accounts}
                 ownerId={userId}
+                isShared={itemIsShared}
                 title={
                   itemType === "expense"
                     ? "결제 방법 선택"
@@ -512,6 +541,7 @@ export function ComposerFormStep({
                 paymentMethods={paymentMethods}
                 accounts={accounts}
                 ownerId={userId}
+                isShared={itemIsShared}
                 includeClearOption={false}
                 excludedValues={toValue ? [toValue] : []}
                 title="어디에서"
@@ -541,7 +571,7 @@ export function ComposerFormStep({
                 paymentMethods={paymentMethods}
                 accounts={accounts}
                 ownerId={userId}
-                accountOwnerScope="household"
+                isShared={itemIsShared}
                 includeClearOption={false}
                 excludedValues={fromValue ? [fromValue] : []}
                 title="어디로"

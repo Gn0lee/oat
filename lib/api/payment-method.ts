@@ -25,6 +25,7 @@ export interface CreatePaymentMethodParams {
   lastFour?: string;
   paymentDay?: number;
   balance?: number | null;
+  isHouseholdUsable?: boolean;
   memo?: string;
 }
 
@@ -36,6 +37,7 @@ export interface UpdatePaymentMethodParams {
   lastFour?: string | null;
   paymentDay?: number | null;
   balance?: number | null;
+  isHouseholdUsable?: boolean;
   memo?: string | null;
 }
 
@@ -52,6 +54,7 @@ export interface PaymentMethodWithDetails {
   lastFour: string | null;
   paymentDay: number | null;
   balance: number | null;
+  isHouseholdUsable: boolean;
   balanceUpdatedAt: string | null;
   memo: string | null;
   createdAt: string;
@@ -113,6 +116,7 @@ export async function getPaymentMethods(
     lastFour: pm.last_four,
     paymentDay: pm.payment_day,
     balance: pm.balance,
+    isHouseholdUsable: pm.is_household_usable,
     balanceUpdatedAt: pm.balance_updated_at,
     memo: pm.memo,
     createdAt: pm.created_at,
@@ -134,6 +138,7 @@ export async function createPaymentMethod(
     lastFour,
     paymentDay,
     balance,
+    isHouseholdUsable,
     memo,
   } = params;
 
@@ -188,6 +193,7 @@ export async function createPaymentMethod(
       payment_day: paymentDay ?? null,
       balance: normalizedBalance,
       balance_updated_at: normalizedBalance !== null ? now : null,
+      is_household_usable: isHouseholdUsable ?? false,
       memo: memo || null,
     })
     .select()
@@ -302,6 +308,9 @@ export async function updatePaymentMethod(
       balance: normalizedBalance,
       ...(balanceUpdatedAt !== undefined && {
         balance_updated_at: balanceUpdatedAt,
+      }),
+      ...(params.isHouseholdUsable !== undefined && {
+        is_household_usable: params.isHouseholdUsable,
       }),
       ...(params.memo !== undefined && { memo: params.memo }),
       updated_at: new Date().toISOString(),

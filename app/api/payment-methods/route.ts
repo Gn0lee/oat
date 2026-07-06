@@ -106,6 +106,7 @@ export async function POST(request: Request) {
       lastFour: input.lastFour,
       paymentDay: input.paymentDay,
       balance: input.balance,
+      isHouseholdUsable: input.isHouseholdUsable,
       memo: input.memo,
     });
 

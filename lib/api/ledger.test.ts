@@ -423,10 +423,24 @@ describe("assertLedgerFinancialSourceOwnership", () => {
     accounts = [],
     paymentMethods = [],
   }: {
-    accounts?: Array<{ id: string; owner_id: string }>;
-    paymentMethods?: Array<{ id: string; owner_id: string }>;
+    accounts?: Array<{
+      id: string;
+      owner_id: string;
+      is_household_usable?: boolean;
+    }>;
+    paymentMethods?: Array<{
+      id: string;
+      owner_id: string;
+      is_household_usable?: boolean;
+    }>;
   }) {
-    const createBuilder = (rows: Array<{ id: string; owner_id: string }>) => ({
+    const createBuilder = (
+      rows: Array<{
+        id: string;
+        owner_id: string;
+        is_household_usable?: boolean;
+      }>,
+    ) => ({
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
       in: vi.fn().mockResolvedValue({ data: rows, error: null }),
@@ -480,16 +494,73 @@ describe("assertLedgerFinancialSourceOwnership", () => {
     );
   });
 
-  it("household 계좌로 허용한 계좌는 기록 소유자가 달라도 허용한다", async () => {
+  it("공용 기록은 가구원 사용 허용 금융수단을 사용할 수 있다", async () => {
     const supabase = createFinancialSourceSupabaseMock({
-      accounts: [{ id: "acc-1", owner_id: "other-user" }],
+      accounts: [
+        {
+          id: "acc-1",
+          owner_id: "other-user",
+          is_household_usable: true,
+        },
+      ],
+      paymentMethods: [
+        {
+          id: "pm-1",
+          owner_id: "other-user",
+          is_household_usable: true,
+        },
+      ],
     });
 
     await expect(
       assertLedgerFinancialSourceOwnership(supabase as never, {
         householdId: "household-1",
         ownerId: "user-1",
-        householdAccountIds: ["acc-1"],
+        isShared: true,
+        accountIds: ["acc-1"],
+        paymentMethodIds: ["pm-1"],
+      }),
+    ).resolves.toBeUndefined();
+  });
+
+  it("개인 기록은 다른 구성원의 허용 금융수단도 거부한다", async () => {
+    const supabase = createFinancialSourceSupabaseMock({
+      accounts: [
+        {
+          id: "acc-1",
+          owner_id: "other-user",
+          is_household_usable: true,
+        },
+      ],
+    });
+
+    await expect(
+      assertLedgerFinancialSourceOwnership(supabase as never, {
+        householdId: "household-1",
+        ownerId: "user-1",
+        isShared: false,
+        accountIds: ["acc-1"],
+      }),
+    ).rejects.toMatchObject({ statusCode: 403 });
+  });
+
+  it("공용 계좌는 기록 소유자가 달라도 허용한다", async () => {
+    const supabase = createFinancialSourceSupabaseMock({
+      accounts: [
+        {
+          id: "acc-1",
+          owner_id: "other-user",
+          is_household_usable: true,
+        },
+      ],
+    });
+
+    await expect(
+      assertLedgerFinancialSourceOwnership(supabase as never, {
+        householdId: "household-1",
+        ownerId: "user-1",
+        isShared: true,
+        accountIds: ["acc-1"],
       }),
     ).resolves.toBeUndefined();
     expect(supabase.accountsBuilder.in).toHaveBeenCalledWith("id", ["acc-1"]);

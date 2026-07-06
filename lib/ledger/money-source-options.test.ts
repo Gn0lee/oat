@@ -38,6 +38,7 @@ const investmentAccount: LedgerMoneySourceAccount = {
   lastFour: "3444",
   accountType: "stock",
   category: "investment",
+  isHouseholdUsable: true,
 };
 
 const legacyInvestmentAccount: LedgerMoneySourceAccount = {
@@ -49,6 +50,7 @@ const legacyInvestmentAccount: LedgerMoneySourceAccount = {
   lastFour: null,
   accountType: "isa",
   category: null,
+  isHouseholdUsable: false,
 };
 
 const creditCard: LedgerMoneySourcePaymentMethod = {
@@ -69,6 +71,7 @@ const cash: LedgerMoneySourcePaymentMethod = {
   type: "cash",
   issuer: null,
   lastFour: null,
+  isHouseholdUsable: true,
 };
 
 const paymentMethods = [creditCard, cash];
@@ -146,20 +149,35 @@ describe("buildLedgerMoneySourceGroups", () => {
 });
 
 describe("scopeLedgerMoneySources", () => {
-  it("account scope만 household로 풀면 모든 계좌와 본인 결제수단만 남긴다", () => {
+  it("공용 기록은 본인 금융수단과 가구원 사용 허용 금융수단만 남긴다", () => {
     const scoped = scopeLedgerMoneySources({
       ownerId: "user-1",
+      isShared: true,
       accounts,
       paymentMethods,
-      accountOwnerScope: "household",
-      paymentMethodOwnerScope: "owner",
     });
 
     expect(scoped.accounts.map((account) => account.id)).toEqual([
       "bank-1",
       "legacy-bank-1",
       "investment-1",
-      "legacy-investment-1",
+    ]);
+    expect(
+      scoped.paymentMethods.map((paymentMethod) => paymentMethod.id),
+    ).toEqual(["pm-card-1", "pm-cash-1"]);
+  });
+
+  it("개인 기록은 가구원 사용 허용 여부와 관계없이 본인 금융수단만 남긴다", () => {
+    const scoped = scopeLedgerMoneySources({
+      ownerId: "user-1",
+      isShared: false,
+      accounts,
+      paymentMethods,
+    });
+
+    expect(scoped.accounts.map((account) => account.id)).toEqual([
+      "bank-1",
+      "legacy-bank-1",
     ]);
     expect(
       scoped.paymentMethods.map((paymentMethod) => paymentMethod.id),
