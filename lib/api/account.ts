@@ -11,6 +11,7 @@ export interface CreateAccountParams {
   accountType: AccountType;
   category?: AccountCategory;
   balance?: number;
+  isHouseholdUsable?: boolean;
   memo?: string;
 }
 
@@ -21,6 +22,7 @@ export interface UpdateAccountParams {
   accountType?: AccountType;
   category?: AccountCategory | null;
   balance?: number | null;
+  isHouseholdUsable?: boolean;
   memo?: string | null;
 }
 
@@ -35,6 +37,7 @@ export interface AccountWithOwner {
   accountType: AccountType | null;
   category: AccountCategory | null;
   balance: number | null;
+  isHouseholdUsable: boolean;
   balanceUpdatedAt: string | null;
   memo: string | null;
   createdAt: string;
@@ -79,6 +82,7 @@ export async function getAccounts(
     accountType: account.account_type,
     category: account.category,
     balance: account.balance,
+    isHouseholdUsable: account.is_household_usable,
     balanceUpdatedAt: account.balance_updated_at,
     memo: account.memo,
     createdAt: account.created_at,
@@ -102,6 +106,7 @@ export async function createAccount(
     accountType,
     category,
     balance,
+    isHouseholdUsable,
     memo,
   } = params;
 
@@ -134,6 +139,7 @@ export async function createAccount(
       category: category ?? null,
       balance: balance ?? null,
       balance_updated_at: balance != null ? new Date().toISOString() : null,
+      is_household_usable: isHouseholdUsable ?? false,
       memo: memo || null,
     })
     .select()
@@ -210,6 +216,9 @@ export async function updateAccount(
       ...(params.balance !== undefined && {
         balance: params.balance,
         balance_updated_at: new Date().toISOString(),
+      }),
+      ...(params.isHouseholdUsable !== undefined && {
+        is_household_usable: params.isHouseholdUsable,
       }),
       ...(params.memo !== undefined && { memo: params.memo }),
       updated_at: new Date().toISOString(),

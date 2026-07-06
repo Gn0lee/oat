@@ -33,6 +33,7 @@ export const createPaymentMethodSchema = z.object({
     .max(31, "결제일은 31일 이하여야 합니다.")
     .optional(),
   balance: z.number().optional(),
+  isHouseholdUsable: z.boolean().optional(),
   memo: z.string().max(500, "메모는 500자 이내여야 합니다.").optional(),
 });
 
@@ -71,6 +72,7 @@ export const updatePaymentMethodSchema = z.object({
     .nullable()
     .optional(),
   balance: z.number().nullable().optional(),
+  isHouseholdUsable: z.boolean().optional(),
   memo: z
     .string()
     .max(500, "메모는 500자 이내여야 합니다.")

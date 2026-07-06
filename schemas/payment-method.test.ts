@@ -171,3 +171,26 @@ describe("payment method auxiliary balance", () => {
     expect(result.success).toBe(true);
   });
 });
+
+describe("payment method household access", () => {
+  it("생성 및 수정 입력에서 가구원 사용 허용 여부를 받는다", () => {
+    expect(
+      createPaymentMethodSchema.parse({
+        name: "가족카드",
+        type: "credit_card",
+        isHouseholdUsable: true,
+      }).isHouseholdUsable,
+    ).toBe(true);
+    expect(
+      updatePaymentMethodSchema.parse({ isHouseholdUsable: false })
+        .isHouseholdUsable,
+    ).toBe(false);
+  });
+
+  it("가구원 사용 허용 여부는 boolean만 받는다", () => {
+    expect(
+      updatePaymentMethodSchema.safeParse({ isHouseholdUsable: "yes" })
+        .success,
+    ).toBe(false);
+  });
+});

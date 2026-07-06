@@ -103,6 +103,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
       accountType: input.accountType,
       category: input.category,
       balance: input.balance,
+      isHouseholdUsable: input.isHouseholdUsable,
       memo: input.memo,
     });
 

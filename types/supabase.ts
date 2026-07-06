@@ -44,6 +44,7 @@ export type Database = {
           created_at: string;
           household_id: string;
           id: string;
+          is_household_usable: boolean;
           last_four: string | null;
           memo: string | null;
           name: string;
@@ -59,6 +60,7 @@ export type Database = {
           created_at?: string;
           household_id: string;
           id?: string;
+          is_household_usable?: boolean;
           last_four?: string | null;
           memo?: string | null;
           name: string;
@@ -74,6 +76,7 @@ export type Database = {
           created_at?: string;
           household_id?: string;
           id?: string;
+          is_household_usable?: boolean;
           last_four?: string | null;
           memo?: string | null;
           name?: string;
@@ -847,6 +850,7 @@ export type Database = {
           created_at: string;
           household_id: string;
           id: string;
+          is_household_usable: boolean;
           issuer: string | null;
           last_four: string | null;
           linked_account_id: string | null;
@@ -863,6 +867,7 @@ export type Database = {
           created_at?: string;
           household_id: string;
           id?: string;
+          is_household_usable?: boolean;
           issuer?: string | null;
           last_four?: string | null;
           linked_account_id?: string | null;
@@ -879,6 +884,7 @@ export type Database = {
           created_at?: string;
           household_id?: string;
           id?: string;
+          is_household_usable?: boolean;
           issuer?: string | null;
           last_four?: string | null;
           linked_account_id?: string | null;

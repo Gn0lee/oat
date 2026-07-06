@@ -40,6 +40,7 @@ const paymentMethod: PaymentMethodWithDetails = {
   lastFour: "1234",
   paymentDay: 25,
   balance: null,
+  isHouseholdUsable: false,
   balanceUpdatedAt: null,
   memo: null,
   createdAt: "2026-05-01T00:00:00.000Z",

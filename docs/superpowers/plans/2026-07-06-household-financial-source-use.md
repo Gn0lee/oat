@@ -20,6 +20,10 @@
 - Modify: `schemas/payment-method.test.ts`
 - Modify: `lib/api/account.ts`
 - Modify: `lib/api/payment-method.ts`
+- Modify: `app/api/accounts/route.ts`
+- Modify: `app/api/accounts/[id]/route.ts`
+- Modify: `app/api/payment-methods/route.ts`
+- Modify: `app/api/payment-methods/[id]/route.ts`
 
 - [ ] **Step 1: Write failing schema tests**
 
