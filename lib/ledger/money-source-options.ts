@@ -11,6 +11,7 @@ export interface LedgerMoneySourcePaymentMethod {
   type: PaymentMethodType;
   issuer: string | null;
   lastFour: string | null;
+  isHouseholdUsable?: boolean;
 }
 
 export interface LedgerMoneySourceAccount {
@@ -22,6 +23,7 @@ export interface LedgerMoneySourceAccount {
   lastFour: string | null;
   accountType: AccountType | null;
   category: AccountCategory | null;
+  isHouseholdUsable?: boolean;
 }
 
 export interface LedgerMoneySourceOption {
@@ -38,14 +40,11 @@ export interface LedgerMoneySourceGroup {
   options: LedgerMoneySourceOption[];
 }
 
-export type LedgerMoneySourceOwnerScope = "owner" | "household";
-
 interface ScopeLedgerMoneySourcesParams {
   ownerId?: string | null;
+  isShared?: boolean;
   paymentMethods: LedgerMoneySourcePaymentMethod[];
   accounts: LedgerMoneySourceAccount[];
-  paymentMethodOwnerScope?: LedgerMoneySourceOwnerScope;
-  accountOwnerScope?: LedgerMoneySourceOwnerScope;
 }
 
 interface BuildLedgerMoneySourceGroupsParams {
@@ -112,7 +111,7 @@ function toPaymentMethodOption(
     id: paymentMethod.id,
     value: `pm:${paymentMethod.id}`,
     kind: "paymentMethod",
-    label: paymentMethod.name,
+    label: `${paymentMethod.name} · ${paymentMethod.ownerName}`,
     description: description || null,
     searchValue: compactSearchText([
       paymentMethod.name,
@@ -138,7 +137,7 @@ function toAccountOption(
     id: account.id,
     value: `acc:${account.id}`,
     kind: "account",
-    label: account.name,
+    label: `${account.name} · ${account.ownerName}`,
     description: description || null,
     searchValue: compactSearchText([
       account.name,
@@ -161,22 +160,21 @@ export function getLedgerMoneySourceValue({
 
 export function scopeLedgerMoneySources({
   ownerId,
+  isShared = false,
   paymentMethods,
   accounts,
-  paymentMethodOwnerScope = "owner",
-  accountOwnerScope = "owner",
 }: ScopeLedgerMoneySourcesParams) {
   if (!ownerId) return { paymentMethods, accounts };
 
   return {
-    paymentMethods:
-      paymentMethodOwnerScope === "household"
-        ? paymentMethods
-        : paymentMethods.filter((item) => item.ownerId === ownerId),
-    accounts:
-      accountOwnerScope === "household"
-        ? accounts
-        : accounts.filter((item) => item.ownerId === ownerId),
+    paymentMethods: paymentMethods.filter(
+      (item) =>
+        item.ownerId === ownerId || (isShared && item.isHouseholdUsable),
+    ),
+    accounts: accounts.filter(
+      (item) =>
+        item.ownerId === ownerId || (isShared && item.isHouseholdUsable),
+    ),
   };
 }
 

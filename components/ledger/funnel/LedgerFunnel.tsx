@@ -108,13 +108,15 @@ export function LedgerFunnel() {
       AddItems={({ context, history }) => (
         <AddItemsStep
           type={context.type}
+          isShared={context.isShared}
           onNext={(items) => {
             history.push("Confirm", (prev) => ({ ...prev, items }));
           }}
         />
       )}
-      AddTransfer={({ history }) => (
+      AddTransfer={({ context, history }) => (
         <AddTransferStep
+          isShared={context.isShared}
           onNext={(transferItem) => {
             history.push("Confirm", (prev) => ({
               ...prev,

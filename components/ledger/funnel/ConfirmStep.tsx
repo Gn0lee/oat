@@ -44,8 +44,15 @@ export function ConfirmStep({
   const { data: accounts = [] } = useAccounts();
 
   const categoryMap = new Map(categories.map((c) => [c.id, c.name]));
-  const pmMap = new Map(paymentMethods.map((pm) => [pm.id, pm.name]));
-  const accountMap = new Map(accounts.map((a) => [a.id, a.name]));
+  const pmMap = new Map(
+    paymentMethods.map((pm) => [pm.id, `${pm.name} · ${pm.ownerName}`]),
+  );
+  const accountMap = new Map(
+    accounts.map((account) => [
+      account.id,
+      `${account.name} · ${account.ownerName}`,
+    ]),
+  );
 
   const totalAmount =
     type === "transfer" && transferItem
