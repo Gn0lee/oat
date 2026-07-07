@@ -5,7 +5,7 @@ import { addMonths, getYear, startOfMonth, subMonths } from "date-fns";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -55,6 +55,12 @@ export function StockRecordsClient({ initialDate }: StockRecordsClientProps) {
     startOfMonth(initial),
   );
   const [selectedDate, setSelectedDate] = useState<Date>(initial);
+
+  useEffect(() => {
+    void queryClient.invalidateQueries({
+      queryKey: queries.notifications._def,
+    });
+  }, [queryClient]);
 
   const prevMonth = useMemo(() => subMonths(currentMonth, 1), [currentMonth]);
   const nextMonth = useMemo(() => addMonths(currentMonth, 1), [currentMonth]);

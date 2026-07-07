@@ -10,6 +10,7 @@ import {
   notifyLedgerEntryDeleted,
   notifyLedgerEntryUpdated,
 } from "@/lib/api/ledger-notifications";
+import { markNotificationsAsReadForLinkBestEffort } from "@/lib/api/notifications";
 import { createClient } from "@/lib/supabase/server";
 import { updateLedgerEntrySchema } from "@/schemas/ledger-entry";
 
@@ -46,6 +47,10 @@ export async function GET(_request: Request, { params }: RouteParams) {
     }
 
     const entry = await getLedgerEntryById(supabase, id, householdId);
+    await markNotificationsAsReadForLinkBestEffort(supabase, user.id, {
+      kind: "ledger_record_detail",
+      params: { entryId: id },
+    });
 
     return NextResponse.json({ data: entry });
   } catch (error) {

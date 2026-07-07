@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { APIError, toErrorResponse } from "@/lib/api/error";
 import { getUserHouseholdId } from "@/lib/api/invitation";
+import { markNotificationsAsReadForLinkBestEffort } from "@/lib/api/notifications";
 import {
   notifyStockTransactionDeleted,
   notifyStockTransactionUpdated,
@@ -53,6 +54,10 @@ export async function GET(_request: Request, { params }: RouteParams) {
       id,
       householdId,
     );
+    await markNotificationsAsReadForLinkBestEffort(supabase, user.id, {
+      kind: "stock_transaction_detail",
+      params: { transactionId: id },
+    });
 
     return NextResponse.json({ data: transaction });
   } catch (error) {

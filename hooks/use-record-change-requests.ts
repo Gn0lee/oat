@@ -71,10 +71,19 @@ async function resolveRecordChangeRequest({
 }
 
 export function useRecordChangeRequest(id: string) {
+  const queryClient = useQueryClient();
+
   return useQuery({
     queryKey: queries.recordChangeRequests.detail(id).queryKey,
-    queryFn: () =>
-      fetchApiData<RecordChangeRequest>(`/api/record-change-requests/${id}`),
+    queryFn: async () => {
+      const request = await fetchApiData<RecordChangeRequest>(
+        `/api/record-change-requests/${id}`,
+      );
+      void queryClient.invalidateQueries({
+        queryKey: queries.notifications._def,
+      });
+      return request;
+    },
   });
 }
 

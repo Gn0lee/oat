@@ -82,10 +82,21 @@ async function fetchLedgerEntries(
 }
 
 export function useLedgerEntries(params?: LedgerEntriesParams) {
+  const queryClient = useQueryClient();
+
   return useQuery({
     queryKey: queries.ledgerEntries.list(params).queryKey,
-    queryFn: () => fetchLedgerEntries(params),
+    queryFn: async () => {
+      const entries = await fetchLedgerEntries(params);
+      if (params?.date) {
+        void queryClient.invalidateQueries({
+          queryKey: queries.notifications._def,
+        });
+      }
+      return entries;
+    },
     staleTime: 1000 * 60 * 5,
+    refetchOnMount: params?.date ? "always" : undefined,
   });
 }
 
@@ -94,10 +105,19 @@ async function fetchLedgerEntry(id: string): Promise<LedgerEntryWithDetails> {
 }
 
 export function useLedgerEntry(id: string) {
+  const queryClient = useQueryClient();
+
   return useQuery({
     queryKey: queries.ledgerEntries.detail(id).queryKey,
-    queryFn: () => fetchLedgerEntry(id),
+    queryFn: async () => {
+      const entry = await fetchLedgerEntry(id);
+      void queryClient.invalidateQueries({
+        queryKey: queries.notifications._def,
+      });
+      return entry;
+    },
     staleTime: 1000 * 60 * 5,
+    refetchOnMount: "always",
   });
 }
 

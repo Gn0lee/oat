@@ -20,12 +20,13 @@ export default async function LedgerRecordsPage({
   await requireUser();
   const { date, scope } = await searchParams;
   const today = getKstToday();
+  const initialDate = normalizeRecordDate(date, today);
   const initialScope = scope === "personal" ? "personal" : "shared";
 
   return (
     <PageContainer maxWidth="default">
       <LedgerRecordsClient
-        initialDate={normalizeRecordDate(date, today)}
+        initialDate={initialDate}
         initialScope={initialScope}
       />
     </PageContainer>

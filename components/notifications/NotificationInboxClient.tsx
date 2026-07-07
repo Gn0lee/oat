@@ -112,12 +112,6 @@ function NotificationItemRow({
   const config = NOTIFICATION_TYPE_CONFIG[notification.type];
   const isUnread = !notification.readAt;
 
-  const handleClick = () => {
-    if (isUnread) {
-      markRead.mutate(notification.id);
-    }
-  };
-
   const handleMarkRead = () => {
     if (isUnread) {
       markRead.mutate(notification.id);
@@ -131,7 +125,7 @@ function NotificationItemRow({
         isUnread && "bg-primary/[0.02] hover:bg-primary/[0.04]",
       )}
     >
-      <Link href={href} onClick={handleClick} className="block p-4 pr-12">
+      <Link href={href} className="block p-4 pr-12">
         <div className="flex items-start gap-3">
           <span
             className={cn(

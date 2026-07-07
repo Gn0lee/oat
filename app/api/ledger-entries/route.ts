@@ -7,6 +7,7 @@ import {
   getLedgerEntries,
 } from "@/lib/api/ledger";
 import { notifyLedgerEntryCreated } from "@/lib/api/ledger-notifications";
+import { markNotificationsAsReadForLinkBestEffort } from "@/lib/api/notifications";
 import { createClient } from "@/lib/supabase/server";
 import { createLedgerEntrySchema } from "@/schemas/ledger-entry";
 
@@ -72,6 +73,12 @@ export async function GET(request: NextRequest) {
     };
 
     const entries = await getLedgerEntries(supabase, householdId, options);
+    if (dateParam) {
+      await markNotificationsAsReadForLinkBestEffort(supabase, user.id, {
+        kind: "ledger_record_date",
+        params: { date: dateParam },
+      });
+    }
 
     return NextResponse.json({ data: entries });
   } catch (error) {
