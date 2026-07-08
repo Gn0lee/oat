@@ -77,10 +77,19 @@ async function fetchTransaction(id: string): Promise<TransactionWithDetails> {
 }
 
 export function useTransaction(id: string) {
+  const queryClient = useQueryClient();
+
   return useQuery({
     queryKey: queries.transactions.detail(id).queryKey,
-    queryFn: () => fetchTransaction(id),
+    queryFn: async () => {
+      const transaction = await fetchTransaction(id);
+      void queryClient.invalidateQueries({
+        queryKey: queries.notifications._def,
+      });
+      return transaction;
+    },
     staleTime: 1000 * 60 * 5,
+    refetchOnMount: "always",
   });
 }
 

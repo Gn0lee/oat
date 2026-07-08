@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { APIError, toErrorResponse } from "@/lib/api/error";
+import { markNotificationsAsReadForLinkBestEffort } from "@/lib/api/notifications";
 import { getRecordChangeRequestById } from "@/lib/api/record-change-requests";
 import { createClient } from "@/lib/supabase/server";
 
@@ -21,6 +22,11 @@ export async function GET(_request: Request, { params }: RouteParams) {
     }
 
     const data = await getRecordChangeRequestById(supabase, user.id, id);
+    await markNotificationsAsReadForLinkBestEffort(supabase, user.id, {
+      kind: "record_change_request_detail",
+      params: { requestId: id },
+    });
+
     return NextResponse.json({ data });
   } catch (error) {
     if (error instanceof APIError) {

@@ -206,6 +206,44 @@ export async function markAllNotificationsAsRead(
   return data?.length ?? 0;
 }
 
+export async function markNotificationsAsReadForLink(
+  supabase: SupabaseClient<Database>,
+  userId: string,
+  link: NotificationLink,
+): Promise<number> {
+  const normalizedLink = normalizeNotificationLink(link);
+  if (!normalizedLink.linkKind) {
+    return 0;
+  }
+
+  const { data, error } = await supabase
+    .from("notifications")
+    .update({ read_at: new Date().toISOString() })
+    .eq("recipient_id", userId)
+    .eq("link_kind", normalizedLink.linkKind)
+    .is("read_at", null)
+    .contains("link_params", normalizedLink.linkParams)
+    .select("id");
+
+  if (error) {
+    throw error;
+  }
+
+  return data?.length ?? 0;
+}
+
+export async function markNotificationsAsReadForLinkBestEffort(
+  supabase: SupabaseClient<Database>,
+  userId: string,
+  link: NotificationLink,
+): Promise<void> {
+  try {
+    await markNotificationsAsReadForLink(supabase, userId, link);
+  } catch (error) {
+    console.error("Linked notification read error:", error);
+  }
+}
+
 export async function getNotificationPreferences(
   supabase: SupabaseClient<Database>,
   userId: string,
