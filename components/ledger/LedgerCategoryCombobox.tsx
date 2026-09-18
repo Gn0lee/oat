@@ -28,6 +28,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { DrawerDescription, DrawerTitle } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -195,7 +196,7 @@ function CategoryCommandList({
           </CommandItem>
         ))}
       </CommandGroup>
-      <div className="border-t p-2">
+      <div className="border-t p-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]">
         <Button
           asChild
           type="button"
@@ -416,6 +417,7 @@ export function LedgerCategoryPickerPanel({
   value,
   categories,
   type = "expense",
+  title,
   searchPlaceholder,
   onValueChange,
 }: LedgerCategoryPickerPanelProps) {
@@ -443,6 +445,10 @@ export function LedgerCategoryPickerPanel({
       className="flex-1 min-h-0 overflow-clip w-full h-full"
       style={{ overflow: "clip" }}
     >
+      <DrawerTitle className="sr-only">{title}</DrawerTitle>
+      <DrawerDescription className="sr-only">
+        카테고리를 선택하거나 새로 추가하세요.
+      </DrawerDescription>
       <motion.div
         animate={{ x: view === "create" ? "-100%" : "0%" }}
         transition={
@@ -453,7 +459,7 @@ export function LedgerCategoryPickerPanel({
         className="flex h-full w-full"
       >
         <div className="w-full h-full shrink-0 min-w-0">
-          <Command className="h-full">
+          <Command className="h-full pb-6">
             <CommandInput
               placeholder={searchPlaceholder}
               value={search}

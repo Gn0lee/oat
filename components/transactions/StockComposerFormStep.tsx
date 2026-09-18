@@ -49,7 +49,7 @@ export function StockComposerFormStep({
       </Button>
 
       {/* Form Content */}
-      <div className="flex-1 overflow-y-auto px-4 pt-16 pb-[calc(1rem+env(safe-area-inset-bottom))] space-y-4">
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 pt-16 pb-4 space-y-4">
         <div className="space-y-3">
           <div>
             <h3 className="text-sm font-semibold text-gray-900">
@@ -87,7 +87,9 @@ export function StockComposerFormStep({
         </div>
 
         <TransactionItemRow index={index} control={form.control} />
+      </div>
 
+      <div className="shrink-0 bg-background px-4 pt-2 pb-[calc(1rem+env(safe-area-inset-bottom))]">
         <Button
           type="button"
           onClick={handleConfirm}

@@ -1,8 +1,10 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { FormProvider, useForm } from "react-hook-form";
-import { beforeAll, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { AccountSelector } from "./AccountSelector";
+
+const media = vi.hoisted(() => ({ isDesktop: true }));
 
 vi.mock("@/hooks/use-accounts", () => ({
   useAccounts: () => ({
@@ -33,8 +35,12 @@ vi.mock("@/hooks/use-accounts", () => ({
 }));
 
 vi.mock("@/hooks/use-media-query", () => ({
-  useMediaQuery: () => true,
+  useMediaQuery: () => media.isDesktop,
 }));
+
+afterEach(() => {
+  media.isDesktop = true;
+});
 
 beforeAll(() => {
   global.ResizeObserver = class ResizeObserver {
@@ -52,12 +58,34 @@ function AccountSelectorHarness() {
 
   return (
     <FormProvider {...form}>
-      <AccountSelector control={form.control} variant="inline" />
+      <div data-testid="form-scroll" style={{ overflowY: "auto" }}>
+        <AccountSelector control={form.control} variant="inline" />
+        <output data-testid="account-id">{form.watch("accountId")}</output>
+      </div>
     </FormProvider>
   );
 }
 
 describe("AccountSelector", () => {
+  it("mobile picker keeps the chosen account and form scroll on return", async () => {
+    media.isDesktop = false;
+    const user = userEvent.setup();
+    render(<AccountSelectorHarness />);
+    const formScroll = screen.getByTestId("form-scroll");
+    formScroll.scrollTop = 120;
+
+    await user.click(screen.getByRole("combobox"));
+    fireEvent.click(screen.getByRole("option", { name: /키움증권/ }));
+
+    expect(screen.getByTestId("account-id")).toHaveTextContent("account-1");
+    expect(formScroll).toHaveTextContent("키움증권 (키움)");
+    expect(screen.getByRole("dialog", { name: "계좌 선택" })).toHaveAttribute(
+      "data-state",
+      "closed",
+    );
+    expect(formScroll.scrollTop).toBe(120);
+  });
+
   it("검색어가 있으면 새 투자 계좌 추가 dialog를 열 수 있다", async () => {
     const user = userEvent.setup();
 

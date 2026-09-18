@@ -202,13 +202,13 @@ export function StockSearchDialog({
       <>
         {triggerButton}
         <Dialog open={open} onOpenChange={handleOpenChange}>
-          <DialogHeader className="sr-only">
-            <DialogTitle>종목 검색</DialogTitle>
-            <DialogDescription>
-              티커, 종목명, 초성으로 검색하세요
-            </DialogDescription>
-          </DialogHeader>
           <DialogContent className="overflow-hidden p-0 sm:max-w-lg [&>button]:top-[10px] [&>button]:right-[10px]">
+            <DialogHeader className="sr-only">
+              <DialogTitle>종목 검색</DialogTitle>
+              <DialogDescription>
+                티커, 종목명, 초성으로 검색하세요
+              </DialogDescription>
+            </DialogHeader>
             {searchContent}
           </DialogContent>
         </Dialog>
