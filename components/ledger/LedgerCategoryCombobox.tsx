@@ -459,7 +459,7 @@ export function LedgerCategoryPickerPanel({
         className="flex h-full w-full"
       >
         <div className="w-full h-full shrink-0 min-w-0">
-          <Command className="h-full">
+          <Command className="h-full pb-6">
             <CommandInput
               placeholder={searchPlaceholder}
               value={search}
