@@ -1,4 +1,11 @@
-import { CalendarDays, CreditCard, PieChart, Plus, Tags } from "lucide-react";
+import {
+  CalendarDays,
+  CreditCard,
+  PieChart,
+  Plus,
+  Search,
+  Tags,
+} from "lucide-react";
 import { PageContainer } from "@/components/layout";
 import {
   EntryRow,
@@ -35,6 +42,12 @@ export default async function LedgerPage() {
             title="기록 조회"
             description="달력에서 수입과 지출 내역을 확인해요"
             href="/ledger/records"
+          />
+          <EntryRow
+            icon={Search}
+            title="내역 검색"
+            description="제목이나 메모로 과거 기록을 찾아요"
+            href="/ledger/search"
           />
         </GroupedList>
       </ScreenSection>

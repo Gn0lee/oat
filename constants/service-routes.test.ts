@@ -90,6 +90,16 @@ describe("getServiceRouteMeta", () => {
     });
   });
 
+  it("가계부 내역 검색 route는 검색 조건을 보존한다", () => {
+    expect(
+      getServiceRouteMeta("/ledger/search", { mcpEnabled: true }),
+    ).toMatchObject({
+      label: "내역 검색",
+      parentHref: "/ledger",
+      preserveSearchParams: [],
+    });
+  });
+
   it("주식 거래 Entry Composer route를 task 화면으로 계산한다", () => {
     expect(
       getServiceRouteMeta("/assets/stock/transactions/new/full", {
@@ -269,6 +279,15 @@ describe("getServiceRouteMeta", () => {
         searchParams: new URLSearchParams("from=notification"),
       }),
     ).toBe("/notifications");
+
+    expect(
+      resolveServiceParentHref({
+        meta,
+        searchParams: new URLSearchParams(
+          "from=search&q=%EC%83%9D%EC%9D%BC&scope=personal",
+        ),
+      }),
+    ).toBe("/ledger/search?q=%EC%83%9D%EC%9D%BC&scope=personal");
   });
 
   it("주식 거래 상세는 진입한 collection으로 돌아간다", () => {

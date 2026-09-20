@@ -1,8 +1,14 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { fetchApiData } from "@/lib/api/client";
 import type {
+  LedgerEntrySearchResult,
   LedgerEntrySummary,
   LedgerEntryWithDetails,
 } from "@/lib/api/ledger";
@@ -97,6 +103,34 @@ export function useLedgerEntries(params?: LedgerEntriesParams) {
     },
     staleTime: 1000 * 60 * 5,
     refetchOnMount: params?.date ? "always" : undefined,
+  });
+}
+
+export function useLedgerEntrySearch(
+  query: string,
+  scope: "shared" | "personal",
+) {
+  const normalizedQuery = query.trim();
+
+  return useInfiniteQuery({
+    queryKey: queries.ledgerEntries.search({
+      query: normalizedQuery,
+      scope,
+    }).queryKey,
+    queryFn: ({ pageParam }) => {
+      const params = new URLSearchParams({
+        q: normalizedQuery,
+        scope,
+        offset: String(pageParam),
+      });
+      return fetchApiData<LedgerEntrySearchResult>(
+        `/api/ledger-entries/search?${params.toString()}`,
+      );
+    },
+    initialPageParam: 0,
+    getNextPageParam: (lastPage) => lastPage.nextOffset ?? undefined,
+    enabled: normalizedQuery.replace(/\s/g, "").length >= 2,
+    staleTime: 1000 * 60 * 5,
   });
 }
 

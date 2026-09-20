@@ -139,6 +139,9 @@ export const queries = createQueryKeyStore({
     }) => ({
       queryKey: [params],
     }),
+    search: (params: { query: string; scope: "shared" | "personal" }) => ({
+      queryKey: [params],
+    }),
     summary: (year: number, month: number, scope: "shared" | "personal") => ({
       queryKey: [year, month, scope],
     }),

@@ -216,17 +216,17 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: "categories_parent_id_fkey";
-            columns: ["parent_id"];
-            isOneToOne: false;
-            referencedRelation: "categories";
-            referencedColumns: ["id"];
-          },
-          {
             foreignKeyName: "categories_household_id_fkey";
             columns: ["household_id"];
             isOneToOne: false;
             referencedRelation: "households";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "categories_parent_id_fkey";
+            columns: ["parent_id"];
+            isOneToOne: false;
+            referencedRelation: "categories";
             referencedColumns: ["id"];
           },
         ];
@@ -1365,6 +1365,39 @@ export type Database = {
       is_admin: { Args: never; Returns: boolean };
       is_household_member: { Args: { hh_id: string }; Returns: boolean };
       is_household_owner: { Args: { hh_id: string }; Returns: boolean };
+      search_ledger_entries: {
+        Args: {
+          hh_id: string;
+          result_limit?: number;
+          result_offset?: number;
+          search_query: string;
+          search_scope: string;
+        };
+        Returns: {
+          amount: number;
+          category_id: string | null;
+          created_at: string;
+          from_account_id: string | null;
+          from_payment_method_id: string | null;
+          household_id: string;
+          id: string;
+          is_shared: boolean;
+          memo: string | null;
+          owner_id: string;
+          title: string | null;
+          to_account_id: string | null;
+          to_payment_method_id: string | null;
+          transacted_at: string;
+          type: Database["public"]["Enums"]["ledger_entry_type"];
+          updated_at: string;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "ledger_entries";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
       search_stocks: {
         Args: {
           market_filter?: Database["public"]["Enums"]["market_type"];
