@@ -50,6 +50,10 @@ export function getServiceRouteTree(options?: {
           closeHref: "/ledger",
         },
         {
+          href: "/ledger/search",
+          label: "내역 검색",
+        },
+        {
           href: "/ledger/records",
           label: "기록 조회",
           preserveSearchParams: ["date"],
@@ -295,6 +299,12 @@ export function resolveServiceParentHref({
     if (from === "records") {
       return appendAllowedSearchParams("/ledger/records", searchParams, [
         "date",
+      ]);
+    }
+    if (from === "search") {
+      return appendAllowedSearchParams("/ledger/search", searchParams, [
+        "q",
+        "scope",
       ]);
     }
   }

@@ -161,6 +161,20 @@ describe("LedgerEntryRow", () => {
     expect(screen.getByText("#데이트")).toBeInTheDocument();
   });
 
+  it("검색 결과 문맥과 거래일을 선택적으로 표시한다", () => {
+    render(
+      <LedgerEntryRow
+        entry={baseEntry}
+        href="/ledger/records/entry-1?from=search&q=%EA%B9%80%EB%B0%A5&scope=shared"
+        dateLabel="2026.06.02"
+        memoContext="메모: 김밥"
+      />,
+    );
+
+    expect(screen.getByText(/2026\.06\.02/)).toBeInTheDocument();
+    expect(screen.getByText("메모: 김밥")).toHaveClass("line-clamp-1");
+  });
+
   it("태그가 3개를 초과해도 최대 5개까지 자연스럽게 랩핑되며 +N 표시가 나타나지 않는다", () => {
     renderRow({
       ...baseEntry,

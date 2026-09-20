@@ -157,6 +157,15 @@ export interface GetLedgerEntriesOptions {
   categoryBreakdown?: "direct";
 }
 
+export interface LedgerEntrySearchItem extends LedgerEntryWithDetails {
+  memoMatched: boolean;
+}
+
+export interface LedgerEntrySearchResult {
+  items: LedgerEntrySearchItem[];
+  nextOffset: number | null;
+}
+
 export interface CreateLedgerEntryParams {
   householdId: string;
   ownerId: string;
@@ -672,6 +681,50 @@ export async function getLedgerEntries(
   }
 
   return attachLedgerEntryDetails(supabase, scopedRows);
+}
+
+export async function searchLedgerEntries(
+  supabase: SupabaseClient<Database>,
+  householdId: string,
+  options: {
+    query: string;
+    scope: "shared" | "personal";
+    offset: number;
+    limit: number;
+  },
+): Promise<LedgerEntrySearchResult> {
+  const query = options.query.trim();
+  const { data, error } = await supabase.rpc("search_ledger_entries", {
+    hh_id: householdId,
+    search_query: query,
+    search_scope: options.scope,
+    result_offset: options.offset,
+    result_limit: options.limit + 1,
+  });
+
+  if (error) {
+    console.error("Ledger entry search error:", error);
+    throw new APIError(
+      "LEDGER_SEARCH_ERROR",
+      "가계부 내역 검색에 실패했습니다.",
+      500,
+    );
+  }
+
+  const rows = data ?? [];
+  const pageRows = rows.slice(0, options.limit);
+  const entries = await attachLedgerEntryDetails(supabase, pageRows);
+  const normalizedQuery = query.toLocaleLowerCase();
+
+  return {
+    items: entries.map((entry) => ({
+      ...entry,
+      memoMatched:
+        entry.memo?.toLocaleLowerCase().includes(normalizedQuery) ?? false,
+    })),
+    nextOffset:
+      rows.length > options.limit ? options.offset + pageRows.length : null,
+  };
 }
 
 export async function getLedgerEntrySummary(

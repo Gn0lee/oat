@@ -9,6 +9,7 @@ import {
   getLedgerEntryById,
   getOwnLedgerActivity,
   isTransferCapablePaymentMethod,
+  searchLedgerEntries,
   updateLedgerEntryWithBalanceSync,
 } from "./ledger";
 
@@ -197,6 +198,67 @@ describe("getLedgerEntryById", () => {
     ).rejects.toMatchObject(
       new APIError("NOT_FOUND", "가계부 기록을 찾을 수 없습니다.", 404),
     );
+  });
+});
+
+describe("searchLedgerEntries", () => {
+  it("검색 조건을 서버 RPC에 적용한 뒤 20건 단위로 페이지를 나눈다", async () => {
+    const rows = Array.from({ length: 21 }, (_, index) => ({
+      id: `entry-${index}`,
+      household_id: "household-1",
+      owner_id: "user-1",
+      type: "expense" as const,
+      amount: 1000,
+      title: index === 0 ? "백화점" : "생일 지출",
+      category_id: null,
+      from_account_id: null,
+      from_payment_method_id: null,
+      to_account_id: null,
+      to_payment_method_id: null,
+      is_shared: false,
+      memo: index === 0 ? "생일 선물" : null,
+      transacted_at: "2026-06-08T03:00:00.000Z",
+      created_at: "2026-06-08T03:10:00.000Z",
+      updated_at: "2026-06-08T03:10:00.000Z",
+    }));
+    const emptyBuilder = {
+      select: vi.fn().mockReturnThis(),
+      in: vi.fn().mockResolvedValue({ data: [] }),
+    };
+    const profilesBuilder = {
+      select: vi.fn().mockReturnThis(),
+      in: vi.fn().mockResolvedValue({ data: [{ id: "user-1", name: "진호" }] }),
+    };
+    const tagsBuilder = {
+      select: vi.fn().mockReturnThis(),
+      in: vi.fn().mockResolvedValue({ data: [] }),
+    };
+    const supabase = {
+      rpc: vi.fn().mockResolvedValue({ data: rows, error: null }),
+      from: vi.fn((table: string) => {
+        if (table === "profiles") return profilesBuilder;
+        if (table === "ledger_entry_tags") return tagsBuilder;
+        return emptyBuilder;
+      }),
+    };
+
+    const result = await searchLedgerEntries(supabase as never, "household-1", {
+      query: " 생일 ",
+      scope: "personal",
+      offset: 0,
+      limit: 20,
+    });
+
+    expect(supabase.rpc).toHaveBeenCalledWith("search_ledger_entries", {
+      hh_id: "household-1",
+      search_query: "생일",
+      search_scope: "personal",
+      result_offset: 0,
+      result_limit: 21,
+    });
+    expect(result.items).toHaveLength(20);
+    expect(result.items[0]).toMatchObject({ memoMatched: true });
+    expect(result.nextOffset).toBe(20);
   });
 });
 

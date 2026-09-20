@@ -9,9 +9,18 @@ import { formatCurrency } from "@/lib/utils/format";
 interface LedgerEntryRowProps {
   entry: LedgerEntryWithDetails;
   href: string;
+  dateLabel?: string;
+  memoContext?: string;
+  onClick?: () => void;
 }
 
-export function LedgerEntryRow({ entry, href }: LedgerEntryRowProps) {
+export function LedgerEntryRow({
+  entry,
+  href,
+  dateLabel,
+  memoContext,
+  onClick,
+}: LedgerEntryRowProps) {
   const isIncome = entry.type === "income";
   const isTransfer = entry.type === "transfer";
   const isNonExpenseWithdrawal = entry.type === "non_expense_withdrawal";
@@ -61,12 +70,14 @@ export function LedgerEntryRow({ entry, href }: LedgerEntryRowProps) {
   return (
     <Link
       href={href}
+      onClick={onClick}
       className="group flex flex-col gap-1 border-b px-4 py-3 transition-colors last:border-b-0 hover:bg-gray-50 active:bg-gray-100 sm:px-5"
     >
       {/* Top Row: status + share indicator on left, chevron on right */}
       <div className="flex items-center justify-between text-xs text-gray-500 font-medium">
         <span>
           {typeLabel} · {entry.isShared ? "공용" : "개인"}
+          {dateLabel ? ` · ${dateLabel}` : ""}
         </span>
         <ChevronRight
           data-testid="ledger-entry-row-chevron"
@@ -80,6 +91,12 @@ export function LedgerEntryRow({ entry, href }: LedgerEntryRowProps) {
           {titleText}
         </span>
       </div>
+
+      {memoContext && (
+        <p className="line-clamp-1 break-words text-xs text-gray-500">
+          {memoContext}
+        </p>
+      )}
 
       {/* Tag Row: max 5 tags, wrapping, no +N */}
       {entry.tags && entry.tags.length > 0 && (
