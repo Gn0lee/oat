@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import type * as React from "react";
 import { Drawer as DrawerPrimitive } from "vaul";
 
 import { cn } from "@/lib/utils/cn";
@@ -49,43 +49,15 @@ function DrawerContent({
   className,
   children,
   showHandle = true,
-  keyboardViewport = false,
-  style,
   ...props
 }: React.ComponentProps<typeof DrawerPrimitive.Content> & {
   showHandle?: boolean;
-  keyboardViewport?: boolean;
 }) {
-  const [viewportStyle, setViewportStyle] =
-    React.useState<React.CSSProperties>();
-
-  React.useEffect(() => {
-    if (!keyboardViewport || !window.visualViewport) return;
-    const viewport = window.visualViewport;
-    const update = () =>
-      setViewportStyle({
-        height: viewport.height,
-        maxHeight: viewport.height,
-        bottom: Math.max(
-          0,
-          window.innerHeight - viewport.height - viewport.offsetTop,
-        ),
-      });
-    update();
-    viewport.addEventListener("resize", update);
-    viewport.addEventListener("scroll", update);
-    return () => {
-      viewport.removeEventListener("resize", update);
-      viewport.removeEventListener("scroll", update);
-    };
-  }, [keyboardViewport]);
-
   return (
     <DrawerPortal data-slot="drawer-portal">
       <DrawerOverlay />
       <DrawerPrimitive.Content
         data-slot="drawer-content"
-        style={{ ...style, ...viewportStyle }}
         className={cn(
           "group/drawer-content fixed z-50 flex h-auto flex-col bg-background",
           "data-[vaul-drawer-direction=top]:inset-x-0 data-[vaul-drawer-direction=top]:top-0 data-[vaul-drawer-direction=top]:mb-24 data-[vaul-drawer-direction=top]:max-h-[80vh] data-[vaul-drawer-direction=top]:rounded-b-lg data-[vaul-drawer-direction=top]:border-b",

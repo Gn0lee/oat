@@ -9,12 +9,7 @@ import { createPortal } from "react-dom";
 import { FormProvider, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
-import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerTitle,
-} from "@/components/ui/drawer";
+import { Drawer, DrawerContent } from "@/components/ui/drawer";
 import { useCreateBatchLedgerEntries } from "@/hooks/use-ledger-entries";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import {
@@ -276,22 +271,16 @@ export function LedgerEntryComposer({
       {mounted && !isDesktop && (
         <Drawer
           open={editIndex !== null}
-          repositionInputs={!window.visualViewport}
           onOpenChange={(open) => {
             if (!open) setEditIndex(null);
           }}
         >
           {activeEditIndex !== null && (
             <DrawerContent
-              keyboardViewport
               className="h-[100dvh] max-h-[100dvh] rounded-none border-t-0 p-0 flex flex-col data-[vaul-drawer-direction=bottom]:mt-0 data-[vaul-drawer-direction=bottom]:max-h-[100dvh] data-[vaul-drawer-direction=bottom]:rounded-none data-[vaul-drawer-direction=bottom]:border-t-0"
               showHandle={false}
               onOpenAutoFocus={(event) => event.preventDefault()}
             >
-              <DrawerTitle className="sr-only">가계부 내역 편집</DrawerTitle>
-              <DrawerDescription className="sr-only">
-                내역을 입력하고 완료를 누르세요.
-              </DrawerDescription>
               <ComposerFormStep
                 key={activeEditIndex}
                 index={activeEditIndex}
