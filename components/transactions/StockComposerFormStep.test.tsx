@@ -54,14 +54,4 @@ describe("StockComposerFormStep", () => {
     expect(screen.queryByText("거래일")).not.toBeInTheDocument();
     expect(screen.getByText("계좌 선택")).toBeInTheDocument();
   });
-
-  it("keeps 완료 outside the scrollable fields when the keyboard shortens the drawer", () => {
-    renderStep("full");
-
-    const fields = screen.getByText("종목 입력").closest(".overflow-y-auto");
-    const action = screen.getByRole("button", { name: "완료" });
-    expect(fields).toBeInTheDocument();
-    expect(fields).not.toContainElement(action);
-    expect(action.parentElement).toHaveClass("shrink-0");
-  });
 });

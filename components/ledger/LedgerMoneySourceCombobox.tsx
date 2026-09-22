@@ -31,7 +31,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { DrawerDescription, DrawerTitle } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -677,7 +676,6 @@ export function LedgerMoneySourcePickerPanel({
   isShared,
   includeClearOption = true,
   excludedValues,
-  title,
   searchPlaceholder,
   onValueChange,
 }: LedgerMoneySourcePickerPanelProps) {
@@ -735,10 +733,6 @@ export function LedgerMoneySourcePickerPanel({
       className="flex-1 min-h-0 overflow-clip w-full h-full"
       style={{ overflow: "clip" }}
     >
-      <DrawerTitle className="sr-only">{title}</DrawerTitle>
-      <DrawerDescription className="sr-only">
-        목록에서 선택하거나 새로 추가하세요.
-      </DrawerDescription>
       <motion.div
         animate={{ x: getTranslateX() }}
         transition={
