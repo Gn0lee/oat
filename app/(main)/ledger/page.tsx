@@ -14,10 +14,26 @@ import {
   SectionHeader,
 } from "@/components/layout/screen";
 import { LedgerSummarySection } from "@/components/ledger/LedgerSummarySection";
+import { LedgerBookFlowPrototype } from "@/components/ledger/prototype/LedgerBookFlowPrototype";
 import { getKstNow } from "@/lib/date";
 import { requireUser } from "@/lib/supabase/auth";
 
-export default async function LedgerPage() {
+export default async function LedgerPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ prototype?: string }>;
+}) {
+  if (
+    process.env.NODE_ENV !== "production" &&
+    (await searchParams).prototype === "books"
+  ) {
+    return (
+      <PageContainer maxWidth="default">
+        <LedgerBookFlowPrototype />
+      </PageContainer>
+    );
+  }
+
   await requireUser();
 
   const now = getKstNow();

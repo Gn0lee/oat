@@ -2,6 +2,13 @@ import type { NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 
 export async function proxy(request: NextRequest) {
+  if (
+    process.env.NODE_ENV !== "production" &&
+    request.nextUrl.pathname === "/ledger" &&
+    request.nextUrl.searchParams.get("prototype") === "books"
+  ) {
+    return;
+  }
   return await updateSession(request);
 }
 
