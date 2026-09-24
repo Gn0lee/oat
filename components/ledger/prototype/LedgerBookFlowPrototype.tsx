@@ -15,23 +15,59 @@ type Screen =
   | "detail"
   | "form";
 type Scope = "shared" | "personal";
-type Book = { id: string; name: string; archived: boolean; isDefault: boolean };
+type Book = {
+  id: string;
+  name: string;
+  scope: Scope;
+  archived: boolean;
+  isDefault: boolean;
+};
 type Entry = {
   id: string;
   bookId: string;
   title: string;
   amount: number;
   date: string;
-  scope: Scope;
   type: "expense" | "income" | "transfer" | "non_expense_withdrawal";
   mine: boolean;
 };
 
 const initialBooks: Book[] = [
-  { id: "living", name: "생활비", archived: false, isDefault: true },
-  { id: "trip", name: "여행비", archived: false, isDefault: false },
-  { id: "move", name: "이사비", archived: false, isDefault: false },
-  { id: "old", name: "지난 휴가", archived: true, isDefault: false },
+  {
+    id: "living",
+    name: "생활비",
+    scope: "shared",
+    archived: false,
+    isDefault: true,
+  },
+  {
+    id: "trip",
+    name: "여행비",
+    scope: "shared",
+    archived: false,
+    isDefault: false,
+  },
+  {
+    id: "move",
+    name: "이사비",
+    scope: "shared",
+    archived: false,
+    isDefault: false,
+  },
+  {
+    id: "mine",
+    name: "내 저축",
+    scope: "personal",
+    archived: false,
+    isDefault: false,
+  },
+  {
+    id: "old",
+    name: "지난 휴가",
+    scope: "shared",
+    archived: true,
+    isDefault: false,
+  },
 ];
 const initialEntries: Entry[] = [
   {
@@ -40,17 +76,15 @@ const initialEntries: Entry[] = [
     title: "장보기",
     amount: 82000,
     date: "2026-09-18",
-    scope: "shared",
     type: "expense",
     mine: true,
   },
   {
     id: "2",
-    bookId: "living",
+    bookId: "mine",
     title: "월급",
     amount: 1500000,
     date: "2026-09-17",
-    scope: "personal",
     type: "income",
     mine: true,
   },
@@ -60,7 +94,6 @@ const initialEntries: Entry[] = [
     title: "숙소 예약",
     amount: 200000,
     date: "2026-09-16",
-    scope: "shared",
     type: "expense",
     mine: true,
   },
@@ -70,7 +103,6 @@ const initialEntries: Entry[] = [
     title: "항공권",
     amount: 80000,
     date: "2026-09-12",
-    scope: "shared",
     type: "expense",
     mine: false,
   },
@@ -80,7 +112,6 @@ const initialEntries: Entry[] = [
     title: "이사 자금 이동",
     amount: 300000,
     date: "2026-09-11",
-    scope: "shared",
     type: "transfer",
     mine: true,
   },
@@ -90,7 +121,6 @@ const initialEntries: Entry[] = [
     title: "작년 여행 기념품",
     amount: 45000,
     date: "2025-09-08",
-    scope: "shared",
     type: "expense",
     mine: true,
   },
@@ -115,7 +145,6 @@ export function LedgerBookFlowPrototype() {
   const [books, setBooks] = useState(initialBooks);
   const [entries, setEntries] = useState(initialEntries);
   const [bookId, setBookId] = useState("all");
-  const [scope, setScope] = useState<Scope>("shared");
   const [screen, setScreen] = useState<Screen>("hub");
   const [returnScreen, setReturnScreen] = useState<Screen>("calendar");
   const [entryId, setEntryId] = useState<string | null>(null);
@@ -125,7 +154,6 @@ export function LedgerBookFlowPrototype() {
   const [formAmount, setFormAmount] = useState("");
   const [formDate, setFormDate] = useState("2026-09-18");
   const [formBookId, setFormBookId] = useState("living");
-  const [formScope, setFormScope] = useState<Scope>("shared");
   const [formType, setFormType] = useState<Entry["type"]>("expense");
   const [notice, setNotice] = useState("");
   const [month, setMonth] = useState("2026-09");
@@ -134,8 +162,7 @@ export function LedgerBookFlowPrototype() {
   const activeBooks = books.filter((book) => !book.archived);
   const entry = entries.find((item) => item.id === entryId);
   const filtered = entries.filter(
-    (item) =>
-      (bookId === "all" || item.bookId === bookId) && item.scope === scope,
+    (item) => bookId === "all" || item.bookId === bookId,
   );
   const searchResults = filtered.filter((item) =>
     item.title.includes(query.trim()),
@@ -191,7 +218,6 @@ export function LedgerBookFlowPrototype() {
           ? (activeBooks.find((book) => book.isDefault)?.id ?? "")
           : bookId),
     );
-    setFormScope(item?.scope ?? scope);
     setFormType(item?.type ?? "expense");
     setScreen("form");
     setNotice("");
@@ -221,7 +247,6 @@ export function LedgerBookFlowPrototype() {
       title: formTitle.trim(),
       amount: Number(formAmount),
       date: formDate,
-      scope: formScope,
       type: formType,
       mine: true,
     };
@@ -230,21 +255,26 @@ export function LedgerBookFlowPrototype() {
         ? current.map((item) => (item.id === next.id ? next : item))
         : [next, ...current],
     );
+    if (editing && source?.bookId !== formBookId) setBookId(formBookId);
     setEntryId(next.id);
     setScreen(editing ? "detail" : returnScreen);
     setNotice(
       editing
-        ? "모형에서 수정했어요. 장부 이동은 잔액을 바꾸지 않아요."
+        ? source &&
+          books.find((book) => book.id === source.bookId)?.scope !==
+            target.scope
+          ? "장부를 옮겼어요. 공개 대상도 새 장부에 맞게 바뀌었어요."
+          : "모형에서 수정했어요. 장부 이동은 잔액을 바꾸지 않아요."
         : "모형에 기록을 추가했어요.",
     );
   };
-  const addBook = () => {
+  const addBook = (scope: Scope = "shared") => {
     const name = window.prompt("새 장부 이름", "새 목적");
     if (!name?.trim()) return;
     const id = String(Date.now());
     setBooks((current) => [
       ...current,
-      { id, name: name.trim(), archived: false, isDefault: false },
+      { id, name: name.trim(), scope, archived: false, isDefault: false },
     ]);
     setBookId(id);
     setNotice("빈 장부를 만들었어요.");
@@ -316,30 +346,12 @@ export function LedgerBookFlowPrototype() {
         <option value="all">전체 장부</option>
         {books.map((book) => (
           <option key={book.id} value={book.id}>
-            {book.name}
+            {book.name} · {book.scope === "shared" ? "공용" : "개인"}
             {book.archived ? " · 보관" : ""}
           </option>
         ))}
       </select>
     </label>
-  );
-  const scopeSelect = () => (
-    <div className="space-y-1">
-      <p className="text-xs font-semibold text-gray-500">공개 범위</p>
-      <div className="flex gap-2">
-        {(["shared", "personal"] as const).map((value) => (
-          <button
-            key={value}
-            type="button"
-            aria-pressed={scope === value}
-            onClick={() => setScope(value)}
-            className={`${button} flex-1 ${scope === value ? "border-indigo-500 bg-indigo-50 text-indigo-700" : ""}`}
-          >
-            {value === "shared" ? "공용 기록" : "내 개인 기록"}
-          </button>
-        ))}
-      </div>
-    </div>
   );
   const entryList = (items: Entry[]) =>
     items.length ? (
@@ -383,27 +395,29 @@ export function LedgerBookFlowPrototype() {
       + 기록 추가
     </button>
   );
-  const heading = (title: string) => (
-    <div className="flex items-center gap-3">
-      <button
-        type="button"
-        className="text-sm text-gray-500"
-        onClick={() => {
-          setScreen(
-            screen === "form"
-              ? returnScreen
-              : screen === "detail"
+  const heading = (title: string) =>
+    variant === "C" &&
+    ["calendar", "search", "analysis"].includes(screen) ? null : (
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          className="text-sm text-gray-500"
+          onClick={() => {
+            setScreen(
+              screen === "form"
                 ? returnScreen
-                : "hub",
-          );
-          setNotice("");
-        }}
-      >
-        ← 뒤로
-      </button>
-      {variant !== "C" && <h2 className="text-lg font-bold">{title}</h2>}
-    </div>
-  );
+                : screen === "detail"
+                  ? returnScreen
+                  : "hub",
+            );
+            setNotice("");
+          }}
+        >
+          ← 뒤로
+        </button>
+        <h2 className="text-lg font-bold">{title}</h2>
+      </div>
+    );
 
   const content = () => {
     if (screen === "calendar") {
@@ -478,7 +492,7 @@ export function LedgerBookFlowPrototype() {
             })}
           </div>
           <p className="text-xs text-gray-500">
-            표시 금액과 아래 목록은 현재 장부·공개 범위가 같아요.
+            표시 금액과 아래 목록은 현재 장부의 기록이에요.
           </p>
           <p className="text-sm font-semibold">
             {selectedDay ? `${selectedDay}일 기록` : "이번 달 기록"}
@@ -508,9 +522,7 @@ export function LedgerBookFlowPrototype() {
               placeholder="예: 숙소"
             />
           </label>
-          <p className="text-xs text-gray-500">
-            현재 장부와 공개 범위에서만 검색해요.
-          </p>
+          <p className="text-xs text-gray-500">현재 장부에서만 검색해요.</p>
           {query.trim() ? (
             entryList(searchResults)
           ) : (
@@ -567,15 +579,24 @@ export function LedgerBookFlowPrototype() {
       return (
         <div className="space-y-4">
           {heading("장부 관리")}
-          <button
-            type="button"
-            className={`${primary} w-full`}
-            onClick={addBook}
-          >
-            + 새 장부
-          </button>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              className={`${primary} flex-1`}
+              onClick={() => addBook("shared")}
+            >
+              + 공용 장부
+            </button>
+            <button
+              type="button"
+              className={`${button} flex-1`}
+              onClick={() => addBook("personal")}
+            >
+              + 개인 장부
+            </button>
+          </div>
           <p className="text-xs text-gray-500">
-            장부는 목적별 분류예요. 공개 범위는 기록마다 별도로 정해요.
+            장부 안의 모든 기록은 같은 공개 범위를 따릅니다.
           </p>
           {books.map((book) => (
             <div key={book.id} className="border-b border-gray-100 py-3">
@@ -588,7 +609,7 @@ export function LedgerBookFlowPrototype() {
                     setScreen("calendar");
                   }}
                 >
-                  {book.name}{" "}
+                  {book.name} · {book.scope === "shared" ? "공용" : "개인"}{" "}
                   {book.isDefault && (
                     <span className="text-xs text-indigo-600">기본</span>
                   )}{" "}
@@ -610,23 +631,25 @@ export function LedgerBookFlowPrototype() {
                     이름 변경
                   </button>
                 )}
-                {!book.archived && !book.isDefault && (
-                  <button
-                    type="button"
-                    className={button}
-                    onClick={() => {
-                      setBooks((current) =>
-                        current.map((item) => ({
-                          ...item,
-                          isDefault: item.id === book.id,
-                        })),
-                      );
-                      setNotice(`${book.name}을 기본 장부로 지정했어요.`);
-                    }}
-                  >
-                    기본 지정
-                  </button>
-                )}
+                {!book.archived &&
+                  !book.isDefault &&
+                  book.scope === "shared" && (
+                    <button
+                      type="button"
+                      className={button}
+                      onClick={() => {
+                        setBooks((current) =>
+                          current.map((item) => ({
+                            ...item,
+                            isDefault: item.id === book.id,
+                          })),
+                        );
+                        setNotice(`${book.name}을 기본 장부로 지정했어요.`);
+                      }}
+                    >
+                      기본 지정
+                    </button>
+                  )}
                 <button
                   type="button"
                   className={button}
@@ -679,7 +702,12 @@ export function LedgerBookFlowPrototype() {
                 </div>
                 <div className="flex justify-between">
                   <dt>공개 범위</dt>
-                  <dd>{entry.scope === "shared" ? "공용" : "개인"}</dd>
+                  <dd>
+                    {books.find((book) => book.id === entry.bookId)?.scope ===
+                    "shared"
+                      ? "공용 장부"
+                      : "개인 장부"}
+                  </dd>
                 </div>
                 <div className="flex justify-between">
                   <dt>작성</dt>
@@ -726,30 +754,26 @@ export function LedgerBookFlowPrototype() {
             >
               {activeBooks.map((book) => (
                 <option key={book.id} value={book.id}>
-                  {book.name}
+                  {book.name} · {book.scope === "shared" ? "공용" : "개인"}
                   {book.isDefault ? " · 기본" : ""}
                 </option>
               ))}
             </select>
           </label>
-          <div className="space-y-1">
-            <p className="text-xs font-semibold text-gray-500">
-              공개 범위 · 장부와 별개
-            </p>
-            <div className="flex gap-2">
-              {(["shared", "personal"] as const).map((value) => (
-                <button
-                  key={value}
-                  type="button"
-                  aria-pressed={formScope === value}
-                  className={`${button} flex-1 ${formScope === value ? "border-indigo-500 bg-indigo-50 text-indigo-700" : ""}`}
-                  onClick={() => setFormScope(value)}
-                >
-                  {value === "shared" ? "공용" : "개인"}
-                </button>
-              ))}
-            </div>
-          </div>
+          <p className="text-xs text-gray-500">
+            이 기록은 선택한 장부와 같은 공개 범위를 따릅니다.
+            {editing &&
+              entry &&
+              books.find((book) => book.id === entry.bookId)?.scope !==
+                books.find((book) => book.id === formBookId)?.scope && (
+                <strong className="mt-1 block text-amber-700">
+                  {books.find((book) => book.id === formBookId)?.scope ===
+                  "shared"
+                    ? "옮기면 이 기록이 가족에게 공개됩니다."
+                    : "옮기면 이 기록이 나에게만 보입니다."}
+                </strong>
+              )}
+          </p>
           <label className="block text-xs font-semibold text-gray-500">
             종류
             <select
@@ -837,16 +861,14 @@ export function LedgerBookFlowPrototype() {
       </div>
       {variant === "A" && (
         <div className="space-y-5">
-          <div className="space-y-3">
-            {bookSelect("현재 장부")}
-            {scopeSelect()}
-          </div>
+          <div className="space-y-3">{bookSelect("현재 장부")}</div>
           {screen === "hub" ? (
             <div className="space-y-5">
               <div className="border-b border-gray-200 pb-4">
                 <p className="text-sm text-gray-500">
-                  {selected?.name ?? "전체 장부"} ·{" "}
-                  {scope === "shared" ? "공용" : "개인"} 지출
+                  {selected?.name ?? "전체 장부"} · 지출
+                  {selected &&
+                    ` · ${selected.scope === "shared" ? "공용" : "개인"}`}
                 </p>
                 <p className="text-3xl font-bold">{won(expenses)}</p>
                 {selected?.archived && (
@@ -885,12 +907,12 @@ export function LedgerBookFlowPrototype() {
                   관리
                 </button>
               </div>
-              {scopeSelect()}
               <div className="space-y-2">
                 {[
                   {
                     id: "all",
                     name: "전체 장부",
+                    scope: "shared" as Scope,
                     archived: false,
                     isDefault: false,
                   },
@@ -908,6 +930,8 @@ export function LedgerBookFlowPrototype() {
                     <span>
                       <strong className="block text-lg">{book.name}</strong>
                       <small className="text-gray-500">
+                        {book.id !== "all" &&
+                          `${book.scope === "shared" ? "공용" : "개인"} · `}
                         {book.archived
                           ? "보관 · 읽기 전용"
                           : book.isDefault
@@ -924,7 +948,7 @@ export function LedgerBookFlowPrototype() {
               <button
                 type="button"
                 className={`${button} w-full`}
-                onClick={addBook}
+                onClick={() => setScreen("manage")}
               >
                 + 장부 만들기
               </button>
@@ -963,10 +987,6 @@ export function LedgerBookFlowPrototype() {
                     )}
                   </div>
                 )}
-              {screen !== "manage" &&
-                screen !== "detail" &&
-                screen !== "form" &&
-                scopeSelect()}
               {content()}
             </>
           )}
@@ -974,81 +994,136 @@ export function LedgerBookFlowPrototype() {
       )}
       {variant === "C" && (
         <div className="space-y-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs text-gray-500">빠른 기록형</p>
-              <h2 className="text-2xl font-bold">
-                {screen === "hub"
-                  ? "가계부"
-                  : screen === "calendar"
-                    ? "캘린더"
-                    : screen === "search"
-                      ? "검색"
-                      : screen === "analysis"
-                        ? "분석"
-                        : screen === "manage"
-                          ? "장부 관리"
-                          : screen === "detail"
-                            ? "기록 상세"
-                            : "기록 입력"}
-              </h2>
-            </div>
-            {screen !== "form" &&
-              screen !== "detail" &&
-              !selected?.archived && (
-                <button
-                  type="button"
-                  className={primary}
-                  onClick={() => openForm()}
-                >
-                  + 입력
-                </button>
-              )}
-          </div>
-          {screen !== "form" && screen !== "detail" && screen !== "manage" && (
-            <div className="space-y-3 rounded-2xl bg-gray-50 p-3">
-              {bookSelect("조회 장부")}
-              {scopeSelect()}
-            </div>
-          )}
           {screen === "hub" ? (
             <>
-              <p className="text-sm text-gray-500">
-                장부와 공개 범위를 선택해 내용을 확인하세요.
-              </p>
-              <p className="text-3xl font-bold">{won(expenses)}</p>
-              <h3 className="font-semibold">최근 기록</h3>
-              {entryList(filtered.slice(0, 3))}
-            </>
-          ) : (
-            content()
-          )}
-          {screen !== "form" && screen !== "detail" && (
-            <div className="fixed inset-x-0 bottom-[calc(9rem+env(safe-area-inset-bottom))] z-30 mx-auto flex max-w-md justify-around rounded-2xl border border-gray-200 bg-white p-2 shadow-lg">
-              {(
-                ["hub", "calendar", "search", "analysis", "manage"] as const
-              ).map((target) => (
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-gray-500">전체 장부 지출</p>
                 <button
-                  key={target}
                   type="button"
-                  className={`min-h-11 px-2 text-xs ${screen === target ? "font-bold text-indigo-600" : "text-gray-500"}`}
+                  className="text-sm text-gray-500"
+                  onClick={() => setScreen("manage")}
+                >
+                  장부 관리 ›
+                </button>
+              </div>
+              <p className="text-3xl font-bold">
+                {won(
+                  entries
+                    .filter((item) => item.type === "expense")
+                    .reduce((sum, item) => sum + item.amount, 0),
+                )}
+              </p>
+              <div className="divide-y divide-gray-100 border-y border-gray-200">
+                <button
+                  type="button"
+                  className={row}
                   onClick={() => {
-                    setScreen(target);
-                    setNotice("");
+                    chooseBook("all");
+                    setScreen("calendar");
                   }}
                 >
-                  {target === "hub"
-                    ? "홈"
-                    : target === "calendar"
-                      ? "달력"
-                      : target === "search"
-                        ? "검색"
-                        : target === "analysis"
-                          ? "분석"
-                          : "장부"}
+                  <span className="font-semibold">전체 기록 보기</span>
+                  <span aria-hidden>›</span>
                 </button>
-              ))}
-            </div>
+                {activeBooks.map((book) => (
+                  <button
+                    key={book.id}
+                    type="button"
+                    className={row}
+                    onClick={() => {
+                      chooseBook(book.id);
+                      setScreen("calendar");
+                    }}
+                  >
+                    <span>
+                      <strong className="block text-sm">{book.name}</strong>
+                      <small className="text-xs text-gray-500">
+                        {book.scope === "shared" ? "공용" : "개인"}
+                        {book.isDefault ? " · 기본 장부" : ""}
+                      </small>
+                    </span>
+                    <span className="flex items-center gap-2 text-sm">
+                      {won(
+                        entries
+                          .filter(
+                            (item) =>
+                              item.bookId === book.id &&
+                              item.type === "expense",
+                          )
+                          .reduce((sum, item) => sum + item.amount, 0),
+                      )}
+                      <span aria-hidden>›</span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+              <button
+                type="button"
+                className={`${primary} w-full`}
+                onClick={() => openForm()}
+              >
+                + 기록 추가
+              </button>
+            </>
+          ) : (
+            <>
+              {(["calendar", "search", "analysis"] as Screen[]).includes(
+                screen,
+              ) && (
+                <>
+                  <div className="flex items-center justify-between">
+                    <button
+                      type="button"
+                      className="text-sm text-indigo-600"
+                      onClick={() => setScreen("hub")}
+                    >
+                      ‹ 장부 목록
+                    </button>
+                    <strong>{selected?.name ?? "전체 장부"}</strong>
+                    <button
+                      type="button"
+                      className="text-sm text-gray-500"
+                      onClick={() => setScreen("manage")}
+                    >
+                      관리
+                    </button>
+                  </div>
+                  <div className="border-b border-gray-200 pb-3">
+                    <p className="text-xs text-gray-500">
+                      {selected?.scope === "personal"
+                        ? "개인"
+                        : selected
+                          ? "공용"
+                          : "전체"}{" "}
+                      지출
+                    </p>
+                    <p className="text-2xl font-bold">{won(expenses)}</p>
+                    {selected?.archived && (
+                      <p className="text-xs text-gray-500">보관 · 읽기 전용</p>
+                    )}
+                  </div>
+                  <div className="flex gap-4 border-b border-gray-200 text-sm">
+                    {(["calendar", "search", "analysis"] as const).map(
+                      (target) => (
+                        <button
+                          key={target}
+                          type="button"
+                          onClick={() => setScreen(target)}
+                          className={`min-h-11 ${screen === target ? "border-b-2 border-indigo-600 font-semibold text-indigo-700" : "text-gray-500"}`}
+                        >
+                          {target === "calendar"
+                            ? "달력"
+                            : target === "search"
+                              ? "검색"
+                              : "분석"}
+                        </button>
+                      ),
+                    )}
+                  </div>
+                </>
+              )}
+              {content()}
+            </>
           )}
         </div>
       )}
@@ -1065,9 +1140,13 @@ export function LedgerBookFlowPrototype() {
               variant,
               screen,
               book: selected?.name ?? "전체",
-              scope,
+              scope: selected?.scope ?? "전체",
               defaultBook: books.find((book) => book.isDefault)?.name,
-              books: books.map(({ name, archived }) => ({ name, archived })),
+              books: books.map(({ name, scope, archived }) => ({
+                name,
+                scope,
+                archived,
+              })),
               entries: entries.length,
             },
             null,
@@ -1092,7 +1171,7 @@ export function LedgerBookFlowPrototype() {
             ? "허브 중심"
             : variant === "B"
               ? "장부 서가"
-              : "빠른 기록"}
+              : "혼합안"}
         </span>
         <button
           type="button"
