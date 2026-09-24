@@ -1,6 +1,7 @@
 "use client";
 
 // Throwaway comparison: three iPhone book flows on /ledger?prototype=books&variant=A|B|C.
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -827,6 +828,12 @@ export function LedgerBookFlowPrototype() {
         <p className="mt-1">
           모든 변경은 이 화면의 메모리에만 남아요. 새로고침하면 초기화돼요.
         </p>
+        <Link
+          href="/ledger"
+          className="mt-2 inline-block font-semibold underline"
+        >
+          ← 기존 가계부로 돌아가기
+        </Link>
       </div>
       {variant === "A" && (
         <div className="space-y-5">

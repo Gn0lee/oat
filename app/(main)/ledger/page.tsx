@@ -1,4 +1,5 @@
 import {
+  BookOpen,
   CalendarDays,
   CreditCard,
   PieChart,
@@ -23,11 +24,10 @@ export default async function LedgerPage({
 }: {
   searchParams: Promise<{ prototype?: string }>;
 }) {
-  if (
-    (process.env.NODE_ENV !== "production" ||
-      process.env.VERCEL_ENV === "preview") &&
-    (await searchParams).prototype === "books"
-  ) {
+  const showBookPrototype =
+    process.env.NODE_ENV !== "production" ||
+    process.env.VERCEL_ENV === "preview";
+  if (showBookPrototype && (await searchParams).prototype === "books") {
     return (
       <PageContainer maxWidth="default">
         <LedgerBookFlowPrototype />
@@ -43,6 +43,18 @@ export default async function LedgerPage({
 
   return (
     <PageContainer maxWidth="default">
+      {showBookPrototype && (
+        <ScreenSection>
+          <GroupedList>
+            <EntryRow
+              icon={BookOpen}
+              title="목적별 장부 시안 비교"
+              description="A·B·C 전환·입력·관리 흐름을 체험해요"
+              href="/ledger?prototype=books&variant=A"
+            />
+          </GroupedList>
+        </ScreenSection>
+      )}
       <LedgerSummarySection year={year} month={month} />
 
       <ScreenSection>
