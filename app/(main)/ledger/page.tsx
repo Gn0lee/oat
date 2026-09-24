@@ -24,7 +24,8 @@ export default async function LedgerPage({
   searchParams: Promise<{ prototype?: string }>;
 }) {
   if (
-    process.env.NODE_ENV !== "production" &&
+    (process.env.NODE_ENV !== "production" ||
+      process.env.VERCEL_ENV === "preview") &&
     (await searchParams).prototype === "books"
   ) {
     return (

@@ -3,7 +3,8 @@ import { updateSession } from "@/lib/supabase/middleware";
 
 export async function proxy(request: NextRequest) {
   if (
-    process.env.NODE_ENV !== "production" &&
+    (process.env.NODE_ENV !== "production" ||
+      process.env.VERCEL_ENV === "preview") &&
     request.nextUrl.pathname === "/ledger" &&
     request.nextUrl.searchParams.get("prototype") === "books"
   ) {

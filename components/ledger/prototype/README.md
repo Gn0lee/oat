@@ -6,6 +6,6 @@
 - B: 장부 서가에서 장부를 먼저 고른 뒤 달력·검색·분석으로 이동
 - C: 기록 중심 화면에서 각 조회 화면의 장부 필터와 빠른 입력 사용
 
-`pnpm dev` 후 `/ledger?prototype=books&variant=A`에서 시작한다. 개발 모드에서만 열리고 모든 변경은 메모리에만 남는다.
+`pnpm dev` 또는 Vercel preview 배포에서 `/ledger?prototype=books&variant=A`로 시작한다. production 배포에서는 열리지 않으며 모든 변경은 메모리에만 남는다.
 
 사용자 선택과 이유: **실제 iPhone 확인 후 기록 예정.**

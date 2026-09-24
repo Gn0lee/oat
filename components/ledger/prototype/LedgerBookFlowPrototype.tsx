@@ -1068,38 +1068,36 @@ export function LedgerBookFlowPrototype() {
           )}
         </pre>
       </details>
-      {process.env.NODE_ENV !== "production" && (
-        <div className="fixed inset-x-0 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-50 mx-auto flex w-max max-w-[calc(100vw-24px)] items-center gap-3 rounded-full bg-gray-950 px-3 py-2 text-xs text-white shadow-xl">
-          <button
-            type="button"
-            aria-label="이전 시안"
-            className="min-h-9 px-2"
-            onClick={() =>
-              switchVariant(variant === "A" ? "C" : variant === "B" ? "A" : "B")
-            }
-          >
-            ←
-          </button>
-          <span aria-live="polite">
-            {variant} ·{" "}
-            {variant === "A"
-              ? "허브 중심"
-              : variant === "B"
-                ? "장부 서가"
-                : "빠른 기록"}
-          </span>
-          <button
-            type="button"
-            aria-label="다음 시안"
-            className="min-h-9 px-2"
-            onClick={() =>
-              switchVariant(variant === "A" ? "B" : variant === "B" ? "C" : "A")
-            }
-          >
-            →
-          </button>
-        </div>
-      )}
+      <div className="fixed inset-x-0 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-50 mx-auto flex w-max max-w-[calc(100vw-24px)] items-center gap-3 rounded-full bg-gray-950 px-3 py-2 text-xs text-white shadow-xl">
+        <button
+          type="button"
+          aria-label="이전 시안"
+          className="min-h-9 px-2"
+          onClick={() =>
+            switchVariant(variant === "A" ? "C" : variant === "B" ? "A" : "B")
+          }
+        >
+          ←
+        </button>
+        <span aria-live="polite">
+          {variant} ·{" "}
+          {variant === "A"
+            ? "허브 중심"
+            : variant === "B"
+              ? "장부 서가"
+              : "빠른 기록"}
+        </span>
+        <button
+          type="button"
+          aria-label="다음 시안"
+          className="min-h-9 px-2"
+          onClick={() =>
+            switchVariant(variant === "A" ? "B" : variant === "B" ? "C" : "A")
+          }
+        >
+          →
+        </button>
+      </div>
     </div>
   );
 }
