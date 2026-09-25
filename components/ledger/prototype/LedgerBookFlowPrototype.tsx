@@ -158,6 +158,7 @@ export function LedgerBookFlowPrototype() {
   const [notice, setNotice] = useState("");
   const [month, setMonth] = useState("2026-09");
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
+  const [monthExpanded, setMonthExpanded] = useState(false);
   const selected = books.find((book) => book.id === bookId);
   const activeBooks = books.filter((book) => !book.archived);
   const entry = entries.find((item) => item.id === entryId);
@@ -317,12 +318,18 @@ export function LedgerBookFlowPrototype() {
     setBookId(id);
     const archived = books.find((book) => book.id === id)?.archived;
     const latest = entries
-      .filter((item) => item.bookId === id)
+      .filter((item) => id === "all" || item.bookId === id)
       .map((item) => item.date)
       .sort()
       .at(-1);
-    setMonth(archived && latest ? latest.slice(0, 7) : "2026-09");
-    setSelectedDay(null);
+    const nextMonth = archived && latest ? latest.slice(0, 7) : "2026-09";
+    setMonth(nextMonth);
+    setSelectedDay(
+      variant === "C" && latest?.startsWith(nextMonth)
+        ? Number(latest.slice(-2))
+        : null,
+    );
+    setMonthExpanded(false);
     setNotice("");
   };
   const moveMonth = (offset: number) => {
@@ -331,7 +338,7 @@ export function LedgerBookFlowPrototype() {
     setMonth(
       `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, "0")}`,
     );
-    setSelectedDay(null);
+    setSelectedDay(variant === "C" ? 1 : null);
   };
 
   const bookSelect = (label = "장부") => (
@@ -424,6 +431,44 @@ export function LedgerBookFlowPrototype() {
       const [year, value] = month.split("-").map(Number);
       const dayCount = new Date(year, value, 0).getDate();
       const firstDay = new Date(year, value - 1, 1).getDay();
+      const focusedDay = selectedDay ?? 18;
+      const weekStart =
+        focusedDay - new Date(year, value - 1, focusedDay).getDay();
+      const calendarDay = (day: number) => {
+        const amount = filtered
+          .filter(
+            (item) =>
+              item.date === `${month}-${String(day).padStart(2, "0")}` &&
+              item.type === "expense",
+          )
+          .reduce((sum, item) => sum + item.amount, 0);
+        return (
+          <button
+            key={day}
+            type="button"
+            onClick={() =>
+              setSelectedDay(
+                variant === "C" ? day : selectedDay === day ? null : day,
+              )
+            }
+            aria-pressed={selectedDay === day}
+            className={
+              variant === "C"
+                ? `min-h-14 rounded-xl py-1 ${selectedDay === day ? "bg-gray-950 text-white" : "text-gray-800"}`
+                : `min-h-12 rounded-lg py-1 ${selectedDay === day ? "bg-indigo-600 text-white" : amount ? "bg-indigo-50" : "bg-gray-50"}`
+            }
+          >
+            <span className="block text-sm">{day}</span>
+            {amount > 0 && (
+              <span
+                className={`block text-[10px] ${selectedDay === day ? "text-white" : "text-gray-500"}`}
+              >
+                {Math.round(amount / 10000)}만
+              </span>
+            )}
+          </button>
+        );
+      };
       return (
         <div className="space-y-4">
           {heading("캘린더")}
@@ -449,7 +494,6 @@ export function LedgerBookFlowPrototype() {
                 ›
               </button>
             </div>
-            {addButton}
           </div>
           <div className="grid grid-cols-7 gap-1 text-center text-xs">
             {["일", "월", "화", "수", "목", "금", "토"].map((day) => (
@@ -457,43 +501,36 @@ export function LedgerBookFlowPrototype() {
                 {day}
               </span>
             ))}
-            {["sun", "mon", "tue", "wed", "thu", "fri"]
-              .slice(0, firstDay)
-              .map((key) => (
-                <span key={key} aria-hidden="true" />
+            {(variant !== "C" || monthExpanded) &&
+              Array.from({ length: firstDay }, (_, i) => i + 1).map((blank) => (
+                <span key={`empty-${blank}`} aria-hidden="true" />
               ))}
-            {Array.from({ length: dayCount }, (_, i) => {
-              const day = i + 1;
-              const amount = filtered
-                .filter(
-                  (item) =>
-                    item.date === `${month}-${String(day).padStart(2, "0")}` &&
-                    item.type === "expense",
-                )
-                .reduce((sum, item) => sum + item.amount, 0);
-              return (
-                <button
-                  key={day}
-                  type="button"
-                  onClick={() =>
-                    setSelectedDay(selectedDay === day ? null : day)
-                  }
-                  aria-pressed={selectedDay === day}
-                  className={`min-h-12 rounded-lg py-1 ${selectedDay === day ? "bg-indigo-600 text-white" : amount ? "bg-indigo-50" : "bg-gray-50"}`}
-                >
-                  <span className="block">{day}</span>
-                  {amount > 0 && (
-                    <span className="text-[10px] text-indigo-700">
-                      {Math.round(amount / 10000)}만
-                    </span>
-                  )}
-                </button>
-              );
-            })}
+            {Array.from(
+              { length: variant === "C" && !monthExpanded ? 7 : dayCount },
+              (_, i) =>
+                variant === "C" && !monthExpanded ? weekStart + i : i + 1,
+            ).map((day) =>
+              day >= 1 && day <= dayCount ? (
+                calendarDay(day)
+              ) : (
+                <span key={`outside-${day}`} aria-hidden="true" />
+              ),
+            )}
           </div>
-          <p className="text-xs text-gray-500">
-            표시 금액과 아래 목록은 현재 장부의 기록이에요.
-          </p>
+          {variant === "C" ? (
+            <button
+              type="button"
+              className="mx-auto block min-h-11 text-sm text-gray-500"
+              aria-expanded={monthExpanded}
+              onClick={() => setMonthExpanded(!monthExpanded)}
+            >
+              {monthExpanded ? "⌃ 월간 달력 접기" : "⌄ 월간 달력 펼치기"}
+            </button>
+          ) : (
+            <p className="text-xs text-gray-500">
+              표시 금액과 아래 목록은 현재 장부의 기록이에요.
+            </p>
+          )}
           <p className="text-sm font-semibold">
             {selectedDay ? `${selectedDay}일 기록` : "이번 달 기록"}
           </p>
@@ -504,6 +541,19 @@ export function LedgerBookFlowPrototype() {
                   `${month}-${String(selectedDay).padStart(2, "0")}`
                 : item.date.startsWith(month),
             ),
+          )}
+          {!readOnly && (
+            <button
+              type="button"
+              className={
+                variant === "C"
+                  ? "min-h-11 w-full border-t border-gray-200 pt-3 text-left text-sm font-semibold text-gray-700"
+                  : `${primary} w-full`
+              }
+              onClick={() => openForm()}
+            >
+              + 기록 추가
+            </button>
           )}
         </div>
       );
@@ -549,30 +599,34 @@ export function LedgerBookFlowPrototype() {
           <p className="text-xs text-gray-500">
             이체는 소비 합계에서 제외해요. 보관 장부 기록은 전체 합계에 남아요.
           </p>
-          <h3 className="font-semibold">장부별 지출</h3>
-          {books.map((book) => (
-            <button
-              key={book.id}
-              type="button"
-              className={row}
-              onClick={() => chooseBook(book.id)}
-            >
-              <span>
-                {book.name}
-                {book.archived ? " · 보관" : ""}
-              </span>
-              <strong>
-                {won(
-                  filtered
-                    .filter(
-                      (item) =>
-                        item.bookId === book.id && item.type === "expense",
-                    )
-                    .reduce((sum, item) => sum + item.amount, 0),
-                )}
-              </strong>
-            </button>
-          ))}
+          {bookId === "all" && (
+            <>
+              <h3 className="font-semibold">장부별 지출</h3>
+              {books.map((book) => (
+                <button
+                  key={book.id}
+                  type="button"
+                  className={row}
+                  onClick={() => chooseBook(book.id)}
+                >
+                  <span>
+                    {book.name}
+                    {book.archived ? " · 보관" : ""}
+                  </span>
+                  <strong>
+                    {won(
+                      filtered
+                        .filter(
+                          (item) =>
+                            item.bookId === book.id && item.type === "expense",
+                        )
+                        .reduce((sum, item) => sum + item.amount, 0),
+                    )}
+                  </strong>
+                </button>
+              ))}
+            </>
+          )}
         </div>
       );
     if (screen === "manage")
@@ -596,7 +650,8 @@ export function LedgerBookFlowPrototype() {
             </button>
           </div>
           <p className="text-xs text-gray-500">
-            장부 안의 모든 기록은 같은 공개 범위를 따릅니다.
+            장부 안의 모든 기록은 같은 공개 범위를 따릅니다. 개인 장부의 이름과
+            기록은 만든 사람에게만 보입니다.
           </p>
           {books.map((book) => (
             <div key={book.id} className="border-b border-gray-100 py-3">
@@ -1013,18 +1068,8 @@ export function LedgerBookFlowPrototype() {
                     .reduce((sum, item) => sum + item.amount, 0),
                 )}
               </p>
+              <h2 className="pt-3 text-base font-bold">장부 목록</h2>
               <div className="divide-y divide-gray-100 border-y border-gray-200">
-                <button
-                  type="button"
-                  className={row}
-                  onClick={() => {
-                    chooseBook("all");
-                    setScreen("calendar");
-                  }}
-                >
-                  <span className="font-semibold">전체 기록 보기</span>
-                  <span aria-hidden>›</span>
-                </button>
                 {activeBooks.map((book) => (
                   <button
                     key={book.id}
@@ -1057,6 +1102,30 @@ export function LedgerBookFlowPrototype() {
                   </button>
                 ))}
               </div>
+              <div className="space-y-2 pt-2">
+                <h2 className="text-base font-bold">전체 장부에서 보기</h2>
+                <div className="grid grid-cols-3 gap-2">
+                  {(["calendar", "search", "analysis"] as const).map(
+                    (target) => (
+                      <button
+                        key={target}
+                        type="button"
+                        className={button}
+                        onClick={() => {
+                          chooseBook("all");
+                          setScreen(target);
+                        }}
+                      >
+                        {target === "calendar"
+                          ? "달력"
+                          : target === "search"
+                            ? "검색"
+                            : "분석"}
+                      </button>
+                    ),
+                  )}
+                </div>
+              </div>
               <button
                 type="button"
                 className={`${primary} w-full`}
@@ -1079,7 +1148,21 @@ export function LedgerBookFlowPrototype() {
                     >
                       ‹ 장부 목록
                     </button>
-                    <strong>{selected?.name ?? "전체 장부"}</strong>
+                    <select
+                      aria-label="조회 장부"
+                      className="min-h-11 max-w-[55%] rounded-lg bg-white px-2 text-center text-sm font-semibold"
+                      value={bookId}
+                      onChange={(event) => chooseBook(event.target.value)}
+                    >
+                      <option value="all">전체 장부</option>
+                      {books.map((book) => (
+                        <option key={book.id} value={book.id}>
+                          {book.name} ·{" "}
+                          {book.scope === "shared" ? "공용" : "개인"}
+                          {book.archived ? " · 보관" : ""}
+                        </option>
+                      ))}
+                    </select>
                     <button
                       type="button"
                       className="text-sm text-gray-500"
@@ -1088,20 +1171,24 @@ export function LedgerBookFlowPrototype() {
                       관리
                     </button>
                   </div>
-                  <div className="border-b border-gray-200 pb-3">
-                    <p className="text-xs text-gray-500">
-                      {selected?.scope === "personal"
-                        ? "개인"
-                        : selected
-                          ? "공용"
-                          : "전체"}{" "}
-                      지출
-                    </p>
-                    <p className="text-2xl font-bold">{won(expenses)}</p>
-                    {selected?.archived && (
-                      <p className="text-xs text-gray-500">보관 · 읽기 전용</p>
-                    )}
-                  </div>
+                  {screen === "calendar" && (
+                    <div className="border-b border-gray-200 pb-3">
+                      <p className="text-xs text-gray-500">
+                        {selected?.scope === "personal"
+                          ? "개인"
+                          : selected
+                            ? "공용"
+                            : "전체"}{" "}
+                        지출
+                      </p>
+                      <p className="text-2xl font-bold">{won(expenses)}</p>
+                      {selected?.archived && (
+                        <p className="text-xs text-gray-500">
+                          보관 · 읽기 전용
+                        </p>
+                      )}
+                    </div>
+                  )}
                   <div className="flex gap-4 border-b border-gray-200 text-sm">
                     {(["calendar", "search", "analysis"] as const).map(
                       (target) => (
