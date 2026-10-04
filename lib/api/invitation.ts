@@ -279,36 +279,32 @@ export async function acceptInvitation(
   if (inviteError) throw inviteError;
 }
 
-/**
- * 새 가구 생성 및 owner로 추가
- * RLS를 우회하기 위해 admin 클라이언트 사용
- */
+/** 새 가구와 owner, 기본 장부를 하나의 트랜잭션에서 생성합니다. */
 export async function createHouseholdWithOwner(
-  _supabase: SupabaseClient<Database>,
+  supabase: SupabaseClient<Database>,
   userId: string,
   householdName = "우리집",
 ): Promise<string> {
-  const adminClient = createAdminClient();
-
-  // 새 가구 생성
-  const { data: household, error: householdError } = await adminClient
-    .from("households")
-    .insert({ name: householdName })
-    .select("id")
-    .single();
-
-  if (householdError) throw householdError;
-
-  // owner로 추가
-  const { error: memberError } = await adminClient
-    .from("household_members")
-    .insert({
-      household_id: household.id,
-      user_id: userId,
-      role: "owner",
-    });
-
-  if (memberError) throw memberError;
-
-  return household.id;
+  const { data, error } = await supabase.rpc("create_household_with_owner", {
+    p_actor_id: userId,
+    p_name: householdName,
+  });
+  if (error || !data) {
+    if (error?.code === "P0001" && error.message === "AUTH_UNAUTHORIZED") {
+      throw new APIError("AUTH_UNAUTHORIZED", "로그인이 필요합니다.", 401);
+    }
+    if (error?.code === "P0001" && error.message === "HOUSEHOLD_NAME_INVALID") {
+      throw new APIError(
+        "HOUSEHOLD_NAME_INVALID",
+        "가구 이름이 올바르지 않습니다.",
+        400,
+      );
+    }
+    throw new APIError(
+      "HOUSEHOLD_CREATE_ERROR",
+      "가구 생성에 실패했습니다.",
+      500,
+    );
+  }
+  return data;
 }

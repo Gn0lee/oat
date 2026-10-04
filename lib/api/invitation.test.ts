@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Invitation } from "@/types";
 import { APIError } from "./error";
-import { acceptInvitation } from "./invitation";
+import { acceptInvitation, createHouseholdWithOwner } from "./invitation";
 
 vi.mock("@/lib/supabase/admin", () => ({
   createAdminClient: vi.fn(),
@@ -101,5 +101,47 @@ describe("acceptInvitation", () => {
 
     expect(admin.membershipInsertBuilder.insert).not.toHaveBeenCalled();
     expect(admin.invitationUpdateBuilder.update).not.toHaveBeenCalled();
+  });
+});
+
+describe("createHouseholdWithOwner", () => {
+  it("uses the caller-bound household transaction RPC and returns the id", async () => {
+    const supabase = {
+      rpc: vi.fn().mockResolvedValue({ data: "household-1", error: null }),
+    };
+    createAdminClientMock.mockClear();
+    await expect(
+      createHouseholdWithOwner(supabase as never, "user-1"),
+    ).resolves.toBe("household-1");
+    expect(supabase.rpc).toHaveBeenCalledExactlyOnceWith(
+      "create_household_with_owner",
+      {
+        p_actor_id: "user-1",
+        p_name: "우리집",
+      },
+    );
+    expect(createAdminClientMock).not.toHaveBeenCalled();
+  });
+
+  it("failed owner/book creation has no separate admin writes and returns a safe error", async () => {
+    const supabase = {
+      rpc: vi.fn().mockResolvedValue({
+        data: null,
+        error: {
+          code: "23514",
+          message: "private household details",
+        },
+      }),
+    };
+    createAdminClientMock.mockClear();
+    await expect(
+      createHouseholdWithOwner(supabase as never, "user-1", " 새 가구 "),
+    ).rejects.toMatchObject({
+      code: "HOUSEHOLD_CREATE_ERROR",
+      message: "가구 생성에 실패했습니다.",
+      statusCode: 500,
+    });
+    expect(supabase.rpc).toHaveBeenCalledTimes(1);
+    expect(createAdminClientMock).not.toHaveBeenCalled();
   });
 });

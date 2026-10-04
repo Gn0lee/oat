@@ -5,11 +5,16 @@ import {
   buildLedgerEntryPayload,
   buildTransferLedgerEntryPayload,
   calculateLedgerSummary,
+  createLedgerEntry,
+  createLedgerEntryWithBalanceSync,
+  deleteLedgerEntry,
+  deleteLedgerEntryWithBalanceSync,
   getLedgerBalanceEffects,
   getLedgerEntryById,
   getOwnLedgerActivity,
   isTransferCapablePaymentMethod,
   searchLedgerEntries,
+  updateLedgerEntry,
   updateLedgerEntryWithBalanceSync,
 } from "./ledger";
 
@@ -727,112 +732,156 @@ describe("getOwnLedgerActivity", () => {
   });
 });
 
-describe("updateLedgerEntry & updateLedgerEntryWithBalanceSync", () => {
-  it("소유한 transfer 레코드에 대해 tag-only 업데이트 시 성공하며, 계좌 소유권 검증 및 balance sync가 수행되지 않는다", async () => {
-    const existingEntry = {
-      id: "entry-1",
-      household_id: "household-1",
-      owner_id: "user-1",
-      type: "transfer",
-      amount: 10000,
-      title: "이체",
-      transacted_at: "2026-06-20",
-      from_account_id: "acc-1",
-      to_account_id: "acc-2",
-    };
-
-    const updatedEntry = {
-      ...existingEntry,
-      updated_at: "2026-06-20T12:00:00.000Z",
-    };
-
-    const ledgerEntriesSingleMock = vi
-      .fn()
-      .mockResolvedValueOnce({ data: existingEntry, error: null }) // select in updateLedgerEntryWithBalanceSync
-      .mockResolvedValueOnce({ data: existingEntry, error: null }) // select in updateLedgerEntry
-      .mockResolvedValueOnce({ data: updatedEntry, error: null }); // update in updateLedgerEntry
-
-    const supabase = {
-      from: vi.fn((table: string) => {
-        if (table === "ledger_entries") {
-          return {
-            select: vi.fn().mockReturnThis(),
-            eq: vi.fn().mockReturnThis(),
-            single: ledgerEntriesSingleMock,
-            maybeSingle: vi.fn().mockResolvedValue({
-              data: existingEntry,
-              error: null,
-            }),
-            update: vi.fn().mockReturnThis(),
-          } as any;
-        }
-        if (table === "ledger_tags") {
-          return {
-            upsert: vi.fn().mockReturnThis(),
-            select: vi.fn().mockResolvedValue({
-              data: [{ id: "tag-1", name: "태그" }],
-              error: null,
-            }),
-          } as any;
-        }
-        if (table === "ledger_entry_tags") {
-          return {
-            delete: vi.fn().mockReturnThis(),
-            eq: vi.fn().mockResolvedValue({ error: null }),
-            insert: vi.fn().mockResolvedValue({ error: null }),
-          } as any;
-        }
-        return {
-          select: vi.fn().mockReturnThis(),
-          eq: vi.fn().mockReturnThis(),
-          single: vi.fn().mockResolvedValue({ data: null, error: null }),
-        } as any;
+describe("atomic ledger writes", () => {
+  const params = {
+    householdId: "household-1",
+    ownerId: "user-1",
+    type: "expense" as const,
+    amount: 12000,
+    transactedAt: validDate,
+    fromPaymentMethodId: "pm-1",
+  };
+  const row = { id: "entry-1", amount: 12000, book_id: "book-1" };
+  function client(error: { code: string; message: string } | null = null) {
+    return {
+      rpc: vi.fn().mockResolvedValue({ data: error ? null : row, error }),
+      from: vi.fn(() => {
+        throw new Error("writes must use the transaction RPC");
       }),
     };
+  }
 
-    const result = await updateLedgerEntryWithBalanceSync(
-      supabase as any,
-      "entry-1",
-      "user-1",
-      { tags: ["#태그"] },
-    );
-
-    expect(result).toEqual(updatedEntry);
-
-    // assertLedgerFinancialSourceOwnership is bypassed, so accounts / payment_methods should not be queried.
-    expect(supabase.from).not.toHaveBeenCalledWith("accounts");
-    expect(supabase.from).not.toHaveBeenCalledWith("payment_methods");
+  it("legacy create needs neither bookId nor isShared, normalizes tags, and returns the RPC row", async () => {
+    const supabase = client();
+    await expect(
+      createLedgerEntryWithBalanceSync(supabase as never, {
+        ...params,
+        tags: [" #여행 ", "Trip", "trip", ""],
+      }),
+    ).resolves.toBe(row);
+    expect(supabase.rpc).toHaveBeenCalledExactlyOnceWith("write_ledger_entry", {
+      p_operation: "create",
+      p_actor_id: "user-1",
+      p_payload: { ...params, tags: ["여행", "Trip"] },
+    });
+    expect(supabase.from).not.toHaveBeenCalled();
   });
 
-  it("소유한 transfer 레코드에 대해 태그 이외의 정보를 변경하려 하면 실패한다", async () => {
-    const existingEntry = {
-      id: "entry-1",
-      household_id: "household-1",
-      owner_id: "user-1",
-      type: "transfer",
-      amount: 10000,
-      title: "이체",
-      transacted_at: "2026-06-20",
-      from_account_id: "acc-1",
-      to_account_id: "acc-2",
-    };
-
-    const builder = {
-      select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      single: vi.fn().mockResolvedValue({ data: existingEntry, error: null }),
-      update: vi.fn().mockReturnThis(),
-    };
-
-    const supabase = {
-      from: vi.fn(() => builder),
-    };
-
+  it("update sends only supplied fields and supports clearing legacy tags", async () => {
+    const supabase = client();
     await expect(
-      updateLedgerEntryWithBalanceSync(supabase as any, "entry-1", "user-1", {
-        amount: 20000,
-        tags: ["#태그"],
+      updateLedgerEntryWithBalanceSync(supabase as never, "entry-1", "user-1", {
+        tags: null,
+        memo: null,
+        amount: undefined,
       }),
-    ).rejects.toThrowError("이체 기록은 태그 외의 정보를 수정할 수 없습니다.");
+    ).resolves.toBe(row);
+    expect(supabase.rpc).toHaveBeenCalledExactlyOnceWith("write_ledger_entry", {
+      p_operation: "update",
+      p_actor_id: "user-1",
+      p_entry_id: "entry-1",
+      p_payload: { tags: [], memo: null },
+    });
+  });
+
+  it("delete preserves the void return contract", async () => {
+    const supabase = client();
+    await expect(
+      deleteLedgerEntryWithBalanceSync(supabase as never, "entry-1", "user-1"),
+    ).resolves.toBeUndefined();
+    expect(supabase.rpc).toHaveBeenCalledExactlyOnceWith("write_ledger_entry", {
+      p_operation: "delete",
+      p_actor_id: "user-1",
+      p_entry_id: "entry-1",
+    });
+  });
+
+  it.each(["create", "update", "delete"])(
+    "rejected %s has no separate entry, balance, tag or compensation requests",
+    async (operation) => {
+      const supabase = client({
+        code: "P0001",
+        message: "LEDGER_BOOK_ARCHIVED",
+      });
+      const write =
+        operation === "create"
+          ? createLedgerEntryWithBalanceSync(supabase as never, params)
+          : operation === "update"
+            ? updateLedgerEntryWithBalanceSync(
+                supabase as never,
+                "entry-1",
+                "user-1",
+                { amount: 20000 },
+              )
+            : deleteLedgerEntryWithBalanceSync(
+                supabase as never,
+                "entry-1",
+                "user-1",
+              );
+      await expect(write).rejects.toMatchObject({
+        code: "LEDGER_BOOK_ARCHIVED",
+        statusCode: 409,
+      });
+      expect(supabase.rpc).toHaveBeenCalledTimes(1);
+      expect(supabase.from).not.toHaveBeenCalled();
+    },
+  );
+
+  it("invalid tags are rejected before any write", async () => {
+    const supabase = client();
+    await expect(
+      createLedgerEntryWithBalanceSync(supabase as never, {
+        ...params,
+        tags: ["bad tag"],
+      }),
+    ).rejects.toMatchObject({
+      code: "LEDGER_TAG_INVALID_NAME",
+      statusCode: 400,
+    });
+    expect(supabase.rpc).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["LEDGER_BOOK_UNAVAILABLE", 404],
+    ["LEDGER_FORBIDDEN", 403],
+    ["LEDGER_FINANCIAL_SOURCE_FORBIDDEN", 403],
+    ["LEDGER_TRANSFER_EDIT_UNSUPPORTED", 400],
+    ["LEDGER_TAG_INVALID_NAME", 400],
+    ["LEDGER_VALIDATION_ERROR", 400],
+  ])("maps %s without exposing SQL details", async (message, statusCode) => {
+    const supabase = client({ code: "P0001", message: String(message) });
+    await expect(
+      updateLedgerEntryWithBalanceSync(
+        supabase as never,
+        "entry-1",
+        "user-1",
+        {},
+      ),
+    ).rejects.toMatchObject({ code: message, statusCode });
+  });
+
+  it("unknown database details stay private", async () => {
+    const supabase = client({
+      code: "23505",
+      message: "private book name / personal details",
+    });
+    await expect(
+      createLedgerEntryWithBalanceSync(supabase as never, params),
+    ).rejects.toMatchObject({
+      code: "LEDGER_CREATE_ERROR",
+      message: "가계부 항목 생성에 실패했습니다.",
+      statusCode: 500,
+    });
+  });
+
+  it("raw exports use the same safe path exactly once", async () => {
+    const supabase = client();
+    await createLedgerEntry(supabase as never, params);
+    await updateLedgerEntry(supabase as never, "entry-1", "user-1", {
+      tags: ["#태그"],
+    });
+    await deleteLedgerEntry(supabase as never, "entry-1", "user-1");
+    expect(supabase.rpc).toHaveBeenCalledTimes(3);
+    expect(supabase.from).not.toHaveBeenCalled();
   });
 });

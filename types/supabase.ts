@@ -430,9 +430,61 @@ export type Database = {
           },
         ];
       };
+      ledger_books: {
+        Row: {
+          archived_at: string | null;
+          created_at: string;
+          created_by: string | null;
+          household_id: string;
+          id: string;
+          is_default: boolean;
+          name: string;
+          updated_at: string;
+          visibility: string;
+        };
+        Insert: {
+          archived_at?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          household_id: string;
+          id?: string;
+          is_default?: boolean;
+          name: string;
+          updated_at?: string;
+          visibility: string;
+        };
+        Update: {
+          archived_at?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          household_id?: string;
+          id?: string;
+          is_default?: boolean;
+          name?: string;
+          updated_at?: string;
+          visibility?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "ledger_books_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "ledger_books_household_id_fkey";
+            columns: ["household_id"];
+            isOneToOne: false;
+            referencedRelation: "households";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       ledger_entries: {
         Row: {
           amount: number;
+          book_id: string;
           category_id: string | null;
           created_at: string;
           from_account_id: string | null;
@@ -451,6 +503,8 @@ export type Database = {
         };
         Insert: {
           amount: number;
+          // The compatibility trigger resolves omitted book IDs for legacy clients.
+          book_id?: string;
           category_id?: string | null;
           created_at?: string;
           from_account_id?: string | null;
@@ -469,6 +523,7 @@ export type Database = {
         };
         Update: {
           amount?: number;
+          book_id?: string;
           category_id?: string | null;
           created_at?: string;
           from_account_id?: string | null;
@@ -506,6 +561,13 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: "payment_methods";
             referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "ledger_entries_household_book_fkey";
+            columns: ["household_id", "book_id"];
+            isOneToOne: false;
+            referencedRelation: "ledger_books";
+            referencedColumns: ["household_id", "id"];
           },
           {
             foreignKeyName: "ledger_entries_household_id_fkey";
@@ -1361,10 +1423,22 @@ export type Database = {
       };
     };
     Functions: {
+      backfill_ledger_books: {
+        Args: { p_batch_size?: number };
+        Returns: number;
+      };
+      create_household_with_owner: {
+        Args: { p_actor_id: string; p_name?: string };
+        Returns: string;
+      };
       get_user_household_ids: { Args: never; Returns: string[] };
       is_admin: { Args: never; Returns: boolean };
       is_household_member: { Args: { hh_id: string }; Returns: boolean };
       is_household_owner: { Args: { hh_id: string }; Returns: boolean };
+      make_default_ledger_book: {
+        Args: { p_book_id: string };
+        Returns: Database["public"]["Tables"]["ledger_books"]["Row"];
+      };
       search_ledger_entries: {
         Args: {
           hh_id: string;
@@ -1375,6 +1449,7 @@ export type Database = {
         };
         Returns: {
           amount: number;
+          book_id: string;
           category_id: string | null;
           created_at: string;
           from_account_id: string | null;
@@ -1431,6 +1506,15 @@ export type Database = {
       seed_household_categories: {
         Args: { hh_id: string };
         Returns: undefined;
+      };
+      write_ledger_entry: {
+        Args: {
+          p_actor_id: string;
+          p_entry_id?: string;
+          p_operation: string;
+          p_payload?: Json;
+        };
+        Returns: Database["public"]["Tables"]["ledger_entries"]["Row"];
       };
     };
     Enums: {
