@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { APIError, toErrorResponse } from "@/lib/api/error";
 import { getUserHouseholdId } from "@/lib/api/invitation";
 import {
@@ -47,7 +48,46 @@ export async function GET(request: NextRequest) {
     const yearParam = searchParams.get("year");
     const monthParam = searchParams.get("month");
     const dateParam = searchParams.get("date");
+    if (
+      (yearParam !== null &&
+        (!Number.isInteger(Number(yearParam)) ||
+          Number(yearParam) < 1900 ||
+          Number(yearParam) > 9999)) ||
+      (monthParam !== null &&
+        (!Number.isInteger(Number(monthParam)) ||
+          Number(monthParam) < 1 ||
+          Number(monthParam) > 12)) ||
+      (dateParam !== null &&
+        (!/^\d{4}-\d{2}-\d{2}$/.test(dateParam) ||
+          Number.isNaN(Date.parse(`${dateParam}T00:00:00Z`)) ||
+          new Date(`${dateParam}T00:00:00Z`).toISOString().slice(0, 10) !==
+            dateParam))
+    ) {
+      throw new APIError(
+        "VALIDATION_ERROR",
+        "유효하지 않은 조회 기간입니다.",
+        400,
+      );
+    }
     const scopeParam = searchParams.get("scope");
+    if (
+      scopeParam !== null &&
+      !["all", "shared", "personal"].includes(scopeParam)
+    ) {
+      throw new APIError(
+        "VALIDATION_ERROR",
+        "유효하지 않은 조회 범위입니다.",
+        400,
+      );
+    }
+    const bookId = searchParams.get("book") ?? undefined;
+    if (bookId !== undefined && !z.uuid().safeParse(bookId).success) {
+      throw new APIError(
+        "VALIDATION_ERROR",
+        "유효하지 않은 장부 ID입니다.",
+        400,
+      );
+    }
     const scope: "shared" | "personal" | undefined =
       scopeParam === "personal" || scopeParam === "shared"
         ? scopeParam
@@ -61,10 +101,12 @@ export async function GET(request: NextRequest) {
         : undefined;
 
     const options = {
+      bookId,
+      includeBookDetails: true,
       year: yearParam ? Number(yearParam) : undefined,
       month: monthParam ? Number(monthParam) : undefined,
       date: dateParam ?? undefined,
-      scope,
+      scope: bookId ? undefined : scope,
       userId: user.id,
       tagIds: tagIdParams.length > 0 ? tagIdParams : undefined,
       categoryId: searchParams.get("categoryId") ?? undefined,

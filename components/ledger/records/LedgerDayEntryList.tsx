@@ -14,11 +14,13 @@ import { LedgerEntryRow } from "./LedgerEntryRow";
 interface LedgerDayEntryListProps {
   selectedDate: Date;
   entries: LedgerEntryWithDetails[];
+  returnTo?: string;
 }
 
 export function LedgerDayEntryList({
   selectedDate,
   entries,
+  returnTo,
 }: LedgerDayEntryListProps) {
   const dateLabel = formatKst(selectedDate, "M월 d일 (eee)");
   const dateParam = formatKst(selectedDate, "yyyy-MM-dd");
@@ -44,7 +46,7 @@ export function LedgerDayEntryList({
             <LedgerEntryRow
               key={entry.id}
               entry={entry}
-              href={`/ledger/records/${entry.id}?from=records&date=${dateParam}`}
+              href={`/ledger/records/${entry.id}?from=records&date=${dateParam}${returnTo ? `&returnTo=${encodeURIComponent(returnTo)}` : ""}`}
             />
           ))}
         </GroupedList>

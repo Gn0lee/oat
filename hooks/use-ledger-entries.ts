@@ -6,7 +6,8 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { fetchApiData } from "@/lib/api/client";
+import { useLedgerIdentity } from "@/hooks/use-ledger-identity";
+import { ApiQueryError, fetchApiData } from "@/lib/api/client";
 import type {
   LedgerEntrySearchResult,
   LedgerEntrySummary,
@@ -44,6 +45,8 @@ interface LedgerError {
 // ============================================================================
 
 interface LedgerEntriesParams {
+  bookId?: string;
+  enabled?: boolean;
   year?: number;
   month?: number;
   date?: string;
@@ -62,6 +65,7 @@ async function fetchLedgerEntries(
   if (params?.month) searchParams.set("month", String(params.month));
   if (params?.date) searchParams.set("date", params.date);
   if (params?.scope) searchParams.set("scope", params.scope);
+  if (params?.bookId) searchParams.set("book", params.bookId);
   if (params?.categoryId) searchParams.set("categoryId", params.categoryId);
   if (params?.childCategoryId) {
     searchParams.set("childCategoryId", params.childCategoryId);
@@ -81,7 +85,11 @@ async function fetchLedgerEntries(
 
   if (!response.ok) {
     const error = json as LedgerError;
-    throw new Error(error.error.message);
+    throw new ApiQueryError(
+      error.error.code,
+      error.error.message,
+      response.status,
+    );
   }
 
   return (json as LedgerEntryListResponse).data;
@@ -89,9 +97,15 @@ async function fetchLedgerEntries(
 
 export function useLedgerEntries(params?: LedgerEntriesParams) {
   const queryClient = useQueryClient();
+  const identity = useLedgerIdentity();
 
   return useQuery({
-    queryKey: queries.ledgerEntries.list(params).queryKey,
+    queryKey: queries.ledgerEntries.list({
+      ...params,
+      userId: identity.userId,
+      householdId: identity.householdId,
+    }).queryKey,
+    enabled: params?.enabled,
     queryFn: async () => {
       const entries = await fetchLedgerEntries(params);
       if (params?.date) {
@@ -102,7 +116,8 @@ export function useLedgerEntries(params?: LedgerEntriesParams) {
       return entries;
     },
     staleTime: 1000 * 60 * 5,
-    refetchOnMount: params?.date ? "always" : undefined,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
   });
 }
 
@@ -140,9 +155,14 @@ async function fetchLedgerEntry(id: string): Promise<LedgerEntryWithDetails> {
 
 export function useLedgerEntry(id: string) {
   const queryClient = useQueryClient();
+  const identity = useLedgerIdentity();
 
   return useQuery({
-    queryKey: queries.ledgerEntries.detail(id).queryKey,
+    queryKey: [
+      ...queries.ledgerEntries.detail(id).queryKey,
+      identity.userId,
+      identity.householdId,
+    ],
     queryFn: async () => {
       const entry = await fetchLedgerEntry(id);
       void queryClient.invalidateQueries({
@@ -152,6 +172,7 @@ export function useLedgerEntry(id: string) {
     },
     staleTime: 1000 * 60 * 5,
     refetchOnMount: "always",
+    refetchOnWindowFocus: true,
   });
 }
 
@@ -162,15 +183,22 @@ export function useLedgerEntry(id: string) {
 export function useLedgerEntrySummary(
   year: number,
   month: number,
-  scope: "shared" | "personal" = "shared",
+  scope: "shared" | "personal" | "all" = "shared",
 ) {
+  const identity = useLedgerIdentity();
   return useQuery({
-    queryKey: queries.ledgerEntries.summary(year, month, scope).queryKey,
+    queryKey: [
+      ...queries.ledgerEntries.summary(year, month, scope).queryKey,
+      identity.userId,
+      identity.householdId,
+    ],
     queryFn: () =>
       fetchApiData<LedgerEntrySummary>(
         `/api/ledger-entries/summary?year=${year}&month=${month}&scope=${scope}`,
       ),
     staleTime: 1000 * 60 * 5,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
   });
 }
 

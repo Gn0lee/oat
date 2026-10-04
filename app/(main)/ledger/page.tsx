@@ -13,6 +13,7 @@ import {
   ScreenSection,
   SectionHeader,
 } from "@/components/layout/screen";
+import { LedgerBooksSection } from "@/components/ledger/books/LedgerBooksSection";
 import { LedgerSummarySection } from "@/components/ledger/LedgerSummarySection";
 import { getKstNow } from "@/lib/date";
 import { requireUser } from "@/lib/supabase/auth";
@@ -27,6 +28,8 @@ export default async function LedgerPage() {
   return (
     <PageContainer maxWidth="default">
       <LedgerSummarySection year={year} month={month} />
+
+      <LedgerBooksSection />
 
       <ScreenSection>
         <SectionHeader title="기록" />

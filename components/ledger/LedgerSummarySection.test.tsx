@@ -20,7 +20,8 @@ describe("LedgerSummarySection", () => {
       <LedgerSummarySection year={2026} month={5} />,
     );
 
-    expect(screen.getByText("5월 공용 현금흐름")).toBeInTheDocument();
+    expect(screen.getByText("5월 전체 현금흐름")).toBeInTheDocument();
+    expect(useLedgerEntrySummary).toHaveBeenCalledWith(2026, 5, "all");
     expect(
       container.querySelectorAll("[data-slot='skeleton']").length,
     ).toBeGreaterThan(0);
@@ -42,6 +43,7 @@ describe("LedgerSummarySection", () => {
     expect(
       screen.getByText("가구 정보를 불러올 수 없어요"),
     ).toBeInTheDocument();
+    expect(useLedgerEntrySummary).toHaveBeenCalledWith(2026, 5, "all");
   });
 
   it("월 수입, 지출, 잔액을 렌더링한다", () => {

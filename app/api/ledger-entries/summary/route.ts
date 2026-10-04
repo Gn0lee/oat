@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { APIError, toErrorResponse } from "@/lib/api/error";
 import { getUserHouseholdId } from "@/lib/api/invitation";
 import { getLedgerEntrySummary } from "@/lib/api/ledger";
@@ -45,7 +46,42 @@ export async function GET(request: NextRequest) {
       ? Number(searchParams.get("month"))
       : now.getUTCMonth() + 1;
     const scopeParam = searchParams.get("scope");
-    const scope = scopeParam === "personal" ? "personal" : "shared";
+    if (
+      scopeParam !== null &&
+      !["all", "shared", "personal"].includes(scopeParam)
+    ) {
+      throw new APIError(
+        "VALIDATION_ERROR",
+        "유효하지 않은 조회 범위입니다.",
+        400,
+      );
+    }
+    const bookId = searchParams.get("book") ?? undefined;
+    if (bookId !== undefined && !z.uuid().safeParse(bookId).success) {
+      throw new APIError(
+        "VALIDATION_ERROR",
+        "유효하지 않은 장부 ID입니다.",
+        400,
+      );
+    }
+    if (
+      !Number.isInteger(year) ||
+      year < 1900 ||
+      year > 9999 ||
+      !Number.isInteger(month) ||
+      month < 1 ||
+      month > 12
+    ) {
+      throw new APIError(
+        "VALIDATION_ERROR",
+        "유효하지 않은 조회 기간입니다.",
+        400,
+      );
+    }
+    const scope =
+      !bookId && (scopeParam === "personal" || scopeParam === "shared")
+        ? scopeParam
+        : "all";
 
     const summary = await getLedgerEntrySummary(
       supabase,
@@ -54,6 +90,7 @@ export async function GET(request: NextRequest) {
       month,
       scope,
       user.id,
+      bookId,
     );
 
     return NextResponse.json({ data: summary });

@@ -77,6 +77,9 @@ export function LedgerEntryRow({
       <div className="flex items-center justify-between text-xs text-gray-500 font-medium">
         <span>
           {typeLabel} · {entry.isShared ? "공용" : "개인"}
+          {entry.book
+            ? ` · ${entry.book.name}${entry.book.archivedAt ? " · 보관" : ""}`
+            : ""}
           {dateLabel ? ` · ${dateLabel}` : ""}
         </span>
         <ChevronRight
