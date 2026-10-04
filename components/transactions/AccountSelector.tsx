@@ -9,7 +9,7 @@ import {
   PlusIcon,
 } from "lucide-react";
 import type { ComponentPropsWithoutRef, FormEvent } from "react";
-import { forwardRef, useEffect, useState } from "react";
+import { forwardRef, useEffect, useRef, useState } from "react";
 import type { Control, FieldValues, Path } from "react-hook-form";
 import { useController } from "react-hook-form";
 import { Button } from "@/components/ui/button";
@@ -122,7 +122,13 @@ function AccountCommandList({
         <div className="space-y-3">
           <p>검색 결과가 없습니다.</p>
           {createLabel && onCreate && (
-            <Button type="button" variant="ghost" size="sm" onClick={onCreate}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="min-h-11 md:min-h-8"
+              onClick={onCreate}
+            >
               <PlusIcon className="size-4" />
               {createLabel}
             </Button>
@@ -134,7 +140,7 @@ function AccountCommandList({
           <CommandItem
             value="DEFAULT"
             onSelect={() => onValueChange("DEFAULT")}
-            className="cursor-pointer py-2.5"
+            className="min-h-11 cursor-pointer py-2.5 md:min-h-0"
           >
             <CheckIcon
               className={cn(
@@ -157,7 +163,7 @@ function AccountCommandList({
               .filter(Boolean)
               .join(" ")}
             onSelect={() => onValueChange(account.id)}
-            className="cursor-pointer py-2.5"
+            className="min-h-11 cursor-pointer py-2.5 md:min-h-0"
           >
             <CheckIcon
               className={cn(
@@ -336,6 +342,8 @@ export function AccountSelector<T extends FieldValues>({
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [createInitialName, setCreateInitialName] = useState("");
   const [mobileCreateOpen, setMobileCreateOpen] = useState(false);
+  const mobileTriggerRef = useRef<HTMLButtonElement>(null);
+  const drawerTitleRef = useRef<HTMLHeadingElement>(null);
   const shouldReduceMotion = useReducedMotion();
   const createQuery = search.trim();
   const createLabel = createQuery
@@ -406,6 +414,9 @@ export function AccountSelector<T extends FieldValues>({
     if (!isOpen) {
       setSearch("");
       setMobileCreateOpen(false);
+      requestAnimationFrame(() =>
+        mobileTriggerRef.current?.focus({ preventScroll: true }),
+      );
     }
   };
 
@@ -420,7 +431,7 @@ export function AccountSelector<T extends FieldValues>({
           <Button
             type="button"
             variant="outline"
-            className="rounded-xl"
+            className="h-11 rounded-xl md:h-9"
             onClick={() => {
               setCreateInitialName("");
               setCreateDialogOpen(true);
@@ -465,7 +476,7 @@ export function AccountSelector<T extends FieldValues>({
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="size-8 shrink-0"
+                    className="size-11 shrink-0 md:size-8"
                     aria-label={createLabel}
                     onClick={handleCreateClick}
                   >
@@ -497,8 +508,10 @@ export function AccountSelector<T extends FieldValues>({
   const mobileContent = (
     <>
       <AccountSelectorTrigger
+        ref={mobileTriggerRef}
         label={triggerLabel}
         placeholder={triggerPlaceholder}
+        open={open}
         onClick={() => {
           setMobileCreateOpen(false);
           setOpen(true);
@@ -507,10 +520,21 @@ export function AccountSelector<T extends FieldValues>({
       <Drawer open={open} onOpenChange={handleOpenChange}>
         <DrawerContent
           className="h-[85dvh] max-h-[85dvh] p-0 flex flex-col data-[vaul-drawer-direction=bottom]:mt-0 data-[vaul-drawer-direction=bottom]:max-h-[85dvh]"
-          onOpenAutoFocus={(event) => event.preventDefault()}
+          onOpenAutoFocus={(event) => {
+            event.preventDefault();
+            drawerTitleRef.current?.focus({ preventScroll: true });
+          }}
+          onCloseAutoFocus={(event) => {
+            event.preventDefault();
+            requestAnimationFrame(() =>
+              mobileTriggerRef.current?.focus({ preventScroll: true }),
+            );
+          }}
         >
           <DrawerHeader className="sr-only">
-            <DrawerTitle>계좌 선택</DrawerTitle>
+            <DrawerTitle ref={drawerTitleRef} tabIndex={-1}>
+              계좌 선택
+            </DrawerTitle>
             <DrawerDescription>
               거래 계좌를 선택하고 검색해보세요.
             </DrawerDescription>
@@ -542,7 +566,7 @@ export function AccountSelector<T extends FieldValues>({
                           type="button"
                           variant="ghost"
                           size="icon"
-                          className="size-8 shrink-0"
+                          className="size-11 shrink-0 md:size-8"
                           aria-label={createLabel}
                           onClick={handleCreateClick}
                         >
@@ -569,6 +593,7 @@ export function AccountSelector<T extends FieldValues>({
                       type="button"
                       variant="ghost"
                       size="icon"
+                      className="size-11 md:size-9"
                       aria-label="계좌 선택으로 돌아가기"
                       onClick={() => setMobileCreateOpen(false)}
                     >

@@ -13,12 +13,15 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils/cn";
 import { formatCurrency } from "@/lib/utils/format";
 import type { MultiTransactionFormData } from "@/schemas/multi-transaction-form";
-import { DEFAULT_TRANSACTION_ITEM } from "@/schemas/multi-transaction-form";
+import {
+  DEFAULT_TRANSACTION_ITEM,
+  transactionItemSchema,
+} from "@/schemas/multi-transaction-form";
 
 interface StockComposerListStepProps {
   mode?: "full" | "daily";
   ownerId: string;
-  onEditItem: (index: number) => void;
+  onEditItem: (index: number, isNew?: boolean) => void;
   onSubmit: (data: MultiTransactionFormData) => void;
   isSubmitting: boolean;
 }
@@ -45,19 +48,22 @@ export function StockComposerListStep({
 
   const getValidItems = () => {
     return watchItems.filter(
-      (item) => item.stock && item.quantity && Number(item.quantity) > 0,
+      (item) => transactionItemSchema.safeParse(item).success,
     );
   };
   const validCount = getValidItems().length;
 
   const handleAddItem = () => {
     const newIndex = fields.length;
-    append({
-      ...DEFAULT_TRANSACTION_ITEM,
-      transactedAt: watchTransactedAt,
-      accountId: form.getValues("accountId"),
-    });
-    onEditItem(newIndex);
+    append(
+      {
+        ...DEFAULT_TRANSACTION_ITEM,
+        transactedAt: watchTransactedAt,
+        accountId: form.getValues("accountId"),
+      },
+      { shouldFocus: false },
+    );
+    onEditItem(newIndex, true);
   };
 
   const onInvalid = () => {
@@ -67,8 +73,8 @@ export function StockComposerListStep({
   };
 
   return (
-    <div className="space-y-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
-      <div className="rounded-xl border border-gray-100 bg-white p-4 space-y-4">
+    <div className="space-y-4 pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-4">
+      <div className="space-y-4 border-b border-gray-100 pb-4 md:rounded-xl md:border md:bg-white md:p-4">
         <TransactionTypeSelector control={form.control} variant="inline" />
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -103,6 +109,7 @@ export function StockComposerListStep({
             type="button"
             variant="outline"
             onClick={handleAddItem}
+            disabled={isSubmitting || fields.length >= 20}
             className="w-full rounded-xl border-dashed h-11 px-6"
           >
             <PlusIcon className="h-4 w-4 mr-2" />
@@ -128,7 +135,7 @@ export function StockComposerListStep({
         </div>
       ) : (
         <div className="space-y-4">
-          <div className="overflow-hidden rounded-xl bg-white ring-1 ring-gray-100 divide-y divide-gray-100">
+          <div className="overflow-hidden bg-white divide-y divide-gray-100 md:rounded-xl md:ring-1 md:ring-gray-100">
             {fields.map((field, index) => {
               const item = watchItems[index];
               if (!item) return null;
@@ -155,8 +162,10 @@ export function StockComposerListStep({
                   {/* The main click target for editing */}
                   <button
                     type="button"
-                    className="absolute inset-0 h-full w-full cursor-pointer text-left focus:outline-none"
+                    className="absolute inset-0 h-full w-full cursor-pointer text-left focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
                     onClick={() => onEditItem(index)}
+                    aria-label={`${label} 거래 수정`}
+                    disabled={isSubmitting}
                   />
 
                   {/* Top Row: Type on top-left, delete button on top-right */}
@@ -174,6 +183,7 @@ export function StockComposerListStep({
                       }}
                       className="flex size-11 shrink-0 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500 pointer-events-auto"
                       aria-label="종목 삭제"
+                      disabled={isSubmitting}
                     >
                       <X className="h-4 w-4" />
                     </button>
@@ -222,16 +232,24 @@ export function StockComposerListStep({
             <TransactionSummary items={watchItems} type={watchType} />
           )}
 
-          <Button
-            type="button"
-            className="w-full h-14 rounded-xl text-base font-semibold"
-            disabled={isSubmitting || validCount === 0}
-            onClick={form.handleSubmit(onSubmit, onInvalid)}
-          >
-            {isSubmitting
-              ? "등록 중..."
-              : `${watchType === "buy" ? "매수" : "매도"} ${validCount}건 일괄 등록`}
-          </Button>
+          {form.formState.errors.items?.root?.message && (
+            <p role="alert" className="text-sm text-destructive">
+              {form.formState.errors.items.root.message}
+            </p>
+          )}
+
+          <div className="fixed inset-x-0 bottom-0 z-50 border-t border-gray-100 bg-background p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] md:static md:border-0 md:p-0">
+            <Button
+              type="button"
+              className="w-full h-14 rounded-xl text-base font-semibold"
+              disabled={isSubmitting || validCount === 0}
+              onClick={form.handleSubmit(onSubmit, onInvalid)}
+            >
+              {isSubmitting
+                ? "등록 중..."
+                : `${watchType === "buy" ? "매수" : "매도"} ${fields.length}건 일괄 등록`}
+            </Button>
+          </div>
         </div>
       )}
     </div>

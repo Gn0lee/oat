@@ -1,7 +1,7 @@
 "use client";
 
 import { CheckIcon, LoaderIcon, SearchIcon } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Command,
@@ -48,6 +48,8 @@ export function StockSearchDialog({
 }: StockSearchDialogProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const drawerTitleRef = useRef<HTMLHeadingElement>(null);
   const debouncedQuery = useDebouncedValue(query, 300);
   const isDesktop = useMediaQuery("(min-width: 768px)");
 
@@ -72,6 +74,11 @@ export function StockSearchDialog({
     setOpen(isOpen);
     if (!isOpen) {
       setQuery("");
+      if (!isDesktop) {
+        requestAnimationFrame(() =>
+          triggerRef.current?.focus({ preventScroll: true }),
+        );
+      }
     }
   };
 
@@ -146,6 +153,7 @@ export function StockSearchDialog({
                 key={stock.id}
                 value={stock.id}
                 onSelect={() => handleSelect(stock)}
+                className="min-h-11 md:min-h-0"
               >
                 <div className="flex flex-1 items-center gap-3 min-w-0">
                   <span className="shrink-0 w-16 font-mono font-medium text-sm">
@@ -178,8 +186,11 @@ export function StockSearchDialog({
       type="button"
       variant="outline"
       disabled={disabled}
+      ref={triggerRef}
+      aria-haspopup="dialog"
+      aria-expanded={open}
       onClick={() => setOpen(true)}
-      className="w-full justify-start font-normal min-w-0"
+      className="h-11 w-full justify-start font-normal min-w-0 md:h-9"
     >
       {value ? (
         <span className="flex items-center gap-2 w-full min-w-0 text-left">
@@ -223,10 +234,21 @@ export function StockSearchDialog({
       <Drawer open={open} onOpenChange={handleOpenChange}>
         <DrawerContent
           className="h-[85dvh] max-h-[85dvh] p-0 flex flex-col data-[vaul-drawer-direction=bottom]:mt-0 data-[vaul-drawer-direction=bottom]:max-h-[85dvh]"
-          onOpenAutoFocus={(event) => event.preventDefault()}
+          onOpenAutoFocus={(event) => {
+            event.preventDefault();
+            drawerTitleRef.current?.focus({ preventScroll: true });
+          }}
+          onCloseAutoFocus={(event) => {
+            event.preventDefault();
+            requestAnimationFrame(() =>
+              triggerRef.current?.focus({ preventScroll: true }),
+            );
+          }}
         >
           <DrawerHeader className="sr-only">
-            <DrawerTitle>종목 검색</DrawerTitle>
+            <DrawerTitle ref={drawerTitleRef} tabIndex={-1}>
+              종목 검색
+            </DrawerTitle>
             <DrawerDescription>
               티커, 종목명, 초성으로 검색하세요
             </DrawerDescription>

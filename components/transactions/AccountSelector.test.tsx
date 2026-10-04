@@ -1,8 +1,10 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { FormProvider, useForm } from "react-hook-form";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import { AccountSelector } from "./AccountSelector";
+
+const viewport = vi.hoisted(() => ({ isDesktop: true }));
 
 vi.mock("@/hooks/use-accounts", () => ({
   useAccounts: () => ({
@@ -33,7 +35,7 @@ vi.mock("@/hooks/use-accounts", () => ({
 }));
 
 vi.mock("@/hooks/use-media-query", () => ({
-  useMediaQuery: () => true,
+  useMediaQuery: () => viewport.isDesktop,
 }));
 
 beforeAll(() => {
@@ -86,5 +88,21 @@ describe("AccountSelector", () => {
 
     expect(screen.getByText("키움증권 (1234)")).toBeInTheDocument();
     expect(screen.getByText("키움 · 소유자: 홍길동")).toBeInTheDocument();
+  });
+
+  it("mobile drawer focuses its title and returns focus to the trigger", async () => {
+    viewport.isDesktop = false;
+    const user = userEvent.setup();
+    render(<AccountSelectorHarness />);
+
+    const trigger = screen.getByRole("combobox");
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+    await user.click(trigger);
+
+    const title = await screen.findByRole("heading", { name: "계좌 선택" });
+    await waitFor(() => expect(title).toHaveFocus());
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(trigger).toHaveFocus());
   });
 });
