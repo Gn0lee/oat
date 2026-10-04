@@ -89,7 +89,12 @@ export async function PATCH(request: Request, { params }: RouteParams) {
       throw new APIError("AUTH_UNAUTHORIZED", "로그인이 필요합니다.", 401);
     }
 
-    const body = await request.json();
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      throw new APIError("VALIDATION_ERROR", "유효하지 않은 요청입니다.", 400);
+    }
     const result = updateLedgerEntrySchema.safeParse(body);
 
     if (!result.success) {

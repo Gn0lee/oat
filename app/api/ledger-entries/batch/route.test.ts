@@ -80,4 +80,19 @@ describe("POST /api/ledger-entries/batch atomic write", () => {
     expect(response).toBeDefined();
     expect(notifyBatchLedgerEntriesCreated).not.toHaveBeenCalled();
   });
+
+  it("returns validation error for malformed JSON without writing", async () => {
+    const response = await POST(
+      new NextRequest("http://localhost/api/ledger-entries/batch", {
+        method: "POST",
+        body: "{",
+      }),
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({
+      error: { code: "VALIDATION_ERROR" },
+    });
+    expect(createBatchLedgerEntriesWithBalanceSync).not.toHaveBeenCalled();
+  });
 });

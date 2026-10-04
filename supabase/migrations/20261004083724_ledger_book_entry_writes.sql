@@ -54,7 +54,7 @@ begin
     raise exception 'LEDGER_VALIDATION_ERROR';
   end if;
 
-  -- Whitelist fields at the RPC boundary; updates cannot reassign book/actor/household.
+  -- Whitelist fields at the RPC boundary; updates cannot reassign actor/household. Book moves are validated below.
   for v_key, v_value in select key, value from pg_catalog.jsonb_each(p_payload) loop
     v_column := case v_key
       when 'type' then 'type' when 'amount' then 'amount'

@@ -111,4 +111,19 @@ describe("POST /api/ledger-entries selected book", () => {
       }),
     );
   });
+
+  it("returns validation error for malformed JSON without writing", async () => {
+    const response = await POST(
+      new NextRequest("http://localhost/api/ledger-entries", {
+        method: "POST",
+        body: "{",
+      }),
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({
+      error: { code: "VALIDATION_ERROR" },
+    });
+    expect(createLedgerEntryWithBalanceSync).not.toHaveBeenCalled();
+  });
 });
