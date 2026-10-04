@@ -35,7 +35,10 @@ export function LedgerEntryDeleteDialog({
     if (!entry) return;
 
     try {
-      await deleteMutation.mutateAsync(entry.id);
+      await deleteMutation.mutateAsync({
+        id: entry.id,
+        expectedUpdatedAt: entry.updatedAt,
+      });
       toast.success("기록이 삭제되었습니다.");
       onOpenChange(false);
       onDeleted?.();

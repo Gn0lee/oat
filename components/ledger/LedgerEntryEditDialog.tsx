@@ -1,9 +1,10 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQueryClient } from "@tanstack/react-query";
 import { InfoIcon, XIcon } from "lucide-react";
-import { useEffect, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { useEffect, useRef, useState } from "react";
+import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import {
@@ -17,8 +18,6 @@ import {
   LedgerMoneySourcePickerPanel,
   LedgerMoneySourceTrigger,
 } from "@/components/ledger/LedgerMoneySourceCombobox";
-import { LedgerTagInput } from "@/components/ledger/LedgerTagInput";
-import { LedgerTitleCombobox } from "@/components/ledger/LedgerTitleCombobox";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DatePickerInput } from "@/components/ui/date-picker";
@@ -30,24 +29,44 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Drawer, DrawerContent } from "@/components/ui/drawer";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useAccounts } from "@/hooks/use-accounts";
 import { useCategories } from "@/hooks/use-categories";
+import { useLedgerBooks } from "@/hooks/use-ledger-books";
 import { useUpdateLedgerEntry } from "@/hooks/use-ledger-entries";
-import { useLedgerTags } from "@/hooks/use-ledger-tags";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { usePaymentMethods } from "@/hooks/use-payment-methods";
+import { ApiQueryError } from "@/lib/api/client";
 import type { LedgerEntryWithDetails } from "@/lib/api/ledger";
+import { formatKst } from "@/lib/date";
 import { getLedgerMoneySourceValue } from "@/lib/ledger/money-source-options";
+import { queries } from "@/lib/queries/keys";
 import type { CategoryType } from "@/types";
 
 interface LedgerEntryEditDialogProps {
   entry: LedgerEntryWithDetails | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onUpdated?: (result: {
+    bookId: string;
+    date: string;
+    bookChanged: boolean;
+  }) => void;
 }
 
 const editFormSchema = z.object({
@@ -58,10 +77,7 @@ const editFormSchema = z.object({
   accountId: z.string().optional(),
   transactedAt: z.string().optional(),
   memo: z.string().max(500, "메모는 500자 이내여야 합니다.").optional(),
-  tags: z
-    .array(z.string())
-    .max(5, "태그는 최대 5개까지 지정할 수 있습니다.")
-    .optional(),
+  bookId: z.string().uuid(),
 });
 
 type EditFormValues = z.infer<typeof editFormSchema>;
@@ -71,8 +87,10 @@ export function LedgerEntryEditDialog({
   entry,
   open,
   onOpenChange,
+  onUpdated,
 }: LedgerEntryEditDialogProps) {
   const updateMutation = useUpdateLedgerEntry();
+  const queryClient = useQueryClient();
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const [mobileView, setMobileView] = useState<MobileEditView>("form");
 
@@ -83,9 +101,33 @@ export function LedgerEntryEditDialog({
   const { data: categories = [] } = useCategories(categoryType);
   const { data: paymentMethods = [] } = usePaymentMethods();
   const { data: accounts = [] } = useAccounts();
-  const { data: availableTags = [] } = useLedgerTags();
+  const { data: books = [] } = useLedgerBooks();
+  const [pendingVisibilityChange, setPendingVisibilityChange] =
+    useState<EditFormValues | null>(null);
+  const initializedEntryRef = useRef<string | null>(null);
+  const originalEntryRef = useRef<LedgerEntryWithDetails | null>(null);
+  const categoryTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const sourceTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const previousMobileView = useRef<MobileEditView>("form");
 
   const dynamicSchema = editFormSchema.superRefine((data, ctx) => {
+    const original = originalEntryRef.current ?? entry;
+    const bookOnly =
+      original &&
+      data.bookId !== original.bookId &&
+      (original.type === "transfer" ||
+        (data.amount === String(original.amount) &&
+          data.title === original.title &&
+          (data.categoryId || null) === (original.categoryId || null) &&
+          (data.paymentMethodId || null) ===
+            (original.fromPaymentMethodId || null) &&
+          (data.accountId || null) ===
+            ((original.type === "income"
+              ? original.toAccountId
+              : original.fromAccountId) || null) &&
+          data.transactedAt === formatKst(original.transactedAt) &&
+          (data.memo || "") === (original.memo || "")));
+    if (bookOnly) return;
     if (entry?.type === "transfer") {
       return;
     }
@@ -145,7 +187,6 @@ export function LedgerEntryEditDialog({
     reset,
     watch,
     setValue,
-    control,
     formState: { errors, isSubmitting },
   } = useForm<EditFormValues>({
     resolver: zodResolver(dynamicSchema),
@@ -156,9 +197,17 @@ export function LedgerEntryEditDialog({
   const watchPaymentMethodId = watch("paymentMethodId");
   const watchAccountId = watch("accountId");
   const watchTitle = watch("title");
+  const watchBookId = watch("bookId");
 
   useEffect(() => {
-    if (entry) {
+    if (!open) {
+      initializedEntryRef.current = null;
+      originalEntryRef.current = null;
+      return;
+    }
+    if (entry && initializedEntryRef.current !== entry.id) {
+      initializedEntryRef.current = entry.id;
+      originalEntryRef.current = entry;
       const date = new Date(entry.transactedAt);
       const formattedDate = date.toISOString().split("T")[0];
 
@@ -171,15 +220,46 @@ export function LedgerEntryEditDialog({
           entry.type === "expense" || entry.type === "non_expense_withdrawal"
             ? (entry.fromAccountId ?? undefined)
             : (entry.toAccountId ?? undefined),
-        transactedAt: formattedDate,
+        transactedAt: formatKst(entry.transactedAt) || formattedDate,
         memo: entry.memo ?? "",
-        tags: entry.tags ? entry.tags.map((tag) => tag.name) : [],
+        bookId: entry.bookId,
       });
     }
-  }, [entry, reset]);
+  }, [entry, open, reset]);
+
+  useEffect(() => {
+    if (mobileView !== "form") {
+      requestAnimationFrame(() =>
+        document
+          .querySelector<HTMLElement>('[data-slot="command-input"]')
+          ?.focus(),
+      );
+    } else if (previousMobileView.current === "categoryPicker") {
+      categoryTriggerRef.current?.focus();
+    } else if (previousMobileView.current === "moneySourcePicker") {
+      sourceTriggerRef.current?.focus();
+    }
+    previousMobileView.current = mobileView;
+  }, [mobileView]);
 
   const onSubmit = async (data: EditFormValues) => {
     if (!entry) return;
+    const original = originalEntryRef.current ?? entry;
+    const destinationBook = books.find((book) => book.id === data.bookId);
+    if (!destinationBook || destinationBook.archivedAt) {
+      toast.error("활성 장부를 선택해주세요.");
+      return;
+    }
+    if ((destinationBook.visibility === "shared") !== original.isShared) {
+      setPendingVisibilityChange(data);
+      return;
+    }
+    await submitUpdate(data);
+  };
+
+  const submitUpdate = async (data: EditFormValues) => {
+    if (!entry) return;
+    const original = originalEntryRef.current ?? entry;
 
     try {
       const transactedAt = data.transactedAt?.includes("T")
@@ -188,19 +268,34 @@ export function LedgerEntryEditDialog({
           ? `${data.transactedAt}T00:00:00.000Z`
           : undefined;
 
-      const updateData: Record<string, unknown> = isTransfer
-        ? { tags: data.tags || null }
+      const bookOnly =
+        original.type === "transfer" ||
+        (data.bookId !== original.bookId &&
+          data.amount === String(original.amount) &&
+          data.title === original.title &&
+          (data.categoryId || null) === (original.categoryId || null) &&
+          (data.paymentMethodId || null) ===
+            (original.fromPaymentMethodId || null) &&
+          (data.accountId || null) ===
+            ((original.type === "income"
+              ? original.toAccountId
+              : original.fromAccountId) || null) &&
+          data.transactedAt === formatKst(original.transactedAt) &&
+          (data.memo || "") === (original.memo || ""));
+      const updateData: Record<string, unknown> = bookOnly
+        ? { bookId: data.bookId, expectedUpdatedAt: original.updatedAt }
         : {
             amount: Number(data.amount),
             title: data.title,
             transactedAt,
             categoryId: data.categoryId || null,
             memo: data.memo || null,
-            tags: data.tags || null,
+            bookId: data.bookId,
+            expectedUpdatedAt: original.updatedAt,
           };
 
       // 유형에 따라 결제수단/계좌 필드 설정
-      if (!isTransfer) {
+      if (!isTransfer && !bookOnly) {
         if (
           entry.type === "expense" ||
           entry.type === "non_expense_withdrawal"
@@ -217,8 +312,27 @@ export function LedgerEntryEditDialog({
         data: updateData,
       });
       toast.success("기록이 수정되었습니다.");
+      setPendingVisibilityChange(null);
+      onUpdated?.({
+        bookId: data.bookId,
+        date: data.transactedAt ?? formatKst(original.transactedAt),
+        bookChanged: data.bookId !== original.bookId,
+      });
       onOpenChange(false);
     } catch (error) {
+      if (
+        error instanceof ApiQueryError &&
+        ["BOOK_ARCHIVED", "BOOK_UNAVAILABLE", "ENTRY_CHANGED"].includes(
+          error.code,
+        )
+      ) {
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ["ledgerBooks"] }),
+          queryClient.invalidateQueries({
+            queryKey: queries.ledgerEntries._def,
+          }),
+        ]);
+      }
       if (error instanceof Error) {
         toast.error(error.message);
       } else {
@@ -244,6 +358,7 @@ export function LedgerEntryEditDialog({
       : "secondary";
 
   const privacyLabel = entry.isShared ? "공용" : "개인";
+  const currentBook = books.find((book) => book.id === entry.bookId);
 
   // 결제수단/계좌 통합 value
   const paymentValue = getLedgerMoneySourceValue({
@@ -286,16 +401,21 @@ export function LedgerEntryEditDialog({
   });
 
   const descriptionContent = (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-wrap items-center gap-2">
       <Badge variant={typeVariant}>{typeLabel}</Badge>
       <Badge variant="outline">{privacyLabel}</Badge>
+      <Badge variant="outline">{currentBook?.name ?? "장부"}</Badge>
+      {currentBook?.archivedAt && <Badge variant="destructive">보관됨</Badge>}
     </div>
   );
 
   const infoBanner = !isTransfer && (
     <div className="flex items-start gap-2 rounded-md bg-muted/50 p-3 text-sm text-muted-foreground">
       <InfoIcon className="mt-0.5 h-4 w-4 shrink-0" />
-      <p>유형이나 공개범위를 변경하려면 이 기록을 삭제 후 다시 등록해주세요.</p>
+      <p>
+        금액, 내용, 분류, 금융수단, 날짜는 여기서 수정할 수 있습니다. 장부를
+        바꾸면 표시 범위가 함께 바뀝니다.
+      </p>
     </div>
   );
 
@@ -303,35 +423,46 @@ export function LedgerEntryEditDialog({
     <div className="flex items-start gap-2 rounded-md bg-muted/50 p-3 text-sm text-muted-foreground">
       <InfoIcon className="mt-0.5 h-4 w-4 shrink-0" />
       <p>
-        내부이체 기록은 태그 외의 정보를 수정할 수 없습니다. 삭제 후 다시
-        등록해주세요.
+        내부이체는 장부만 변경할 수 있습니다. 금액과 금융수단은 그대로
+        유지됩니다.
       </p>
     </div>
   );
 
   const formFields = (
     <>
+      <div className="space-y-2">
+        <Label htmlFor="edit-book">장부</Label>
+        <Select
+          value={watchBookId ?? entry.bookId}
+          onValueChange={(value) =>
+            setValue("bookId", value, {
+              shouldValidate: true,
+              shouldDirty: true,
+            })
+          }
+          disabled={Boolean(currentBook?.archivedAt)}
+        >
+          <SelectTrigger id="edit-book" aria-label="장부">
+            <SelectValue placeholder="장부 선택" />
+          </SelectTrigger>
+          <SelectContent>
+            {books
+              .filter((book) => !book.archivedAt || book.id === entry.bookId)
+              .map((book) => (
+                <SelectItem key={book.id} className="min-h-11" value={book.id}>
+                  {book.name} · {book.visibility === "shared" ? "공용" : "개인"}
+                  {book.archivedAt ? " · 보관됨" : ""}
+                </SelectItem>
+              ))}
+          </SelectContent>
+        </Select>
+        <p className="text-xs text-muted-foreground">
+          개인·공용 장부를 변경하면 표시 범위가 바뀝니다.
+        </p>
+      </div>
       {isTransfer ? (
-        <>
-          {transferEditNotice}
-          {/* 태그 */}
-          <div className="space-y-2">
-            <Label>태그</Label>
-            <Controller
-              control={control}
-              name="tags"
-              render={({ field }) => (
-                <LedgerTagInput
-                  value={field.value || []}
-                  onValueChange={field.onChange}
-                  availableTags={availableTags}
-                  placeholder="태그를 입력하세요 (예: #데이트)"
-                  error={errors.tags?.message}
-                />
-              )}
-            />
-          </div>
-        </>
+        { transferEditNotice }
       ) : (
         <>
           {/* 금액 */}
@@ -361,13 +492,13 @@ export function LedgerEntryEditDialog({
           {/* 내용 */}
           <div className="space-y-2">
             <Label htmlFor="edit-title">내용 *</Label>
-            <LedgerTitleCombobox
+            <Input
               id="edit-title"
+              autoComplete="off"
               value={watchTitle ?? ""}
-              onValueChange={(value) =>
-                setValue("title", value, { shouldValidate: true })
+              onChange={(event) =>
+                setValue("title", event.target.value, { shouldValidate: true })
               }
-              placeholder="예: 이마트 장보기, 스타벅스 아메리카노"
             />
             {errors.title && (
               <p className="text-sm text-destructive">{errors.title.message}</p>
@@ -396,6 +527,8 @@ export function LedgerEntryEditDialog({
                   />
                 ) : (
                   <LedgerCategoryTrigger
+                    ref={categoryTriggerRef}
+                    aria-label="카테고리"
                     label={
                       categories.find((cat) => cat.id === watchCategoryId)
                         ?.name ?? "선택"
@@ -433,6 +566,14 @@ export function LedgerEntryEditDialog({
                 />
               ) : (
                 <LedgerMoneySourceTrigger
+                  ref={sourceTriggerRef}
+                  aria-label={
+                    entry.type === "income"
+                      ? "입금 계좌"
+                      : entry.type === "non_expense_withdrawal"
+                        ? "출금처"
+                        : "결제 방법"
+                  }
                   label={moneySourceLabel}
                   placeholder={moneySourcePlaceholder}
                   onClick={() => setMobileView("moneySourcePicker")}
@@ -463,24 +604,6 @@ export function LedgerEntryEditDialog({
             )}
           </div>
 
-          {/* 태그 */}
-          <div className="space-y-2">
-            <Label>태그</Label>
-            <Controller
-              control={control}
-              name="tags"
-              render={({ field }) => (
-                <LedgerTagInput
-                  value={field.value || []}
-                  onValueChange={field.onChange}
-                  availableTags={availableTags}
-                  placeholder="태그를 입력하세요 (예: #데이트)"
-                  error={errors.tags?.message}
-                />
-              )}
-            />
-          </div>
-
           {/* 메모 */}
           <div className="space-y-2">
             <Label htmlFor="edit-memo">메모 (선택)</Label>
@@ -500,40 +623,88 @@ export function LedgerEntryEditDialog({
     </>
   );
 
+  const visibilityConfirmDialog = (
+    <Dialog
+      open={Boolean(pendingVisibilityChange)}
+      onOpenChange={(isOpen) => !isOpen && setPendingVisibilityChange(null)}
+    >
+      <DialogContent showCloseButton={false}>
+        <DialogHeader>
+          <DialogTitle>기록 공개 범위를 바꿀까요?</DialogTitle>
+          <DialogDescription>
+            {books.find((book) => book.id === pendingVisibilityChange?.bookId)
+              ?.visibility === "shared"
+              ? "공용 장부로 이동하면 함께 쓰는 구성원이 이 기록을 볼 수 있습니다."
+              : "개인 장부로 이동하면 다른 구성원에게 이 기록이 보이지 않습니다."}
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            className="min-h-11"
+            onClick={() => setPendingVisibilityChange(null)}
+          >
+            계속 수정
+          </Button>
+          <Button
+            type="button"
+            className="min-h-11"
+            disabled={isSubmitting}
+            onClick={() =>
+              pendingVisibilityChange &&
+              void submitUpdate(pendingVisibilityChange)
+            }
+          >
+            범위 변경 저장
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+
   if (isDesktop) {
     return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>기록 수정</DialogTitle>
-            <DialogDescription asChild>{descriptionContent}</DialogDescription>
-          </DialogHeader>
+      <>
+        <Dialog open={open} onOpenChange={onOpenChange}>
+          <DialogContent className="sm:max-w-md max-h-[90dvh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>기록 수정</DialogTitle>
+              <DialogDescription asChild>
+                {descriptionContent}
+              </DialogDescription>
+            </DialogHeader>
 
-          {infoBanner}
+            {infoBanner}
 
-          <form
-            id="ledger-entry-edit-form"
-            onSubmit={handleSubmit(onSubmit)}
-            className="space-y-4"
-          >
-            {formFields}
+            <form
+              id="ledger-entry-edit-form"
+              onSubmit={handleSubmit(onSubmit)}
+              className="space-y-4"
+            >
+              {formFields}
 
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                disabled={isSubmitting}
-              >
-                취소
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "저장 중..." : "저장"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => onOpenChange(false)}
+                  disabled={isSubmitting}
+                >
+                  취소
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isSubmitting || Boolean(currentBook?.archivedAt)}
+                >
+                  {isSubmitting ? "저장 중..." : "저장"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+        {visibilityConfirmDialog}
+      </>
     );
   }
 
@@ -546,9 +717,14 @@ export function LedgerEntryEditDialog({
           showHandle={false}
           onOpenAutoFocus={(event) => event.preventDefault()}
         >
+          <DrawerTitle className="sr-only">기록 수정</DrawerTitle>
+          <DrawerDescription className="sr-only">
+            기록의 내용을 수정합니다.
+          </DrawerDescription>
           <Button
             type="button"
             variant="ghost"
+            aria-label="기록 수정 닫기"
             onClick={() => onOpenChange(false)}
             className="absolute right-2 top-2 z-10 inline-flex size-11 items-center justify-center rounded-full text-gray-700 transition-colors hover:bg-gray-100"
           >
@@ -574,14 +750,14 @@ export function LedgerEntryEditDialog({
                   type="button"
                   variant="outline"
                   onClick={() => onOpenChange(false)}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || Boolean(currentBook?.archivedAt)}
                   className="flex-1 h-12 rounded-xl text-base font-semibold"
                 >
                   취소
                 </Button>
                 <Button
                   type="submit"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || Boolean(currentBook?.archivedAt)}
                   className="flex-1 h-12 rounded-xl text-base font-semibold"
                 >
                   {isSubmitting ? "저장 중..." : "저장"}
@@ -603,6 +779,10 @@ export function LedgerEntryEditDialog({
           className="h-[85dvh] max-h-[85dvh] p-0 flex flex-col data-[vaul-drawer-direction=bottom]:mt-0 data-[vaul-drawer-direction=bottom]:max-h-[85dvh]"
           onOpenAutoFocus={(event) => event.preventDefault()}
         >
+          <DrawerTitle className="sr-only">카테고리 선택</DrawerTitle>
+          <DrawerDescription className="sr-only">
+            검색하거나 목록에서 카테고리를 선택하세요.
+          </DrawerDescription>
           <div className="flex h-full flex-col pb-4">
             <LedgerCategoryPickerPanel
               value={watchCategoryId ?? ""}
@@ -630,6 +810,16 @@ export function LedgerEntryEditDialog({
           className="h-[85dvh] max-h-[85dvh] p-0 flex flex-col data-[vaul-drawer-direction=bottom]:mt-0 data-[vaul-drawer-direction=bottom]:max-h-[85dvh]"
           onOpenAutoFocus={(event) => event.preventDefault()}
         >
+          <DrawerTitle className="sr-only">
+            {entry.type === "income"
+              ? "입금 계좌 선택"
+              : entry.type === "non_expense_withdrawal"
+                ? "출금처 선택"
+                : "결제 방법 선택"}
+          </DrawerTitle>
+          <DrawerDescription className="sr-only">
+            검색하거나 목록에서 금융수단을 선택하세요.
+          </DrawerDescription>
           <div className="flex h-full flex-col pb-4">
             <LedgerMoneySourcePickerPanel
               mode={moneySourceMode}
@@ -652,6 +842,7 @@ export function LedgerEntryEditDialog({
           </div>
         </DrawerContent>
       </Drawer>
+      {visibilityConfirmDialog}
     </>
   );
 }

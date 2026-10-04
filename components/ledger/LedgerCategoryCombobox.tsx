@@ -123,7 +123,7 @@ export const LedgerCategoryTrigger = forwardRef<
       role="combobox"
       aria-expanded={open}
       className={cn(
-        "h-10 w-full justify-between px-3 font-normal rounded-xl",
+        "h-11 min-h-11 w-full justify-between px-3 font-normal rounded-xl",
         className,
       )}
       {...props}
@@ -248,11 +248,13 @@ function InlineCategoryCreateDialog({
 function CategoryInlineCreateForm({
   initialName,
   type,
+  autoFocus = true,
   onBack,
   onCreated,
 }: {
   initialName: string;
   type: CategoryType;
+  autoFocus?: boolean;
   onBack?: () => void;
   onCreated: (category: Category) => void;
 }) {
@@ -302,7 +304,7 @@ function CategoryInlineCreateForm({
             setError(null);
           }}
           maxLength={20}
-          autoFocus
+          autoFocus={autoFocus}
         />
         {error && <p className="text-sm text-destructive">{error}</p>}
       </div>
@@ -413,11 +415,13 @@ export function LedgerCategoryCombobox({
 }
 
 export function LedgerCategoryPickerPanel({
+  title,
   value,
   categories,
   type = "expense",
   searchPlaceholder,
   onValueChange,
+  onBack,
 }: LedgerCategoryPickerPanelProps) {
   const [search, setSearch] = useState("");
   const [view, setView] = useState<"select" | "create">("select");
@@ -452,9 +456,25 @@ export function LedgerCategoryPickerPanel({
         }
         className="flex h-full w-full"
       >
-        <div className="w-full h-full shrink-0 min-w-0">
-          <Command className="h-full">
+        <div
+          className="w-full h-full shrink-0 min-w-0"
+          aria-hidden={view !== "select"}
+          inert={view !== "select"}
+        >
+          <div className="flex h-14 items-center justify-between border-b px-4">
+            <h2 className="font-semibold">{title}</h2>
+            <Button
+              type="button"
+              variant="ghost"
+              className="min-h-11"
+              onClick={onBack}
+            >
+              닫기
+            </Button>
+          </div>
+          <Command className="h-[calc(100%-3.5rem)]">
             <CommandInput
+              aria-label={searchPlaceholder}
               placeholder={searchPlaceholder}
               value={search}
               onValueChange={setSearch}
@@ -465,7 +485,7 @@ export function LedgerCategoryPickerPanel({
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="size-8 shrink-0"
+                    className="size-11 shrink-0"
                     aria-label={createLabel}
                     onClick={handleCreateClick}
                   >
@@ -480,11 +500,15 @@ export function LedgerCategoryPickerPanel({
               createLabel={createLabel}
               onCreate={handleCreateClick}
               onValueChange={onValueChange}
-              className="max-h-none min-h-0 flex-1"
+              className="max-h-none min-h-0 flex-1 [&_[cmdk-item]]:min-h-11"
             />
           </Command>
         </div>
-        <div className="w-full h-full shrink-0 min-w-0">
+        <div
+          className="w-full h-full shrink-0 min-w-0"
+          aria-hidden={view !== "create"}
+          inert={view !== "create"}
+        >
           <div className="flex h-full flex-col">
             <div className="flex h-14 shrink-0 items-center border-b px-2">
               <Button
@@ -492,7 +516,10 @@ export function LedgerCategoryPickerPanel({
                 variant="ghost"
                 size="icon"
                 aria-label="카테고리 선택으로 돌아가기"
-                onClick={handleBackToSelect}
+                onClick={() => {
+                  handleBackToSelect();
+                  onBack?.();
+                }}
               >
                 <ChevronLeftIcon className="size-5" />
               </Button>
@@ -502,6 +529,7 @@ export function LedgerCategoryPickerPanel({
               <CategoryInlineCreateForm
                 initialName={createInitialName}
                 type={type}
+                autoFocus={view === "create"}
                 onCreated={(category) => onValueChange(category.id)}
               />
             </div>

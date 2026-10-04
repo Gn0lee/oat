@@ -1,11 +1,13 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { LedgerEntryWithDetails } from "@/lib/api/ledger";
 import { LedgerEntryDeleteDialog } from "./LedgerEntryDeleteDialog";
 
+const mutateAsync = vi.fn();
+
 vi.mock("@/hooks/use-ledger-entries", () => ({
   useDeleteLedgerEntry: vi.fn(() => ({
-    mutateAsync: vi.fn(),
+    mutateAsync,
     isPending: false,
   })),
 }));
@@ -49,5 +51,26 @@ describe("LedgerEntryDeleteDialog", () => {
     expect(screen.getByText("비지출 출금")).toBeInTheDocument();
     expect(screen.getByText("출금처")).toBeInTheDocument();
     expect(screen.getByText("토스뱅크")).toBeInTheDocument();
+  });
+
+  it("삭제할 때 최신 기록 버전을 그대로 전달한다", async () => {
+    mutateAsync.mockResolvedValue(undefined);
+    render(
+      <LedgerEntryDeleteDialog
+        entry={{
+          ...nonExpenseWithdrawalEntry,
+          updatedAt: "2026-10-04T10:20:30.123456+00:00",
+        }}
+        open={true}
+        onOpenChange={() => {}}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "삭제" }));
+
+    expect(mutateAsync).toHaveBeenCalledWith({
+      id: nonExpenseWithdrawalEntry.id,
+      expectedUpdatedAt: "2026-10-04T10:20:30.123456+00:00",
+    });
   });
 });

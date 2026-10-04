@@ -119,7 +119,7 @@ describe("LedgerRecordsClient", () => {
       expect.objectContaining({ bookId: undefined, categoryId: "category-1" }),
     );
   });
-  it("specific book queries only that scope, links straight to management and never silently creates in another book", () => {
+  it("specific active non-default book exposes creation scoped to that book", () => {
     state.search = "book=book-1&date=2026-06-16";
     vi.mocked(useLedgerBook).mockReturnValue({
       data: book,
@@ -135,9 +135,10 @@ describe("LedgerRecordsClient", () => {
       "href",
       "/ledger/books/book-1?returnTo=%2Fledger%2Frecords%3Fbook%3Dbook-1%26date%3D2026-06-16",
     );
-    expect(
-      screen.queryByRole("link", { name: /가계부 등록/ }),
-    ).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /가계부 등록/ })).toHaveAttribute(
+      "href",
+      "/ledger/records/new/daily?date=2026-06-16&book=book-1",
+    );
   });
   it("archived book retains its scope, shows read-only and has no creation link", () => {
     state.search = "book=book-1&date=2026-06-16";

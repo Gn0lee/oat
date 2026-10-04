@@ -157,7 +157,10 @@ export const LedgerMoneySourceTrigger = forwardRef<
       variant="outline"
       role="combobox"
       aria-expanded={open}
-      className={cn("h-9 w-full justify-between px-3 font-normal", className)}
+      className={cn(
+        "h-11 min-h-11 w-full justify-between px-3 font-normal",
+        className,
+      )}
       {...props}
     >
       <span
@@ -194,7 +197,13 @@ function MoneySourceCommandList({
         <div className="space-y-3">
           <p>검색 결과가 없습니다.</p>
           {createLabel && onCreate && (
-            <Button type="button" variant="ghost" size="sm" onClick={onCreate}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="min-h-11"
+              onClick={onCreate}
+            >
               <PlusIcon className="size-4" />
               {createLabel}
             </Button>
@@ -668,6 +677,7 @@ export function LedgerMoneySourceCombobox({
 }
 
 export function LedgerMoneySourcePickerPanel({
+  title,
   mode,
   value,
   paymentMethods,
@@ -678,6 +688,7 @@ export function LedgerMoneySourcePickerPanel({
   excludedValues,
   searchPlaceholder,
   onValueChange,
+  onBack,
 }: LedgerMoneySourcePickerPanelProps) {
   const [search, setSearch] = useState("");
   const [target, setTarget] = useState<MoneySourceCreateTarget | null>(null);
@@ -743,9 +754,25 @@ export function LedgerMoneySourcePickerPanel({
         className="flex h-full w-full"
       >
         {/* Select View */}
-        <div className="h-full w-full shrink-0 min-w-0">
-          <Command className="h-full">
+        <div
+          className="h-full w-full shrink-0 min-w-0"
+          aria-hidden={Boolean(target)}
+          inert={Boolean(target)}
+        >
+          <div className="flex h-14 items-center justify-between border-b px-4">
+            <h2 className="font-semibold">{title}</h2>
+            <Button
+              type="button"
+              variant="ghost"
+              className="min-h-11"
+              onClick={onBack}
+            >
+              닫기
+            </Button>
+          </div>
+          <Command className="h-[calc(100%-3.5rem)]">
             <CommandInput
+              aria-label={searchPlaceholder}
               placeholder={searchPlaceholder}
               value={search}
               onValueChange={setSearch}
@@ -756,7 +783,7 @@ export function LedgerMoneySourcePickerPanel({
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="size-8 shrink-0"
+                    className="size-11 shrink-0"
                     aria-label={createLabel}
                     onClick={handleCreateClick}
                   >
@@ -771,20 +798,25 @@ export function LedgerMoneySourcePickerPanel({
               createLabel={createLabel}
               onCreate={handleCreateClick}
               onValueChange={onValueChange}
-              className="max-h-none min-h-0 flex-1"
+              className="max-h-none min-h-0 flex-1 [&_[cmdk-item]]:min-h-11"
             />
           </Command>
         </div>
 
         {/* Choose View (Expense Only) */}
         {isExpense && (
-          <div className="h-full w-full shrink-0 min-w-0">
+          <div
+            className="h-full w-full shrink-0 min-w-0"
+            aria-hidden={target?.kind !== "choose"}
+            inert={target?.kind !== "choose"}
+          >
             <div className="flex h-full flex-col">
               <div className="flex h-14 shrink-0 items-center border-b px-2">
                 <Button
                   type="button"
                   variant="ghost"
                   size="icon"
+                  className="size-11"
                   aria-label="결제 방법 선택으로 돌아가기"
                   onClick={() => setTarget(null)}
                 >
@@ -831,13 +863,20 @@ export function LedgerMoneySourcePickerPanel({
         )}
 
         {/* Form View */}
-        <div className="h-full w-full shrink-0 min-w-0">
+        <div
+          className="h-full w-full shrink-0 min-w-0"
+          aria-hidden={
+            target?.kind !== "account" && target?.kind !== "paymentMethod"
+          }
+          inert={target?.kind !== "account" && target?.kind !== "paymentMethod"}
+        >
           <div className="flex h-full flex-col">
             <div className="flex h-14 shrink-0 items-center border-b px-2">
               <Button
                 type="button"
                 variant="ghost"
                 size="icon"
+                className="size-11"
                 aria-label="결제 방법 선택으로 돌아가기"
                 onClick={() => {
                   if (mode === "expense") {
