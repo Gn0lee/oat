@@ -4,7 +4,6 @@ import { CheckIcon, XIcon } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
-  AmountDisclosure,
   GroupedList,
   ScreenSection,
   ScreenState,
@@ -67,6 +66,8 @@ function getStatusLabel(status: RecordChangeRequest["status"]) {
       return "거절됨";
     case "cancelled":
       return "취소됨";
+    case "expired":
+      return "만료됨";
   }
 }
 

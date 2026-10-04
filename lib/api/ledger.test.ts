@@ -5,6 +5,7 @@ import {
   buildLedgerEntryPayload,
   buildTransferLedgerEntryPayload,
   calculateLedgerSummary,
+  createBatchLedgerEntriesWithBalanceSync,
   createLedgerEntry,
   createLedgerEntryWithBalanceSync,
   deleteLedgerEntry,
@@ -321,8 +322,8 @@ describe("buildLedgerEntryPayload", () => {
       categoryId: "cat-1",
       transactedAt: validDate,
     });
-    expect(shared.isShared).toBe(true);
-    expect(private_.isShared).toBe(false);
+    expect("isShared" in shared && shared.isShared).toBe(true);
+    expect("isShared" in private_ && private_.isShared).toBe(false);
   });
 
   it("amount string → number 변환", () => {
@@ -733,6 +734,64 @@ describe("getOwnLedgerActivity", () => {
 });
 
 describe("atomic ledger writes", () => {
+  it("creates a batch with one RPC and decodes the replay receipt", async () => {
+    const supabase = {
+      rpc: vi.fn().mockResolvedValue({
+        data: {
+          entries: [
+            {
+              id: "entry-1",
+              household_id: "household-1",
+              owner_id: "user-1",
+              book_id: "book-1",
+              type: "expense",
+              amount: 12000,
+              transacted_at: validDate,
+              updated_at: validDate,
+            },
+          ],
+          replayed: true,
+        },
+        error: null,
+      }),
+      from: vi.fn(() => {
+        throw new Error("batch writes must use one transaction RPC");
+      }),
+    };
+    const result = await createBatchLedgerEntriesWithBalanceSync(
+      supabase as never,
+      "user-1",
+      "household-1",
+      [{ ...params, bookId: "book-1" }],
+      "request-1",
+    );
+    expect(supabase.rpc).toHaveBeenCalledExactlyOnceWith(
+      "write_ledger_entries_batch",
+      {
+        p_actor_id: "user-1",
+        p_household_id: "household-1",
+        p_entries: [{ ...params, bookId: "book-1" }],
+        p_request_id: "request-1",
+      },
+    );
+    expect(result).toEqual({
+      entries: [
+        {
+          id: "entry-1",
+          household_id: "household-1",
+          owner_id: "user-1",
+          book_id: "book-1",
+          type: "expense",
+          amount: 12000,
+          transacted_at: validDate,
+          updated_at: validDate,
+        },
+      ],
+      replayed: true,
+    });
+    expect(supabase.from).not.toHaveBeenCalled();
+  });
+
   const params = {
     householdId: "household-1",
     ownerId: "user-1",
@@ -793,6 +852,7 @@ describe("atomic ledger writes", () => {
       p_operation: "delete",
       p_actor_id: "user-1",
       p_entry_id: "entry-1",
+      p_payload: {},
     });
   });
 
@@ -819,7 +879,7 @@ describe("atomic ledger writes", () => {
                 "user-1",
               );
       await expect(write).rejects.toMatchObject({
-        code: "LEDGER_BOOK_ARCHIVED",
+        code: "BOOK_ARCHIVED",
         statusCode: 409,
       });
       expect(supabase.rpc).toHaveBeenCalledTimes(1);
@@ -842,23 +902,42 @@ describe("atomic ledger writes", () => {
   });
 
   it.each([
-    ["LEDGER_BOOK_UNAVAILABLE", 404],
-    ["LEDGER_FORBIDDEN", 403],
-    ["LEDGER_FINANCIAL_SOURCE_FORBIDDEN", 403],
-    ["LEDGER_TRANSFER_EDIT_UNSUPPORTED", 400],
-    ["LEDGER_TAG_INVALID_NAME", 400],
-    ["LEDGER_VALIDATION_ERROR", 400],
-  ])("maps %s without exposing SQL details", async (message, statusCode) => {
-    const supabase = client({ code: "P0001", message: String(message) });
-    await expect(
-      updateLedgerEntryWithBalanceSync(
-        supabase as never,
-        "entry-1",
-        "user-1",
-        {},
-      ),
-    ).rejects.toMatchObject({ code: message, statusCode });
-  });
+    ["LEDGER_BOOK_UNAVAILABLE", "BOOK_UNAVAILABLE", 404],
+    ["LEDGER_BOOK_ARCHIVED", "BOOK_ARCHIVED", 409],
+    ["ENTRY_CHANGED", "ENTRY_CHANGED", 409],
+    [
+      "VISIBILITY_CHANGE_CONFIRMATION_REQUIRED",
+      "VISIBILITY_CHANGE_CONFIRMATION_REQUIRED",
+      400,
+    ],
+    ["IDEMPOTENCY_CONFLICT", "IDEMPOTENCY_CONFLICT", 409],
+    ["LEDGER_FORBIDDEN", "LEDGER_FORBIDDEN", 403],
+    [
+      "LEDGER_FINANCIAL_SOURCE_FORBIDDEN",
+      "LEDGER_FINANCIAL_SOURCE_FORBIDDEN",
+      403,
+    ],
+    [
+      "LEDGER_TRANSFER_EDIT_UNSUPPORTED",
+      "LEDGER_TRANSFER_EDIT_UNSUPPORTED",
+      400,
+    ],
+    ["LEDGER_TAG_INVALID_NAME", "LEDGER_TAG_INVALID_NAME", 400],
+    ["LEDGER_VALIDATION_ERROR", "LEDGER_VALIDATION_ERROR", 400],
+  ])(
+    "maps %s without exposing SQL details",
+    async (message, code, statusCode) => {
+      const supabase = client({ code: "P0001", message: String(message) });
+      await expect(
+        updateLedgerEntryWithBalanceSync(
+          supabase as never,
+          "entry-1",
+          "user-1",
+          {},
+        ),
+      ).rejects.toMatchObject({ code, statusCode });
+    },
+  );
 
   it("unknown database details stay private", async () => {
     const supabase = client({

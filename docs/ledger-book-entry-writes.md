@@ -1,0 +1,25 @@
+# 장부 지정 기록 쓰기 (#442 Slice A)
+
+기록 생성은 선택한 `bookId`를 서버에서 검증하고, 기존 `is_shared` 값은 DB가 장부에서 계산한다. 구버전 호출은 계속 `isShared`만 보내도 기존 기본 장부 선택 경로를 사용한다. 기록 재분류는 작성자 본인만 가능하며, 원본과 대상 장부가 현재 사용자에게 접근 가능한 활성 장부인지 검사한다. 공용/개인 사이의 실제 공개범위 변경에는 `confirmVisibilityChange: true`와 `expectedUpdatedAt`이 필요하다. 같은 범위의 장부 이동에도 버전이 필요하며, 오래된 버전은 `ENTRY_CHANGED`로 거절된다. 원본과 대상이 같으면 공개범위 확인은 요구하지 않는다.
+
+`POST /api/ledger-entries/batch`는 `entries` 전체를 단일 DB RPC/트랜잭션에 전달한다. 선택적 UUID `requestId`는 동일 actor와 요청 본문에서 재전송 안전성을 제공한다. 같은 키와 다른 가구 또는 본문은 `IDEMPOTENCY_CONFLICT`(409)다. 응답의 `replayed`가 참이면 API는 생성 알림을 다시 보내지 않는다. 실패한 요청은 기록, 잔액 변경과 영수증을 함께 롤백한다. 배치 크기는 1–20건이다.
+
+개인 기록과 개인 기록에 연결된 요청/알림은 작성자만 읽는다. 변경으로 무효화된 대기 중 기록 변경 요청은 `expired`가 된다. 정의자 권한 가시성 함수는 호출자의 `auth.uid()`만 조회하며, 저장된 대상 작성자는 대상 행이 삭제된 뒤에도 요청의 가구 구성원인 동안 자신의 이력을 볼 수 있다. 인증 역할의 테이블 직접 UPDATE 권한은 버전·확인 검사를 우회하지 못하도록 제거했다. 앱은 기존 `write_ledger_entry` RPC 서명과 HTTP 경로를 유지하고 그 RPC를 통해 수정한다.
+
+## 적용 및 호환성
+
+[#440 원자 쓰기 및 장부 마이그레이션](ledger-books-migration.md)과 [#441 장부 관리](ledger-books-management.md)가 먼저 설치돼야 한다. 먼저 enum 추가 마이그레이션 `20261004083722_ledger_entry_request_expiry.sql`을 적용하고, 그 다음 `20261004083724_ledger_book_entry_writes.sql`을 적용한다. enum 값을 별도 커밋으로 먼저 배포하면 PostgreSQL이 같은 트랜잭션에서 새 값을 사용하는 제약을 피할 수 있다. 두 마이그레이션은 기존 기록/잔액을 변경하지 않는다.
+
+앱을 적용한 뒤에도 기존 단일 쓰기 RPC 시그니처, 태그 정규화, 금융 잔액 동기화, `isShared` 기반 구버전 create 입력은 유지된다. 기존 원자 쓰기 SQL 테스트는 호환 회귀 검증에 사용한다. 인증된 SQL 클라이언트의 원시 `UPDATE ledger_entries`는 더 이상 허용되지 않으며 앱 수정은 RPC를 사용해야 한다.
+
+## scratch 검증
+
+운영 또는 공유 DB가 아닌 마이그레이션된 격리 scratch DB에서 새 통합 회귀 테스트를 실행한다. 이 테스트는 트랜잭션 끝에 fixture를 롤백한다.
+
+```sh
+docker exec -i supabase_db_oat psql -X -v ON_ERROR_STOP=1 -U supabase_admin -d oat_ledger_books_442_test < supabase/tests/ledger-book-entry-writes.sql
+```
+
+기존 원자 쓰기 회귀 파일은 440 DB 이름을 직접 보호하므로, 442 clone 검증 때는 stdin 복사본에서 DB 이름만 442 scratch DB로 치환해 실행한다. 원본 파일은 수정하지 않는다. 새 SQL 회귀는 권한·직접 DB 프라이버시·개인/공용 이동·transfer 장부만 이동·확인/버전 유효성·보관·batch 롤백/재시도를 순차적으로 확인한다. 격리 scratch DB에서 별도로 두 인증 세션을 사용해 동시성 검사도 실행한다. 이 검사는 오래된 원본 보존, 보관/쓰기 잠금 순서, 동일 버전 충돌, receipt 키 경쟁을 다루며, fixture SQL 자체는 동시 세션을 만들지 않는다. Root가 `oat_ledger_books_442_test`와 깨끗한 clone에 enum→writer 순서로 마이그레이션을 적용하고 SQL 검사를 통과시켰다. 운영 배포 전에는 동일한 순서로 마이그레이션을 검토·적용하고 앱/API를 함께 배포한다.
+
+배포 장애 시 이전 앱으로 되돌릴 수 있지만, 새 API의 장부 지정 기능은 사용할 수 없다. 마이그레이션은 기존 기록 데이터를 보존하며 하향 enum 제거 또는 receipt 삭제를 수행하지 않는다. 직접 테이블 UPDATE 권한 복구는 버전·확인 우회로가 되므로 권장하지 않는다.

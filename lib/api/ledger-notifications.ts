@@ -201,7 +201,7 @@ export async function notifyLedgerEntryUpdated(
   supabase: SupabaseClient<Database>,
   input: LedgerEntryUpdatedInput,
 ): Promise<void> {
-  if (!input.previousEntry.is_shared) return;
+  if (!input.previousEntry.is_shared || !input.updatedEntry.is_shared) return;
 
   await runBestEffort(
     () =>

@@ -1520,6 +1520,15 @@ export type Database = {
         };
         Returns: Database["public"]["Tables"]["ledger_entries"]["Row"];
       };
+      write_ledger_entries_batch: {
+        Args: {
+          p_actor_id: string;
+          p_entries: Json;
+          p_household_id: string;
+          p_request_id?: string;
+        };
+        Returns: Json;
+      };
     };
     Enums: {
       account_category: "bank" | "investment";
@@ -1588,7 +1597,8 @@ export type Database = {
         | "pending"
         | "approved"
         | "rejected"
-        | "cancelled";
+        | "cancelled"
+        | "expired";
       record_change_request_target_type: "ledger_entry" | "stock_transaction";
       record_change_request_type: "update" | "delete";
       risk_level: "safe" | "moderate" | "aggressive";
@@ -1809,6 +1819,7 @@ export const Constants = {
         "approved",
         "rejected",
         "cancelled",
+        "expired",
       ],
       record_change_request_target_type: ["ledger_entry", "stock_transaction"],
       record_change_request_type: ["update", "delete"],

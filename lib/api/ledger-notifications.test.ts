@@ -178,6 +178,16 @@ describe("ledger notification helpers", () => {
     expect(createUserNotificationMock).not.toHaveBeenCalled();
   });
 
+  it("공용에서 개인으로 옮긴 기록은 업데이트 알림을 만들지 않는다", async () => {
+    const supabase = createLedgerNotificationSupabaseMock();
+    await notifyLedgerEntryUpdated(supabase as never, {
+      actorId: "owner-1",
+      previousEntry: sharedEntry,
+      updatedEntry: { ...sharedEntry, is_shared: false },
+    });
+    expect(createUserNotificationMock).not.toHaveBeenCalled();
+  });
+
   it("삭제 알림은 삭제 전 기록 날짜로 이동한다", async () => {
     const supabase = createLedgerNotificationSupabaseMock();
 

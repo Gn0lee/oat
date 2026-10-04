@@ -29,16 +29,52 @@ interface LedgerEntryListResponse {
   data: LedgerEntryWithDetails[];
 }
 
-interface LedgerEntryResponse {
-  data: LedgerEntry;
+interface MutationEnvelope<T> {
+  data: T;
+}
+
+interface MutationErrorEnvelope {
+  error?: { code?: string; message?: string };
 }
 
 interface LedgerError {
-  error: {
-    code: string;
-    message: string;
-  };
+  error: { code: string; message: string };
 }
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+async function readMutationBody(response: Response): Promise<unknown> {
+  const body: unknown = await response.json();
+  if (!response.ok) {
+    const error =
+      isObject(body) && isObject(body.error)
+        ? (body.error as MutationErrorEnvelope["error"])
+        : undefined;
+    throw new ApiQueryError(
+      error?.code ?? "UNKNOWN_ERROR",
+      error?.message ?? "요청에 실패했습니다.",
+      response.status,
+    );
+  }
+  return body;
+}
+
+async function readMutationData<T>(response: Response): Promise<T> {
+  const body = await readMutationBody(response);
+  if (!isObject(body) || !("data" in body)) {
+    throw new ApiQueryError(
+      "INVALID_RESPONSE",
+      "응답을 처리할 수 없습니다.",
+      response.status,
+    );
+  }
+  return (body as unknown as MutationEnvelope<T>).data;
+}
+export type CreateBatchLedgerEntriesInput =
+  | CreateLedgerEntryInput[]
+  | { entries: CreateLedgerEntryInput[]; requestId?: string };
 
 // ============================================================================
 // 가계부 항목 목록 조회
@@ -214,25 +250,23 @@ async function createLedgerEntry(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
   });
-  const json = await response.json();
-
-  if (!response.ok) {
-    const error = json as LedgerError;
-    throw new Error(error.error.message);
-  }
-
-  return (json as LedgerEntryResponse).data;
+  return readMutationData<LedgerEntry>(response);
 }
 
 function invalidateLedgerBalanceQueries(
   queryClient: ReturnType<typeof useQueryClient>,
 ) {
+  queryClient.invalidateQueries({ queryKey: ["ledgerBooks"] });
   queryClient.invalidateQueries({ queryKey: queries.ledgerEntries._def });
   queryClient.invalidateQueries({ queryKey: queries.accounts._def });
   queryClient.invalidateQueries({ queryKey: queries.paymentMethods._def });
   queryClient.invalidateQueries({ queryKey: queries.ledgerTags._def });
   queryClient.invalidateQueries({ queryKey: queries.ledgerStats._def });
   queryClient.invalidateQueries({ queryKey: queries.home._def });
+  queryClient.invalidateQueries({
+    queryKey: queries.recordChangeRequests._def,
+  });
+  queryClient.invalidateQueries({ queryKey: queries.notifications._def });
 }
 
 export function useCreateLedgerEntry() {
@@ -251,21 +285,27 @@ export function useCreateLedgerEntry() {
 // ============================================================================
 
 async function createBatchLedgerEntries(
-  entries: CreateLedgerEntryInput[],
+  input: CreateBatchLedgerEntriesInput,
 ): Promise<BatchCreateResponse> {
+  const payload = Array.isArray(input) ? { entries: input } : input;
   const response = await fetch("/api/ledger-entries/batch", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ entries }),
+    body: JSON.stringify(payload),
   });
-  const json = await response.json();
-
-  if (!response.ok) {
-    const error = json as LedgerError;
-    throw new Error(error.error.message);
+  const body = await readMutationBody(response);
+  if (
+    !isObject(body) ||
+    !Array.isArray(body.data) ||
+    typeof body.count !== "number"
+  ) {
+    throw new ApiQueryError(
+      "INVALID_RESPONSE",
+      "응답을 처리할 수 없습니다.",
+      response.status,
+    );
   }
-
-  return json as BatchCreateResponse;
+  return { data: body.data as LedgerEntry[], count: body.count };
 }
 
 export function useCreateBatchLedgerEntries() {
@@ -297,14 +337,7 @@ async function updateLedgerEntry({
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-  const json = await response.json();
-
-  if (!response.ok) {
-    const error = json as LedgerError;
-    throw new Error(error.error.message);
-  }
-
-  return (json as LedgerEntryResponse).data;
+  return readMutationData<LedgerEntry>(response);
 }
 
 export function useUpdateLedgerEntry() {
@@ -322,16 +355,22 @@ export function useUpdateLedgerEntry() {
 // 가계부 항목 삭제
 // ============================================================================
 
-async function deleteLedgerEntry(id: string): Promise<void> {
+type DeleteLedgerEntryInput =
+  | string
+  | { id: string; expectedUpdatedAt?: string };
+
+async function deleteLedgerEntry(input: DeleteLedgerEntryInput): Promise<void> {
+  const id = typeof input === "string" ? input : input.id;
+  const expectedUpdatedAt =
+    typeof input === "string" ? undefined : input.expectedUpdatedAt;
   const response = await fetch(`/api/ledger-entries/${id}`, {
     method: "DELETE",
+    ...(expectedUpdatedAt && {
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ expectedUpdatedAt }),
+    }),
   });
-  const json = await response.json();
-
-  if (!response.ok) {
-    const error = json as LedgerError;
-    throw new Error(error.error.message);
-  }
+  await readMutationBody(response);
 }
 
 export function useDeleteLedgerEntry() {

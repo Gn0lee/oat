@@ -20,6 +20,7 @@ export const recordChangeRequestStatusSchema = z.enum([
   "approved",
   "rejected",
   "cancelled",
+  "expired",
 ]);
 
 export type RecordChangeRequestStatus = z.infer<

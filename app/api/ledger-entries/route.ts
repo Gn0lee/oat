@@ -184,6 +184,7 @@ export async function POST(request: Request) {
     const entry = await createLedgerEntryWithBalanceSync(supabase, {
       householdId,
       ownerId: user.id,
+      bookId: input.bookId,
       type: input.type,
       amount: input.amount,
       transactedAt: input.transactedAt,
@@ -193,7 +194,7 @@ export async function POST(request: Request) {
       fromPaymentMethodId: input.fromPaymentMethodId,
       toAccountId: input.toAccountId,
       toPaymentMethodId: input.toPaymentMethodId,
-      isShared: input.isShared,
+      isShared: "isShared" in input ? input.isShared : undefined,
       memo: input.memo,
       tags: input.tags,
     });
