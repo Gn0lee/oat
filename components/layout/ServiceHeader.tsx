@@ -2,8 +2,8 @@
 
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import { NotificationBell } from "@/components/notifications";
 import {
   getServiceRouteMeta,
@@ -18,26 +18,29 @@ interface ServiceHeaderProps {
 
 export function ServiceHeader({ variant, mcpEnabled }: ServiceHeaderProps) {
   const pathname = usePathname();
-  const [searchParams, setSearchParams] = useState<URLSearchParams | null>(
-    null,
-  );
   const meta = getServiceRouteMeta(pathname, { mcpEnabled });
-  const parentHref = resolveServiceParentHref({
-    meta,
-    searchParams,
-  });
-
-  useEffect(() => {
-    if (!pathname) {
-      return;
-    }
-    setSearchParams(new URLSearchParams(window.location.search));
-  }, [pathname]);
 
   if (variant === "desktop") {
     return <DesktopServiceHeader meta={meta} />;
   }
 
+  return (
+    <Suspense fallback={<MobileServiceHeader meta={meta} />}>
+      <MobileServiceHeaderWithQuery meta={meta} />
+    </Suspense>
+  );
+}
+
+function MobileServiceHeaderWithQuery({
+  meta,
+}: {
+  meta: ReturnType<typeof getServiceRouteMeta>;
+}) {
+  const searchParams = useSearchParams();
+  const parentHref = resolveServiceParentHref({
+    meta,
+    searchParams: new URLSearchParams(searchParams.toString()),
+  });
   return <MobileServiceHeader meta={meta} parentHref={parentHref} />;
 }
 

@@ -110,8 +110,9 @@ export function LedgerCalendar({
         variant="ghost"
         size="icon"
         onClick={onRefresh}
-        className="absolute top-5 right-6 h-7 w-7 text-gray-400 hover:text-gray-600 z-10"
+        className="absolute top-2 right-2 size-11 text-gray-400 hover:text-gray-600 z-10"
         title="새로고침"
+        aria-label="기록 새로고침"
       >
         <RefreshCw className="w-3.5 h-3.5" />
       </Button>

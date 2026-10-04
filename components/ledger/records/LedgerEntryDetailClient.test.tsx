@@ -65,6 +65,33 @@ const mockEntry: LedgerEntryWithDetails = {
 };
 
 describe("LedgerEntryDetailClient", () => {
+  it.each(["owner-1", "non-owner"])(
+    "보관 장부는 %s에게 읽기 전용이며 수정·삭제·요청을 노출하지 않는다",
+    (userId) => {
+      vi.mocked(useCurrentUserId).mockReturnValue({ userId, isLoading: false });
+      vi.mocked(useLedgerEntry).mockReturnValue({
+        data: {
+          ...mockEntry,
+          bookId: "book-1",
+          book: {
+            name: "지난 여행",
+            visibility: "shared",
+            archivedAt: "2026-06-01T00:00:00Z",
+          },
+        },
+        isLoading: false,
+        error: null,
+      } as never);
+      render(<LedgerEntryDetailClient entryId="entry-1" />);
+      expect(
+        screen.getByText("지난 여행 · 보관됨 · 읽기 전용"),
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", { name: /기록 (수정|삭제)/ }),
+      ).not.toBeInTheDocument();
+    },
+  );
+
   it("소유자 뷰: 헤더 타이틀, 타입 라벨, 금액 디스크로저, 배지, 인포 로우, 메모, 수정/삭제 버튼 렌더링", () => {
     vi.mocked(useCurrentUserId).mockReturnValue({
       userId: "owner-1",

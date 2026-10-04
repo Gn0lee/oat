@@ -1,169 +1,231 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import userEvent from "@testing-library/user-event";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { useLedgerBook, useLedgerBooks } from "@/hooks/use-ledger-books";
 import { useLedgerEntries } from "@/hooks/use-ledger-entries";
-import { useLedgerTags } from "@/hooks/use-ledger-tags";
+import { ApiQueryError } from "@/lib/api/client";
 import type { LedgerEntryWithDetails } from "@/lib/api/ledger";
 import { LedgerRecordsClient } from "./LedgerRecordsClient";
 
-const mockReplace = vi.fn();
-const mockSearchParams = vi.fn(() => new URLSearchParams("date=2026-06-16"));
-
+const replace = vi.fn();
+const state = vi.hoisted(() => ({ search: "date=2026-06-16" }));
+const ledgerIdentity = vi.hoisted(() => ({
+  userId: "user" as string | null,
+  householdId: "household" as string | null,
+  role: "member" as const,
+}));
 vi.mock("next/navigation", () => ({
   usePathname: () => "/ledger/records",
-  useRouter: () => ({ replace: mockReplace }),
-  useSearchParams: () => mockSearchParams(),
+  useRouter: () => ({ replace, push: vi.fn(), refresh: vi.fn() }),
+  useSearchParams: () => new URLSearchParams(state.search),
 }));
-
-vi.mock("@/hooks/use-ledger-entries", () => ({
-  useLedgerEntries: vi.fn(),
+vi.mock("@/hooks/use-ledger-entries", () => ({ useLedgerEntries: vi.fn() }));
+vi.mock("@/hooks/use-ledger-books", () => ({
+  useLedgerBooks: vi.fn(),
+  useLedgerBook: vi.fn(),
 }));
-
-vi.mock("@/hooks/use-ledger-tags", () => ({
-  useLedgerTags: vi.fn(),
+vi.mock("@/hooks/use-ledger-identity", () => ({
+  useLedgerIdentity: () => ledgerIdentity,
 }));
-
-vi.mock("@/components/ledger/CategoryIcon", () => ({
-  CategoryIcon: ({ iconName }: { iconName: string | null }) => (
-    <span data-icon-name={iconName ?? "fallback"} />
+vi.mock("./LedgerCalendar", () => ({
+  LedgerCalendar: ({
+    onDateSelect,
+  }: {
+    onDateSelect: (date: Date) => void;
+  }) => (
+    <button type="button" onClick={() => onDateSelect(new Date(2026, 5, 17))}>
+      다음 날짜 선택
+    </button>
   ),
 }));
-
-const mockEntries: LedgerEntryWithDetails[] = [
-  {
-    id: "entry-1",
-    householdId: "household-1",
-    ownerId: "owner-1",
-    ownerName: "홍길동",
-    type: "expense",
-    amount: 1250000, // Large amount to check no compaction on row
-    title: "가계부등록기록",
-    categoryId: "cat-1",
-    categoryName: "식비",
-    categoryIcon: "Coffee",
-    fromAccountId: null,
-    fromAccountName: null,
-    fromPaymentMethodId: "pay-1",
-    fromPaymentMethodName: "신용카드",
-    toAccountId: null,
-    toAccountName: null,
-    toPaymentMethodId: null,
-    toPaymentMethodName: null,
-    isShared: true,
-    memo: "메모",
-    transactedAt: "2026-06-16T00:00:00.000Z",
-    createdAt: "2026-06-16T00:00:00.000Z",
-    updatedAt: "2026-06-16T00:00:00.000Z",
-  },
-];
-
-describe("LedgerRecordsClient", () => {
-  it("restores selected date, shows scope switch, summary metrics, links row and add button with date query", () => {
-    vi.mocked(useLedgerTags).mockReturnValue({
-      data: [],
-      isSuccess: true,
-    } as any);
-
-    // mock useLedgerEntries to return data only for current month (June)
-    vi.mocked(useLedgerEntries).mockImplementation((params) => {
-      if (params?.month === 6) {
-        return {
-          data: mockEntries,
-          isLoading: false,
-        } as unknown as ReturnType<typeof useLedgerEntries>;
+const book = {
+  id: "book-1",
+  name: "여행비",
+  visibility: "shared" as const,
+  createdBy: "user",
+  isDefault: false,
+  archivedAt: null,
+  createdAt: "",
+  updatedAt: "",
+};
+const entry = {
+  id: "entry-1",
+  householdId: "household",
+  ownerId: "user",
+  ownerName: "홍길동",
+  type: "expense",
+  amount: 1250000,
+  title: "여행 기록",
+  categoryId: null,
+  categoryName: null,
+  categoryIcon: null,
+  fromAccountId: null,
+  fromAccountName: null,
+  fromPaymentMethodId: null,
+  fromPaymentMethodName: null,
+  toAccountId: null,
+  toAccountName: null,
+  toPaymentMethodId: null,
+  toPaymentMethodName: null,
+  isShared: true,
+  memo: null,
+  transactedAt: "2026-06-16T00:00:00Z",
+  createdAt: "",
+  updatedAt: "",
+} satisfies LedgerEntryWithDetails;
+function renderRecords() {
+  return render(
+    <QueryClientProvider
+      client={
+        new QueryClient({ defaultOptions: { queries: { retry: false } } })
       }
-      return {
-        data: [],
-        isLoading: false,
-      } as unknown as ReturnType<typeof useLedgerEntries>;
-    });
-
-    const queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false } },
-    });
-
-    render(
-      <QueryClientProvider client={queryClient}>
-        <LedgerRecordsClient initialDate="2026-06-16" />
-      </QueryClientProvider>,
+    >
+      <LedgerRecordsClient initialDate="2026-06-16" />
+    </QueryClientProvider>,
+  );
+}
+beforeEach(() => {
+  vi.clearAllMocks();
+  state.search = "date=2026-06-16";
+  ledgerIdentity.userId = "user";
+  ledgerIdentity.householdId = "household";
+  vi.mocked(useLedgerBooks).mockReturnValue({
+    data: [book],
+    isPending: false,
+  } as never);
+  vi.mocked(useLedgerBook).mockReturnValue({
+    data: undefined,
+    isPending: false,
+  } as never);
+  vi.mocked(useLedgerEntries).mockImplementation(
+    (params) =>
+      ({ data: params?.month === 6 ? [entry] : [], isLoading: false }) as never,
+  );
+});
+describe("LedgerRecordsClient", () => {
+  it("whole scope displays visible entries and preserves date/category conditions in detail return", () => {
+    state.search = "date=2026-06-16&categoryId=category-1";
+    renderRecords();
+    expect(screen.getByRole("link", { name: /여행 기록/ })).toHaveAttribute(
+      "href",
+      "/ledger/records/entry-1?from=records&date=2026-06-16&returnTo=%2Fledger%2Frecords%3Fdate%3D2026-06-16%26categoryId%3Dcategory-1",
     );
-
-    // 1. scope switch 검증 (공용 / 개인)
-    expect(screen.getByText("공용")).toBeInTheDocument();
-    expect(screen.getByText("개인")).toBeInTheDocument();
-
-    // 2. summary metrics (입금, 지출, 잔액 라벨 확인)
-    expect(screen.getByText("입금")).toBeInTheDocument();
-    expect(screen.getByText("지출")).toBeInTheDocument();
-    expect(screen.getByText("잔액")).toBeInTheDocument();
-
-    // 3. selected date list links row correctly
+    expect(screen.getByRole("link", { name: "장부 관리" })).toHaveAttribute(
+      "href",
+      "/ledger/books?returnTo=%2Fledger%2Frecords%3Fdate%3D2026-06-16%26categoryId%3Dcategory-1",
+    );
+    expect(useLedgerEntries).toHaveBeenCalledWith(
+      expect.objectContaining({ bookId: undefined, categoryId: "category-1" }),
+    );
+  });
+  it("specific book queries only that scope, links straight to management and never silently creates in another book", () => {
+    state.search = "book=book-1&date=2026-06-16";
+    vi.mocked(useLedgerBook).mockReturnValue({
+      data: book,
+      isPending: false,
+    } as never);
+    renderRecords();
+    expect(useLedgerEntries).toHaveBeenCalledWith(
+      expect.objectContaining({ bookId: "book-1", enabled: true }),
+    );
     expect(
-      screen.getByRole("link", { name: /가계부등록기록/ }),
+      screen.getByRole("link", { name: "여행비 장부 관리" }),
     ).toHaveAttribute(
       "href",
-      "/ledger/records/entry-1?from=records&date=2026-06-16",
+      "/ledger/books/book-1?returnTo=%2Fledger%2Frecords%3Fbook%3Dbook-1%26date%3D2026-06-16",
     );
-
-    // 4. add button href remains correctly formatted with date and scope query
-    expect(screen.getByRole("link", { name: /가계부 등록/ })).toHaveAttribute(
-      "href",
-      "/ledger/records/new/daily?date=2026-06-16&scope=shared",
+    expect(
+      screen.queryByRole("link", { name: /가계부 등록/ }),
+    ).not.toBeInTheDocument();
+  });
+  it("archived book retains its scope, shows read-only and has no creation link", () => {
+    state.search = "book=book-1&date=2026-06-16";
+    vi.mocked(useLedgerBook).mockReturnValue({
+      data: { ...book, archivedAt: "2026-06-01Z" },
+      isPending: false,
+    } as never);
+    renderRecords();
+    expect(screen.getByRole("status")).toHaveTextContent("읽기 전용");
+    expect(
+      screen.queryByRole("link", { name: /가계부 등록/ }),
+    ).not.toBeInTheDocument();
+  });
+  it("hidden book does not fall back to totals or reveal entries", () => {
+    state.search = "book=hidden";
+    vi.mocked(useLedgerBook).mockReturnValue({
+      data: undefined,
+      error: new ApiQueryError("BOOK_UNAVAILABLE", "hidden", 404),
+      isPending: false,
+    } as never);
+    renderRecords();
+    expect(screen.getByText("장부를 볼 수 없음")).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "전체 장부로 이동" }),
+    ).toHaveAttribute("href", "/ledger/records");
+    expect(screen.queryByText("여행 기록")).not.toBeInTheDocument();
+    expect(useLedgerEntries).toHaveBeenCalledWith(
+      expect.objectContaining({ enabled: false }),
+    );
+  });
+  it("date change preserves book and filters in URL", async () => {
+    state.search = "book=book-1&date=2026-06-16&categoryId=category-1";
+    vi.mocked(useLedgerBook).mockReturnValue({
+      data: book,
+      isPending: false,
+    } as never);
+    renderRecords();
+    await userEvent.click(
+      screen.getByRole("button", { name: "다음 날짜 선택" }),
+    );
+    expect(replace).toHaveBeenCalledWith(
+      "/ledger/records?book=book-1&date=2026-06-17&categoryId=category-1",
     );
   });
 
-  it("initialScope가 personal일 때 daily add 버튼 링크에 scope=personal 쿼리가 포함된다", () => {
-    vi.mocked(useLedgerTags).mockReturnValue({
-      data: [],
-      isSuccess: true,
-    } as any);
+  it("falls back to the validated initial date for malformed date query values", () => {
+    state.search = "date=2026-02-31";
+    renderRecords();
 
-    vi.mocked(useLedgerEntries).mockReturnValue({
-      data: [],
-      isLoading: false,
-    } as any);
-
-    const queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false } },
-    });
-
-    render(
-      <QueryClientProvider client={queryClient}>
-        <LedgerRecordsClient initialDate="2026-06-16" initialScope="personal" />
-      </QueryClientProvider>,
+    expect(
+      screen.getByRole("heading", { name: /6월 16일/ }),
+    ).toBeInTheDocument();
+    expect(useLedgerEntries).toHaveBeenCalledWith(
+      expect.objectContaining({ year: 2026, month: 6 }),
     );
-
-    expect(screen.getByRole("link", { name: /가계부 등록/ })).toHaveAttribute(
-      "href",
-      "/ledger/records/new/daily?date=2026-06-16&scope=personal",
-    );
+    expect(
+      vi
+        .mocked(useLedgerEntries)
+        .mock.calls.every(
+          ([params]) =>
+            Number.isFinite(params?.year) && Number.isFinite(params?.month),
+        ),
+    ).toBe(true);
   });
 
-  it("availableTags가 없을 때 stale tagId 필터가 URL과 selectedTagIds 상태에서 지워진다", () => {
-    mockSearchParams.mockReturnValue(
-      new URLSearchParams("date=2026-06-16&tagId=stale-tag"),
-    );
+  it("shows household setup guidance and disables record queries without a household", () => {
+    ledgerIdentity.householdId = null;
+    state.search = "book=book-1";
+    vi.mocked(useLedgerBook).mockReturnValue({
+      data: undefined,
+      isPending: true,
+    } as never);
+    vi.mocked(useLedgerBooks).mockReturnValue({
+      data: undefined,
+      isPending: true,
+    } as never);
 
-    vi.mocked(useLedgerTags).mockReturnValue({
-      data: [],
-      isSuccess: true,
-    } as any);
+    renderRecords();
 
-    vi.mocked(useLedgerEntries).mockReturnValue({
-      data: [],
-      isLoading: false,
-    } as any);
-
-    const queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false } },
-    });
-
-    render(
-      <QueryClientProvider client={queryClient}>
-        <LedgerRecordsClient initialDate="2026-06-16" />
-      </QueryClientProvider>,
-    );
-
-    expect(mockReplace).toHaveBeenCalledWith("/ledger/records?date=2026-06-16");
+    expect(screen.getByText("가구 설정이 필요해요")).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "가구 설정으로 이동" }),
+    ).toHaveAttribute("href", "/settings/household");
+    expect(useLedgerEntries).toHaveBeenCalledTimes(3);
+    expect(
+      vi
+        .mocked(useLedgerEntries)
+        .mock.calls.every(([params]) => params?.enabled === false),
+    ).toBe(true);
   });
 });

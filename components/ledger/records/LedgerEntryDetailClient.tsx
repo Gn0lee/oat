@@ -30,6 +30,8 @@ import { useCurrentUserId } from "@/hooks/use-current-user";
 import { useLedgerEntry } from "@/hooks/use-ledger-entries";
 import { ApiQueryError } from "@/lib/api/client";
 import type { LedgerEntryWithDetails } from "@/lib/api/ledger";
+import { formatKst } from "@/lib/date";
+import { safeLedgerReturnTo } from "@/lib/ledger-books/navigation";
 
 interface LedgerEntryDetailClientProps {
   entryId: string;
@@ -78,11 +80,17 @@ export function LedgerEntryDetailClient({
   const [requestMode, setRequestMode] = useState<RequestMode>("update");
   const [requestOpen, setRequestOpen] = useState(false);
 
-  const parentHref =
-    resolveServiceParentHref({
-      meta: getServiceRouteMeta(pathname),
-      searchParams,
-    }) ?? "/ledger/records";
+  const directReturn = entry?.bookId
+    ? `/ledger/records?book=${entry.bookId}&date=${formatKst(entry.transactedAt)}`
+    : "/ledger/records";
+  const parentHref = searchParams.get("returnTo")
+    ? safeLedgerReturnTo(searchParams.get("returnTo"), directReturn)
+    : !searchParams.get("from")
+      ? directReturn
+      : (resolveServiceParentHref({
+          meta: getServiceRouteMeta(pathname),
+          searchParams,
+        }) ?? directReturn);
 
   if (isLoading) {
     return (
@@ -117,7 +125,7 @@ export function LedgerEntryDetailClient({
   const isOwner = Boolean(userId && entry.ownerId === userId);
   const canUpdate = isOwner || entry.type !== "transfer";
   const canRequest = Boolean(userId && !isOwner && entry.isShared);
-  const hasActions = isOwner || canRequest;
+  const hasActions = !entry.book?.archivedAt && (isOwner || canRequest);
   const showUpdateAction = hasActions && canUpdate;
   const showDeleteAction = hasActions;
   const typeLabel = getTypeLabel(entry.type);
@@ -148,7 +156,7 @@ export function LedgerEntryDetailClient({
         {/* 헤더 섹션 */}
         <ScreenSection className="relative">
           {(showUpdateAction || showDeleteAction) && (
-            <div className="absolute top-0 right-0 flex h-5 items-center gap-1 z-10">
+            <div className="absolute top-0 right-0 flex items-center gap-1 z-10">
               {showUpdateAction && (
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -156,7 +164,7 @@ export function LedgerEntryDetailClient({
                       variant="ghost"
                       size="icon"
                       aria-label={isOwner ? "기록 수정" : "기록 수정 요청"}
-                      className="h-5 w-7 rounded-md p-0 text-gray-500 hover:text-gray-900"
+                      className="size-11 rounded-md p-0 text-gray-500 hover:text-gray-900"
                       onClick={() =>
                         isOwner ? setEditOpen(true) : handleRequest("update")
                       }
@@ -176,7 +184,7 @@ export function LedgerEntryDetailClient({
                       variant="ghost"
                       size="icon"
                       aria-label={isOwner ? "기록 삭제" : "기록 삭제 요청"}
-                      className="h-5 w-7 rounded-md p-0 text-gray-400 hover:text-red-500 focus-visible:text-red-500"
+                      className="size-11 rounded-md p-0 text-gray-400 hover:text-red-500 focus-visible:text-red-500"
                       onClick={() =>
                         isOwner ? setDeleteOpen(true) : handleRequest("delete")
                       }
@@ -199,7 +207,7 @@ export function LedgerEntryDetailClient({
               />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate pr-20 text-sm text-gray-500">
+              <p className="truncate pr-24 text-sm text-gray-500">
                 {typeLabel}
               </p>
               <h2 className="mt-1 break-words text-xl font-semibold text-gray-900">
@@ -237,6 +245,12 @@ export function LedgerEntryDetailClient({
         {/* 인포 로우 목록 */}
         <ScreenSection>
           <GroupedList>
+            {entry.book && (
+              <DetailInfoRow
+                label="장부"
+                value={`${entry.book.name}${entry.book.archivedAt ? " · 보관됨 · 읽기 전용" : ""}`}
+              />
+            )}
             {entry.type !== "non_expense_withdrawal" && (
               <DetailInfoRow
                 label="카테고리"

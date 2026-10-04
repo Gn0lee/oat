@@ -1427,6 +1427,10 @@ export type Database = {
         Args: { p_batch_size?: number };
         Returns: number;
       };
+      mutate_ledger_book: {
+        Args: { p_book_id: string; p_action: string; p_name?: string | null };
+        Returns: Database["public"]["Tables"]["ledger_books"]["Row"];
+      };
       create_household_with_owner: {
         Args: { p_actor_id: string; p_name?: string };
         Returns: string;

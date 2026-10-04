@@ -1,5 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { APIError } from "@/lib/api/error";
+import { getLedgerBook } from "@/lib/api/ledger-books";
+import { getKstDayRange, getKstMonthRange, getKstToday } from "@/lib/date";
 import type { CreateLedgerEntryInput } from "@/schemas/ledger-entry";
 import type {
   Database,
@@ -108,6 +110,12 @@ export function buildTransferLedgerEntryPayload(
 }
 
 export interface LedgerEntryWithDetails {
+  bookId?: string;
+  book?: {
+    name: string;
+    visibility: "shared" | "personal";
+    archivedAt: string | null;
+  };
   id: string;
   householdId: string;
   ownerId: string;
@@ -146,6 +154,8 @@ export interface OwnLedgerActivity {
 }
 
 export interface GetLedgerEntriesOptions {
+  bookId?: string;
+  includeBookDetails?: boolean;
   year?: number;
   month?: number;
   date?: string;
@@ -385,20 +395,16 @@ function getDateRange(options: GetLedgerEntriesOptions): {
   to: string;
 } {
   if (options.date) {
-    return {
-      from: `${options.date}T00:00:00.000Z`,
-      to: `${options.date}T23:59:59.999Z`,
-    };
+    const range = getKstDayRange(options.date);
+    return range;
   }
 
-  const now = new Date();
-  const year = options.year ?? now.getUTCFullYear();
-  const month = options.month ?? now.getUTCMonth() + 1;
-
-  const from = new Date(Date.UTC(year, month - 1, 1));
-  const to = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999));
-
-  return { from: from.toISOString(), to: to.toISOString() };
+  const [currentYear, currentMonth] = getKstToday().split("-").map(Number);
+  const range = getKstMonthRange(
+    options.year ?? currentYear,
+    options.month ?? currentMonth,
+  );
+  return range;
 }
 
 async function attachLedgerEntryDetails(
@@ -567,6 +573,15 @@ export async function getLedgerEntryById(
   }
 
   const [entry] = await attachLedgerEntryDetails(supabase, [data]);
+  if (data.book_id) {
+    const [withBook] = await attachLedgerBookDetails(
+      supabase,
+      householdId,
+      [data],
+      [entry],
+    );
+    return withBook;
+  }
   return entry;
 }
 
@@ -575,6 +590,9 @@ export async function getLedgerEntries(
   householdId: string,
   options?: GetLedgerEntriesOptions,
 ): Promise<LedgerEntryWithDetails[]> {
+  const book = options?.bookId
+    ? await getLedgerBook(supabase, householdId, options.bookId)
+    : null;
   const { from, to } = getDateRange(options ?? {});
 
   let matchingIds: string[] | null = null;
@@ -644,7 +662,9 @@ export async function getLedgerEntries(
     .select("*")
     .eq("household_id", householdId)
     .gte("transacted_at", from)
-    .lte("transacted_at", to);
+    .lt("transacted_at", to);
+
+  if (book) query.eq("book_id", book.id);
 
   if (matchingIds !== null) {
     query.in("id", matchingIds);
@@ -680,7 +700,55 @@ export async function getLedgerEntries(
     return [];
   }
 
-  return attachLedgerEntryDetails(supabase, scopedRows);
+  const entries = await attachLedgerEntryDetails(supabase, scopedRows);
+  return options?.includeBookDetails
+    ? attachLedgerBookDetails(supabase, householdId, scopedRows, entries)
+    : entries;
+}
+
+async function attachLedgerBookDetails(
+  supabase: SupabaseClient<Database>,
+  householdId: string,
+  rows: Array<{ id: string; book_id?: string }>,
+  entries: LedgerEntryWithDetails[],
+): Promise<LedgerEntryWithDetails[]> {
+  const ids = [
+    ...new Set(
+      rows.map((row) => row.book_id).filter((id): id is string => Boolean(id)),
+    ),
+  ];
+  if (!ids.length) return entries;
+  const { data: books, error } = await supabase
+    .from("ledger_books")
+    .select("id, name, visibility, archived_at")
+    .eq("household_id", householdId)
+    .in("id", ids);
+  if (error)
+    throw new APIError(
+      "LEDGER_FETCH_ERROR",
+      "장부 정보를 불러올 수 없습니다.",
+      500,
+    );
+  const byId = new Map((books ?? []).map((book) => [book.id, book]));
+  const rowById = new Map(rows.map((row) => [row.id, row]));
+  return entries.map((entry) => {
+    const bookId = rowById.get(entry.id)?.book_id;
+    const book = bookId ? byId.get(bookId) : null;
+    return {
+      ...entry,
+      bookId,
+      ...(book && {
+        book: {
+          name: book.name,
+          visibility:
+            book.visibility === "personal"
+              ? ("personal" as const)
+              : ("shared" as const),
+          archivedAt: book.archived_at,
+        },
+      }),
+    };
+  });
 }
 
 export async function searchLedgerEntries(
@@ -732,17 +800,21 @@ export async function getLedgerEntrySummary(
   householdId: string,
   year: number,
   month: number,
-  scope: "shared" | "personal" = "shared",
+  scope: "shared" | "personal" | "all" = "shared",
   userId?: string,
+  bookId?: string,
 ): Promise<LedgerEntrySummary> {
+  if (bookId) await getLedgerBook(supabase, householdId, bookId);
   const { from, to } = getDateRange({ year, month });
 
-  const { data, error } = await supabase
+  const query = supabase
     .from("ledger_entries")
     .select("type, amount, is_shared, owner_id")
     .eq("household_id", householdId)
     .gte("transacted_at", from)
-    .lte("transacted_at", to);
+    .lt("transacted_at", to);
+  if (bookId) query.eq("book_id", bookId);
+  const { data, error } = await query;
 
   if (error) {
     console.error("Ledger summary fetch error:", error);
@@ -754,9 +826,11 @@ export async function getLedgerEntrySummary(
   }
 
   const rows = (data ?? []).filter((row) =>
-    scope === "shared"
-      ? row.is_shared
-      : !row.is_shared && row.owner_id === userId,
+    scope === "all"
+      ? true
+      : scope === "shared"
+        ? row.is_shared
+        : !row.is_shared && row.owner_id === userId,
   );
 
   return calculateLedgerSummary(rows);

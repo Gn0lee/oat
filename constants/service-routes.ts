@@ -1,3 +1,5 @@
+import { safeLedgerReturnTo } from "@/lib/ledger-books/navigation";
+
 export type MobileHeaderVariant = "topLevel" | "child" | "task";
 
 export interface BreadcrumbItem {
@@ -48,6 +50,26 @@ export function getServiceRouteTree(options?: {
           label: "기록 추가",
           mobile: "task",
           closeHref: "/ledger",
+        },
+        {
+          href: "/ledger/books",
+          label: "장부 관리",
+          preserveSearchParams: ["returnTo"],
+          children: [
+            {
+              href: "/ledger/books/new",
+              label: "장부 추가",
+              mobile: "task",
+              closeHref: "/ledger/books",
+              preserveSearchParams: ["returnTo"],
+            },
+            {
+              href: "/ledger/books/[id]",
+              pattern: "/ledger/books/[id]",
+              label: "장부 상세",
+              preserveSearchParams: ["returnTo"],
+            },
+          ],
         },
         {
           href: "/ledger/search",
@@ -291,6 +313,13 @@ export function resolveServiceParentHref({
     return undefined;
   }
 
+  if (meta.href.startsWith("/ledger/") && searchParams?.get("returnTo")) {
+    return safeLedgerReturnTo(
+      searchParams.get("returnTo"),
+      meta.parentHref ?? "/ledger",
+    );
+  }
+
   if (meta.parentResolver === "ledgerRecordDetail") {
     const from = searchParams?.get("from");
     if (from === "notification") {
@@ -299,12 +328,17 @@ export function resolveServiceParentHref({
     if (from === "records") {
       return appendAllowedSearchParams("/ledger/records", searchParams, [
         "date",
+        "book",
+        "categoryId",
+        "childCategoryId",
+        "categoryBreakdown",
       ]);
     }
     if (from === "search") {
       return appendAllowedSearchParams("/ledger/search", searchParams, [
         "q",
         "scope",
+        "book",
       ]);
     }
   }

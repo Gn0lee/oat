@@ -3,7 +3,8 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 
 interface ProvidersProps {
   children: ReactNode;
@@ -23,6 +24,23 @@ export function Providers({ children }: ProvidersProps) {
         },
       }),
   );
+
+  useEffect(() => {
+    let previousUserId: string | null | undefined;
+    const {
+      data: { subscription },
+    } = createClient().auth.onAuthStateChange((event, session) => {
+      const userId = session?.user.id ?? null;
+      if (
+        event === "SIGNED_OUT" ||
+        (previousUserId !== undefined && previousUserId !== userId)
+      ) {
+        queryClient.clear();
+      }
+      previousUserId = userId;
+    });
+    return () => subscription.unsubscribe();
+  }, [queryClient]);
 
   return (
     <QueryClientProvider client={queryClient}>
