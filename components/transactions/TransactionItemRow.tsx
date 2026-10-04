@@ -3,11 +3,12 @@
 import { Trash2Icon } from "lucide-react";
 import { useMemo } from "react";
 import type { Control, FieldPath, FieldValues } from "react-hook-form";
-import { useController, useWatch } from "react-hook-form";
+import { useController } from "react-hook-form";
 import { StockSearchDialog } from "@/components/stocks/StockSearchDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils/cn";
 import { formatCurrency } from "@/lib/utils/format";
 import type { TransactionItemFormData } from "@/schemas/multi-transaction-form";
 import type { CurrencyType, StockMaster } from "@/types";
@@ -20,6 +21,7 @@ interface TransactionItemRowProps<T extends FormWithItems> {
   control: Control<T>;
   onRemove?: () => void;
   canRemove?: boolean;
+  prominent?: boolean;
 }
 
 export function TransactionItemRow<T extends FormWithItems>({
@@ -27,20 +29,32 @@ export function TransactionItemRow<T extends FormWithItems>({
   control,
   onRemove,
   canRemove = false,
+  prominent = false,
 }: TransactionItemRowProps<T>) {
-  const { field: stockField } = useController({
+  const stockController = useController({
     control,
     name: `items.${index}.stock` as FieldPath<T>,
   });
+  const { field: stockField, fieldState: stockState } = stockController;
 
-  const quantity = useWatch({
+  const quantityController = useController({
     control,
     name: `items.${index}.quantity` as FieldPath<T>,
   });
-  const price = useWatch({
+  const priceController = useController({
     control,
     name: `items.${index}.price` as FieldPath<T>,
   });
+  const { field: quantityField, fieldState: quantityState } =
+    quantityController;
+  const { field: priceField, fieldState: priceState } = priceController;
+  const quantity = quantityField.value;
+  const price = priceField.value;
+  const stockErrorId = `item-${index}-stock-error`;
+  const quantityId = `item-${index}-quantity`;
+  const quantityErrorId = `item-${index}-quantity-error`;
+  const priceId = `item-${index}-price`;
+  const priceErrorId = `item-${index}-price-error`;
 
   // 소계 계산
   const subtotal = useMemo(() => {
@@ -65,16 +79,21 @@ export function TransactionItemRow<T extends FormWithItems>({
   return (
     <div className="py-2 space-y-4">
       {/* 1줄: 종목 */}
-      <div className="space-y-1">
+      <fieldset
+        className="space-y-1"
+        aria-invalid={stockState.invalid}
+        aria-describedby={stockState.error ? stockErrorId : undefined}
+      >
+        <legend className="text-sm font-medium text-gray-700">종목 *</legend>
         <div className="flex items-center justify-between">
-          <Label className="text-sm text-gray-700">종목 *</Label>
           {canRemove && onRemove && (
             <Button
               type="button"
               variant="ghost"
               size="icon"
               onClick={onRemove}
-              className="h-8 w-8 text-gray-400 hover:text-red-500 shrink-0"
+              aria-label="종목 삭제"
+              className="size-11 text-gray-400 hover:text-red-500 shrink-0"
             >
               <Trash2Icon className="h-4 w-4" />
             </Button>
@@ -94,31 +113,63 @@ export function TransactionItemRow<T extends FormWithItems>({
           onSelect={handleStockSelect}
           placeholder="종목 검색"
         />
-      </div>
+        {stockState.error && (
+          <p id={stockErrorId} className="text-sm text-destructive">
+            {stockState.error.message}
+          </p>
+        )}
+      </fieldset>
 
       {/* 2줄: 수량 + 단가 */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className={cn("grid grid-cols-2 gap-3", prominent && "grid-cols-1")}>
         <div className="space-y-1">
-          <Label className="text-sm text-gray-700">수량 *</Label>
+          <Label htmlFor={quantityId} className="text-sm text-gray-700">
+            수량 *
+          </Label>
           <Input
+            id={quantityId}
             type="number"
-            inputMode="numeric"
+            inputMode="decimal"
+            step="any"
             placeholder="0"
-            className="h-11 rounded-xl text-sm"
-            {...control.register(`items.${index}.quantity` as FieldPath<T>)}
+            aria-invalid={quantityState.invalid}
+            aria-describedby={quantityState.error ? quantityErrorId : undefined}
+            className={cn(
+              "h-11 rounded-xl text-sm",
+              prominent && "h-14 text-2xl",
+            )}
+            {...quantityField}
           />
+          {quantityState.error && (
+            <p id={quantityErrorId} className="text-sm text-destructive">
+              {quantityState.error.message}
+            </p>
+          )}
         </div>
         <div className="space-y-1">
-          <Label className="text-sm text-gray-700">
+          <Label htmlFor={priceId} className="text-sm text-gray-700">
             {currency === "KRW" ? "단가 (원) *" : "단가 ($) *"}
           </Label>
           <Input
+            id={priceId}
             type="number"
             inputMode="decimal"
+            min="0"
+            step="any"
             placeholder="0"
-            className="h-11 rounded-xl text-sm"
-            {...control.register(`items.${index}.price` as FieldPath<T>)}
+            aria-invalid={priceState.invalid}
+            aria-describedby={priceState.error ? priceErrorId : undefined}
+            className={cn(
+              "h-11 rounded-xl text-sm",
+              prominent && "h-14 text-2xl",
+            )}
+            {...priceField}
           />
+          {priceState.error && (
+            <p id={priceErrorId} className="text-sm text-destructive">
+              {priceState.error.message}
+            </p>
+          )}
         </div>
       </div>
 
