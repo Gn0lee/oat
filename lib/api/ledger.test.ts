@@ -1,4 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
+import {
+  decodeLedgerSearchCursor,
+  encodeLedgerSearchCursor,
+} from "@/lib/ledger/search-cursor";
 import { APIError } from "./error";
 import {
   assertLedgerFinancialSourceOwnership,
@@ -15,6 +19,7 @@ import {
   getOwnLedgerActivity,
   isTransferCapablePaymentMethod,
   searchLedgerEntries,
+  searchLedgerEntriesScoped,
   updateLedgerEntry,
   updateLedgerEntryWithBalanceSync,
 } from "./ledger";
@@ -265,6 +270,145 @@ describe("searchLedgerEntries", () => {
     expect(result.items).toHaveLength(20);
     expect(result.items[0]).toMatchObject({ memoMatched: true });
     expect(result.nextOffset).toBe(20);
+  });
+});
+
+describe("searchLedgerEntriesScoped", () => {
+  const bookId = "0a6b9d64-3a4c-4f61-8d45-3fd3c40d2b0e";
+  const row = (index: number) => ({
+    id: `00000000-0000-4000-8000-${String(index).padStart(12, "0")}`,
+    household_id: "household-1",
+    owner_id: "user-1",
+    book_id: bookId,
+    type: "expense" as const,
+    amount: 1000,
+    title: "커피",
+    category_id: null,
+    from_account_id: null,
+    from_payment_method_id: null,
+    to_account_id: null,
+    to_payment_method_id: null,
+    is_shared: true,
+    memo: index === 0 ? "커피 원두" : null,
+    transacted_at: "2026-10-03T01:00:00+00:00",
+    created_at: `2026-10-03T01:00:${String(59 - index).padStart(2, "0")}+00:00`,
+    updated_at: "2026-10-03T01:00:00+00:00",
+  });
+  function mockSupabase(rows: ReturnType<typeof row>[]) {
+    const emptyBuilder = {
+      select: vi.fn().mockReturnThis(),
+      in: vi.fn().mockResolvedValue({ data: [] }),
+    };
+    const booksBuilder = {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      in: vi.fn().mockResolvedValue({
+        data: [
+          {
+            id: bookId,
+            name: "여행비",
+            visibility: "shared",
+            archived_at: "2026-10-04T00:00:00+00:00",
+          },
+        ],
+        error: null,
+      }),
+    };
+    return {
+      rpc: vi.fn().mockResolvedValue({ data: rows, error: null }),
+      from: vi.fn((table: string) =>
+        table === "ledger_books" ? booksBuilder : emptyBuilder,
+      ),
+    };
+  }
+
+  it("첫 페이지는 커서 없이 장부 조건과 함께 새 RPC를 호출하고 다음 커서를 만든다", async () => {
+    const rows = Array.from({ length: 21 }, (_, index) => row(index));
+    const supabase = mockSupabase(rows);
+
+    const result = await searchLedgerEntriesScoped(
+      supabase as never,
+      "household-1",
+      { query: " 커피 ", bookId, limit: 20 },
+    );
+
+    expect(supabase.rpc).toHaveBeenCalledWith("search_ledger_entries_scoped", {
+      hh_id: "household-1",
+      search_query: "커피",
+      p_book_id: bookId,
+      result_limit: 21,
+    });
+    expect(result.items).toHaveLength(20);
+    expect(result.items[0]).toMatchObject({
+      memoMatched: true,
+      bookId,
+      book: {
+        name: "여행비",
+        visibility: "shared",
+        archivedAt: "2026-10-04T00:00:00+00:00",
+      },
+    });
+    expect(result.nextCursor).toEqual(expect.any(String));
+    expect(
+      decodeLedgerSearchCursor(result.nextCursor as string, {
+        query: "커피",
+        bookId,
+      }),
+    ).toEqual({
+      transactedAt: rows[19].transacted_at,
+      createdAt: rows[19].created_at,
+      id: rows[19].id,
+    });
+  });
+
+  it("커서의 위치를 RPC에 넘기고 마지막 페이지에서는 다음 커서가 없다", async () => {
+    const supabase = mockSupabase([row(0)]);
+    const cursor = encodeLedgerSearchCursor(
+      {
+        transactedAt: "2026-10-03T01:00:00+00:00",
+        createdAt: "2026-10-03T01:00:10+00:00",
+        id: "00000000-0000-4000-8000-000000000009",
+      },
+      { query: "커피" },
+    );
+
+    const result = await searchLedgerEntriesScoped(
+      supabase as never,
+      "household-1",
+      { query: "커피", cursor, limit: 20 },
+    );
+
+    expect(supabase.rpc).toHaveBeenCalledWith("search_ledger_entries_scoped", {
+      hh_id: "household-1",
+      search_query: "커피",
+      cursor_transacted_at: "2026-10-03T01:00:00+00:00",
+      cursor_created_at: "2026-10-03T01:00:10+00:00",
+      cursor_id: "00000000-0000-4000-8000-000000000009",
+      result_limit: 21,
+    });
+    expect(result.nextCursor).toBeNull();
+  });
+
+  it("다른 검색 범위의 커서는 RPC 호출 전에 거절한다", async () => {
+    const supabase = mockSupabase([]);
+    const cursor = encodeLedgerSearchCursor(
+      {
+        transactedAt: "2026-10-03T01:00:00+00:00",
+        createdAt: "2026-10-03T01:00:10+00:00",
+        id: "00000000-0000-4000-8000-000000000009",
+      },
+      { query: "커피" },
+    );
+
+    await expect(
+      searchLedgerEntriesScoped(supabase as never, "household-1", {
+        query: "커피",
+        bookId,
+        cursor,
+        limit: 20,
+      }),
+    ).rejects.toMatchObject({ code: "LEDGER_SEARCH_CURSOR_INVALID" });
+    expect(supabase.rpc).not.toHaveBeenCalled();
   });
 });
 

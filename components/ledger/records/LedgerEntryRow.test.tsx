@@ -43,159 +43,128 @@ const baseEntry: LedgerEntryWithDetails = {
   transactedAt: "2026-06-02T00:00:00.000Z",
   createdAt: "2026-06-02T00:00:00.000Z",
   updatedAt: "2026-06-02T00:00:00.000Z",
+  bookId: "book-1",
+  book: { name: "여행비", visibility: "shared", archivedAt: null },
 };
 
-function renderRow(entry: LedgerEntryWithDetails) {
-  return render(
-    <LedgerEntryRow
-      entry={entry}
-      href={`/ledger/records/${entry.id}?from=records&date=2026-06-02`}
-    />,
-  );
-}
+const href = "/ledger/records/entry-1?from=records&date=2026-06-02";
 
 describe("LedgerEntryRow", () => {
-  it("기록 상세로 이동하는 링크를 렌더링한다", () => {
-    renderRow(baseEntry);
+  it("금액을 크게, 제목과 결제수단을 한 줄로 보여주고 상세로 연결한다", () => {
+    render(<LedgerEntryRow entry={baseEntry} href={href} />);
 
-    expect(screen.getByRole("link", { name: /점심/ })).toHaveAttribute(
-      "href",
-      "/ledger/records/entry-1?from=records&date=2026-06-02",
+    const link = screen.getByRole("link");
+    expect(link).toHaveAttribute("href", href);
+    expect(link).toHaveAccessibleName(/점심/);
+    expect(link).toHaveAccessibleName(/-12,000원/);
+    expect(screen.getByText("-12,000원")).toHaveClass("text-base");
+    expect(screen.getByText("점심 | 현대카드")).toBeInTheDocument();
+    expect(screen.getByTestId("ledger-entry-icon")).toHaveAttribute(
+      "data-icon-name",
+      "Utensils",
     );
-    expect(screen.queryByRole("button", { name: "기록 작업" })).toBeNull();
-    expect(screen.getByText(/식비/)).toBeInTheDocument();
-    expect(screen.getByText(/소유자/)).toBeInTheDocument();
-    expect(screen.getByText(/현대카드/)).toBeInTheDocument();
   });
 
-  it("child category label을 API가 제공한 Parent > Child 그대로 렌더링한다", () => {
-    renderRow({
-      ...baseEntry,
-      categoryName: "식비 > 외식",
-    });
+  it("보조 줄에 카테고리와 다른 작성자를 보여주고 내 기록이면 작성자를 생략한다", () => {
+    const { rerender } = render(
+      <LedgerEntryRow entry={baseEntry} href={href} currentUserId="me" />,
+    );
+    expect(screen.getByText("식비 · 소유자")).toBeInTheDocument();
 
-    expect(screen.getByText(/식비 > 외식/)).toBeInTheDocument();
-  });
-
-  it("긴 타이틀과 큰 금액을 정책에 맞게 올바르게 렌더링한다", () => {
-    const longExpenseEntry: LedgerEntryWithDetails = {
-      ...baseEntry,
-      amount: 1250000,
-      title: "아주아주아주아주아주긴가계부제목",
-      type: "expense",
-    };
-    const { rerender } = renderRow(longExpenseEntry);
-
-    const titleElement = screen.getByText("아주아주아주아주아주긴가계부제목");
-    expect(titleElement).toHaveClass("line-clamp-2");
-
-    const expenseAmount = screen.getByText("-1,250,000원");
-    expect(expenseAmount).toBeInTheDocument();
-    expect(expenseAmount).toHaveClass("[overflow-wrap:anywhere]");
-    expect(expenseAmount).toHaveClass("whitespace-nowrap");
-    expect(expenseAmount).toHaveAttribute("title", "-1,250,000원");
-    expect(expenseAmount.textContent).not.toContain("만원");
-    expect(expenseAmount.parentElement).not.toHaveClass("max-w-[42%]");
-
-    // Chevron is in the top action area, not in the amount row parent
-    const chevron = screen.getByTestId("ledger-entry-row-chevron");
-    expect(chevron).toBeInTheDocument();
-    expect(chevron.parentElement).not.toContain(expenseAmount);
-
-    // Add check for -42,000원
-    const midExpenseEntry: LedgerEntryWithDetails = {
-      ...baseEntry,
-      amount: 42000,
-      type: "expense",
-    };
     rerender(
+      <LedgerEntryRow entry={baseEntry} href={href} currentUserId="owner-1" />,
+    );
+    expect(screen.getByText("식비")).toBeInTheDocument();
+    expect(screen.queryByText(/소유자/)).toBeNull();
+  });
+
+  it("전체 범위에서는 장부 이름, 개인·보관 상태를 텍스트로 표시한다", () => {
+    render(
       <LedgerEntryRow
-        entry={midExpenseEntry}
-        href={`/ledger/records/${midExpenseEntry.id}?from=records&date=2026-06-02`}
+        entry={{
+          ...baseEntry,
+          isShared: false,
+          book: {
+            name: "내 용돈",
+            visibility: "personal",
+            archivedAt: "2026-10-01T00:00:00Z",
+          },
+        }}
+        href={href}
+        currentUserId="owner-1"
+        showBook
       />,
     );
-    const midExpenseAmount = screen.getByText("-42,000원");
-    expect(midExpenseAmount).toBeInTheDocument();
-
-    const incomeEntry: LedgerEntryWithDetails = {
-      ...baseEntry,
-      amount: 1250000,
-      type: "income",
-    };
-    rerender(
-      <LedgerEntryRow
-        entry={incomeEntry}
-        href={`/ledger/records/${incomeEntry.id}?from=records&date=2026-06-02`}
-      />,
-    );
-    const incomeAmount = screen.getByText("+1,250,000원");
-    expect(incomeAmount).toBeInTheDocument();
-    expect(incomeAmount).toHaveAttribute("title", "+1,250,000원");
-
-    const transferEntry: LedgerEntryWithDetails = {
-      ...baseEntry,
-      amount: 1250000,
-      type: "transfer",
-    };
-    rerender(
-      <LedgerEntryRow
-        entry={transferEntry}
-        href={`/ledger/records/${transferEntry.id}?from=records&date=2026-06-02`}
-      />,
-    );
-    const transferAmount = screen.getByText("1,250,000원");
-    expect(transferAmount).toBeInTheDocument();
-    expect(transferAmount).toHaveAttribute("title", "1,250,000원");
+    expect(
+      screen.getByText("식비 · 내 용돈 · 개인 · 보관"),
+    ).toBeInTheDocument();
   });
 
-  it("태그가 있으면 #형식으로 화면에 보여준다", () => {
-    renderRow({
-      ...baseEntry,
-      tags: [
-        { id: "1", name: "여행" },
-        { id: "2", name: "데이트" },
-      ],
-    });
-
-    expect(screen.getByText("#여행")).toBeInTheDocument();
-    expect(screen.getByText("#데이트")).toBeInTheDocument();
+  it("특정 장부 범위에서는 장부 이름을 반복하지 않지만 개인 표시는 남긴다", () => {
+    render(
+      <LedgerEntryRow
+        entry={{
+          ...baseEntry,
+          isShared: false,
+          book: { name: "내 용돈", visibility: "personal", archivedAt: null },
+        }}
+        href={href}
+        currentUserId="owner-1"
+      />,
+    );
+    expect(screen.getByText("식비 · 개인")).toBeInTheDocument();
   });
 
-  it("검색 결과 문맥과 거래일을 선택적으로 표시한다", () => {
+  it("수입은 +, 내부이체는 부호 없이 출발→도착을 보여준다", () => {
+    const { rerender } = render(
+      <LedgerEntryRow
+        entry={{ ...baseEntry, type: "income", amount: 1250000 }}
+        href={href}
+      />,
+    );
+    expect(screen.getByText("+1,250,000원")).toHaveClass("text-red-500");
+
+    rerender(
+      <LedgerEntryRow
+        entry={{
+          ...baseEntry,
+          type: "transfer",
+          amount: 1250000,
+          title: null,
+          categoryName: null,
+          fromPaymentMethodName: null,
+          fromAccountName: "생활비 통장",
+          toAccountName: "적금",
+        }}
+        href={href}
+      />,
+    );
+    expect(screen.getByText("1,250,000원")).toBeInTheDocument();
+    expect(
+      screen.getByText("내부이체 | 생활비 통장 → 적금"),
+    ).toBeInTheDocument();
+  });
+
+  it("검색 결과에서는 거래일과 일치한 메모를 함께 보여준다", () => {
     render(
       <LedgerEntryRow
         entry={baseEntry}
-        href="/ledger/records/entry-1?from=search&q=%EA%B9%80%EB%B0%A5&scope=shared"
+        href={href}
         dateLabel="2026.06.02"
         memoContext="메모: 김밥"
       />,
     );
-
-    expect(screen.getByText(/2026\.06\.02/)).toBeInTheDocument();
+    expect(screen.getByText("식비 · 소유자 · 2026.06.02")).toBeInTheDocument();
     expect(screen.getByText("메모: 김밥")).toHaveClass("line-clamp-1");
   });
 
-  it("태그가 3개를 초과해도 최대 5개까지 자연스럽게 랩핑되며 +N 표시가 나타나지 않는다", () => {
-    renderRow({
-      ...baseEntry,
-      tags: [
-        { id: "1", name: "태그1" },
-        { id: "2", name: "태그2" },
-        { id: "3", name: "태그3" },
-        { id: "4", name: "태그4" },
-        { id: "5", name: "태그5" },
-        { id: "6", name: "태그6" },
-        { id: "7", name: "태그7" },
-      ],
-    });
-
-    expect(screen.getByText("#태그1")).toBeInTheDocument();
-    expect(screen.getByText("#태그2")).toBeInTheDocument();
-    expect(screen.getByText("#태그3")).toBeInTheDocument();
-    expect(screen.getByText("#태그4")).toBeInTheDocument();
-    expect(screen.getByText("#태그5")).toBeInTheDocument();
-    expect(screen.queryByText("#태그6")).toBeNull();
-    expect(screen.queryByText("#태그7")).toBeNull();
-    expect(screen.queryByText(/\+\d+/)).toBeNull();
+  it("목록 행에는 태그를 표시하지 않는다", () => {
+    render(
+      <LedgerEntryRow
+        entry={{ ...baseEntry, tags: [{ id: "t1", name: "여행" }] }}
+        href={href}
+      />,
+    );
+    expect(screen.queryByText("#여행")).toBeNull();
   });
 });

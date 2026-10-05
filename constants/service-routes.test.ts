@@ -288,6 +288,24 @@ describe("getServiceRouteMeta", () => {
         ),
       }),
     ).toBe("/ledger/search?q=%EC%83%9D%EC%9D%BC&scope=personal");
+
+    expect(
+      resolveServiceParentHref({
+        meta,
+        searchParams: new URLSearchParams(
+          "from=search&q=%EC%BB%A4%ED%94%BC&book=book-1&cursor=x",
+        ),
+      }),
+    ).toBe("/ledger/search?q=%EC%BB%A4%ED%94%BC&book=book-1");
+
+    expect(
+      resolveServiceParentHref({
+        meta,
+        searchParams: new URLSearchParams(
+          "from=records&date=2026-06-08&book=book-1&view=month",
+        ),
+      }),
+    ).toBe("/ledger/records?date=2026-06-08&book=book-1&view=month");
   });
 
   it("주식 거래 상세는 진입한 collection으로 돌아간다", () => {

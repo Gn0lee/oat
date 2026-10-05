@@ -9,7 +9,7 @@ import {
 import { useLedgerIdentity } from "@/hooks/use-ledger-identity";
 import { ApiQueryError, fetchApiData } from "@/lib/api/client";
 import type {
-  LedgerEntrySearchResult,
+  LedgerEntryScopedSearchResult,
   LedgerEntrySummary,
   LedgerEntryWithDetails,
 } from "@/lib/api/ledger";
@@ -157,29 +157,27 @@ export function useLedgerEntries(params?: LedgerEntriesParams) {
   });
 }
 
-export function useLedgerEntrySearch(
-  query: string,
-  scope: "shared" | "personal",
-) {
+export function useLedgerEntrySearch(query: string, bookId?: string) {
   const normalizedQuery = query.trim();
+  const identity = useLedgerIdentity();
 
   return useInfiniteQuery({
     queryKey: queries.ledgerEntries.search({
       query: normalizedQuery,
-      scope,
+      bookId,
+      userId: identity.userId,
+      householdId: identity.householdId,
     }).queryKey,
     queryFn: ({ pageParam }) => {
-      const params = new URLSearchParams({
-        q: normalizedQuery,
-        scope,
-        offset: String(pageParam),
-      });
-      return fetchApiData<LedgerEntrySearchResult>(
+      const params = new URLSearchParams({ q: normalizedQuery });
+      if (bookId) params.set("book", bookId);
+      if (pageParam) params.set("cursor", pageParam);
+      return fetchApiData<LedgerEntryScopedSearchResult>(
         `/api/ledger-entries/search?${params.toString()}`,
       );
     },
-    initialPageParam: 0,
-    getNextPageParam: (lastPage) => lastPage.nextOffset ?? undefined,
+    initialPageParam: null as string | null,
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
     enabled: normalizedQuery.replace(/\s/g, "").length >= 2,
     staleTime: 1000 * 60 * 5,
   });
