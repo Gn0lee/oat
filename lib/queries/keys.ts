@@ -142,7 +142,12 @@ export const queries = createQueryKeyStore({
     }) => ({
       queryKey: [params],
     }),
-    search: (params: { query: string; scope: "shared" | "personal" }) => ({
+    search: (params: {
+      query: string;
+      bookId?: string;
+      userId: string | null;
+      householdId: string | null;
+    }) => ({
       queryKey: [params],
     }),
     summary: (

@@ -1,8 +1,13 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { APIError, toErrorResponse } from "@/lib/api/error";
 import { getUserHouseholdId } from "@/lib/api/invitation";
-import { searchLedgerEntries } from "@/lib/api/ledger";
+import {
+  searchLedgerEntries,
+  searchLedgerEntriesScoped,
+} from "@/lib/api/ledger";
+import { getLedgerBook } from "@/lib/api/ledger-books";
 import { createClient } from "@/lib/supabase/server";
 
 const SEARCH_PAGE_SIZE = 20;
@@ -29,20 +34,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const scope = searchParams.get("scope");
-    if (scope !== "shared" && scope !== "personal") {
-      throw new APIError(
-        "LEDGER_SEARCH_SCOPE_INVALID",
-        "검색 범위를 선택해주세요.",
-        400,
-      );
-    }
-
-    const offsetParam = Number(searchParams.get("offset") ?? 0);
-    const offset =
-      Number.isInteger(offsetParam) && offsetParam >= 0 ? offsetParam : 0;
     const householdId = await getUserHouseholdId(supabase, user.id);
-
     if (!householdId) {
       throw new APIError(
         "HOUSEHOLD_NOT_FOUND",
@@ -51,10 +43,42 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const result = await searchLedgerEntries(supabase, householdId, {
+    const scope = searchParams.get("scope");
+    // Legacy clients (before #445) still send scope+offset. Removed in #446.
+    if (scope !== null) {
+      if (scope !== "shared" && scope !== "personal") {
+        throw new APIError(
+          "LEDGER_SEARCH_SCOPE_INVALID",
+          "검색 범위를 선택해주세요.",
+          400,
+        );
+      }
+      const offsetParam = Number(searchParams.get("offset") ?? 0);
+      const offset =
+        Number.isInteger(offsetParam) && offsetParam >= 0 ? offsetParam : 0;
+      const result = await searchLedgerEntries(supabase, householdId, {
+        query,
+        scope,
+        offset,
+        limit: SEARCH_PAGE_SIZE,
+      });
+      return NextResponse.json({ data: result });
+    }
+
+    const bookId = searchParams.get("book") ?? undefined;
+    if (bookId !== undefined && !z.uuid().safeParse(bookId).success) {
+      throw new APIError(
+        "VALIDATION_ERROR",
+        "유효하지 않은 장부 ID입니다.",
+        400,
+      );
+    }
+    if (bookId) await getLedgerBook(supabase, householdId, bookId);
+
+    const result = await searchLedgerEntriesScoped(supabase, householdId, {
       query,
-      scope,
-      offset,
+      bookId,
+      cursor: searchParams.get("cursor") ?? undefined,
       limit: SEARCH_PAGE_SIZE,
     });
 

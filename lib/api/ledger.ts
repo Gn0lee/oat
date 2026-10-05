@@ -2,6 +2,10 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { APIError } from "@/lib/api/error";
 import { getLedgerBook } from "@/lib/api/ledger-books";
 import { getKstDayRange, getKstMonthRange, getKstToday } from "@/lib/date";
+import {
+  decodeLedgerSearchCursor,
+  encodeLedgerSearchCursor,
+} from "@/lib/ledger/search-cursor";
 import type { CreateLedgerEntryInput } from "@/schemas/ledger-entry";
 import type {
   Database,
@@ -175,6 +179,11 @@ export interface LedgerEntrySearchItem extends LedgerEntryWithDetails {
 export interface LedgerEntrySearchResult {
   items: LedgerEntrySearchItem[];
   nextOffset: number | null;
+}
+
+export interface LedgerEntryScopedSearchResult {
+  items: LedgerEntrySearchItem[];
+  nextCursor: string | null;
 }
 
 export interface CreateLedgerEntryParams {
@@ -797,6 +806,75 @@ export async function searchLedgerEntries(
     })),
     nextOffset:
       rows.length > options.limit ? options.offset + pageRows.length : null,
+  };
+}
+
+// All-books (bookId omitted) or single-book title·memo search. Book access must be
+// checked by the caller; RLS limits rows to the caller's visible books.
+export async function searchLedgerEntriesScoped(
+  supabase: SupabaseClient<Database>,
+  householdId: string,
+  options: {
+    query: string;
+    bookId?: string;
+    cursor?: string;
+    limit: number;
+  },
+): Promise<LedgerEntryScopedSearchResult> {
+  const query = options.query.trim();
+  const scope = { query, bookId: options.bookId };
+  const position = options.cursor
+    ? decodeLedgerSearchCursor(options.cursor, scope)
+    : null;
+  const { data, error } = await supabase.rpc("search_ledger_entries_scoped", {
+    hh_id: householdId,
+    search_query: query,
+    ...(options.bookId && { p_book_id: options.bookId }),
+    ...(position && {
+      cursor_transacted_at: position.transactedAt,
+      cursor_created_at: position.createdAt,
+      cursor_id: position.id,
+    }),
+    result_limit: options.limit + 1,
+  });
+
+  if (error) {
+    console.error("Ledger entry scoped search error:", error);
+    throw new APIError(
+      "LEDGER_SEARCH_ERROR",
+      "가계부 내역 검색에 실패했습니다.",
+      500,
+    );
+  }
+
+  const rows = data ?? [];
+  const pageRows = rows.slice(0, options.limit);
+  const entries = await attachLedgerBookDetails(
+    supabase,
+    householdId,
+    pageRows,
+    await attachLedgerEntryDetails(supabase, pageRows),
+  );
+  const normalizedQuery = query.toLocaleLowerCase();
+  const last = pageRows.at(-1);
+
+  return {
+    items: entries.map((entry) => ({
+      ...entry,
+      memoMatched:
+        entry.memo?.toLocaleLowerCase().includes(normalizedQuery) ?? false,
+    })),
+    nextCursor:
+      rows.length > options.limit && last
+        ? encodeLedgerSearchCursor(
+            {
+              transactedAt: last.transacted_at,
+              createdAt: last.created_at,
+              id: last.id,
+            },
+            scope,
+          )
+        : null,
   };
 }
 

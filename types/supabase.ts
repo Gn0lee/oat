@@ -1494,6 +1494,42 @@ export type Database = {
           isSetofReturn: true;
         };
       };
+      search_ledger_entries_scoped: {
+        Args: {
+          cursor_created_at?: string;
+          cursor_id?: string;
+          cursor_transacted_at?: string;
+          hh_id: string;
+          p_book_id?: string;
+          result_limit?: number;
+          search_query: string;
+        };
+        Returns: {
+          amount: number;
+          book_id: string;
+          category_id: string | null;
+          created_at: string;
+          from_account_id: string | null;
+          from_payment_method_id: string | null;
+          household_id: string;
+          id: string;
+          is_shared: boolean;
+          memo: string | null;
+          owner_id: string;
+          title: string | null;
+          to_account_id: string | null;
+          to_payment_method_id: string | null;
+          transacted_at: string;
+          type: Database["public"]["Enums"]["ledger_entry_type"];
+          updated_at: string;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "ledger_entries";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
       search_stocks: {
         Args: {
           market_filter?: Database["public"]["Enums"]["market_type"];

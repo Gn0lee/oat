@@ -5,7 +5,7 @@ import { requireUser } from "@/lib/supabase/auth";
 interface LedgerSearchPageProps {
   searchParams: Promise<{
     q?: string;
-    scope?: string;
+    book?: string;
   }>;
 }
 
@@ -13,14 +13,11 @@ export default async function LedgerSearchPage({
   searchParams,
 }: LedgerSearchPageProps) {
   await requireUser();
-  const { q, scope } = await searchParams;
+  const { q, book } = await searchParams;
 
   return (
     <PageContainer maxWidth="medium">
-      <LedgerSearchClient
-        initialQuery={q ?? ""}
-        initialScope={scope === "personal" ? "personal" : "shared"}
-      />
+      <LedgerSearchClient initialQuery={q ?? ""} initialBookId={book} />
     </PageContainer>
   );
 }

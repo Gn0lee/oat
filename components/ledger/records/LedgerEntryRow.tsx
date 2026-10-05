@@ -1,16 +1,22 @@
 "use client";
 
-import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { AmountText } from "@/components/layout/screen";
+import { CategoryIcon } from "@/components/ledger/CategoryIcon";
 import type { LedgerEntryWithDetails } from "@/lib/api/ledger";
+import { cn } from "@/lib/utils/cn";
 import { formatCurrency } from "@/lib/utils/format";
 
 interface LedgerEntryRowProps {
   entry: LedgerEntryWithDetails;
   href: string;
+  /** 검색 결과처럼 날짜 묶음 밖에서 보여줄 때의 거래일 */
   dateLabel?: string;
   memoContext?: string;
+  /** 전체 장부 범위에서만 장부 이름을 보여준다 */
+  showBook?: boolean;
+  /** 내 기록이면 작성자 이름을 생략한다 */
+  currentUserId?: string | null;
   onClick?: () => void;
 }
 
@@ -19,113 +25,86 @@ export function LedgerEntryRow({
   href,
   dateLabel,
   memoContext,
+  showBook = false,
+  currentUserId,
   onClick,
 }: LedgerEntryRowProps) {
   const isIncome = entry.type === "income";
   const isTransfer = entry.type === "transfer";
   const isNonExpenseWithdrawal = entry.type === "non_expense_withdrawal";
-  const amountSign = isTransfer ? "" : isIncome ? "+" : "-";
-
-  const typeLabel = isTransfer
-    ? "내부이체"
-    : isNonExpenseWithdrawal
-      ? "비지출 출금"
-      : isIncome
-        ? "수입"
-        : "지출";
-
-  const paymentLabel =
-    entry.fromPaymentMethodName ?? entry.fromAccountName ?? entry.toAccountName;
-
-  const transferLabel = isTransfer
-    ? `${entry.fromAccountName ?? entry.fromPaymentMethodName ?? "출발지"} → ${
-        entry.toAccountName ?? entry.toPaymentMethodName ?? "도착지"
-      }`
-    : null;
-
-  const categoryLabel = isNonExpenseWithdrawal
-    ? "비지출 출금"
-    : entry.categoryName;
+  const sign = isTransfer ? "" : isIncome ? "+" : "-";
+  const amountLabel = `${sign}${formatCurrency(entry.amount)}`;
 
   const titleText =
     entry.title ??
     (isNonExpenseWithdrawal
       ? "비지출 출금"
-      : (entry.categoryName ?? (isTransfer ? "내부이체" : "미분류")));
+      : isTransfer
+        ? "내부이체"
+        : (entry.categoryName ?? "미분류"));
+  const sourceText = isTransfer
+    ? `${entry.fromAccountName ?? entry.fromPaymentMethodName ?? "출발지"} → ${
+        entry.toAccountName ?? entry.toPaymentMethodName ?? "도착지"
+      }`
+    : (entry.fromPaymentMethodName ??
+      entry.fromAccountName ??
+      entry.toAccountName ??
+      entry.toPaymentMethodName);
+  const primaryLine = sourceText ? `${titleText} | ${sourceText}` : titleText;
 
-  const contextSegments: string[] = [];
-  if (isTransfer) {
-    if (transferLabel) contextSegments.push(transferLabel);
-  } else {
-    if (categoryLabel) contextSegments.push(categoryLabel);
-  }
-  if (entry.ownerName) {
-    contextSegments.push(entry.ownerName);
-  }
-  if (!isTransfer && paymentLabel) {
-    contextSegments.push(paymentLabel);
-  }
-  const contextText = contextSegments.join(" · ");
+  const isPersonal = entry.book
+    ? entry.book.visibility === "personal"
+    : !entry.isShared;
+  const metaSegments = [
+    isNonExpenseWithdrawal
+      ? "비지출 출금"
+      : entry.title && !isTransfer
+        ? entry.categoryName
+        : null,
+    showBook ? entry.book?.name : null,
+    isPersonal ? "개인" : null,
+    entry.book?.archivedAt ? "보관" : null,
+    entry.ownerName && entry.ownerId !== currentUserId ? entry.ownerName : null,
+    dateLabel,
+  ].filter((segment): segment is string => Boolean(segment));
 
   return (
     <Link
       href={href}
       onClick={onClick}
-      className="group flex flex-col gap-1 border-b px-4 py-3 transition-colors last:border-b-0 hover:bg-gray-50 active:bg-gray-100 sm:px-5"
+      className="flex min-h-16 items-start gap-3 py-3 transition-colors active:bg-gray-50"
     >
-      {/* Top Row: status + share indicator on left, chevron on right */}
-      <div className="flex items-center justify-between text-xs text-gray-500 font-medium">
-        <span>
-          {typeLabel} · {entry.isShared ? "공용" : "개인"}
-          {entry.book
-            ? ` · ${entry.book.name}${entry.book.archivedAt ? " · 보관" : ""}`
-            : ""}
-          {dateLabel ? ` · ${dateLabel}` : ""}
-        </span>
-        <ChevronRight
-          data-testid="ledger-entry-row-chevron"
-          className="h-4 w-4 flex-shrink-0 text-gray-300 transition-colors group-hover:text-gray-500"
-        />
-      </div>
-
-      {/* Title Row */}
-      <div className="mt-0.5">
-        <span className="line-clamp-2 min-w-0 break-words text-sm leading-5 font-semibold text-gray-900">
-          {titleText}
-        </span>
-      </div>
-
-      {memoContext && (
-        <p className="line-clamp-1 break-words text-xs text-gray-500">
-          {memoContext}
-        </p>
-      )}
-
-      {/* Tag Row: max 5 tags, wrapping, no +N */}
-      {entry.tags && entry.tags.length > 0 && (
-        <div className="mt-1 flex flex-wrap items-center gap-1">
-          {entry.tags.slice(0, 5).map((tag) => (
-            <span
-              key={tag.id}
-              className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-gray-50 text-gray-600 border border-gray-100"
-            >
-              #{tag.name}
-            </span>
-          ))}
-        </div>
-      )}
-
-      {/* Bottom Row: context text on left, amount on right */}
-      <div className="mt-1 flex flex-wrap items-end justify-between gap-x-3 gap-y-1 text-xs text-gray-500">
-        <span className="break-words max-w-full">{contextText}</span>
+      <span
+        aria-hidden="true"
+        className="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-xl bg-gray-100 text-gray-600"
+      >
+        <CategoryIcon iconName={entry.categoryIcon} className="size-5" />
+      </span>
+      <span className="min-w-0 flex-1">
         <AmountText
-          amount={entry.amount}
-          sign={amountSign}
-          tone={isTransfer ? "neutral" : isIncome ? "income" : "expense"}
-          title={`${amountSign}${formatCurrency(entry.amount)}`}
-          className="text-sm font-semibold whitespace-nowrap text-right ml-auto"
+          value={amountLabel}
+          tone="neutral"
+          align="left"
+          title={amountLabel}
+          className={cn(
+            "block text-base font-bold",
+            isIncome && "text-red-600",
+          )}
         />
-      </div>
+        <span className="mt-0.5 block truncate text-sm text-gray-600">
+          {primaryLine}
+        </span>
+        {metaSegments.length > 0 && (
+          <span className="mt-0.5 block truncate text-xs text-gray-500">
+            {metaSegments.join(" · ")}
+          </span>
+        )}
+        {memoContext && (
+          <span className="mt-0.5 line-clamp-1 block break-words text-xs text-gray-500">
+            {memoContext}
+          </span>
+        )}
+      </span>
     </Link>
   );
 }

@@ -329,6 +329,7 @@ export function resolveServiceParentHref({
       return appendAllowedSearchParams("/ledger/records", searchParams, [
         "date",
         "book",
+        "view",
         "categoryId",
         "childCategoryId",
         "categoryBreakdown",
