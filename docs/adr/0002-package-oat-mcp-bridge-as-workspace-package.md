@@ -1,5 +1,7 @@
 # Package oat MCP bridge as a workspace package
 
+> **Superseded (2026-10-05, #446):** MCP는 사용하지 않아 `/api/mcp`, 토큰 API·설정 화면, `lib/mcp`, `packages/mcp-bridge`를 삭제했다. DB의 `mcp_tokens`·`mcp_audit_logs` 테이블은 남아 있으며 삭제는 별도 결정이다. 아래는 당시 결정 기록이다.
+
 oat exposes its real MCP server as the hosted Streamable HTTP endpoint at `/api/mcp`, but Claude Code, Codex, and Claude Desktop may still need a stdio MCP process to connect reliably. We will keep the Next.js app at the repository root and add only `packages/mcp-bridge` as a lightweight pnpm workspace package, published publicly as `@oat-app/mcp-bridge@0.1.0` under MIT.
 
 The bridge is a transport adapter for data access: tokens remain env-only, auth and data access stay on the hosted oat server, and `tools/call` requests are forwarded to the hosted endpoint. It will use the official MCP TypeScript SDK for stdio/protocol behavior, default to `https://oat-blond.vercel.app/api/mcp` when `OAT_MCP_URL` is not set, support `OAT_MCP_DEBUG=1` for stderr-only diagnostics, and keep JSON-RPC response normalization in isolated modules with tests.

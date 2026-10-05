@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, Bot, LogOut, Monitor, Shield, User, Users } from "lucide-react";
+import { Bell, LogOut, Monitor, Shield, User, Users } from "lucide-react";
 import { useTransition } from "react";
 import { signOutAction } from "@/app/(auth)/logout/actions";
 import {
@@ -10,7 +10,7 @@ import {
 } from "@/components/layout/screen";
 import { SettingsMenuItem } from "./SettingsMenuItem";
 
-export function SettingsMenu({ mcpEnabled }: { mcpEnabled?: boolean }) {
+export function SettingsMenu() {
   const [isPending, startTransition] = useTransition();
 
   const handleLogout = () => {
@@ -62,14 +62,6 @@ export function SettingsMenu({ mcpEnabled }: { mcpEnabled?: boolean }) {
             href="/settings/theme"
             disabled
           />
-          {mcpEnabled && (
-            <SettingsMenuItem
-              icon={Bot}
-              label="MCP 연결"
-              description="AI 도구 연결 토큰 관리"
-              href="/settings/mcp"
-            />
-          )}
         </GroupedList>
       </ScreenSection>
 

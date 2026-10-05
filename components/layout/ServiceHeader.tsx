@@ -13,12 +13,11 @@ import { cn } from "@/lib/utils/cn";
 
 interface ServiceHeaderProps {
   variant: "mobile" | "desktop";
-  mcpEnabled?: boolean;
 }
 
-export function ServiceHeader({ variant, mcpEnabled }: ServiceHeaderProps) {
+export function ServiceHeader({ variant }: ServiceHeaderProps) {
   const pathname = usePathname();
-  const meta = getServiceRouteMeta(pathname, { mcpEnabled });
+  const meta = getServiceRouteMeta(pathname);
 
   if (variant === "desktop") {
     return <DesktopServiceHeader meta={meta} />;

@@ -30,9 +30,7 @@ interface ServiceRouteNode {
   children?: readonly ServiceRouteNode[];
 }
 
-export function getServiceRouteTree(options?: {
-  mcpEnabled?: boolean;
-}): readonly ServiceRouteNode[] {
+export function getServiceRouteTree(): readonly ServiceRouteNode[] {
   return [
     {
       href: "/home",
@@ -255,17 +253,14 @@ export function getServiceRouteTree(options?: {
       mobile: "topLevel",
       children: [
         { href: "/settings/household", label: "가구 관리" },
-        ...(options?.mcpEnabled
-          ? [{ href: "/settings/mcp", label: "MCP 연결" } as const]
-          : []),
         { href: "/settings/notifications", label: "알림 설정" },
       ],
     },
   ] as const satisfies readonly ServiceRouteNode[];
 }
 
-export function getRouteMeta(options?: { mcpEnabled?: boolean }) {
-  return flattenServiceRoutes(getServiceRouteTree(options));
+export function getRouteMeta() {
+  return flattenServiceRoutes(getServiceRouteTree());
 }
 
 function normalizePathname(pathname: string): string {
@@ -393,13 +388,10 @@ function appendAllowedSearchParams(
   return queryString ? `${href}?${queryString}` : href;
 }
 
-export function getServiceRouteMeta(
-  pathname: string,
-  options?: { mcpEnabled?: boolean },
-): ServiceRouteMeta | null {
+export function getServiceRouteMeta(pathname: string): ServiceRouteMeta | null {
   const normalizedPathname = normalizePathname(pathname);
   return (
-    getRouteMeta(options).find((route) =>
+    getRouteMeta().find((route) =>
       matchesRoutePath(route, normalizedPathname),
     ) ?? null
   );
