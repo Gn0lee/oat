@@ -233,8 +233,24 @@ describe("LedgerRecordsClient", () => {
     renderRecords();
     await userEvent.click(screen.getByRole("button", { name: "여행비" }));
     expect(push).toHaveBeenCalledWith("/ledger/records?view=month&book=book-1");
+  });
+
+  it("selecting 전체 from a book removes the book and date", async () => {
+    state.search = "book=book-1&date=2026-06-16&view=month";
+    vi.mocked(useLedgerBook).mockReturnValue({
+      data: book,
+      isPending: false,
+    } as never);
+    renderRecords();
     await userEvent.click(screen.getByRole("button", { name: "전체" }));
-    expect(push).toHaveBeenLastCalledWith("/ledger/records?view=month");
+    expect(push).toHaveBeenCalledWith("/ledger/records?view=month");
+  });
+
+  it("re-selecting the current book chip does not push a duplicate history entry", async () => {
+    state.search = "date=2026-06-16";
+    renderRecords();
+    await userEvent.click(screen.getByRole("button", { name: "전체" }));
+    expect(push).not.toHaveBeenCalled();
   });
 
   it("month arrows move to the last day of that month (today in the current month)", async () => {

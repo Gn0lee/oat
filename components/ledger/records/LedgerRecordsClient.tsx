@@ -258,7 +258,7 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
                 <dt className="text-sm text-gray-500">{label}</dt>
                 <dd>
                   <AmountText
-                    value={`${sign}${formatCurrency(amount)}`}
+                    value={`${amount > 0 ? sign : ""}${formatCurrency(amount)}`}
                     align="left"
                     className="text-2xl font-bold"
                   />

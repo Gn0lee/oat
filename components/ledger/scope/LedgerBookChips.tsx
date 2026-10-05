@@ -62,7 +62,9 @@ export function LedgerBookChips({
             ref={isSelected ? selectedRef : undefined}
             type="button"
             aria-pressed={isSelected}
-            onClick={() => onSelect(chip.id)}
+            onClick={() => {
+              if (!isSelected) onSelect(chip.id);
+            }}
             className={cn(
               "inline-flex min-h-11 shrink-0 items-center gap-1 rounded-xl px-4 text-[15px] font-semibold transition-colors",
               isSelected

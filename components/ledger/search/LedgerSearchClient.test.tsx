@@ -135,6 +135,12 @@ describe("LedgerSearchClient", () => {
     );
   });
 
+  it("이미 선택한 장부 칩을 다시 눌러도 이동하지 않는다", async () => {
+    render(<LedgerSearchClient initialQuery="커피" />);
+    await userEvent.click(screen.getByRole("button", { name: "전체" }));
+    expect(push).not.toHaveBeenCalled();
+  });
+
   it("검색어 없이 장부를 바꾸면 장부만 URL에 둔다", async () => {
     mockSearch({ data: undefined });
     render(<LedgerSearchClient initialQuery="" />);

@@ -78,7 +78,7 @@ export function LedgerDateStrip({
           </span>
         ))}
       </div>
-      <div className="space-y-1">
+      <div>
         {visibleWeeks.map((week) => (
           <div key={week.find(Boolean)} className="grid grid-cols-7">
             {week.map((day, index) => {
@@ -105,7 +105,7 @@ export function LedgerDateStrip({
                   aria-pressed={isSelected}
                   aria-current={key === today ? "date" : undefined}
                   onClick={() => onSelect(key)}
-                  className="flex min-h-11 min-w-0 flex-col items-center gap-0.5 pb-1"
+                  className="flex min-h-11 min-w-0 flex-col items-center"
                 >
                   <span
                     className={cn(
@@ -119,7 +119,7 @@ export function LedgerDateStrip({
                   >
                     {day}
                   </span>
-                  <span className="flex min-h-6 flex-col items-center text-[10px] leading-3 tabular-nums">
+                  <span className="flex min-h-5 flex-col items-center pt-0.5 text-[10px] leading-3 tabular-nums">
                     {expense > 0 && (
                       <span className="text-blue-500">
                         -{formatDayAmount(expense)}
