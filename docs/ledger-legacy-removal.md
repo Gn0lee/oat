@@ -1,6 +1,6 @@
 # `is_shared`·구버전 호환 제거와 복원 (#446 PR C)
 
-#435는 목적별 장부 이전 동안만 구버전 계약을 남기고, 배포의 마지막 단계에서 지우기로 정했다. 이 문서는 그 제거 절차와 되돌리는 방법이다. **구버전 요청 0을 확인하기 전에는 이 PR을 병합하지 않고 마이그레이션도 적용하지 않는다.**
+#435는 목적별 장부 이전 동안만 구버전 계약을 남기고, 배포의 마지막 단계에서 지우기로 정했다. 이 문서는 그 제거 절차와 되돌리는 방법이다. **MVP 배포 후 확인이 끝나기 전에는 이 PR을 병합하지 않고 마이그레이션도 적용하지 않는다.**
 
 ## 제거 대상
 
@@ -9,13 +9,14 @@
 | DB | `ledger_entries.is_shared`와 동기화(가드 트리거), 장부 없는 생성(쓰기 RPC·가드·배치), `book_id is null` 읽기 분기(RLS·가시성 함수·쓰기 RPC), `개인 생활비` 이름 변경·삭제 보호, 레거시 검색 RPC `search_ledger_entries`, 끝난 백필 함수와 레거시 장부 해석 함수 |
 | API | 검색 `scope+offset`, 목록·요약·통계·태그의 `scope`, 목록의 `tagId`, `bookId` 없는 생성(`isShared`) |
 | 앱 | `is_shared` 컬럼 읽기. 기록의 공용/개인은 장부 공개 범위에서 가져온다. 구버전 요청 로그(`legacy-ledger-contract`), 쓰지 않는 컴포넌트 |
+| MCP | 앱에서 지운 MCP의 남은 테이블 `mcp_tokens`·`mcp_audit_logs`(별도 마이그레이션, 되돌릴 수 없음) |
 
 장부와 `book_id`, 거래, 태그, 잔액은 건드리지 않는다. 홈의 공용 카드는 장부 공개 범위로 계속 집계한다.
 
 ## 진행 조건
 
 1. 목적별 장부 MVP가 운영에 배포돼 있다([런북](ledger-books-release-runbook.md)).
-2. Vercel 런타임 로그에서 `legacy-ledger-contract`가 정한 관측 기간 내내 **0건**이다([관측](ledger-books-analysis.md#구버전-요청-관측)). 관측 시작일·종료일·검색 조건을 기록한다. 0건이 아니면 이 단계만 보류한다.
+2. 런북의 배포 후 확인이 통과했다. 별도 관측 기간은 두지 않는다(2026-10-05 사용자 결정). 진행 직전에 Vercel 런타임 로그에서 MVP 배포 이후 `legacy-ledger-contract`가 **0건**인지 확인하고 검색 조건과 결과를 기록한다([관측](ledger-books-analysis.md#구버전-요청-관측)). 0건이 아니면 원인을 확인할 때까지 이 단계만 보류한다.
 3. 운영 DB 점검에서 아래 결과가 `0|0`이다.
 
    ```sql
@@ -35,7 +36,14 @@
    supabase migration repair --linked --status applied 20261006000000
    ```
 
-4. 적용 후 점검: 아래 결과가 `0|0|0`이어야 한다. 이어서 두 계정으로 2번을 다시 확인한다.
+4. MCP 테이블을 지운다. 사용하지 않는 기능의 잔여물이고 되돌리지 않는다.
+
+   ```sh
+   PGOPTIONS='-c lock_timeout=5s -c statement_timeout=60s' psql -X -v ON_ERROR_STOP=1 --single-transaction -f supabase/migrations/20261006000100_drop_mcp_tables.sql
+   supabase migration repair --linked --status applied 20261006000100
+   ```
+
+5. 적용 후 점검: 아래 결과가 `0|0|0`이어야 한다. 이어서 두 계정으로 2번을 다시 확인한다.
 
    ```sql
    select (select count(*) from information_schema.columns where table_name = 'ledger_entries' and column_name = 'is_shared'),
@@ -61,6 +69,8 @@
 2. 앱을 이전 버전으로 되돌린다.
 3. 다시 지울 때는 제거 마이그레이션을 다시 적용하면 된다.
 
+MCP 테이블 삭제는 되돌리지 않는다. 구버전 앱의 MCP 화면이 필요해지면 `20260508001000_create_mcp_tables.sql`로 빈 테이블만 다시 만들 수 있고, 기존 토큰은 재발급해야 한다.
+
 ## 검증 (격리 scratch DB, 2026-10-05)
 
 `oat_ledger_books_445_test`를 `pg_dump`로 `oat_ledger_books_446c_test`에 복사해 검증했다. 운영 DB와 공유 `postgres` DB는 건드리지 않았다.
@@ -71,6 +81,7 @@
 | 제거 적용 | 컬럼·레거시 함수 0, 함수 본문의 `is_shared` 참조 0. 제거 후 기준으로 고친 회귀 5종과 새 `ledger-legacy-removal.sql` 통과 |
 | 복원 적용 | `is_shared` NOT NULL default true, 장부 공개 범위와 불일치 0/42. 함수 정의 해시와 RLS 정책이 제거 전 DB와 같다. 레거시 검색 RPC에 Supabase 기본 권한으로 `postgres` 실행 권한이 하나 더 붙는다. **원래 버전** 회귀 5종 통과. 구버전식 직접 입력(공용·개인 장부 자동 배정)과 레거시 검색 정상 |
 | 다시 제거 | 회귀 5종과 제거 계약 통과 |
+| MCP 테이블 삭제 | 두 테이블 drop, 앱 타입 검사 통과 |
 
 `ledger-legacy-removal.sql`이 확인하는 것:
 
