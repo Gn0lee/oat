@@ -36,7 +36,7 @@ describe("LedgerStatsDetailDrawer", () => {
       <LedgerStatsDetailDrawer
         open
         title="식비 기록"
-        params={{ kind: "category", scope: "shared" }}
+        params={{ kind: "category" }}
         expectedCount={2}
         onOpenChange={() => undefined}
       />,

@@ -42,20 +42,51 @@ describe("GET /api/ledger-entries/summary scope validation", () => {
     expect(getLedgerEntrySummary).not.toHaveBeenCalled();
   });
 
-  it("accepts all scope and passes it to the summary query", async () => {
+  it("uses the all-books scope by default", async () => {
     const response = await GET(
-      new NextRequest("http://localhost/api/ledger-entries/summary?scope=all"),
+      new NextRequest(
+        "http://localhost/api/ledger-entries/summary?year=2026&month=10&scope=all",
+      ),
     );
 
     expect(response.status).toBe(200);
     expect(getLedgerEntrySummary).toHaveBeenCalledWith(
       expect.anything(),
       "household-id",
-      expect.any(Number),
-      expect.any(Number),
-      "all",
-      "user-id",
-      undefined,
+      { year: 2026, month: 10 },
     );
+  });
+
+  it("passes the selected book", async () => {
+    const book = "00000000-0000-4000-8000-000000000001";
+    await GET(
+      new NextRequest(
+        `http://localhost/api/ledger-entries/summary?year=2026&month=10&book=${book}`,
+      ),
+    );
+
+    expect(getLedgerEntrySummary).toHaveBeenCalledWith(
+      expect.anything(),
+      "household-id",
+      { year: 2026, month: 10, bookId: book },
+    );
+  });
+
+  it("maps a legacy shared/personal scope to book visibility and logs it", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    await GET(
+      new NextRequest(
+        "http://localhost/api/ledger-entries/summary?year=2026&month=10&scope=personal",
+      ),
+    );
+
+    expect(getLedgerEntrySummary).toHaveBeenCalledWith(
+      expect.anything(),
+      "household-id",
+      { year: 2026, month: 10, visibility: "personal" },
+    );
+    expect(String(warn.mock.calls[0]?.[0])).toContain('"summary-scope"');
+    warn.mockRestore();
   });
 });

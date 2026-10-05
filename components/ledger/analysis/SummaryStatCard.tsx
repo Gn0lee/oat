@@ -3,24 +3,22 @@ import { formatCurrency } from "@/lib/utils/format";
 
 interface SummaryStatCardProps {
   summary: LedgerStatsSummary;
-  scope: "shared" | "personal";
+  /** 특정 장부를 볼 때의 장부 이름. 없으면 전체 장부 */
+  bookName?: string;
 }
 
-export function SummaryStatCard({ summary, scope }: SummaryStatCardProps) {
+export function SummaryStatCard({ summary, bookName }: SummaryStatCardProps) {
   const { month } = summary;
+  const isAllBooks = summary.bookId === null;
 
-  const flow = summary[scope];
   const {
     totalIncome: income,
     totalExpense: expense,
     balance,
     savingsRate,
-  } = flow;
+  } = summary.total;
 
-  const title =
-    scope === "personal"
-      ? `${month}월 내 현금흐름`
-      : `${month}월 공용 현금흐름`;
+  const title = `${month}월 ${isAllBooks ? "전체" : (bookName ?? "장부")} 현금흐름`;
 
   return (
     <div className="bg-white rounded-2xl p-6 shadow-sm mb-6">
@@ -51,6 +49,23 @@ export function SummaryStatCard({ summary, scope }: SummaryStatCardProps) {
             {formatCurrency(expense)}
           </span>
         </div>
+
+        {isAllBooks && (
+          <dl className="space-y-1 rounded-xl bg-gray-50 px-3 py-2 text-sm">
+            <div className="flex justify-between">
+              <dt className="text-gray-500">공용 지출</dt>
+              <dd className="text-gray-700">
+                {formatCurrency(summary.shared.totalExpense)}
+              </dd>
+            </div>
+            <div className="flex justify-between">
+              <dt className="text-gray-500">내 개인 지출</dt>
+              <dd className="text-gray-700">
+                {formatCurrency(summary.personal.totalExpense)}
+              </dd>
+            </div>
+          </dl>
+        )}
 
         {income > 0 && (
           <>

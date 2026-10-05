@@ -1,21 +1,15 @@
 import type { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
-import { APIError, toErrorResponse } from "@/lib/api/error";
-import { getUserHouseholdId } from "@/lib/api/invitation";
+import { APIError } from "@/lib/api/error";
 import {
   getLedgerStatsDetail,
   type LedgerStatsDetailKind,
-  type StatsScope,
 } from "@/lib/api/ledger-stats";
-import { getKstNow } from "@/lib/date";
-import { createClient } from "@/lib/supabase/server";
-
-function parseScope(value: string | null): StatsScope {
-  if (value === "all" || value === "shared" || value === "personal") {
-    return value;
-  }
-  return "shared";
-}
+import {
+  parseLedgerStatsMonth,
+  parseLedgerStatsScope,
+} from "@/lib/api/ledger-stats-query";
+import { respondWithLedgerStats } from "@/lib/api/ledger-stats-route";
+import { isLedgerRecordDate } from "@/lib/ledger-books/navigation";
 
 function parseKind(value: string | null): LedgerStatsDetailKind {
   if (value === "category" || value === "payment-method" || value === "daily") {
@@ -31,65 +25,45 @@ function parseKind(value: string | null): LedgerStatsDetailKind {
 /**
  * GET /api/ledger/stats/details
  * 분석 항목을 구성하는 원본 가계부 기록 조회
+ *
+ * Query params: ?kind=category|payment-method|daily, ?year&month 또는 ?date=YYYY-MM-DD,
+ * ?type, ?categoryId, ?childCategoryId, ?categoryBreakdown=direct, ?paymentMethodId,
+ * ?limit, ?book=<장부 ID>
  */
-export async function GET(request: NextRequest) {
-  try {
-    const supabase = await createClient();
+export function GET(request: NextRequest) {
+  return respondWithLedgerStats(
+    request,
+    ({ supabase, householdId, searchParams }) => {
+      const kind = parseKind(searchParams.get("kind"));
+      const date = searchParams.get("date") ?? undefined;
+      if (date !== undefined && !isLedgerRecordDate(date)) {
+        throw new APIError(
+          "VALIDATION_ERROR",
+          "유효하지 않은 날짜입니다.",
+          400,
+        );
+      }
+      const typeParam = searchParams.get("type");
+      const limit = Number(searchParams.get("limit") ?? 20);
 
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      throw new APIError("AUTH_UNAUTHORIZED", "로그인이 필요합니다.", 401);
-    }
-
-    const householdId = await getUserHouseholdId(supabase, user.id);
-    if (!householdId) {
-      throw new APIError(
-        "HOUSEHOLD_NOT_FOUND",
-        "가구 정보를 찾을 수 없습니다.",
-        404,
-      );
-    }
-
-    const { searchParams } = request.nextUrl;
-    const now = getKstNow();
-    const kind = parseKind(searchParams.get("kind"));
-    const typeParam = searchParams.get("type");
-    const type =
-      typeParam === "income" || typeParam === "expense" ? typeParam : undefined;
-
-    const data = await getLedgerStatsDetail(supabase, householdId, user.id, {
-      kind,
-      year: Number(searchParams.get("year") ?? now.getFullYear()),
-      month: Number(searchParams.get("month") ?? now.getMonth() + 1),
-      date: searchParams.get("date") ?? undefined,
-      type,
-      scope: parseScope(searchParams.get("scope")),
-      categoryId: searchParams.get("categoryId") ?? undefined,
-      childCategoryId: searchParams.get("childCategoryId") ?? undefined,
-      categoryBreakdown:
-        searchParams.get("categoryBreakdown") === "direct"
-          ? "direct"
-          : undefined,
-      paymentMethodId: searchParams.get("paymentMethodId") ?? undefined,
-      limit: Number(searchParams.get("limit") ?? 20),
-    });
-
-    return NextResponse.json({ data });
-  } catch (error) {
-    if (error instanceof APIError) {
-      return NextResponse.json(toErrorResponse(error), {
-        status: error.statusCode,
+      return getLedgerStatsDetail(supabase, householdId, {
+        kind,
+        ...parseLedgerStatsMonth(searchParams),
+        date,
+        type:
+          typeParam === "income" || typeParam === "expense"
+            ? typeParam
+            : undefined,
+        categoryId: searchParams.get("categoryId") ?? undefined,
+        childCategoryId: searchParams.get("childCategoryId") ?? undefined,
+        categoryBreakdown:
+          searchParams.get("categoryBreakdown") === "direct"
+            ? "direct"
+            : undefined,
+        paymentMethodId: searchParams.get("paymentMethodId") ?? undefined,
+        limit: Number.isInteger(limit) ? Math.min(Math.max(limit, 1), 100) : 20,
+        ...parseLedgerStatsScope(searchParams, "details"),
       });
-    }
-    return NextResponse.json(
-      {
-        error: { code: "INTERNAL_ERROR", message: "서버 오류가 발생했습니다." },
-      },
-      { status: 500 },
-    );
-  }
+    },
+  );
 }

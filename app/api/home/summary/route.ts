@@ -81,19 +81,16 @@ export async function GET(request: Request) {
     const [cashFlow, assets, topCategories, ledgerActivity, profileResult] =
       await Promise.all([
         householdId
-          ? getLedgerStatsSummary(supabase, householdId, user.id, year, month)
+          ? getLedgerStatsSummary(supabase, householdId, { year, month })
           : null,
         householdId ? getHomeAssetSummary(supabase, householdId) : null,
         householdId
-          ? getLedgerStatsByCategory(
-              supabase,
-              householdId,
-              user.id,
+          ? getLedgerStatsByCategory(supabase, householdId, {
               year,
               month,
-              "expense",
-              "shared",
-            )
+              type: "expense",
+              visibility: "shared",
+            })
           : null,
         householdId
           ? getOwnLedgerActivity(supabase, householdId, user.id)

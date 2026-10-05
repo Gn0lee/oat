@@ -8,6 +8,7 @@ import {
   searchLedgerEntriesScoped,
 } from "@/lib/api/ledger";
 import { getLedgerBook } from "@/lib/api/ledger-books";
+import { logLegacyLedgerContract } from "@/lib/api/legacy-ledger-contract";
 import { createClient } from "@/lib/supabase/server";
 
 const SEARCH_PAGE_SIZE = 20;
@@ -53,6 +54,7 @@ export async function GET(request: NextRequest) {
           400,
         );
       }
+      logLegacyLedgerContract("search-scope-offset", "ledger-entries/search");
       const offsetParam = Number(searchParams.get("offset") ?? 0);
       const offset =
         Number.isInteger(offsetParam) && offsetParam >= 0 ? offsetParam : 0;

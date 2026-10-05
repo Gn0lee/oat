@@ -32,6 +32,8 @@ const DEFAULT_FLOW: LedgerFlowSummary = {
 const DEFAULT_CASH_FLOW: LedgerStatsSummary = {
   year: 0,
   month: 0,
+  bookId: null,
+  total: DEFAULT_FLOW,
   shared: DEFAULT_FLOW,
   personal: DEFAULT_FLOW,
 };
@@ -43,7 +45,7 @@ const DEFAULT_ASSETS: HomeAssetSummary = {
 
 const DEFAULT_TOP_CATEGORIES: LedgerStatsByCategoryResult = {
   type: "expense",
-  scope: "shared",
+  bookId: null,
   total: 0,
   items: [],
 };

@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { useLedgerIdentity } from "@/hooks/use-ledger-identity";
 import { fetchApiData } from "@/lib/api/client";
 import type {
   LedgerStatsByCategoryResult,
@@ -11,120 +12,115 @@ import type {
   LedgerStatsDetailResult,
   LedgerStatsSummary,
   LedgerStatsTrendResult,
-  StatsScope,
 } from "@/lib/api/ledger-stats";
 import { queries } from "@/lib/queries/keys";
 
-export function useLedgerStatsSummary(year: number, month: number) {
+interface MonthParams {
+  year: number;
+  month: number;
+  bookId?: string;
+}
+
+type StatsName =
+  | "summary"
+  | "by-member"
+  | "by-category"
+  | "by-payment-method"
+  | "trend"
+  | "daily"
+  | "details";
+
+// Every stats request names its book explicitly; no book means all books.
+function statsUrl(
+  name: StatsName,
+  params: Record<string, string | number | null | undefined>,
+) {
+  const search = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (key === "bookId") continue;
+    if (value !== undefined && value !== null && value !== "")
+      search.set(key, String(value));
+  }
+  if (params.bookId) search.set("book", String(params.bookId));
+  return `/api/ledger/stats/${name}?${search}`;
+}
+
+// The cache key carries the viewer so one user's analysis never renders for
+// another account on the same device.
+function useStatsQuery<T>(
+  name: StatsName,
+  params: Record<string, string | number | null | undefined>,
+  enabled = true,
+) {
+  const { userId, householdId } = useLedgerIdentity();
   return useQuery({
-    queryKey: queries.ledgerStats.summary(year, month).queryKey,
-    queryFn: () =>
-      fetchApiData<LedgerStatsSummary>(
-        `/api/ledger/stats/summary?year=${year}&month=${month}`,
-      ),
+    queryKey: queries.ledgerStats.query({
+      name,
+      params,
+      userId,
+      householdId,
+    }).queryKey,
+    queryFn: () => fetchApiData<T>(statsUrl(name, params)),
+    enabled,
     staleTime: 1000 * 60 * 5,
+    refetchOnWindowFocus: true,
   });
 }
 
-export function useLedgerStatsByMember(year: number, month: number) {
-  return useQuery({
-    queryKey: queries.ledgerStats.byMember(year, month).queryKey,
-    queryFn: () =>
-      fetchApiData<LedgerStatsByMemberResult>(
-        `/api/ledger/stats/by-member?year=${year}&month=${month}`,
-      ),
-    staleTime: 1000 * 60 * 5,
-  });
+export function useLedgerStatsSummary(params: MonthParams) {
+  return useStatsQuery<LedgerStatsSummary>("summary", { ...params });
+}
+
+export function useLedgerStatsByMember(params: MonthParams) {
+  return useStatsQuery<LedgerStatsByMemberResult>("by-member", { ...params });
 }
 
 export function useLedgerStatsByCategory(
-  year: number,
-  month: number,
-  type: "expense" | "income",
-  scope: StatsScope,
+  params: MonthParams & { type: "expense" | "income" },
 ) {
-  return useQuery({
-    queryKey: queries.ledgerStats.byCategory(year, month, type, scope).queryKey,
-    queryFn: () =>
-      fetchApiData<LedgerStatsByCategoryResult>(
-        `/api/ledger/stats/by-category?year=${year}&month=${month}&type=${type}&scope=${scope}`,
-      ),
-    staleTime: 1000 * 60 * 5,
+  return useStatsQuery<LedgerStatsByCategoryResult>("by-category", {
+    year: params.year,
+    month: params.month,
+    type: params.type,
+    bookId: params.bookId,
   });
 }
 
-export function useLedgerStatsByPaymentMethod(
-  year: number,
-  month: number,
-  scope: StatsScope,
-) {
-  return useQuery({
-    queryKey: queries.ledgerStats.byPaymentMethod(year, month, scope).queryKey,
-    queryFn: () =>
-      fetchApiData<LedgerStatsByPaymentMethodResult>(
-        `/api/ledger/stats/by-payment-method?year=${year}&month=${month}&scope=${scope}`,
-      ),
-    staleTime: 1000 * 60 * 5,
+export function useLedgerStatsByPaymentMethod(params: MonthParams) {
+  return useStatsQuery<LedgerStatsByPaymentMethodResult>("by-payment-method", {
+    ...params,
   });
 }
 
-export function useLedgerStatsTrend(months = 6, scope?: string) {
-  return useQuery({
-    queryKey: queries.ledgerStats.trend(months, scope).queryKey,
-    queryFn: () =>
-      fetchApiData<LedgerStatsTrendResult>(
-        `/api/ledger/stats/trend?months=${months}${scope ? `&scope=${scope}` : ""}`,
-      ),
-    staleTime: 1000 * 60 * 5,
-  });
+export function useLedgerStatsTrend(params: {
+  months: number;
+  bookId?: string;
+}) {
+  return useStatsQuery<LedgerStatsTrendResult>("trend", { ...params });
 }
 
-export function useLedgerStatsDaily(
-  year: number,
-  month: number,
-  scope: StatsScope,
-) {
-  return useQuery({
-    queryKey: queries.ledgerStats.daily(year, month, scope).queryKey,
-    queryFn: () =>
-      fetchApiData<LedgerStatsDailyResult>(
-        `/api/ledger/stats/daily?year=${year}&month=${month}&scope=${scope}`,
-      ),
-    staleTime: 1000 * 60 * 5,
-  });
+export function useLedgerStatsDaily(params: MonthParams) {
+  return useStatsQuery<LedgerStatsDailyResult>("daily", { ...params });
 }
 
 export function useLedgerStatsDetail(params: LedgerStatsDetailParams | null) {
-  return useQuery({
-    queryKey: queries.ledgerStats.detail(params ?? undefined).queryKey,
-    queryFn: () => {
-      if (!params) {
-        throw new Error("상세 조회 조건이 필요합니다.");
-      }
-      const searchParams = new URLSearchParams({
-        kind: params.kind,
-        scope: params.scope,
-      });
-      if (params.year) searchParams.set("year", String(params.year));
-      if (params.month) searchParams.set("month", String(params.month));
-      if (params.date) searchParams.set("date", params.date);
-      if (params.type) searchParams.set("type", params.type);
-      if (params.categoryId) searchParams.set("categoryId", params.categoryId);
-      if (params.childCategoryId) {
-        searchParams.set("childCategoryId", params.childCategoryId);
-      }
-      if (params.categoryBreakdown) {
-        searchParams.set("categoryBreakdown", params.categoryBreakdown);
-      }
-      if (params.paymentMethodId) {
-        searchParams.set("paymentMethodId", params.paymentMethodId);
-      }
-      if (params.limit) searchParams.set("limit", String(params.limit));
-      return fetchApiData<LedgerStatsDetailResult>(
-        `/api/ledger/stats/details?${searchParams.toString()}`,
-      );
-    },
-    enabled: !!params,
-    staleTime: 1000 * 60 * 5,
-  });
+  return useStatsQuery<LedgerStatsDetailResult>(
+    "details",
+    params
+      ? {
+          kind: params.kind,
+          year: params.year,
+          month: params.month,
+          date: params.date,
+          type: params.type,
+          categoryId: params.categoryId,
+          childCategoryId: params.childCategoryId,
+          categoryBreakdown: params.categoryBreakdown,
+          paymentMethodId: params.paymentMethodId,
+          limit: params.limit,
+          bookId: params.bookId,
+        }
+      : {},
+    Boolean(params),
+  );
 }

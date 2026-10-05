@@ -1,6 +1,6 @@
 "use client";
 
-import { getDaysInMonth, startOfMonth } from "date-fns";
+import { getDaysInMonth } from "date-fns";
 import { useMemo, useState } from "react";
 import { Bar, BarChart, CartesianGrid, Cell, XAxis, YAxis } from "recharts";
 import {
@@ -8,30 +8,27 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
+import { useLedgerAnalysisUrl } from "@/hooks/use-ledger-analysis-url";
 import { useLedgerStatsDaily } from "@/hooks/use-ledger-stats";
-import type { StatsScope } from "@/lib/api/ledger-stats";
-import { getKstNow } from "@/lib/date";
 import { formatCurrency } from "@/lib/utils/format";
 import { LedgerStatsDetailDrawer } from "./LedgerStatsDetailDrawer";
 import { MonthSelector } from "./MonthSelector";
 
 const DAY_NAMES = ["일", "월", "화", "수", "목", "금", "토"];
 
-interface DailyClientProps {
-  scope: StatsScope;
-}
-
-export function DailyClient({ scope }: DailyClientProps) {
-  const [currentMonth, setCurrentMonth] = useState<Date>(() =>
-    startOfMonth(getKstNow()),
-  );
+export function DailyClient() {
+  const {
+    bookId,
+    year,
+    month,
+    monthDate: currentMonth,
+    setMonth,
+  } = useLedgerAnalysisUrl();
   const [detail, setDetail] = useState<{ date: string; label: string } | null>(
     null,
   );
 
-  const year = currentMonth.getFullYear();
-  const month = currentMonth.getMonth() + 1;
-  const { data, isLoading } = useLedgerStatsDaily(year, month, scope);
+  const { data, isLoading } = useLedgerStatsDaily({ year, month, bookId });
 
   const items = data?.items ?? [];
 
@@ -83,7 +80,7 @@ export function DailyClient({ scope }: DailyClientProps) {
 
   return (
     <div className="space-y-4">
-      <MonthSelector value={currentMonth} onChange={setCurrentMonth} />
+      <MonthSelector value={currentMonth} onChange={setMonth} />
 
       {/* 월 요약 스트립 */}
       <div className="grid grid-cols-3 gap-3">
@@ -223,7 +220,7 @@ export function DailyClient({ scope }: DailyClientProps) {
             ? {
                 kind: "daily",
                 date: detail.date,
-                scope,
+                bookId,
               }
             : null
         }

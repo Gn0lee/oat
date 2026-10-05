@@ -8,6 +8,14 @@ vi.mock("@/hooks/use-ledger-stats", () => ({
   useLedgerStatsTrend: vi.fn(),
 }));
 
+const BOOK = "00000000-0000-4000-8000-000000000001";
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/ledger/analysis/trend",
+  useRouter: () => ({ replace: vi.fn(), push: vi.fn() }),
+  useSearchParams: () =>
+    new URLSearchParams("book=00000000-0000-4000-8000-000000000001"),
+}));
+
 class ResizeObserverMock {
   observe() {}
   unobserve() {}
@@ -35,7 +43,7 @@ describe("TrendClient", () => {
       error: null,
     } as unknown as ReturnType<typeof useLedgerStatsTrend>);
 
-    render(<TrendClient scope="shared" />);
+    render(<TrendClient />);
 
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
     expect(screen.getByText("월별 상세")).toBeInTheDocument();
@@ -65,7 +73,7 @@ describe("TrendClient", () => {
       error: null,
     } as unknown as ReturnType<typeof useLedgerStatsTrend>);
 
-    render(<TrendClient scope="shared" />);
+    render(<TrendClient />);
 
     await user.click(screen.getByRole("button", { name: /수입/ }));
 
@@ -73,9 +81,13 @@ describe("TrendClient", () => {
     expect(
       screen.getByText("2026년 5월 수입 기록을 확인합니다."),
     ).toBeInTheDocument();
+    expect(useLedgerStatsTrend).toHaveBeenCalledWith({
+      months: 6,
+      bookId: BOOK,
+    });
     expect(screen.getByRole("link", { name: "이동하기" })).toHaveAttribute(
       "href",
-      "/ledger/records?year=2026&month=5&scope=shared&type=income",
+      `/ledger/records?book=${BOOK}&date=2026-05-31&type=income`,
     );
   });
 });

@@ -7,6 +7,7 @@ import {
   getLedgerTagsForScope,
   type LedgerTag,
 } from "@/lib/api/ledger-tags";
+import { logLegacyLedgerContract } from "@/lib/api/legacy-ledger-contract";
 import { createClient } from "@/lib/supabase/server";
 
 export async function GET(request: NextRequest) {
@@ -37,6 +38,7 @@ export async function GET(request: NextRequest) {
 
     let tags: LedgerTag[];
     if (scopeParam === "shared" || scopeParam === "personal") {
+      logLegacyLedgerContract("tags-scope", "ledger-tags");
       tags = await getLedgerTagsForScope(
         supabase,
         householdId,

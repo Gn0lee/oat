@@ -1,10 +1,32 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { APIError } from "@/lib/api/error";
 import type { LedgerEntryWithDetails } from "@/lib/api/ledger";
-import { getKstDayRange, getKstMonthRange } from "@/lib/date";
+import { getLedgerBook, getLedgerBooks } from "@/lib/api/ledger-books";
+import {
+  formatKst,
+  getKstDayRange,
+  getKstMonthRange,
+  getKstToday,
+} from "@/lib/date";
+import { ledgerMonthAnchorDate } from "@/lib/ledger-books/navigation";
 import type { Database } from "@/types";
+import type { LedgerBookVisibility } from "@/types/ledger-book";
 
-export type StatsScope = "all" | "shared" | "personal";
+/**
+ * Which visible transactions a statistic covers. Without `bookId` every book
+ * the caller can see (RLS: shared books + own personal books, archived
+ * included) is used once. `visibility` narrows that set to shared or personal
+ * books; it backs the home card and legacy `scope` requests.
+ */
+export interface LedgerStatsScope {
+  bookId?: string;
+  visibility?: LedgerBookVisibility;
+}
+
+export interface LedgerStatsMonth {
+  year: number;
+  month: number;
+}
 
 export interface LedgerFlowSummary {
   totalIncome: number;
@@ -16,6 +38,8 @@ export interface LedgerFlowSummary {
 export interface LedgerStatsSummary {
   year: number;
   month: number;
+  bookId: string | null;
+  total: LedgerFlowSummary;
   shared: LedgerFlowSummary;
   personal: LedgerFlowSummary;
 }
@@ -31,6 +55,8 @@ export interface MemberStatItem {
 }
 
 export interface LedgerStatsByMemberResult {
+  bookId: string | null;
+  bookVisibility: LedgerBookVisibility | null;
   members: MemberStatItem[];
 }
 
@@ -57,7 +83,7 @@ export interface CategoryStatChildItem {
 
 export interface LedgerStatsByCategoryResult {
   type: "expense" | "income";
-  scope: StatsScope;
+  bookId: string | null;
   total: number;
   items: CategoryStatItem[];
 }
@@ -72,7 +98,7 @@ export interface PaymentMethodStatItem {
 }
 
 export interface LedgerStatsByPaymentMethodResult {
-  scope: StatsScope;
+  bookId: string | null;
   total: number;
   items: PaymentMethodStatItem[];
 }
@@ -87,6 +113,7 @@ export interface MonthlyTrendItem {
 }
 
 export interface LedgerStatsTrendResult {
+  bookId: string | null;
   items: MonthlyTrendItem[];
 }
 
@@ -100,15 +127,48 @@ export interface DailyStatItem {
 export interface LedgerStatsDailyResult {
   year: number;
   month: number;
-  scope: StatsScope;
+  bookId: string | null;
   items: DailyStatItem[];
 }
 
-function getMonthRange(
-  year: number,
-  month: number,
-): { from: string; to: string } {
-  return getKstMonthRange(year, month);
+interface ResolvedScope {
+  bookId: string | null;
+  bookVisibility: LedgerBookVisibility | null;
+  /** Book filter for the entry query; null means every visible book. */
+  bookIds: string[] | null;
+  visibilityByBook: Map<string, LedgerBookVisibility>;
+}
+
+// A specific book is checked first so hidden, foreign and missing IDs all get
+// the same 404. Book visibility (not the legacy is_shared column) decides the
+// shared/personal split.
+async function resolveScope(
+  supabase: SupabaseClient<Database>,
+  householdId: string,
+  scope: LedgerStatsScope,
+): Promise<ResolvedScope> {
+  if (scope.bookId) {
+    const book = await getLedgerBook(supabase, householdId, scope.bookId);
+    return {
+      bookId: book.id,
+      bookVisibility: book.visibility,
+      bookIds: [book.id],
+      visibilityByBook: new Map([[book.id, book.visibility]]),
+    };
+  }
+  const books = await getLedgerBooks(supabase, householdId);
+  return {
+    bookId: null,
+    bookVisibility: null,
+    bookIds: scope.visibility
+      ? books.filter((b) => b.visibility === scope.visibility).map((b) => b.id)
+      : null,
+    visibilityByBook: new Map(books.map((b) => [b.id, b.visibility])),
+  };
+}
+
+function throwStatsError(): never {
+  throw new APIError("STATS_FETCH_ERROR", "통계 조회에 실패했습니다.", 500);
 }
 
 function calcSavingsRate(income: number, expense: number): number {
@@ -126,50 +186,52 @@ function buildFlowSummary(income: number, expense: number): LedgerFlowSummary {
   };
 }
 
+interface FlowRow {
+  type: string;
+  amount: number;
+}
+
+function sumFlow(rows: FlowRow[]): LedgerFlowSummary {
+  let income = 0;
+  let expense = 0;
+  for (const row of rows) {
+    if (row.type === "income") income += row.amount;
+    else if (row.type === "expense") expense += row.amount;
+  }
+  return buildFlowSummary(income, expense);
+}
+
 export async function getLedgerStatsSummary(
   supabase: SupabaseClient<Database>,
   householdId: string,
-  userId: string,
-  year: number,
-  month: number,
+  params: LedgerStatsMonth & LedgerStatsScope,
 ): Promise<LedgerStatsSummary> {
-  const { from, to } = getMonthRange(year, month);
+  const scope = await resolveScope(supabase, householdId, params);
+  const { from, to } = getKstMonthRange(params.year, params.month);
 
-  // RLS 적용 조회: 공용 + 본인 개인 항목
-  const { data, error } = await supabase
+  let query = supabase
     .from("ledger_entries")
-    .select("type, amount, is_shared, owner_id")
+    .select("type, amount, book_id")
     .eq("household_id", householdId)
     .in("type", ["expense", "income"])
     .gte("transacted_at", from)
     .lt("transacted_at", to);
+  if (scope.bookIds) query = query.in("book_id", scope.bookIds);
 
-  if (error) {
-    throw new APIError("STATS_FETCH_ERROR", "통계 조회에 실패했습니다.", 500);
-  }
+  const { data, error } = await query;
+  if (error) throwStatsError();
 
   const rows = data ?? [];
-
-  let sharedIncome = 0;
-  let sharedExpense = 0;
-  let personalIncome = 0;
-  let personalExpense = 0;
-
-  for (const row of rows) {
-    if (row.is_shared) {
-      if (row.type === "income") sharedIncome += row.amount;
-      else if (row.type === "expense") sharedExpense += row.amount;
-    } else if (row.owner_id === userId) {
-      if (row.type === "income") personalIncome += row.amount;
-      else if (row.type === "expense") personalExpense += row.amount;
-    }
-  }
+  const visibilityOf = (row: { book_id: string }) =>
+    scope.visibilityByBook.get(row.book_id);
 
   return {
-    year,
-    month,
-    shared: buildFlowSummary(sharedIncome, sharedExpense),
-    personal: buildFlowSummary(personalIncome, personalExpense),
+    year: params.year,
+    month: params.month,
+    bookId: scope.bookId,
+    total: sumFlow(rows),
+    shared: sumFlow(rows.filter((row) => visibilityOf(row) === "shared")),
+    personal: sumFlow(rows.filter((row) => visibilityOf(row) === "personal")),
   };
 }
 
@@ -177,65 +239,67 @@ export async function getLedgerStatsByMember(
   supabase: SupabaseClient<Database>,
   householdId: string,
   userId: string,
-  year: number,
-  month: number,
+  params: LedgerStatsMonth & Pick<LedgerStatsScope, "bookId">,
 ): Promise<LedgerStatsByMemberResult> {
-  const { from, to } = getMonthRange(year, month);
+  const scope = await resolveScope(supabase, householdId, params);
+  const { from, to } = getKstMonthRange(params.year, params.month);
 
-  // 가구 멤버 목록 조회
   const { data: members } = await supabase
     .from("household_members")
     .select("user_id, profiles!inner(name)")
     .eq("household_id", householdId);
 
-  const memberList = (members ?? []).map((m) => ({
-    userId: m.user_id,
-    name: Array.isArray(m.profiles)
-      ? ((m.profiles[0] as { name: string })?.name ?? "알 수 없음")
-      : ((m.profiles as unknown as { name: string })?.name ?? "알 수 없음"),
-  }));
+  const memberList = (members ?? [])
+    .map((m) => ({
+      userId: m.user_id,
+      name: Array.isArray(m.profiles)
+        ? ((m.profiles[0] as { name: string })?.name ?? "알 수 없음")
+        : ((m.profiles as unknown as { name: string })?.name ?? "알 수 없음"),
+    }))
+    // A personal book only ever holds its creator's entries.
+    .filter(
+      (member) =>
+        scope.bookVisibility !== "personal" || member.userId === userId,
+    );
 
-  // RLS 적용 조회: 공용 + 본인 개인
-  const { data, error } = await supabase
+  let query = supabase
     .from("ledger_entries")
-    .select("owner_id, type, amount, is_shared")
+    .select("owner_id, type, amount, book_id")
     .eq("household_id", householdId)
     .in("type", ["expense", "income"])
     .gte("transacted_at", from)
     .lt("transacted_at", to);
+  if (scope.bookIds) query = query.in("book_id", scope.bookIds);
 
-  if (error) {
-    throw new APIError("STATS_FETCH_ERROR", "통계 조회에 실패했습니다.", 500);
-  }
+  const { data, error } = await query;
+  if (error) throwStatsError();
 
-  const rows = data ?? [];
+  const statsMap = new Map(
+    memberList.map((member) => [
+      member.userId,
+      { sharedExpense: 0, sharedIncome: 0, personalExpense: 0 },
+    ]),
+  );
 
-  // owner_id → 공용/개인 집계
-  const statsMap = new Map<
-    string,
-    { sharedExpense: number; sharedIncome: number; personalExpense: number }
-  >();
-
-  for (const member of memberList) {
-    statsMap.set(member.userId, {
-      sharedExpense: 0,
-      sharedIncome: 0,
-      personalExpense: 0,
-    });
-  }
-
-  for (const row of rows) {
+  for (const row of data ?? []) {
     const stat = statsMap.get(row.owner_id);
     if (!stat) continue;
-
-    if (row.is_shared) {
+    const visibility = scope.visibilityByBook.get(row.book_id);
+    if (visibility === "shared") {
       if (row.type === "expense") stat.sharedExpense += row.amount;
       else if (row.type === "income") stat.sharedIncome += row.amount;
-    } else if (row.owner_id === userId && row.type === "expense") {
+    } else if (
+      visibility === "personal" &&
+      row.owner_id === userId &&
+      row.type === "expense"
+    ) {
       stat.personalExpense += row.amount;
     }
   }
 
+  // Others' personal spending is never known here, so it is reported as
+  // hidden (null) rather than as 0. A shared book has no personal column.
+  const showsPersonal = scope.bookVisibility !== "shared";
   const result: MemberStatItem[] = memberList.map((member) => {
     const stat = statsMap.get(member.userId) ?? {
       sharedExpense: 0,
@@ -243,7 +307,7 @@ export async function getLedgerStatsByMember(
       personalExpense: 0,
     };
     const isCurrentUser = member.userId === userId;
-    const personalExpense = isCurrentUser ? stat.personalExpense : null;
+    const personalExpenseVisible = isCurrentUser && showsPersonal;
 
     return {
       memberId: member.userId,
@@ -251,24 +315,29 @@ export async function getLedgerStatsByMember(
       isCurrentUser,
       sharedExpense: stat.sharedExpense,
       sharedIncome: stat.sharedIncome,
-      personalExpense,
-      personalExpenseVisible: isCurrentUser,
+      personalExpense: personalExpenseVisible ? stat.personalExpense : null,
+      personalExpenseVisible,
     };
   });
 
-  return { members: result };
+  return {
+    bookId: scope.bookId,
+    bookVisibility: scope.bookVisibility,
+    members: result,
+  };
 }
 
 export async function getLedgerStatsByCategory(
   supabase: SupabaseClient<Database>,
   householdId: string,
-  userId: string,
-  year: number,
-  month: number,
-  type: "expense" | "income",
-  scope: StatsScope,
+  params: LedgerStatsMonth &
+    LedgerStatsScope & {
+      type: "expense" | "income";
+    },
 ): Promise<LedgerStatsByCategoryResult> {
-  const { from, to } = getMonthRange(year, month);
+  const { type } = params;
+  const scope = await resolveScope(supabase, householdId, params);
+  const { from, to } = getKstMonthRange(params.year, params.month);
 
   let query = supabase
     .from("ledger_entries")
@@ -277,18 +346,10 @@ export async function getLedgerStatsByCategory(
     .eq("type", type)
     .gte("transacted_at", from)
     .lt("transacted_at", to);
-
-  if (scope === "shared") {
-    query = query.eq("is_shared", true);
-  } else if (scope === "personal") {
-    query = query.eq("is_shared", false).eq("owner_id", userId);
-  }
+  if (scope.bookIds) query = query.in("book_id", scope.bookIds);
 
   const { data, error } = await query;
-
-  if (error) {
-    throw new APIError("STATS_FETCH_ERROR", "통계 조회에 실패했습니다.", 500);
-  }
+  if (error) throwStatsError();
 
   const rows = data ?? [];
 
@@ -427,18 +488,16 @@ export async function getLedgerStatsByCategory(
     }))
     .sort((a, b) => b.amount - a.amount);
 
-  return { type, scope, total, items };
+  return { type, bookId: scope.bookId, total, items };
 }
 
 export async function getLedgerStatsByPaymentMethod(
   supabase: SupabaseClient<Database>,
   householdId: string,
-  userId: string,
-  year: number,
-  month: number,
-  scope: StatsScope,
+  params: LedgerStatsMonth & LedgerStatsScope,
 ): Promise<LedgerStatsByPaymentMethodResult> {
-  const { from, to } = getMonthRange(year, month);
+  const scope = await resolveScope(supabase, householdId, params);
+  const { from, to } = getKstMonthRange(params.year, params.month);
 
   let query = supabase
     .from("ledger_entries")
@@ -447,18 +506,10 @@ export async function getLedgerStatsByPaymentMethod(
     .eq("type", "expense")
     .gte("transacted_at", from)
     .lt("transacted_at", to);
-
-  if (scope === "shared") {
-    query = query.eq("is_shared", true);
-  } else if (scope === "personal") {
-    query = query.eq("is_shared", false).eq("owner_id", userId);
-  }
+  if (scope.bookIds) query = query.in("book_id", scope.bookIds);
 
   const { data, error } = await query;
-
-  if (error) {
-    throw new APIError("STATS_FETCH_ERROR", "통계 조회에 실패했습니다.", 500);
-  }
+  if (error) throwStatsError();
 
   const rows = data ?? [];
 
@@ -514,22 +565,19 @@ export async function getLedgerStatsByPaymentMethod(
     })
     .sort((a, b) => b.amount - a.amount);
 
-  return { scope, total, items };
+  return { bookId: scope.bookId, total, items };
 }
 
 export async function getLedgerStatsTrend(
   supabase: SupabaseClient<Database>,
   householdId: string,
-  userId: string,
-  months: number,
-  scope: StatsScope = "all",
+  params: LedgerStatsScope & { months: number },
 ): Promise<LedgerStatsTrendResult> {
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const currentMonth = now.getMonth() + 1;
+  const scope = await resolveScope(supabase, householdId, params);
+  const [currentYear, currentMonth] = getKstToday().split("-").map(Number);
 
-  const monthList: { year: number; month: number }[] = [];
-  for (let i = months - 1; i >= 0; i--) {
+  const monthList: LedgerStatsMonth[] = [];
+  for (let i = params.months - 1; i >= 0; i--) {
     let year = currentYear;
     let month = currentMonth - i;
     while (month <= 0) {
@@ -540,8 +588,8 @@ export async function getLedgerStatsTrend(
   }
 
   const first = monthList[0];
-  const from = new Date(first.year, first.month - 1, 1).toISOString();
-  const to = new Date(currentYear, currentMonth, 1).toISOString();
+  const { from } = getKstMonthRange(first.year, first.month);
+  const { to } = getKstMonthRange(currentYear, currentMonth);
 
   let query = supabase
     .from("ledger_entries")
@@ -550,17 +598,10 @@ export async function getLedgerStatsTrend(
     .in("type", ["expense", "income"])
     .gte("transacted_at", from)
     .lt("transacted_at", to);
-
-  if (scope === "shared") {
-    query = query.eq("is_shared", true);
-  } else if (scope === "personal") {
-    query = query.eq("is_shared", false).eq("owner_id", userId);
-  }
+  if (scope.bookIds) query = query.in("book_id", scope.bookIds);
 
   const { data, error } = await query;
-  if (error) {
-    throw new APIError("STATS_FETCH_ERROR", "통계 조회에 실패했습니다.", 500);
-  }
+  if (error) throwStatsError();
 
   const monthMap = new Map<string, { income: number; expense: number }>();
   for (const { year, month } of monthList) {
@@ -568,9 +609,8 @@ export async function getLedgerStatsTrend(
   }
 
   for (const row of data ?? []) {
-    const d = new Date(row.transacted_at);
-    const key = `${d.getFullYear()}-${d.getMonth() + 1}`;
-    const existing = monthMap.get(key);
+    const [year, month] = formatKst(row.transacted_at).split("-").map(Number);
+    const existing = monthMap.get(`${year}-${month}`);
     if (!existing) continue;
     if (row.type === "income") {
       existing.income += row.amount;
@@ -594,18 +634,16 @@ export async function getLedgerStatsTrend(
     };
   });
 
-  return { items };
+  return { bookId: scope.bookId, items };
 }
 
 export async function getLedgerStatsDaily(
   supabase: SupabaseClient<Database>,
   householdId: string,
-  userId: string,
-  year: number,
-  month: number,
-  scope: StatsScope,
+  params: LedgerStatsMonth & LedgerStatsScope,
 ): Promise<LedgerStatsDailyResult> {
-  const { from, to } = getMonthRange(year, month);
+  const scope = await resolveScope(supabase, householdId, params);
+  const { from, to } = getKstMonthRange(params.year, params.month);
 
   let query = supabase
     .from("ledger_entries")
@@ -614,25 +652,15 @@ export async function getLedgerStatsDaily(
     .in("type", ["expense", "income"])
     .gte("transacted_at", from)
     .lt("transacted_at", to);
-
-  if (scope === "shared") {
-    query = query.eq("is_shared", true);
-  } else if (scope === "personal") {
-    query = query.eq("is_shared", false).eq("owner_id", userId);
-  }
+  if (scope.bookIds) query = query.in("book_id", scope.bookIds);
 
   const { data, error } = await query;
-
-  if (error) {
-    throw new APIError("STATS_FETCH_ERROR", "통계 조회에 실패했습니다.", 500);
-  }
-
-  const rows = data ?? [];
+  if (error) throwStatsError();
 
   const dailyMap = new Map<string, { income: number; expense: number }>();
 
-  for (const row of rows) {
-    const date = row.transacted_at.slice(0, 10); // "YYYY-MM-DD"
+  for (const row of data ?? []) {
+    const date = formatKst(row.transacted_at);
     const existing = dailyMap.get(date) ?? { income: 0, expense: 0 };
     if (row.type === "income") {
       dailyMap.set(date, { ...existing, income: existing.income + row.amount });
@@ -653,18 +681,22 @@ export async function getLedgerStatsDaily(
       balance: income - expense,
     }));
 
-  return { year, month, scope, items };
+  return {
+    year: params.year,
+    month: params.month,
+    bookId: scope.bookId,
+    items,
+  };
 }
 
 export type LedgerStatsDetailKind = "category" | "payment-method" | "daily";
 
-export interface LedgerStatsDetailParams {
+export interface LedgerStatsDetailParams extends LedgerStatsScope {
   kind: LedgerStatsDetailKind;
   year?: number;
   month?: number;
   date?: string;
   type?: "expense" | "income";
-  scope: StatsScope;
   categoryId?: string | null;
   childCategoryId?: string | null;
   categoryBreakdown?: "direct";
@@ -682,18 +714,22 @@ function appendParam(params: URLSearchParams, key: string, value?: string) {
   if (value) params.set(key, value);
 }
 
+// The records screen lists the anchor day and every earlier day of that month,
+// so a month-level detail opens on the month's anchor date.
 function buildLedgerStatsDetailViewAllHref(
   params: LedgerStatsDetailParams,
+  type: "expense" | "income",
+  month: LedgerStatsMonth,
 ): string {
   const searchParams = new URLSearchParams();
-  if (params.date) {
-    searchParams.set("date", params.date);
-  } else {
-    if (params.year) searchParams.set("year", String(params.year));
-    if (params.month) searchParams.set("month", String(params.month));
-  }
-  if (params.scope !== "all") searchParams.set("scope", params.scope);
-  appendParam(searchParams, "type", params.type);
+  appendParam(searchParams, "book", params.bookId);
+  searchParams.set(
+    "date",
+    params.kind === "daily" && params.date
+      ? params.date
+      : ledgerMonthAnchorDate(month.year, month.month, getKstToday()),
+  );
+  searchParams.set("type", type);
   appendParam(
     searchParams,
     "categoryId",
@@ -715,6 +751,7 @@ function buildLedgerStatsDetailViewAllHref(
 
 function mapLedgerStatsDetailRow(
   row: Record<string, unknown>,
+  visibilityByBook: Map<string, LedgerBookVisibility>,
 ): LedgerEntryWithDetails {
   const owner = row.profiles as { name?: string } | null;
   const category = row.categories as {
@@ -745,7 +782,7 @@ function mapLedgerStatsDetailRow(
     toAccountName: toAccount?.name ?? null,
     toPaymentMethodId: (row.to_payment_method_id as string | null) ?? null,
     toPaymentMethodName: toPaymentMethod?.name ?? null,
-    isShared: Boolean(row.is_shared),
+    isShared: visibilityByBook.get(String(row.book_id)) === "shared",
     memo: (row.memo as string | null) ?? null,
     transactedAt: String(row.transacted_at),
     createdAt: String(row.created_at),
@@ -756,17 +793,21 @@ function mapLedgerStatsDetailRow(
 export async function getLedgerStatsDetail(
   supabase: SupabaseClient<Database>,
   householdId: string,
-  userId: string,
   params: LedgerStatsDetailParams,
 ): Promise<LedgerStatsDetailResult> {
+  const scope = await resolveScope(supabase, householdId, params);
   const limit = params.limit ?? 20;
+  const [currentYear, currentMonth] = getKstToday().split("-").map(Number);
+  const month = {
+    year: params.year ?? currentYear,
+    month: params.month ?? currentMonth,
+  };
   const range =
     params.kind === "daily" && params.date
       ? getKstDayRange(params.date)
-      : getKstMonthRange(
-          params.year ?? new Date().getFullYear(),
-          params.month ?? new Date().getMonth() + 1,
-        );
+      : getKstMonthRange(month.year, month.month);
+  const type =
+    params.kind === "category" ? (params.type ?? "expense") : "expense";
 
   let query = supabase
     .from("ledger_entries")
@@ -774,6 +815,7 @@ export async function getLedgerStatsDetail(
       `
       id,
       household_id,
+      book_id,
       owner_id,
       type,
       amount,
@@ -784,7 +826,6 @@ export async function getLedgerStatsDetail(
       from_payment_method_id,
       to_account_id,
       to_payment_method_id,
-      is_shared,
       memo,
       created_at,
       updated_at,
@@ -798,17 +839,12 @@ export async function getLedgerStatsDetail(
       { count: "exact" },
     )
     .eq("household_id", householdId)
+    .eq("type", type)
     .gte("transacted_at", range.from)
     .lt("transacted_at", range.to);
-
-  if (params.scope === "shared") {
-    query = query.eq("is_shared", true);
-  } else if (params.scope === "personal") {
-    query = query.eq("is_shared", false).eq("owner_id", userId);
-  }
+  if (scope.bookIds) query = query.in("book_id", scope.bookIds);
 
   if (params.kind === "category") {
-    query = query.eq("type", params.type ?? "expense");
     if (params.categoryId === "__none__" || params.categoryId === null) {
       query = query.is("category_id", null);
     } else if (params.childCategoryId) {
@@ -829,7 +865,6 @@ export async function getLedgerStatsDetail(
   }
 
   if (params.kind === "payment-method") {
-    query = query.eq("type", "expense");
     if (
       params.paymentMethodId === "__none__" ||
       params.paymentMethodId === null
@@ -838,10 +873,6 @@ export async function getLedgerStatsDetail(
     } else if (params.paymentMethodId) {
       query = query.eq("from_payment_method_id", params.paymentMethodId);
     }
-  }
-
-  if (params.kind === "daily") {
-    query = query.eq("type", "expense");
   }
 
   const { data, error, count } = await query
@@ -860,8 +891,11 @@ export async function getLedgerStatsDetail(
   return {
     totalCount: count ?? 0,
     items: (data ?? []).map((row) =>
-      mapLedgerStatsDetailRow(row as Record<string, unknown>),
+      mapLedgerStatsDetailRow(
+        row as Record<string, unknown>,
+        scope.visibilityByBook,
+      ),
     ),
-    viewAllHref: buildLedgerStatsDetailViewAllHref(params),
+    viewAllHref: buildLedgerStatsDetailViewAllHref(params, type, month),
   };
 }

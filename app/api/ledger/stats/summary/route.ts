@@ -1,65 +1,24 @@
 import type { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
-import { APIError, toErrorResponse } from "@/lib/api/error";
-import { getUserHouseholdId } from "@/lib/api/invitation";
 import { getLedgerStatsSummary } from "@/lib/api/ledger-stats";
-import { getKstNow } from "@/lib/date";
-import { createClient } from "@/lib/supabase/server";
+import {
+  parseLedgerStatsMonth,
+  parseLedgerStatsScope,
+} from "@/lib/api/ledger-stats-query";
+import { respondWithLedgerStats } from "@/lib/api/ledger-stats-route";
 
 /**
  * GET /api/ledger/stats/summary
- * 가계부 통계 대시보드 - 월별 가구 전체 요약
+ * 수입·지출·차액과 공용/내 개인 하위 합계
  *
- * Query params:
- *   ?year=2026&month=4  (없으면 당월)
+ * Query params: ?year=2026&month=4 (없으면 KST 당월), ?book=<장부 ID> (없으면 전체 장부)
  */
-export async function GET(request: NextRequest) {
-  try {
-    const supabase = await createClient();
-
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      throw new APIError("AUTH_UNAUTHORIZED", "로그인이 필요합니다.", 401);
-    }
-
-    const householdId = await getUserHouseholdId(supabase, user.id);
-    if (!householdId) {
-      throw new APIError(
-        "HOUSEHOLD_NOT_FOUND",
-        "가구 정보를 찾을 수 없습니다.",
-        404,
-      );
-    }
-
-    const { searchParams } = request.nextUrl;
-    const now = getKstNow();
-    const year = Number(searchParams.get("year") ?? now.getFullYear());
-    const month = Number(searchParams.get("month") ?? now.getMonth() + 1);
-
-    const data = await getLedgerStatsSummary(
-      supabase,
-      householdId,
-      user.id,
-      year,
-      month,
-    );
-
-    return NextResponse.json({ data });
-  } catch (error) {
-    if (error instanceof APIError) {
-      return NextResponse.json(toErrorResponse(error), {
-        status: error.statusCode,
-      });
-    }
-    return NextResponse.json(
-      {
-        error: { code: "INTERNAL_ERROR", message: "서버 오류가 발생했습니다." },
-      },
-      { status: 500 },
-    );
-  }
+export function GET(request: NextRequest) {
+  return respondWithLedgerStats(
+    request,
+    ({ supabase, householdId, searchParams }) =>
+      getLedgerStatsSummary(supabase, householdId, {
+        ...parseLedgerStatsMonth(searchParams),
+        ...parseLedgerStatsScope(searchParams, "summary"),
+      }),
+  );
 }

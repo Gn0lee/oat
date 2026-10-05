@@ -24,6 +24,13 @@ describe("buildHomeSummary", () => {
     const cashFlow = {
       year: 2026,
       month: 4,
+      bookId: null,
+      total: {
+        totalIncome: 5_800_000,
+        totalExpense: 3_300_000,
+        balance: 2_500_000,
+        savingsRate: 43.1,
+      },
       shared: {
         totalIncome: 5_000_000,
         totalExpense: 3_000_000,
@@ -75,7 +82,7 @@ describe("buildHomeSummary", () => {
       null,
       {
         type: "expense",
-        scope: "shared",
+        bookId: null,
         total: 120_000,
         items: [
           {

@@ -25,8 +25,6 @@
 | **TRANSITIONS.md** | `.claude/docs/` | 화면 전환 UX, SSGOI 사용 기준 |
 | **CONVENTIONS_BE.md** | `.claude/docs/` | 백엔드/API 패턴 |
 | **API.md** | `.claude/docs/` | API 설계 원칙 |
-| **MCP.md** | `.claude/docs/` | MCP 서버 설계, 인증, tool 범위 |
-| **MCP_USAGE.md** | `.claude/docs/` | MCP 배포 후 테스트, 사용법 |
 | **DESIGN.md** | `.claude/docs/` | UI/UX 원칙 |
 | **EXAMPLES.md** | `.claude/docs/` | 코드 예시 모음 |
 | **ENV.md** | `.claude/docs/` | 환경변수 설정 가이드 |
@@ -311,7 +309,5 @@ const totalReturn = ((totalCurrentValue - totalInvestedAmount) / totalInvestedAm
 - `.claude/docs/CONVENTIONS_FE.md` - 프론트엔드 패턴
 - `.claude/docs/CONVENTIONS_BE.md` - 백엔드/API 패턴
 - `.claude/docs/API.md` - API 설계 원칙
-- `.claude/docs/MCP.md` - MCP 서버 설계, 인증, tool 범위
-- `.claude/docs/MCP_USAGE.md` - MCP 배포 후 테스트, 사용법
 - `.claude/docs/DESIGN.md` - UI/UX 원칙
 - `.claude/docs/EXAMPLES.md` - 코드 예시 모음

@@ -386,7 +386,7 @@ import { PageContainer } from "@/components/layout";
 | **Top-level / Hub** | `/home`, `/ledger`, `/assets`, `/assets/stock` | topLevel | default (`max-w-5xl`) |
 | **Analysis** | `/ledger/analysis/**`, `/assets/stock/analysis/**` | child | default (`max-w-5xl`) |
 | **Records Calendar** | `/ledger/records`, `/assets/stock/records` | child | default (`max-w-5xl`) |
-| **Management / Settings** | `/settings`, `/settings/household`, `/settings/notifications`, `/settings/mcp`, `/ledger/categories`, `/ledger/payment-methods`, `/assets/accounts`, `/assets/stock/settings` | topLevel / child | medium (`max-w-3xl`) |
+| **Management / Settings** | `/settings`, `/settings/household`, `/settings/notifications`, `/ledger/categories`, `/ledger/payment-methods`, `/assets/accounts`, `/assets/stock/settings` | topLevel / child | medium (`max-w-3xl`) |
 | **Simple Detail** | `/ledger/records/[entryId]`, `/assets/stock/transactions/[transactionId]`, `/assets/accounts/[accountId]`, `/ledger/payment-methods/[paymentMethodId]` | child | medium (`max-w-3xl`) |
 | **Task / Form** | `/ledger/records/new/*`, `/assets/stock/transactions/new/*`, `/assets/accounts/new`, `/ledger/payment-methods/new` | task | narrow (`max-w-xl`) |
 

@@ -1,17 +1,13 @@
 import { PageContainer } from "@/components/layout";
 import { DailyClient } from "@/components/ledger/analysis/DailyClient";
-import type { StatsScope } from "@/lib/api/ledger-stats";
+import { LedgerAnalysisScope } from "@/components/ledger/analysis/LedgerAnalysisScope";
 
-export default async function DailyPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ scope?: string }>;
-}) {
-  const { scope: rawScope } = await searchParams;
-  const scope = (rawScope === "personal" ? "personal" : "shared") as StatsScope;
+export default function DailyPage() {
   return (
     <PageContainer maxWidth="default">
-      <DailyClient scope={scope} />
+      <LedgerAnalysisScope>
+        <DailyClient />
+      </LedgerAnalysisScope>
     </PageContainer>
   );
 }

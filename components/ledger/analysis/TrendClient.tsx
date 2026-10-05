@@ -26,9 +26,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useLedgerAnalysisUrl } from "@/hooks/use-ledger-analysis-url";
 import { useLedgerStatsTrend } from "@/hooks/use-ledger-stats";
-import type { StatsScope } from "@/lib/api/ledger-stats";
-import { getKstNow } from "@/lib/date";
+import { getKstNow, getKstToday } from "@/lib/date";
+import { ledgerMonthAnchorDate } from "@/lib/ledger-books/navigation";
 import { cn } from "@/lib/utils/cn";
 import { formatCurrency } from "@/lib/utils/format";
 
@@ -44,12 +45,9 @@ function getSavingsRateClassName(savingsRate: number) {
   return "text-red-500";
 }
 
-interface TrendClientProps {
-  scope: StatsScope;
-}
-
-export function TrendClient({ scope }: TrendClientProps) {
-  const { data, isLoading } = useLedgerStatsTrend(6, scope);
+export function TrendClient() {
+  const { bookId } = useLedgerAnalysisUrl();
+  const { data, isLoading } = useLedgerStatsTrend({ months: 6, bookId });
   const [navigationTarget, setNavigationTarget] = useState<{
     year: number;
     month: number;
@@ -81,7 +79,15 @@ export function TrendClient({ scope }: TrendClientProps) {
   const currentYear = getKstNow().getFullYear();
   const currentMonth = getKstNow().getMonth() + 1;
   const targetHref = navigationTarget
-    ? `/ledger/records?year=${navigationTarget.year}&month=${navigationTarget.month}&scope=${scope}&type=${navigationTarget.type}`
+    ? `/ledger/records?${new URLSearchParams({
+        ...(bookId ? { book: bookId } : {}),
+        date: ledgerMonthAnchorDate(
+          navigationTarget.year,
+          navigationTarget.month,
+          getKstToday(),
+        ),
+        type: navigationTarget.type,
+      })}`
     : "/ledger/records";
   const targetTypeLabel = navigationTarget?.type === "income" ? "수입" : "지출";
 
