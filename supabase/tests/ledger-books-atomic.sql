@@ -5,7 +5,7 @@ begin;
 set local plpgsql.check_asserts=on;
 set local statement_timeout='30s';
 set local lock_timeout='5s';
-do $$begin assert current_database()='oat_ledger_books_440_test','scratch only'; end $$;
+do $$begin assert current_database() ~ '^oat_ledger_books_[0-9a-z_]+_test$','scratch only'; end $$;
 create temporary table ids as select key,gen_random_uuid() id from unnest(array[
  'owner','peer','outsider','new','lateowner','h','other','a','b','untracked','peerbank',
  'cash','prepaid','gift_card','credit_card','debit_card','unlinked','usabledebit','foreign','category'
@@ -57,6 +57,12 @@ select id,pg_temp.id('h'),case when key='usabledebit' then pg_temp.id('peer') el
  case when key='debit_card' then pg_temp.id('a') when key='usabledebit' then pg_temp.id('peerbank') end,key='usabledebit'
 from ids where key in ('cash','prepaid','gift_card','credit_card','debit_card','unlinked','usabledebit');
 insert into public.categories(id,household_id,name,type) values(pg_temp.id('category'),pg_temp.id('other'),'foreign','expense');
+-- #446: every create names its book. Resolve the seeded shared default and an
+-- owner personal book while still privileged.
+insert into ids select 'book_shared',id from public.ledger_books where household_id=pg_temp.id('h') and is_default;
+insert into ids values('book_personal',gen_random_uuid());
+insert into public.ledger_books(id,household_id,name,visibility,created_by)
+values(pg_temp.id('book_personal'),pg_temp.id('h'),'owner 개인','personal',pg_temp.id('owner'));
 set local role authenticated;
 select pg_temp.actor('owner');
 do $$declare h uuid;begin
@@ -68,7 +74,7 @@ do $$declare h uuid;begin
  assert (select count(*)=1 from public.household_members where household_id=h and user_id=pg_temp.id('new') and role='owner'),'owner membership';
  assert (select count(*)=1 from public.ledger_books where household_id=h and is_default and visibility='shared' and archived_at is null),'one seeded default';
  perform pg_temp.actor('outsider');
- perform pg_temp.reject(format('select public.write_ledger_entry(%L,%L,%L)','create',pg_temp.id('outsider'),jsonb_build_object('householdId',pg_temp.id('h'),'type','expense','amount',1,'transactedAt','2026-01-01Z')),'LEDGER_FORBIDDEN');
+ perform pg_temp.reject(format('select public.write_ledger_entry(%L,%L,%L)','create',pg_temp.id('outsider'),jsonb_build_object('householdId',pg_temp.id('h'),'bookId',pg_temp.id('book_shared'),'type','expense','amount',1,'transactedAt','2026-01-01Z')),'LEDGER_FORBIDDEN');
  perform pg_temp.actor('owner');
 end $$;
 reset role;
@@ -102,7 +108,7 @@ select pg_temp.actor('lateowner');
 select pg_temp.reject(format('select public.create_household_with_owner(%L)',pg_temp.id('lateowner')),'TEST_LATE_MEMBER');
 select pg_temp.actor('owner');
 do $$declare p jsonb; patch jsonb;begin
- p:=jsonb_build_object('householdId',pg_temp.id('h'),'type','expense','amount',7,'transactedAt','2026-01-01Z','fromAccountId',pg_temp.id('a'),'title','late rollback','tags',jsonb_build_array('Keep','LateFail'));
+ p:=jsonb_build_object('householdId',pg_temp.id('h'),'bookId',pg_temp.id('book_shared'),'type','expense','amount',7,'transactedAt','2026-01-01Z','fromAccountId',pg_temp.id('a'),'title','late rollback','tags',jsonb_build_array('Keep','LateFail'));
  perform pg_temp.reject(format('select public.write_ledger_entry(%L,%L,%L)','create',pg_temp.id('owner'),p),'TEST_LATE_TAG');
  perform pg_temp.reject(format('select public.write_ledger_entry(%L,%L,%L)','create',pg_temp.id('owner'),p||'{"title":"late money"}'),'LEDGER_VALIDATION_ERROR');
  for patch in select value from jsonb_array_elements(jsonb_build_array(
@@ -145,7 +151,7 @@ create function pg_temp.balances() returns numeric[] language sql as $$select ar
 do $$declare c record; e public.ledger_entries; base numeric[]; effects numeric[]; factor integer; j integer;begin
  for c in select * from cases loop
   base:=pg_temp.balances(); effects:=array[c.a,c.b,c.cash,c.prepaid,c.gift,c.peerbank];
-  select * into e from public.write_ledger_entry('create',pg_temp.id('owner'),c.payload||jsonb_build_object('householdId',pg_temp.id('h'),'amount',10,'transactedAt','2026-01-01Z','tags',jsonb_build_array(U&'\00A0# Keep\FEFF','keep')));
+  select * into e from public.write_ledger_entry('create',pg_temp.id('owner'),c.payload||jsonb_build_object('householdId',pg_temp.id('h'),'bookId',pg_temp.id('book_shared'),'amount',10,'transactedAt','2026-01-01Z','tags',jsonb_build_array(U&'\00A0# Keep\FEFF','keep')));
   assert (select count(*)=1 from public.ledger_entry_tags where ledger_entry_id=e.id),'normalized Unicode tags deduplicated';
   for factor in 1..2 loop
    if factor=2 then
@@ -166,11 +172,11 @@ do $$declare c record; e public.ledger_entries; base numeric[]; effects numeric[
 end $$;
 -- Reversal uses old type; own delete survives source permission revocation.
 do $$declare e public.ledger_entries; private_entry public.ledger_entries; before jsonb;begin
- select * into e from public.write_ledger_entry('create',pg_temp.id('owner'),jsonb_build_object('householdId',pg_temp.id('h'),'type','expense','amount',10,'transactedAt','2026-01-01Z','fromPaymentMethodId',pg_temp.id('debit_card')));
+ select * into e from public.write_ledger_entry('create',pg_temp.id('owner'),jsonb_build_object('householdId',pg_temp.id('h'),'bookId',pg_temp.id('book_shared'),'type','expense','amount',10,'transactedAt','2026-01-01Z','fromPaymentMethodId',pg_temp.id('debit_card')));
  perform public.write_ledger_entry('update',pg_temp.id('owner'),'{"type":"non_expense_withdrawal"}',e.id);
  assert (select balance=100 from public.accounts where id=pg_temp.id('a')),'debit expense reversed on type change';
  perform public.write_ledger_entry('delete',pg_temp.id('owner'),'{}',e.id);
- select * into private_entry from public.write_ledger_entry('create',pg_temp.id('owner'),jsonb_build_object('householdId',pg_temp.id('h'),'isShared',false,'type','expense','amount',10,'transactedAt','2026-01-01Z','fromAccountId',pg_temp.id('a')));
+ select * into private_entry from public.write_ledger_entry('create',pg_temp.id('owner'),jsonb_build_object('householdId',pg_temp.id('h'),'bookId',pg_temp.id('book_personal'),'type','expense','amount',10,'transactedAt','2026-01-01Z','fromAccountId',pg_temp.id('a')));
  perform pg_temp.actor('peer');
  assert not exists(select 1 from public.ledger_entries where id=private_entry.id),'private hidden under RLS';
  perform pg_temp.reject(format('select public.write_ledger_entry(%L,%L,%L,%L)','update',pg_temp.id('peer'),'{}',private_entry.id),'LEDGER_NOT_FOUND');
@@ -180,7 +186,7 @@ do $$declare e public.ledger_entries; private_entry public.ledger_entries; befor
  update public.ledger_books set archived_at=now() where id=private_entry.book_id;
  perform pg_temp.reject(format('select public.write_ledger_entry(%L,%L,%L,%L)','update',pg_temp.id('owner'),'{"tags":["edit"]}',private_entry.id),'LEDGER_BOOK_ARCHIVED');
  perform pg_temp.reject(format('select public.write_ledger_entry(%L,%L,%L,%L)','delete',pg_temp.id('owner'),'{}',private_entry.id),'LEDGER_BOOK_ARCHIVED');
- perform pg_temp.reject(format('select public.write_ledger_entry(%L,%L,%L)','create',pg_temp.id('owner'),jsonb_build_object('householdId',pg_temp.id('h'),'isShared',false,'type','expense','amount',1,'transactedAt','2026-01-01Z')),'LEDGER_BOOK_ARCHIVED');
+ perform pg_temp.reject(format('select public.write_ledger_entry(%L,%L,%L)','create',pg_temp.id('owner'),jsonb_build_object('householdId',pg_temp.id('h'),'bookId',pg_temp.id('book_personal'),'type','expense','amount',1,'transactedAt','2026-01-01Z')),'LEDGER_BOOK_ARCHIVED');
  update public.ledger_books set archived_at=null where id=private_entry.book_id;
  execute 'reset role'; update public.accounts set owner_id=pg_temp.id('peer') where id=pg_temp.id('a'); execute 'set local role authenticated';
  perform public.write_ledger_entry('update',pg_temp.id('owner'),'{"tags":["stilleditable"]}',private_entry.id);
@@ -191,7 +197,7 @@ reset role;
 set local role service_role;
 select set_config('request.jwt.claims','{"role":"service_role"}',true);
 select pg_temp.reject(format('select public.create_household_with_owner(%L)',gen_random_uuid()),'AUTH_UNAUTHORIZED');
-select pg_temp.reject(format('select public.write_ledger_entry(%L,%L,%L)','create',pg_temp.id('outsider'),jsonb_build_object('householdId',pg_temp.id('h'),'type','expense','amount',1,'transactedAt','2026-01-01Z')),'LEDGER_FORBIDDEN');
+select pg_temp.reject(format('select public.write_ledger_entry(%L,%L,%L)','create',pg_temp.id('outsider'),jsonb_build_object('householdId',pg_temp.id('h'),'bookId',pg_temp.id('book_shared'),'type','expense','amount',1,'transactedAt','2026-01-01Z')),'LEDGER_FORBIDDEN');
 reset role;
 set constraints all immediate;
 rollback;
