@@ -16,6 +16,10 @@ import {
   stockTransactionUpdateProposedChangesSchema,
 } from "@/schemas/record-change-request";
 import type { Database, Json, RecordChangeRequest } from "@/types";
+import {
+  createLedgerReclassifyRequest,
+  resolveLedgerReclassifyRequest,
+} from "./ledger-reclassify-requests";
 import { notifyRecordChangeRequestResult } from "./record-change-request-notifications";
 
 export interface ValidatedRecordChangeRequestTarget {
@@ -320,7 +324,7 @@ export function validateStockTransactionRecordChangeRequestInput(
 async function buildStockTransactionRequestNotificationTitle(
   supabase: SupabaseClient<Database>,
   requesterId: string,
-  requestType: "update" | "delete",
+  requestType: CreateRecordChangeRequestInput["requestType"],
   targetSnapshot: Record<string, unknown>,
 ) {
   const { data } = await supabase
@@ -341,6 +345,10 @@ export async function createRecordChangeRequest(
   requesterId: string,
   input: CreateRecordChangeRequestInput,
 ): Promise<RecordChangeRequest> {
+  if (input.requestType === "reclassify") {
+    return createLedgerReclassifyRequest(supabase, input);
+  }
+
   validateLedgerRecordChangeRequestInput(input);
   validateStockTransactionRecordChangeRequestInput(input);
 
@@ -626,6 +634,7 @@ export async function cancelRecordChangeRequest(
   const request = await getRecordChangeRequestById(supabase, userId, id);
   assertCanCancelRecordChangeRequest(request, userId);
 
+  // 승인·만료와 경합하면 이미 끝난 요청을 덮어쓰지 않는다.
   const { data, error } = await supabase
     .from("record_change_requests")
     .update({
@@ -634,11 +643,21 @@ export async function cancelRecordChangeRequest(
       updated_at: new Date().toISOString(),
     })
     .eq("id", id)
+    .eq("status", "pending")
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) {
     throw error;
+  }
+  if (!data) {
+    throw new APIError(
+      request.request_type === "reclassify"
+        ? "REQUEST_NOT_PENDING"
+        : "RECORD_CHANGE_REQUEST_NOT_PENDING",
+      "이미 처리된 요청입니다.",
+      409,
+    );
   }
 
   await notifyRecordChangeRequestResult(data);
@@ -653,6 +672,9 @@ export async function resolveRecordChangeRequest(
   input: ResolveRecordChangeRequestInput,
 ): Promise<RecordChangeRequest> {
   const request = await getRecordChangeRequestById(supabase, userId, id);
+  if (request.request_type === "reclassify") {
+    return resolveLedgerReclassifyRequest(supabase, id, input);
+  }
   assertCanResolveRecordChangeRequest(request, userId);
 
   if (input.decision === "approved") {
