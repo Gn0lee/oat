@@ -13,8 +13,8 @@
 
 ## 시작 전에 정할 것
 
-1. **배포할 앱 버전.** 현재 운영 앱은 2026-09-18 배포한 `4f7ca4b`다. `Gn0lee/issue-428-iphone-input` 브랜치 빌드이고 main에는 없다. main은 #428을 #439로 되돌렸다. 따라서 이번 main 배포에서는 #428의 iPhone 입력 드로어 수정이 빠진다. 배포할 커밋을 정해 기록한다. 기본값은 #446 PR A까지 병합된 main이다.
-2. **구버전 수정 공백.** 운영 앱(`4f7ca4b`)은 `ledger_entries`를 직접 INSERT·UPDATE·DELETE한다. #442 마이그레이션은 authenticated의 직접 UPDATE 권한을 회수한다. 리허설에서 #442 적용 직후 구버전의 기록 **수정**이 `permission denied`로 실패했다. 입력·삭제·조회·검색은 계속 됐다. 그래서 4~6단계는 쉬지 않고 이어서 하고, 그동안 가족에게 기록 수정을 잠시 멈추도록 알린다. 1~3단계(#440·#441)는 구버전 입력·수정·삭제·검색을 모두 유지한다.
+1. **배포할 앱 버전.** #446 PR A까지 병합된 main을 배포하고 커밋을 기록한다. 현재 운영 앱 `4f7ca4b`는 #428 브랜치 빌드다. main은 #439에서 #428을 되돌렸는데, 써 보니 더 불편해서 일부러 되돌린 것이다(2026-10-05 사용자 확인). 그래서 이번 배포로 #428 동작이 빠지는 것이 의도와 맞다.
+2. **구버전 수정 공백.** 운영 앱(`4f7ca4b`)은 `ledger_entries`를 직접 UPDATE한다. #442 마이그레이션 직후부터 새 앱 배포 전까지는 구버전에서 기록 **수정**이 `permission denied`로 실패한다(리허설 확인). 입력·삭제·조회·검색은 된다. 4~7단계는 이어서 진행하고, 그 사이 구버전 사용은 없다(2026-10-05 사용자 확인).
 3. **감사 증빙.** #440 기준 추출 **전에** 모든 쓰기 경로를 덮는 감사 창이나 WAL 증빙이 있어야 한다([#440 체크포인트](ledger-books-migration.md#실행-전-체크포인트)). 없으면 시작하지 않는다.
 4. **연결.** PG 연결 환경변수(`PGHOST`, `PGUSER`, `PGDATABASE`, `PGPASSWORD` 또는 `.pgpass`)를 안전하게 주입한다. `supabase link`의 대상과 같은 운영 DB인지 확인한다. 명령 인수나 출력에 연결 정보를 남기지 않는다. 아래 명령은 모두 저장소 루트에서 실행한다.
 5. **보안 저장소.** 체크포인트 파일과 기록을 둘 경로 `$SECURE`(암호화, 운영 담당자만 읽기)를 정한다.
@@ -50,7 +50,7 @@
 | 1-11 | enforce `20261002063305_enforce_ledger_books_not_null.sql` + repair, 이어서 1-6 쿼리 재실행 | 성공, 두 수치 0 | 결과 |
 | 1-12 | atomic `20261002111422_atomic_ledger_writes.sql` + repair | 성공 | — |
 | 2 | #441 `20261004034539_ledger_book_management.sql` + repair | `to_regprocedure('public.mutate_ledger_book(uuid,text,text)') is not null` | — |
-| 3 | 두 계정으로 구버전 앱 입력·조회·검색을 짧게 확인 | 정상. 4단계로 넘어가기 전 가족에게 수정 중지를 알린다 | 시각 |
+| 3 | 두 계정으로 구버전 앱 입력·조회·검색을 짧게 확인 | 정상 | 시각 |
 | 4-1 | #442 enum `20261004083722_ledger_entry_request_expiry.sql` + repair (단독 커밋) | 성공 | — |
 | 4-2 | #442 writer `20261004083724_ledger_book_entry_writes.sql` + repair | 아래 확인 쿼리 `f|t` | 결과 |
 | 5-0 | #444 사전 점검([#444 0단계](ledger-reclassify-requests.md#0-사전-점검)) | 전부 `t`. 요청 상태 분포 기록 | 분포 |
@@ -100,7 +100,7 @@ select has_table_privilege('authenticated','public.ledger_entries','UPDATE'),
 - [ ] 입력·권한 오류 없음(두 모바일 2단계 입력 포함)
 - [ ] 접근성 기본 기준: 44px 터치 영역, 버튼 이름·상태, 키보드·포커스 복귀(자동·모바일 브라우저 검증 기록)
 - [ ] 실제 iPhone 설치형 PWA·Safari: 배포 후 실사용 중 진행하고 결과를 기록한다. 출시 blocker가 아니다(2026-10-04 결정). VoiceOver는 선택이다.
-- [ ] 구버전 요청 관측 시작일 기록. 관측 기간 0건이 확인돼야 #446 PR C(`is_shared`·레거시 제거)를 진행한다.
+- [ ] 배포 후 확인 통과 직후 #446 PR C(`is_shared`·레거시 제거, MCP 테이블 삭제)를 진행한다. 별도 관측 기간은 두지 않고, 진행 직전에 배포 이후 `legacy-ledger-contract` 0건만 확인한다(2026-10-05 사용자 결정). 절차는 PR C의 `docs/ledger-legacy-removal.md`.
 
 기능에 영향 없는 시각적 미세 조정만 후속으로 미룰 수 있다.
 
