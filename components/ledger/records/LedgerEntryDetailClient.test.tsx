@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { useCurrentUserId } from "@/hooks/use-current-user";
 import { useLedgerEntry } from "@/hooks/use-ledger-entries";
@@ -20,6 +20,16 @@ vi.mock("@/hooks/use-ledger-entries", () => ({
   useLedgerEntry: vi.fn(),
 }));
 
+const ledgerBooks = vi.hoisted(() => ({
+  data: [
+    { id: "book-1", name: "생활비", visibility: "shared", archivedAt: null },
+    { id: "book-2", name: "여행", visibility: "shared", archivedAt: null },
+  ] as unknown[],
+}));
+vi.mock("@/hooks/use-ledger-books", () => ({
+  useLedgerBooks: () => ledgerBooks,
+}));
+
 vi.mock("@/components/ledger/CategoryIcon", () => ({
   CategoryIcon: ({ iconName }: { iconName: string | null }) => (
     <span data-icon-name={iconName ?? "fallback"} />
@@ -36,6 +46,11 @@ vi.mock("@/components/ledger/LedgerEntryDeleteDialog", () => ({
 
 vi.mock("@/components/ledger/LedgerEntryChangeRequestDialog", () => ({
   LedgerEntryChangeRequestDialog: () => null,
+}));
+
+vi.mock("@/components/ledger/LedgerEntryReclassifyRequestDialog", () => ({
+  LedgerEntryReclassifyRequestDialog: ({ open }: { open: boolean }) =>
+    open ? <div role="dialog" aria-label="장부 이동 요청 열림" /> : null,
 }));
 
 const mockEntry: LedgerEntryWithDetails = {
@@ -239,5 +254,73 @@ describe("LedgerEntryDetailClient", () => {
     expect(
       screen.queryByRole("button", { name: "기록 수정 요청" }),
     ).not.toBeInTheDocument();
+  });
+
+  describe("장부 이동 요청", () => {
+    const activeShared = {
+      ...mockEntry,
+      bookId: "book-1",
+      book: { name: "생활비", visibility: "shared", archivedAt: null },
+    };
+
+    it.each([
+      ["다른 구성원의 활성 공용 기록", "non-owner", activeShared, true],
+      [
+        "다른 구성원의 공용 이체 기록",
+        "non-owner",
+        { ...activeShared, type: "transfer" },
+        true,
+      ],
+      ["작성자 본인 기록", "owner-1", activeShared, false],
+      [
+        "보관된 장부의 기록",
+        "non-owner",
+        {
+          ...activeShared,
+          book: { ...activeShared.book, archivedAt: "2026-09-01T00:00:00Z" },
+        },
+        false,
+      ],
+    ])("%s: 노출=%s", (_label, userId, entry, visible) => {
+      vi.mocked(useCurrentUserId).mockReturnValue({
+        userId: userId as string,
+        isLoading: false,
+      });
+      vi.mocked(useLedgerEntry).mockReturnValue({
+        data: entry,
+        isLoading: false,
+        error: null,
+      } as never);
+      render(<LedgerEntryDetailClient entryId="entry-1" />);
+      const button = screen.queryByRole("button", { name: "장부 이동 요청" });
+      if (visible) {
+        expect(button).toBeInTheDocument();
+        fireEvent.click(button as HTMLElement);
+        expect(
+          screen.getByRole("dialog", { name: "장부 이동 요청 열림" }),
+        ).toBeInTheDocument();
+      } else {
+        expect(button).not.toBeInTheDocument();
+      }
+    });
+
+    it("옮길 수 있는 다른 공용 장부가 없으면 요청 버튼을 숨긴다", () => {
+      const original = ledgerBooks.data;
+      ledgerBooks.data = [original[0]];
+      vi.mocked(useCurrentUserId).mockReturnValue({
+        userId: "non-owner",
+        isLoading: false,
+      });
+      vi.mocked(useLedgerEntry).mockReturnValue({
+        data: activeShared,
+        isLoading: false,
+        error: null,
+      } as never);
+      render(<LedgerEntryDetailClient entryId="entry-1" />);
+      expect(
+        screen.queryByRole("button", { name: "장부 이동 요청" }),
+      ).not.toBeInTheDocument();
+      ledgerBooks.data = original;
+    });
   });
 });

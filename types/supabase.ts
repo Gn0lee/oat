@@ -1439,6 +1439,23 @@ export type Database = {
       is_admin: { Args: never; Returns: boolean };
       is_household_member: { Args: { hh_id: string }; Returns: boolean };
       is_household_owner: { Args: { hh_id: string }; Returns: boolean };
+      create_ledger_reclassify_request: {
+        Args: {
+          p_entry_id: string;
+          p_book_id: string;
+          p_expected_entry_updated_at: string;
+          p_message?: string | null;
+        };
+        Returns: Database["public"]["Tables"]["record_change_requests"]["Row"];
+      };
+      resolve_ledger_reclassify_request: {
+        Args: {
+          p_request_id: string;
+          p_decision: string;
+          p_response_message?: string | null;
+        };
+        Returns: Database["public"]["Tables"]["record_change_requests"]["Row"];
+      };
       make_default_ledger_book: {
         Args: { p_book_id: string };
         Returns: Database["public"]["Tables"]["ledger_books"]["Row"];
@@ -1600,7 +1617,7 @@ export type Database = {
         | "cancelled"
         | "expired";
       record_change_request_target_type: "ledger_entry" | "stock_transaction";
-      record_change_request_type: "update" | "delete";
+      record_change_request_type: "update" | "delete" | "reclassify";
       risk_level: "safe" | "moderate" | "aggressive";
       stock_type_category:
         | "stock"
@@ -1822,7 +1839,7 @@ export const Constants = {
         "expired",
       ],
       record_change_request_target_type: ["ledger_entry", "stock_transaction"],
-      record_change_request_type: ["update", "delete"],
+      record_change_request_type: ["update", "delete", "reclassify"],
       risk_level: ["safe", "moderate", "aggressive"],
       stock_type_category: [
         "stock",

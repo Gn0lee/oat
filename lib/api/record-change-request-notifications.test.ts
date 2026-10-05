@@ -20,6 +20,7 @@ describe("record change request result notification helpers", () => {
       requester_id: "requester-1",
       target_owner_id: "owner-1",
       target_type: "ledger_entry",
+      request_type: "update" as const,
       status: "approved",
       response_message: "반영했습니다.",
     });
@@ -50,6 +51,7 @@ describe("record change request result notification helpers", () => {
       requester_id: "requester-1",
       target_owner_id: "owner-1",
       target_type: "stock_transaction",
+      request_type: "update" as const,
       status: "rejected",
       response_message: null,
     });
@@ -73,6 +75,7 @@ describe("record change request result notification helpers", () => {
       requester_id: "requester-1",
       target_owner_id: "owner-1",
       target_type: "ledger_entry",
+      request_type: "update" as const,
       status: "cancelled",
       response_message: null,
     });
@@ -103,6 +106,7 @@ describe("record change request result notification helpers", () => {
         requester_id: "requester-1",
         target_owner_id: "owner-1",
         target_type: "ledger_entry",
+        request_type: "update" as const,
         status: "approved",
         response_message: null,
       }),

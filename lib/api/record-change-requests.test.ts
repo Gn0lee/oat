@@ -7,15 +7,31 @@ import { deleteTransaction, updateTransaction } from "@/lib/api/transaction";
 import type { RecordChangeRequest } from "@/types";
 import { APIError } from "./error";
 import {
+  createLedgerReclassifyRequest,
+  resolveLedgerReclassifyRequest,
+} from "./ledger-reclassify-requests";
+import {
   applyApprovedRecordChangeRequest,
   assertCanCancelRecordChangeRequest,
   assertCanResolveRecordChangeRequest,
   buildRecordChangeRequestInsert,
+  cancelRecordChangeRequest,
+  createRecordChangeRequest,
   getRecordChangeRequestListQuery,
+  resolveRecordChangeRequest,
   validateLedgerRecordChangeRequestInput,
   validateRecordChangeRequestTarget,
   validateStockTransactionRecordChangeRequestInput,
 } from "./record-change-requests";
+
+vi.mock("./ledger-reclassify-requests", () => ({
+  createLedgerReclassifyRequest: vi.fn(),
+  resolveLedgerReclassifyRequest: vi.fn(),
+}));
+
+vi.mock("./record-change-request-notifications", () => ({
+  notifyRecordChangeRequestResult: vi.fn().mockResolvedValue(undefined),
+}));
 
 vi.mock("@/lib/api/ledger", () => ({
   deleteLedgerEntryWithBalanceSync: vi.fn().mockResolvedValue(undefined),
@@ -450,5 +466,124 @@ describe("applyApprovedRecordChangeRequest", () => {
         409,
       ),
     );
+  });
+});
+
+function createRequestQueryMock(
+  request: Partial<RecordChangeRequest>,
+  updated: Partial<RecordChangeRequest> | null,
+) {
+  const select = {
+    select: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    or: vi.fn().mockReturnThis(),
+    single: vi.fn().mockResolvedValue({ data: request, error: null }),
+  };
+  const update = {
+    update: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    select: vi.fn().mockReturnThis(),
+    maybeSingle: vi.fn().mockResolvedValue({ data: updated, error: null }),
+  };
+  let calls = 0;
+  return {
+    from: vi.fn(() => (calls++ === 0 ? select : update)),
+    update,
+  };
+}
+
+describe("reclassify request routing", () => {
+  const reclassifyInput = {
+    targetType: "ledger_entry" as const,
+    targetId: "00000000-0000-4000-8000-000000000001",
+    requestType: "reclassify" as const,
+    proposedChanges: { bookId: "00000000-0000-4000-8000-000000000002" },
+    expectedEntryUpdatedAt: "2026-10-05T00:00:00Z",
+  };
+
+  it("장부 이동 요청 생성은 전용 RPC 경로로 보낸다", async () => {
+    const created = { id: "request-1" } as RecordChangeRequest;
+    vi.mocked(createLedgerReclassifyRequest).mockResolvedValueOnce(created);
+    const supabase = { from: vi.fn() };
+
+    await expect(
+      createRecordChangeRequest(
+        supabase as never,
+        "requester-1",
+        reclassifyInput,
+      ),
+    ).resolves.toBe(created);
+    expect(createLedgerReclassifyRequest).toHaveBeenCalledWith(
+      supabase,
+      reclassifyInput,
+    );
+    expect(supabase.from).not.toHaveBeenCalled();
+  });
+
+  it("장부 이동 요청 처리는 상태 확인을 DB 트랜잭션에 맡긴다", async () => {
+    const resolved = {
+      id: "request-1",
+      status: "approved",
+    } as RecordChangeRequest;
+    vi.mocked(resolveLedgerReclassifyRequest).mockResolvedValueOnce(resolved);
+    const supabase = createRequestQueryMock(
+      {
+        id: "request-1",
+        request_type: "reclassify",
+        status: "approved",
+        requester_id: "requester-1",
+        target_owner_id: "owner-1",
+      },
+      null,
+    );
+
+    await expect(
+      resolveRecordChangeRequest(supabase as never, "owner-1", "request-1", {
+        decision: "approved",
+      }),
+    ).resolves.toBe(resolved);
+    expect(resolveLedgerReclassifyRequest).toHaveBeenCalledWith(
+      supabase,
+      "request-1",
+      { decision: "approved" },
+    );
+  });
+});
+
+describe("cancelRecordChangeRequest", () => {
+  it("대기 중일 때만 조건부로 취소하고, 그 사이 처리됐으면 409를 던진다", async () => {
+    const supabase = createRequestQueryMock(
+      {
+        id: "request-1",
+        request_type: "reclassify",
+        status: "pending",
+        requester_id: "requester-1",
+        target_owner_id: "owner-1",
+      },
+      null,
+    );
+
+    await expect(
+      cancelRecordChangeRequest(supabase as never, "requester-1", "request-1"),
+    ).rejects.toMatchObject({ code: "REQUEST_NOT_PENDING", statusCode: 409 });
+    expect(supabase.update.eq).toHaveBeenCalledWith("status", "pending");
+  });
+
+  it("대기 중인 요청은 취소된다", async () => {
+    const cancelled = { id: "request-1", status: "cancelled" as const };
+    const supabase = createRequestQueryMock(
+      {
+        id: "request-1",
+        request_type: "update",
+        status: "pending",
+        requester_id: "requester-1",
+        target_owner_id: "owner-1",
+      },
+      cancelled,
+    );
+
+    await expect(
+      cancelRecordChangeRequest(supabase as never, "requester-1", "request-1"),
+    ).resolves.toBe(cancelled);
   });
 });

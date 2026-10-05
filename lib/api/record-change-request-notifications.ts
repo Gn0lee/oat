@@ -8,6 +8,7 @@ type RecordChangeRequestResultNotification = Pick<
   | "requester_id"
   | "target_owner_id"
   | "target_type"
+  | "request_type"
   | "status"
   | "response_message"
 >;
@@ -32,6 +33,8 @@ function getStatusLabel(status: RecordChangeRequest["status"]) {
       return "거절";
     case "cancelled":
       return "취소";
+    case "expired":
+      return "만료";
     default:
       return null;
   }
@@ -54,7 +57,10 @@ export async function notifyRecordChangeRequestResult(
       recipientId,
       householdId: request.household_id,
       type: getRequestResultType(request.target_type),
-      title: `${domainLabel} 변경 요청이 ${statusLabel}되었습니다`,
+      title:
+        request.request_type === "reclassify"
+          ? `장부 이동 요청이 ${statusLabel}되었습니다`
+          : `${domainLabel} 변경 요청이 ${statusLabel}되었습니다`,
       body: request.response_message ?? null,
       link: {
         kind: "record_change_request_detail",

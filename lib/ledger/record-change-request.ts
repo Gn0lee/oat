@@ -1,5 +1,6 @@
 import type { LedgerEntryWithDetails } from "@/lib/api/ledger";
 import type { LedgerRecordUpdateProposedChanges } from "@/schemas/record-change-request";
+import type { LedgerBook } from "@/types/ledger-book";
 
 export interface LedgerRecordUpdateRequestFormValues {
   amount: number;
@@ -74,4 +75,16 @@ export function buildLedgerRecordUpdateProposedChanges(
   applyMoneySourceChange(entry, values.moneySourceId, changes);
 
   return changes;
+}
+
+// 장부 이동 요청의 목적지: 현재 장부를 뺀 활성 공용 장부 (#437)
+export function getReclassifyDestinations<
+  T extends Pick<LedgerBook, "id" | "visibility" | "archivedAt">,
+>(books: T[], currentBookId: string | null | undefined): T[] {
+  return books.filter(
+    (book) =>
+      book.visibility === "shared" &&
+      !book.archivedAt &&
+      book.id !== currentBookId,
+  );
 }

@@ -120,6 +120,19 @@ function getSnapshotMeta(snapshot: Record<string, unknown>) {
   ];
 }
 
+const REQUEST_TYPE_LABELS: Record<RecordChangeRequest["request_type"], string> =
+  {
+    update: "수정 요청",
+    delete: "삭제 요청",
+    reclassify: "장부 이동 요청",
+  };
+
+function getExpiredNote(requestType: RecordChangeRequest["request_type"]) {
+  return requestType === "reclassify"
+    ? "요청한 뒤 기록이나 장부가 바뀌어 만료되었습니다. 기록 상세에서 다시 요청할 수 있습니다."
+    : "요청한 뒤 기록이 바뀌어 만료되었습니다.";
+}
+
 export function RecordChangeRequestDetailClient({
   requestId,
 }: RecordChangeRequestDetailClientProps) {
@@ -197,9 +210,7 @@ export function RecordChangeRequestDetailClient({
       <ScreenSection>
         <SectionHeader
           title={getSnapshotTitle(snapshot)}
-          description={
-            request.request_type === "update" ? "수정 요청" : "삭제 요청"
-          }
+          description={REQUEST_TYPE_LABELS[request.request_type]}
           action={
             <Badge
               variant={request.status === "pending" ? "default" : "outline"}
@@ -208,6 +219,11 @@ export function RecordChangeRequestDetailClient({
             </Badge>
           }
         />
+        {request.status === "expired" ? (
+          <p className="mb-3 text-sm text-gray-600">
+            {getExpiredNote(request.request_type)}
+          </p>
+        ) : null}
         <GroupedList>
           {getSnapshotMeta(snapshot).map((item) => (
             <DetailInfoRow
@@ -219,7 +235,21 @@ export function RecordChangeRequestDetailClient({
         </GroupedList>
       </ScreenSection>
 
-      {request.request_type === "update" ? (
+      {request.request_type === "reclassify" ? (
+        <ScreenSection>
+          <SectionHeader title="장부 이동" />
+          <GroupedList>
+            <DetailInfoRow
+              label="현재 장부"
+              value={formatValue(snapshot.sourceBookName)}
+            />
+            <DetailInfoRow
+              label="옮길 장부"
+              value={formatValue(snapshot.destinationBookName)}
+            />
+          </GroupedList>
+        </ScreenSection>
+      ) : request.request_type === "update" ? (
         <ScreenSection>
           <SectionHeader title="변경 내용" />
           <GroupedList>
@@ -252,7 +282,7 @@ export function RecordChangeRequestDetailClient({
         </ScreenSection>
       )}
 
-      {request.message && request.request_type === "update" ? (
+      {request.message && request.request_type !== "delete" ? (
         <ScreenSection>
           <SectionHeader title="요청 메시지" />
           <div className="rounded-xl border border-gray-100 bg-white p-4">
@@ -276,6 +306,7 @@ export function RecordChangeRequestDetailClient({
               <Button
                 type="button"
                 variant="outline"
+                className="min-h-11"
                 onClick={() => handleResolve("rejected")}
                 disabled={resolveMutation.isPending}
               >
@@ -284,6 +315,7 @@ export function RecordChangeRequestDetailClient({
               </Button>
               <Button
                 type="button"
+                className="min-h-11"
                 onClick={() => handleResolve("approved")}
                 disabled={resolveMutation.isPending}
               >
@@ -299,7 +331,7 @@ export function RecordChangeRequestDetailClient({
         <Button
           type="button"
           variant="outline"
-          className="w-full"
+          className="min-h-11 w-full"
           onClick={handleCancel}
           disabled={cancelMutation.isPending}
         >

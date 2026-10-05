@@ -1,6 +1,6 @@
 "use client";
 
-import { Pencil, Trash2 } from "lucide-react";
+import { FolderInput, Pencil, Trash2 } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import {
@@ -12,6 +12,7 @@ import { CategoryIcon } from "@/components/ledger/CategoryIcon";
 import { LedgerEntryChangeRequestDialog } from "@/components/ledger/LedgerEntryChangeRequestDialog";
 import { LedgerEntryDeleteDialog } from "@/components/ledger/LedgerEntryDeleteDialog";
 import { LedgerEntryEditDialog } from "@/components/ledger/LedgerEntryEditDialog";
+import { LedgerEntryReclassifyRequestDialog } from "@/components/ledger/LedgerEntryReclassifyRequestDialog";
 import { DetailInfoRow } from "@/components/records/DetailInfoRow";
 import { RecordMissingState } from "@/components/records/RecordMissingState";
 import { Badge } from "@/components/ui/badge";
@@ -27,10 +28,12 @@ import {
   resolveServiceParentHref,
 } from "@/constants/service-routes";
 import { useCurrentUserId } from "@/hooks/use-current-user";
+import { useLedgerBooks } from "@/hooks/use-ledger-books";
 import { useLedgerEntry } from "@/hooks/use-ledger-entries";
 import { ApiQueryError } from "@/lib/api/client";
 import type { LedgerEntryWithDetails } from "@/lib/api/ledger";
 import { formatKst } from "@/lib/date";
+import { getReclassifyDestinations } from "@/lib/ledger/record-change-request";
 import { safeLedgerReturnTo } from "@/lib/ledger-books/navigation";
 
 interface LedgerEntryDetailClientProps {
@@ -75,10 +78,12 @@ export function LedgerEntryDetailClient({
   const searchParams = useSearchParams();
   const { userId } = useCurrentUserId();
   const { data: entry, isLoading, error } = useLedgerEntry(entryId);
+  const { data: books = [] } = useLedgerBooks();
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [requestMode, setRequestMode] = useState<RequestMode>("update");
   const [requestOpen, setRequestOpen] = useState(false);
+  const [reclassifyOpen, setReclassifyOpen] = useState(false);
 
   const directReturn = entry?.bookId
     ? `/ledger/records?book=${entry.bookId}&date=${formatKst(entry.transactedAt)}`
@@ -128,6 +133,12 @@ export function LedgerEntryDetailClient({
   const hasActions = !entry.book?.archivedAt && (isOwner || canRequest);
   const showUpdateAction = hasActions && canUpdate;
   const showDeleteAction = hasActions;
+  // 타인 공용 기록은 장부를 직접 바꿀 수 없고 작성자에게 이동을 요청한다 (#437).
+  const canRequestReclassify =
+    canRequest &&
+    entry.book?.visibility === "shared" &&
+    !entry.book.archivedAt &&
+    getReclassifyDestinations(books, entry.bookId).length > 0;
   const typeLabel = getTypeLabel(entry.type);
   const typeVariant =
     entry.type === "expense" || entry.type === "non_expense_withdrawal"
@@ -294,6 +305,20 @@ export function LedgerEntryDetailClient({
             )}
           </GroupedList>
         </ScreenSection>
+
+        {canRequestReclassify && (
+          <ScreenSection>
+            <Button
+              type="button"
+              variant="outline"
+              className="min-h-11 w-full"
+              onClick={() => setReclassifyOpen(true)}
+            >
+              <FolderInput aria-hidden className="size-4" />
+              장부 이동 요청
+            </Button>
+          </ScreenSection>
+        )}
       </div>
 
       <LedgerEntryEditDialog
@@ -323,6 +348,11 @@ export function LedgerEntryDetailClient({
         mode={requestMode}
         open={requestOpen}
         onOpenChange={setRequestOpen}
+      />
+      <LedgerEntryReclassifyRequestDialog
+        entry={entry}
+        open={reclassifyOpen}
+        onOpenChange={setReclassifyOpen}
       />
     </>
   );

@@ -9,7 +9,11 @@ export type RecordChangeRequestTargetType = z.infer<
   typeof recordChangeRequestTargetTypeSchema
 >;
 
-export const recordChangeRequestTypeSchema = z.enum(["update", "delete"]);
+export const recordChangeRequestTypeSchema = z.enum([
+  "update",
+  "delete",
+  "reclassify",
+]);
 
 export type RecordChangeRequestType = z.infer<
   typeof recordChangeRequestTypeSchema
@@ -93,13 +97,57 @@ export type StockTransactionUpdateProposedChanges = z.infer<
   typeof stockTransactionUpdateProposedChangesSchema
 >;
 
-export const createRecordChangeRequestSchema = z.object({
-  targetType: recordChangeRequestTargetTypeSchema,
-  targetId: z.uuid("유효한 대상 ID가 아닙니다."),
-  requestType: recordChangeRequestTypeSchema,
-  message: z.string().max(1000, "메시지는 1000자 이내여야 합니다.").optional(),
-  proposedChanges: jsonObjectSchema.default({}),
-});
+// 장부 이동 요청은 목적 장부 하나만 담는다. 금액 등 수정 요청과 섞지 않는다.
+export const ledgerReclassifyProposedChangesSchema = z
+  .object({ bookId: z.uuid("유효한 장부 ID가 아닙니다.") })
+  .strict();
+
+export type LedgerReclassifyProposedChanges = z.infer<
+  typeof ledgerReclassifyProposedChangesSchema
+>;
+
+export const createRecordChangeRequestSchema = z
+  .object({
+    targetType: recordChangeRequestTargetTypeSchema,
+    targetId: z.uuid("유효한 대상 ID가 아닙니다."),
+    requestType: recordChangeRequestTypeSchema,
+    message: z
+      .string()
+      .max(1000, "메시지는 1000자 이내여야 합니다.")
+      .optional(),
+    proposedChanges: jsonObjectSchema.default({}),
+    expectedEntryUpdatedAt: z
+      .string()
+      .datetime({ offset: true, message: "올바른 기록 버전이 아닙니다." })
+      .optional(),
+  })
+  .superRefine((value, ctx) => {
+    if (value.requestType !== "reclassify") return;
+    if (value.targetType !== "ledger_entry") {
+      ctx.addIssue({
+        code: "custom",
+        path: ["targetType"],
+        message: "가계부 기록만 장부 이동을 요청할 수 있습니다.",
+      });
+    }
+    if (!value.expectedEntryUpdatedAt) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["expectedEntryUpdatedAt"],
+        message: "기록 버전이 필요합니다.",
+      });
+    }
+    const changes = ledgerReclassifyProposedChangesSchema.safeParse(
+      value.proposedChanges,
+    );
+    if (!changes.success) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["proposedChanges"],
+        message: "이동할 장부 하나만 선택해주세요.",
+      });
+    }
+  });
 
 export type CreateRecordChangeRequestInput = z.infer<
   typeof createRecordChangeRequestSchema

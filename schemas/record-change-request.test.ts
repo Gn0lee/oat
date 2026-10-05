@@ -47,6 +47,51 @@ describe("createRecordChangeRequestSchema", () => {
   });
 });
 
+describe("createRecordChangeRequestSchema reclassify", () => {
+  const bookId = "00000000-0000-4000-8000-000000000002";
+  const base = {
+    targetType: "ledger_entry",
+    targetId: uuid,
+    requestType: "reclassify",
+    proposedChanges: { bookId },
+    expectedEntryUpdatedAt: "2026-10-05T01:02:03.123456+00:00",
+  };
+
+  it("장부 이동 요청은 bookId와 기록 버전만 담는다", () => {
+    const result = createRecordChangeRequestSchema.safeParse(base);
+    expect(result.success).toBe(true);
+  });
+
+  it("장부 이동 요청에는 기록 버전이 필요하다", () => {
+    const { expectedEntryUpdatedAt: _omit, ...rest } = base;
+    expect(createRecordChangeRequestSchema.safeParse(rest).success).toBe(false);
+  });
+
+  it("장부 이동 요청은 금액 등 다른 변경을 함께 담을 수 없다", () => {
+    const result = createRecordChangeRequestSchema.safeParse({
+      ...base,
+      proposedChanges: { bookId, amount: 1000 },
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("장부 이동 요청은 유효한 장부 ID가 필요하다", () => {
+    const result = createRecordChangeRequestSchema.safeParse({
+      ...base,
+      proposedChanges: { bookId: "nope" },
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("주식 거래에는 장부 이동 요청을 만들 수 없다", () => {
+    const result = createRecordChangeRequestSchema.safeParse({
+      ...base,
+      targetType: "stock_transaction",
+    });
+    expect(result.success).toBe(false);
+  });
+});
+
 describe("ledgerRecordUpdateProposedChangesSchema", () => {
   it("가계부 수정 요청에 허용된 변경 필드를 파싱한다", () => {
     const result = ledgerRecordUpdateProposedChangesSchema.safeParse({
