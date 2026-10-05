@@ -4,6 +4,7 @@ import { APIError, toErrorResponse } from "@/lib/api/error";
 import { getUserHouseholdId } from "@/lib/api/invitation";
 import { createBatchLedgerEntriesWithBalanceSync } from "@/lib/api/ledger";
 import { notifyBatchLedgerEntriesCreated } from "@/lib/api/ledger-notifications";
+import { logLegacyLedgerContract } from "@/lib/api/legacy-ledger-contract";
 import { createClient } from "@/lib/supabase/server";
 import { createLedgerEntrySchema } from "@/schemas/ledger-entry";
 
@@ -44,6 +45,10 @@ export async function POST(request: Request) {
         "가구 정보를 찾을 수 없습니다.",
         404,
       );
+
+    if (parsed.data.entries.some((entry) => !entry.bookId)) {
+      logLegacyLedgerContract("entry-create-is-shared", "ledger-entries/batch");
+    }
 
     const entries = parsed.data.entries.map((entry) => ({
       householdId,

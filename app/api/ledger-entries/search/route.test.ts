@@ -179,4 +179,17 @@ describe("GET /api/ledger-entries/search", () => {
       { query: "생일", scope: "personal", offset: 20, limit: 20 },
     );
   });
+
+  it("logs the legacy scope+offset search", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    await GET(
+      new NextRequest(
+        "http://localhost/api/ledger-entries/search?q=%EC%83%9D%EC%9D%BC&scope=shared",
+      ),
+    );
+
+    expect(String(warn.mock.calls[0]?.[0])).toContain('"search-scope-offset"');
+    warn.mockRestore();
+  });
 });

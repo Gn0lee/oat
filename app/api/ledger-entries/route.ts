@@ -211,6 +211,10 @@ export async function POST(request: Request) {
       );
     }
 
+    if (!input.bookId) {
+      logLegacyLedgerContract("entry-create-is-shared", "ledger-entries");
+    }
+
     const entry = await createLedgerEntryWithBalanceSync(supabase, {
       householdId,
       ownerId: user.id,

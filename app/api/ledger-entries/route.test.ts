@@ -166,4 +166,46 @@ describe("POST /api/ledger-entries selected book", () => {
     });
     expect(createLedgerEntryWithBalanceSync).not.toHaveBeenCalled();
   });
+
+  it("logs a pre-book create that only sends isShared", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    await POST(
+      new NextRequest("http://localhost/api/ledger-entries", {
+        method: "POST",
+        body: JSON.stringify({
+          type: "expense",
+          amount: 1200,
+          title: "Tea",
+          transactedAt: "2026-04-24T10:00:00.000Z",
+          isShared: false,
+        }),
+      }),
+    );
+
+    expect(String(warn.mock.calls[0]?.[0])).toContain(
+      '"entry-create-is-shared"',
+    );
+    warn.mockRestore();
+  });
+
+  it("does not log a create with a selected book", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    await POST(
+      new NextRequest("http://localhost/api/ledger-entries", {
+        method: "POST",
+        body: JSON.stringify({
+          type: "expense",
+          amount: 1200,
+          title: "Tea",
+          transactedAt: "2026-04-24T10:00:00.000Z",
+          bookId: "11111111-1111-4111-8111-111111111111",
+        }),
+      }),
+    );
+
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
 });
