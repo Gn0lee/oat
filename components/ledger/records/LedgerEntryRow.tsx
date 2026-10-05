@@ -4,6 +4,7 @@ import Link from "next/link";
 import { AmountText } from "@/components/layout/screen";
 import { CategoryIcon } from "@/components/ledger/CategoryIcon";
 import type { LedgerEntryWithDetails } from "@/lib/api/ledger";
+import { cn } from "@/lib/utils/cn";
 import { formatCurrency } from "@/lib/utils/format";
 
 interface LedgerEntryRowProps {
@@ -82,16 +83,19 @@ export function LedgerEntryRow({
       <span className="min-w-0 flex-1">
         <AmountText
           value={amountLabel}
-          tone={isTransfer ? "neutral" : isIncome ? "income" : "neutral"}
+          tone="neutral"
           align="left"
           title={amountLabel}
-          className="block text-base font-bold"
+          className={cn(
+            "block text-base font-bold",
+            isIncome && "text-red-600",
+          )}
         />
         <span className="mt-0.5 block truncate text-sm text-gray-600">
           {primaryLine}
         </span>
         {metaSegments.length > 0 && (
-          <span className="mt-0.5 block truncate text-xs text-gray-400">
+          <span className="mt-0.5 block truncate text-xs text-gray-500">
             {metaSegments.join(" · ")}
           </span>
         )}

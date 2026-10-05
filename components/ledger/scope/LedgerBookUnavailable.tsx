@@ -8,7 +8,7 @@ export function LedgerBookUnavailable({ href }: { href: string }) {
     <ScreenState
       type="error"
       title="장부를 볼 수 없음"
-      description="이 장부의 기록을 볼 수 없습니다."
+      description="이 장부의 기록을 볼 수 없어요."
       action={
         <Button asChild className="min-h-11">
           <Link href={href}>전체 장부로 이동</Link>

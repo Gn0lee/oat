@@ -23,7 +23,7 @@ function toKey(year: number, month: number, day: number) {
   return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
 
-// Weeks (Sun–Sat) of the selected month; days outside the month are null.
+// Weeks (Sun-Sat) of the selected month; days outside the month are null.
 function buildMonthWeeks(year: number, month: number): (number | null)[][] {
   const firstWeekday = new Date(Date.UTC(year, month - 1, 1)).getUTCDay();
   const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
@@ -71,7 +71,7 @@ export function LedgerDateStrip({
 
   return (
     <div>
-      <div className="grid grid-cols-7 text-center text-xs text-gray-400">
+      <div className="grid grid-cols-7 text-center text-xs text-gray-500">
         {WEEKDAYS.map((weekday) => (
           <span key={weekday} aria-hidden="true" className="py-1">
             {weekday}
@@ -119,14 +119,14 @@ export function LedgerDateStrip({
                   >
                     {day}
                   </span>
-                  <span className="flex min-h-5 flex-col items-center pt-0.5 text-[10px] leading-3 tabular-nums">
+                  <span className="flex min-h-5 flex-col items-center pt-0.5 text-[11px] leading-3 tabular-nums">
                     {expense > 0 && (
-                      <span className="text-blue-500">
+                      <span className="text-gray-600">
                         -{formatDayAmount(expense)}
                       </span>
                     )}
                     {income > 0 && (
-                      <span className="text-red-500">
+                      <span className="text-red-600">
                         +{formatDayAmount(income)}
                       </span>
                     )}
@@ -142,7 +142,7 @@ export function LedgerDateStrip({
         aria-expanded={isMonth}
         aria-label={isMonth ? "주간 달력으로 접기" : "월간 달력 펼치기"}
         onClick={() => onViewChange(isMonth ? "week" : "month")}
-        className="flex min-h-11 w-full items-center justify-center text-gray-400"
+        className="flex min-h-11 w-full items-center justify-center text-gray-500"
       >
         {isMonth ? (
           <ChevronUp className="size-5" />

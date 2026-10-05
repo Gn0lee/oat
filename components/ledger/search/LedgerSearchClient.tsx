@@ -110,7 +110,7 @@ export function LedgerSearchClient({
         <div className="relative min-w-0 flex-1">
           <Search
             aria-hidden="true"
-            className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-gray-400"
+            className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-gray-500"
           />
           <input
             type="search"
@@ -120,7 +120,7 @@ export function LedgerSearchClient({
             placeholder="제목이나 메모로 찾기"
             aria-label="가계부 내역 검색어"
             aria-describedby={validationMessage ? "search-error" : undefined}
-            className="h-11 w-full rounded-xl bg-gray-100 pr-3 pl-9 text-base outline-none placeholder:text-gray-400 focus-visible:ring-2 focus-visible:ring-gray-300"
+            className="h-11 w-full rounded-xl bg-gray-100 pr-3 pl-9 text-base outline-none placeholder:text-gray-600 focus-visible:ring-2 focus-visible:ring-gray-300"
           />
         </div>
         <Button asChild variant="ghost" className="size-11 shrink-0 p-0">
@@ -133,7 +133,7 @@ export function LedgerSearchClient({
         </Button>
       </form>
       {validationMessage && (
-        <p id="search-error" role="alert" className="text-sm text-red-500">
+        <p id="search-error" role="alert" className="text-sm text-red-600">
           {validationMessage}
         </p>
       )}
@@ -151,7 +151,7 @@ export function LedgerSearchClient({
       )}
 
       {!isValidQuery(query) ? (
-        <p className="py-10 text-center text-sm text-gray-400">
+        <p className="py-10 text-center text-sm text-gray-500">
           제목이나 메모를 2자 이상 입력해 찾아보세요.
         </p>
       ) : search.isLoading ? (
@@ -159,11 +159,11 @@ export function LedgerSearchClient({
       ) : search.isError ? (
         <ScreenState
           type="error"
-          title="검색 결과를 불러올 수 없습니다"
+          title="검색 결과를 불러오지 못했어요"
           description="잠시 후 다시 시도해주세요."
         />
       ) : entries.length === 0 ? (
-        <p className="py-10 text-center text-sm text-gray-400">
+        <p className="py-10 text-center text-sm text-gray-500">
           검색 결과가 없어요.
         </p>
       ) : (

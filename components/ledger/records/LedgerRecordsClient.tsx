@@ -165,7 +165,7 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
     return (
       <ScreenState
         type="error"
-        title="기록을 불러올 수 없습니다"
+        title="기록을 불러오지 못했어요"
         action={
           <Button onClick={refresh} className="min-h-11">
             다시 시도
@@ -294,7 +294,7 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
           <section key={group.date} className="pt-4">
             <h3 className="text-sm text-gray-500">{dayHeading(group.date)}</h3>
             {group.entries.length === 0 ? (
-              <p className="py-4 text-sm text-gray-400">기록이 없어요</p>
+              <p className="py-4 text-sm text-gray-500">기록이 없어요</p>
             ) : (
               <ul>
                 {group.entries.map((entry) => (

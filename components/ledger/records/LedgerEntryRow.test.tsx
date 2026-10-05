@@ -95,9 +95,9 @@ describe("LedgerEntryRow", () => {
         showBook
       />,
     );
-    expect(
-      screen.getByText("식비 · 내 용돈 · 개인 · 보관"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("식비 · 내 용돈 · 개인 · 보관")).toHaveClass(
+      "text-gray-500",
+    );
   });
 
   it("특정 장부 범위에서는 장부 이름을 반복하지 않지만 개인 표시는 남긴다", () => {
@@ -122,7 +122,7 @@ describe("LedgerEntryRow", () => {
         href={href}
       />,
     );
-    expect(screen.getByText("+1,250,000원")).toHaveClass("text-red-500");
+    expect(screen.getByText("+1,250,000원")).toHaveClass("text-red-600");
 
     rerender(
       <LedgerEntryRow

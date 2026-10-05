@@ -65,14 +65,14 @@ describe("LedgerDateStrip", () => {
     expect(days[0]).toHaveAccessibleName(/^10월 1일 목요일/);
   });
 
-  it("날짜 밑에 지출·수입을 따로 표시하고 이체·비지출 출금은 뺀다", () => {
+  it("날짜 밑에 지출(무채색)·수입(빨강)을 따로 표시하고 이체·비지출 출금은 뺀다", () => {
     renderStrip();
     const day = screen.getByRole("button", { name: /^10월 4일/ });
     expect(day).toHaveAccessibleName(
       "10월 4일 일요일, 지출 231,700원, 수입 100,025원",
     );
-    expect(within(day).getByText("-231,700")).toHaveClass("text-blue-500");
-    expect(within(day).getByText("+100,025")).toHaveClass("text-red-500");
+    expect(within(day).getByText("-231,700")).toHaveClass("text-gray-600");
+    expect(within(day).getByText("+100,025")).toHaveClass("text-red-600");
     expect(within(day).queryByText(/999|888/)).toBeNull();
   });
 

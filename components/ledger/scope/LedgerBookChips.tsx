@@ -74,7 +74,7 @@ export function LedgerBookChips({
           >
             {chip.name}
             {chip.note && (
-              <span className="text-xs font-medium text-gray-400">
+              <span className="text-xs font-medium text-gray-500">
                 {chip.note}
               </span>
             )}
