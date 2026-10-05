@@ -48,7 +48,7 @@
 | `entry-create-is-shared` | `bookId` 없이 `isShared`로 만드는 단건·다건 생성 |
 | `tags-scope` | `/api/ledger-tags`의 `scope` |
 
-운영 배포 뒤 Vercel 런타임 로그에서 `legacy-ledger-contract`를 검색한다. 정한 관측 기간 동안 0건이어야 `is_shared`·레거시 호환 제거(#446 PR C)를 진행한다. `scope=all`은 기록하지 않는다. 현재 허브가 보내는 값이기 때문이다.
+운영 배포 뒤 Vercel 런타임 로그에서 `legacy-ledger-contract`를 검색한다. 배포 후 확인이 통과하면 별도 관측 기간 없이 `is_shared`·레거시 호환 제거(#446 PR C)를 진행한다. 진행 직전에 배포 이후 0건인지만 확인한다(2026-10-05 사용자 결정). `scope=all`은 기록하지 않는다. 현재 허브가 보내는 값이기 때문이다.
 
 ## MCP
 
