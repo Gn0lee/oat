@@ -133,8 +133,6 @@ export const queries = createQueryKeyStore({
       year?: number;
       month?: number;
       date?: string;
-      scope?: "shared" | "personal";
-      tagIds?: string[];
       categoryId?: string | null;
       childCategoryId?: string | null;
       categoryBreakdown?: string;
@@ -151,12 +149,8 @@ export const queries = createQueryKeyStore({
     }) => ({
       queryKey: [params],
     }),
-    summary: (
-      year: number,
-      month: number,
-      scope: "shared" | "personal" | "all",
-    ) => ({
-      queryKey: [year, month, scope],
+    summary: (year: number, month: number) => ({
+      queryKey: [year, month],
     }),
     titles: (query: string) => ({ queryKey: [query] }),
   },
@@ -195,8 +189,6 @@ export const queries = createQueryKeyStore({
   },
   ledgerTags: {
     all: null,
-    list: (params?: { scope?: "shared" | "personal" }) => ({
-      queryKey: [params],
-    }),
+    list: null,
   },
 });

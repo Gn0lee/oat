@@ -42,7 +42,7 @@ interface LedgerEntryTargetRow {
   amount: number | string;
   title: string | null;
   category_id: string | null;
-  is_shared: boolean;
+  ledger_books: { visibility: string } | null;
   memo: string | null;
   transacted_at: string;
   categories: { name: string | null; icon?: string | null } | null;
@@ -156,9 +156,9 @@ export async function validateRecordChangeRequestTarget(
         amount,
         title,
         category_id,
-        is_shared,
         memo,
         transacted_at,
+        ledger_books!ledger_entries_household_book_fkey(visibility),
         categories(name, icon),
         profiles!ledger_entries_owner_id_fkey(name)
       `)
@@ -174,6 +174,7 @@ export async function validateRecordChangeRequestTarget(
     }
 
     const row = data as unknown as LedgerEntryTargetRow;
+    const isShared = row.ledger_books?.visibility === "shared";
 
     if (row.owner_id === requesterId) {
       throw new APIError(
@@ -183,7 +184,7 @@ export async function validateRecordChangeRequestTarget(
       );
     }
 
-    if (!row.is_shared) {
+    if (!isShared) {
       throw new APIError(
         "RECORD_CHANGE_REQUEST_TARGET_INVALID",
         "개인 가계부 기록은 요청 대상이 될 수 없습니다.",
@@ -212,7 +213,7 @@ export async function validateRecordChangeRequestTarget(
         amount: Number(row.amount),
         type: row.type,
         categoryName: category.name ?? row.categories?.name ?? null,
-        isShared: row.is_shared,
+        isShared,
       },
     };
   }

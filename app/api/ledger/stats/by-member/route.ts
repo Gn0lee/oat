@@ -15,14 +15,10 @@ import { respondWithLedgerStats } from "@/lib/api/ledger-stats-route";
 export function GET(request: NextRequest) {
   return respondWithLedgerStats(
     request,
-    ({ supabase, householdId, userId, searchParams }) => {
-      // Member rows are always split by book visibility; a legacy scope has no
-      // meaning here and is ignored.
-      const { bookId } = parseLedgerStatsScope(searchParams, "by-member");
-      return getLedgerStatsByMember(supabase, householdId, userId, {
+    ({ supabase, householdId, userId, searchParams }) =>
+      getLedgerStatsByMember(supabase, householdId, userId, {
         ...parseLedgerStatsMonth(searchParams),
-        ...(bookId ? { bookId } : {}),
-      });
-    },
+        ...parseLedgerStatsScope(searchParams),
+      }),
   );
 }

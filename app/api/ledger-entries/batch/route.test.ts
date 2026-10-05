@@ -96,15 +96,14 @@ describe("POST /api/ledger-entries/batch atomic write", () => {
     expect(createBatchLedgerEntriesWithBalanceSync).not.toHaveBeenCalled();
   });
 
-  it("logs a batch entry without a selected book", async () => {
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+  it("rejects a batch entry without a selected book", async () => {
     const { bookId: _book, ...legacyEntry } = entry;
 
-    await POST(request({ entries: [{ ...legacyEntry, isShared: true }] }));
-
-    expect(String(warn.mock.calls[0]?.[0])).toContain(
-      '"entry-create-is-shared"',
+    const response = await POST(
+      request({ entries: [{ ...legacyEntry, isShared: true }] }),
     );
-    warn.mockRestore();
+
+    expect(response.status).toBe(400);
+    expect(createBatchLedgerEntriesWithBalanceSync).not.toHaveBeenCalled();
   });
 });

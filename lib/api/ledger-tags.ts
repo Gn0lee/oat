@@ -93,56 +93,6 @@ export async function getLedgerTags(
   return data || [];
 }
 
-export async function getLedgerTagsForScope(
-  supabase: SupabaseClient<Database>,
-  householdId: string,
-  userId: string,
-  scope: "shared" | "personal",
-): Promise<LedgerTag[]> {
-  const query = supabase
-    .from("ledger_tags")
-    .select(`
-      *,
-      ledger_entry_tags!inner (
-        ledger_entries!inner (
-          is_shared,
-          owner_id
-        )
-      )
-    `)
-    .eq("household_id", householdId);
-
-  if (scope === "shared") {
-    query.eq("ledger_entry_tags.ledger_entries.is_shared", true);
-  } else {
-    query
-      .eq("ledger_entry_tags.ledger_entries.is_shared", false)
-      .eq("ledger_entry_tags.ledger_entries.owner_id", userId);
-  }
-
-  const { data, error } = await query;
-  if (error) throw error;
-
-  const uniqueTags = new Map<string, LedgerTag>();
-  for (const row of data || []) {
-    const tag = row as unknown as LedgerTag;
-    uniqueTags.set(tag.id, tag);
-  }
-
-  return Array.from(uniqueTags.values()).sort((a, b) => {
-    if (a.last_used_at && b.last_used_at) {
-      const timeDiff =
-        new Date(b.last_used_at).getTime() - new Date(a.last_used_at).getTime();
-      if (timeDiff !== 0) return timeDiff;
-    } else if (a.last_used_at) {
-      return -1;
-    } else if (b.last_used_at) {
-      return 1;
-    }
-    return a.name.localeCompare(b.name);
-  });
-}
-
 export async function upsertLedgerTagsByName(
   supabase: SupabaseClient<Database>,
   householdId: string,

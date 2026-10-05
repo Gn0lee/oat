@@ -37,8 +37,7 @@ const createLedgerEntryBaseSchema = z.object({
   fromPaymentMethodId: z.string().uuid().optional(),
   toAccountId: z.string().uuid().optional(),
   toPaymentMethodId: z.string().uuid().optional(),
-  bookId: z.string().uuid().optional(),
-  isShared: z.boolean().optional(),
+  bookId: z.string({ message: "장부를 선택해주세요." }).uuid(),
   memo: z.string().max(500, "메모는 500자 이내여야 합니다.").optional(),
   tags: z
     .array(ledgerTagNameSchema)
@@ -46,8 +45,8 @@ const createLedgerEntryBaseSchema = z.object({
     .optional(),
 });
 
-export const createLedgerEntrySchema = createLedgerEntryBaseSchema
-  .superRefine((value, ctx) => {
+export const createLedgerEntrySchema = createLedgerEntryBaseSchema.superRefine(
+  (value, ctx) => {
     if (value.type === "transfer") {
       const sourceCount =
         Number(Boolean(value.fromAccountId)) +
@@ -108,14 +107,8 @@ export const createLedgerEntrySchema = createLedgerEntryBaseSchema
         });
       }
     }
-  })
-  .transform((value) => {
-    if (value.bookId) {
-      const { isShared: _legacyVisibility, ...entry } = value;
-      return entry;
-    }
-    return { ...value, isShared: value.isShared ?? true };
-  });
+  },
+);
 
 export type CreateLedgerEntryInput = z.infer<typeof createLedgerEntrySchema>;
 

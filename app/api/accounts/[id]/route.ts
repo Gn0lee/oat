@@ -33,12 +33,7 @@ export async function GET(_request: Request, { params }: RouteParams) {
       );
     }
 
-    const detail = await getAccountBalanceDetail(
-      supabase,
-      householdId,
-      user.id,
-      id,
-    );
+    const detail = await getAccountBalanceDetail(supabase, householdId, id);
 
     return NextResponse.json({ data: detail });
   } catch (error) {

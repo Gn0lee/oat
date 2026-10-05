@@ -103,13 +103,7 @@ export function LedgerBookDetailClient({
   const archived = Boolean(book.archivedAt);
   const isCreator = Boolean(userId && book.createdBy === userId);
   const canManage = book.visibility === "shared" ? true : isCreator;
-  const canRename =
-    canManage &&
-    !archived &&
-    !(
-      book.visibility === "personal" &&
-      book.name.toLocaleLowerCase() === "개인 생활비".toLocaleLowerCase()
-    );
+  const canRename = canManage && !archived;
   const canArchive = canManage && !archived && !book.isDefault;
   const canReactivate = canManage && archived;
   const canDefault =
@@ -120,14 +114,7 @@ export function LedgerBookDetailClient({
   const canDelete =
     (isCreator || (book.visibility === "shared" && role === "owner")) &&
     !archived &&
-    !book.isDefault &&
-    !(
-      book.visibility === "personal" &&
-      book.name.toLocaleLowerCase() === "개인 생활비".toLocaleLowerCase()
-    );
-  const legacyProtected =
-    book.visibility === "personal" &&
-    book.name.toLocaleLowerCase() === "개인 생활비".toLocaleLowerCase();
+    !book.isDefault;
   const isBusy =
     actions.rename.isPending ||
     actions.archive.isPending ||
@@ -188,12 +175,6 @@ export function LedgerBookDetailClient({
               {book.name}
             </h1>
           </div>
-
-          {legacyProtected && (
-            <p className="rounded-lg bg-gray-50 p-4 text-sm leading-6 text-gray-600">
-              현재 이 장부는 이름을 바꾸거나 삭제할 수 없어요.
-            </p>
-          )}
 
           {canRename && (
             <form

@@ -62,7 +62,7 @@ export function GET(request: NextRequest) {
             : undefined,
         paymentMethodId: searchParams.get("paymentMethodId") ?? undefined,
         limit: Number.isInteger(limit) ? Math.min(Math.max(limit, 1), 100) : 20,
-        ...parseLedgerStatsScope(searchParams, "details"),
+        ...parseLedgerStatsScope(searchParams),
       });
     },
   );

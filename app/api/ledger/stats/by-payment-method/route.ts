@@ -18,7 +18,7 @@ export function GET(request: NextRequest) {
     ({ supabase, householdId, searchParams }) =>
       getLedgerStatsByPaymentMethod(supabase, householdId, {
         ...parseLedgerStatsMonth(searchParams),
-        ...parseLedgerStatsScope(searchParams, "by-payment-method"),
+        ...parseLedgerStatsScope(searchParams),
       }),
   );
 }

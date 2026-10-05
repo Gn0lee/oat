@@ -1,16 +1,10 @@
-import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { APIError, toErrorResponse } from "@/lib/api/error";
 import { getUserHouseholdId } from "@/lib/api/invitation";
-import {
-  getLedgerTags,
-  getLedgerTagsForScope,
-  type LedgerTag,
-} from "@/lib/api/ledger-tags";
-import { logLegacyLedgerContract } from "@/lib/api/legacy-ledger-contract";
+import { getLedgerTags } from "@/lib/api/ledger-tags";
 import { createClient } from "@/lib/supabase/server";
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const supabase = await createClient();
 
@@ -33,21 +27,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const { searchParams } = request.nextUrl;
-    const scopeParam = searchParams.get("scope");
-
-    let tags: LedgerTag[];
-    if (scopeParam === "shared" || scopeParam === "personal") {
-      logLegacyLedgerContract("tags-scope", "ledger-tags");
-      tags = await getLedgerTagsForScope(
-        supabase,
-        householdId,
-        user.id,
-        scopeParam,
-      );
-    } else {
-      tags = await getLedgerTags(supabase, householdId);
-    }
+    const tags = await getLedgerTags(supabase, householdId);
 
     return NextResponse.json({ data: tags });
   } catch (error) {

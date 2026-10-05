@@ -86,8 +86,6 @@ interface LedgerEntriesParams {
   year?: number;
   month?: number;
   date?: string;
-  scope?: "shared" | "personal";
-  tagIds?: string[];
   categoryId?: string | null;
   childCategoryId?: string | null;
   categoryBreakdown?: "direct";
@@ -102,7 +100,6 @@ async function fetchLedgerEntries(
   if (params?.year) searchParams.set("year", String(params.year));
   if (params?.month) searchParams.set("month", String(params.month));
   if (params?.date) searchParams.set("date", params.date);
-  if (params?.scope) searchParams.set("scope", params.scope);
   if (params?.bookId) searchParams.set("book", params.bookId);
   if (params?.categoryId) searchParams.set("categoryId", params.categoryId);
   if (params?.childCategoryId) {
@@ -114,11 +111,6 @@ async function fetchLedgerEntries(
   if (params?.type) searchParams.set("type", params.type);
   if (params?.paymentMethodId) {
     searchParams.set("paymentMethodId", params.paymentMethodId);
-  }
-  if (params?.tagIds) {
-    for (const tagId of params.tagIds) {
-      searchParams.append("tagId", tagId);
-    }
   }
 
   const url = `/api/ledger-entries${searchParams.toString() ? `?${searchParams}` : ""}`;
@@ -220,21 +212,18 @@ export function useLedgerEntry(id: string) {
 // 월간 수입/지출 요약 조회
 // ============================================================================
 
-export function useLedgerEntrySummary(
-  year: number,
-  month: number,
-  scope: "shared" | "personal" | "all" = "shared",
-) {
+// The hub summary always covers every visible book.
+export function useLedgerEntrySummary(year: number, month: number) {
   const identity = useLedgerIdentity();
   return useQuery({
     queryKey: [
-      ...queries.ledgerEntries.summary(year, month, scope).queryKey,
+      ...queries.ledgerEntries.summary(year, month).queryKey,
       identity.userId,
       identity.householdId,
     ],
     queryFn: () =>
       fetchApiData<LedgerEntrySummary>(
-        `/api/ledger-entries/summary?year=${year}&month=${month}&scope=${scope}`,
+        `/api/ledger-entries/summary?year=${year}&month=${month}`,
       ),
     staleTime: 1000 * 60 * 5,
     refetchOnMount: "always",

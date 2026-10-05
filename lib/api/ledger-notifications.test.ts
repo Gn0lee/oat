@@ -13,6 +13,9 @@ vi.mock("@/lib/api/notifications", () => ({
 
 const createUserNotificationMock = vi.mocked(createUserNotification);
 
+const SHARED_BOOK = "shared-book";
+const PERSONAL_BOOK = "personal-book";
+
 const sharedEntry = {
   id: "00000000-0000-4000-8000-000000000101",
   household_id: "household-1",
@@ -25,7 +28,7 @@ const sharedEntry = {
   from_payment_method_id: "pm-1",
   to_account_id: null,
   to_payment_method_id: null,
-  is_shared: true,
+  book_id: SHARED_BOOK,
   memo: null,
   transacted_at: "2026-06-03T03:00:00.000Z",
   created_at: "2026-06-03T03:10:00.000Z",
@@ -50,10 +53,23 @@ function createLedgerNotificationSupabaseMock() {
     }),
   };
 
+  // Shared-ness comes from the entry's book, not a stored entry column.
+  const ledgerBooksBuilder = {
+    select: vi.fn().mockReturnThis(),
+    in: vi.fn().mockResolvedValue({
+      data: [
+        { id: SHARED_BOOK, visibility: "shared" },
+        { id: PERSONAL_BOOK, visibility: "personal" },
+      ],
+      error: null,
+    }),
+  };
+
   return {
     from: vi.fn((table: string) => {
       if (table === "household_members") return householdMembersBuilder;
       if (table === "profiles") return profilesBuilder;
+      if (table === "ledger_books") return ledgerBooksBuilder;
       throw new Error(`Unexpected table: ${table}`);
     }),
     householdMembersBuilder,
@@ -106,7 +122,7 @@ describe("ledger notification helpers", () => {
     await notifyLedgerEntryCreated(supabase as never, {
       actorId: "owner-1",
       householdId: "household-1",
-      entry: { ...sharedEntry, is_shared: false },
+      entry: { ...sharedEntry, book_id: PERSONAL_BOOK },
     });
 
     expect(createUserNotificationMock).not.toHaveBeenCalled();
@@ -124,7 +140,7 @@ describe("ledger notification helpers", () => {
         {
           ...sharedEntry,
           id: "00000000-0000-4000-8000-000000000103",
-          is_shared: false,
+          book_id: PERSONAL_BOOK,
           transacted_at: "2026-06-10T03:00:00.000Z",
         },
       ],
@@ -171,7 +187,7 @@ describe("ledger notification helpers", () => {
 
     await notifyLedgerEntryUpdated(supabase as never, {
       actorId: "owner-1",
-      previousEntry: { ...sharedEntry, is_shared: false },
+      previousEntry: { ...sharedEntry, book_id: PERSONAL_BOOK },
       updatedEntry: sharedEntry,
     });
 
@@ -183,7 +199,7 @@ describe("ledger notification helpers", () => {
     await notifyLedgerEntryUpdated(supabase as never, {
       actorId: "owner-1",
       previousEntry: sharedEntry,
-      updatedEntry: { ...sharedEntry, is_shared: false },
+      updatedEntry: { ...sharedEntry, book_id: PERSONAL_BOOK },
     });
     expect(createUserNotificationMock).not.toHaveBeenCalled();
   });

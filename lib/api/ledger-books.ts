@@ -40,7 +40,6 @@ function databaseErrorCode(error: {
     "BOOK_DEFAULT_REQUIRED",
     "BOOK_NOT_EMPTY",
     "BOOK_NAME_CONFLICT",
-    "BOOK_LEGACY_PROTECTED",
   ];
   return knownCodes.find((code) => source.includes(code));
 }
@@ -80,13 +79,6 @@ export function throwLedgerBookMutationError(error: {
     throw new APIError(
       "BOOK_NAME_CONFLICT",
       "이미 사용 중인 장부 이름입니다.",
-      409,
-    );
-  }
-  if (code === "BOOK_LEGACY_PROTECTED") {
-    throw new APIError(
-      code,
-      "이 장부의 이름 변경·삭제는 잠시 제한됩니다.",
       409,
     );
   }

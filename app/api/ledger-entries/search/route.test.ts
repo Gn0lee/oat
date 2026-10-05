@@ -2,10 +2,7 @@ import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { APIError } from "@/lib/api/error";
 import { getUserHouseholdId } from "@/lib/api/invitation";
-import {
-  searchLedgerEntries,
-  searchLedgerEntriesScoped,
-} from "@/lib/api/ledger";
+import { searchLedgerEntriesScoped } from "@/lib/api/ledger";
 import { getLedgerBook } from "@/lib/api/ledger-books";
 import { createClient } from "@/lib/supabase/server";
 import { GET } from "./route";
@@ -15,7 +12,6 @@ vi.mock("@/lib/api/invitation", () => ({
 }));
 
 vi.mock("@/lib/api/ledger", () => ({
-  searchLedgerEntries: vi.fn(),
   searchLedgerEntriesScoped: vi.fn(),
 }));
 
@@ -47,10 +43,6 @@ describe("GET /api/ledger-entries/search", () => {
       },
     } as never);
     vi.mocked(getUserHouseholdId).mockResolvedValue("household-1");
-    vi.mocked(searchLedgerEntries).mockResolvedValue({
-      items: [],
-      nextOffset: null,
-    });
     vi.mocked(searchLedgerEntriesScoped).mockResolvedValue({
       items: [],
       nextCursor: "next",
@@ -86,7 +78,6 @@ describe("GET /api/ledger-entries/search", () => {
       "household-1",
       { query: "커피", bookId: undefined, cursor: undefined, limit: 20 },
     );
-    expect(searchLedgerEntries).not.toHaveBeenCalled();
   });
 
   it("book과 cursor를 받으면 장부 접근을 먼저 검사하고 그 범위로 이어서 조회한다", async () => {
@@ -143,53 +134,24 @@ describe("GET /api/ledger-entries/search", () => {
     expect(searchLedgerEntriesScoped).not.toHaveBeenCalled();
   });
 
-  it("구버전 scope 값이 틀리면 400", async () => {
-    const response = await get("q=커피&scope=all");
-    expect(response.status).toBe(400);
-    await expect(response.json()).resolves.toMatchObject({
-      error: { code: "LEDGER_SEARCH_SCOPE_INVALID" },
-    });
-  });
-
   it("공백을 제외한 2자 미만 검색어를 거절한다", async () => {
-    const response = await GET(
-      new NextRequest(
-        "http://localhost/api/ledger-entries/search?q=%20a%20&scope=shared",
-      ),
-    );
+    const response = await get("q=%20a%20");
 
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toMatchObject({
       error: { code: "LEDGER_SEARCH_QUERY_TOO_SHORT" },
     });
-    expect(searchLedgerEntries).not.toHaveBeenCalled();
+    expect(searchLedgerEntriesScoped).not.toHaveBeenCalled();
   });
 
-  it("구버전 scope 요청은 기존 공개 범위·offset 검색을 유지한다", async () => {
-    const response = await GET(
-      new NextRequest(
-        "http://localhost/api/ledger-entries/search?q=%20%EC%83%9D%EC%9D%BC%20&scope=personal&offset=20",
-      ),
-    );
+  it("구버전 scope·offset은 더 이상 해석하지 않고 전체 장부 첫 페이지를 조회한다", async () => {
+    const response = await get("q=%EC%83%9D%EC%9D%BC&scope=personal&offset=20");
 
     expect(response.status).toBe(200);
-    expect(searchLedgerEntries).toHaveBeenCalledWith(
+    expect(searchLedgerEntriesScoped).toHaveBeenCalledWith(
       expect.anything(),
       "household-1",
-      { query: "생일", scope: "personal", offset: 20, limit: 20 },
+      { query: "생일", bookId: undefined, cursor: undefined, limit: 20 },
     );
-  });
-
-  it("logs the legacy scope+offset search", async () => {
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-
-    await GET(
-      new NextRequest(
-        "http://localhost/api/ledger-entries/search?q=%EC%83%9D%EC%9D%BC&scope=shared",
-      ),
-    );
-
-    expect(String(warn.mock.calls[0]?.[0])).toContain('"search-scope-offset"');
-    warn.mockRestore();
   });
 });

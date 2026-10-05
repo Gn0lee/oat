@@ -9,7 +9,7 @@ vi.mock("@/lib/api/invitation", () => ({ getUserHouseholdId: vi.fn() }));
 vi.mock("@/lib/api/ledger", () => ({ getLedgerEntrySummary: vi.fn() }));
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 
-describe("GET /api/ledger-entries/summary scope validation", () => {
+describe("GET /api/ledger-entries/summary", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(createClient).mockResolvedValue({
@@ -26,20 +26,6 @@ describe("GET /api/ledger-entries/summary scope validation", () => {
       totalExpense: 0,
       balance: 0,
     });
-  });
-
-  it("rejects an unknown scope", async () => {
-    const response = await GET(
-      new NextRequest(
-        "http://localhost/api/ledger-entries/summary?scope=unknown",
-      ),
-    );
-
-    expect(response.status).toBe(400);
-    await expect(response.json()).resolves.toMatchObject({
-      error: { code: "VALIDATION_ERROR" },
-    });
-    expect(getLedgerEntrySummary).not.toHaveBeenCalled();
   });
 
   it("uses the all-books scope by default", async () => {
@@ -72,9 +58,7 @@ describe("GET /api/ledger-entries/summary scope validation", () => {
     );
   });
 
-  it("maps a legacy shared/personal scope to book visibility and logs it", async () => {
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-
+  it("ignores the removed shared/personal scope", async () => {
     await GET(
       new NextRequest(
         "http://localhost/api/ledger-entries/summary?year=2026&month=10&scope=personal",
@@ -84,9 +68,7 @@ describe("GET /api/ledger-entries/summary scope validation", () => {
     expect(getLedgerEntrySummary).toHaveBeenCalledWith(
       expect.anything(),
       "household-id",
-      { year: 2026, month: 10, visibility: "personal" },
+      { year: 2026, month: 10 },
     );
-    expect(String(warn.mock.calls[0]?.[0])).toContain('"summary-scope"');
-    warn.mockRestore();
   });
 });

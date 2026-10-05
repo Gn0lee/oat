@@ -39,7 +39,6 @@ export async function GET(_request: Request, { params }: RouteParams) {
     const detail = await getPaymentMethodBalanceDetail(
       supabase,
       householdId,
-      user.id,
       id,
     );
 

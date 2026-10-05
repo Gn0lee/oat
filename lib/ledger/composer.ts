@@ -117,10 +117,9 @@ export function toComposerPayload(
   ) {
     throw new Error("기록 유형에 맞는 카테고리를 선택해 주세요.");
   }
-  const isShared = book.visibility === "shared";
   const base =
     item.type === "transfer"
-      ? buildTransferLedgerEntryPayload(isShared, {
+      ? buildTransferLedgerEntryPayload(item.bookId, {
           amount: item.amount,
           title: item.title,
           from: parseLocation(item.fromValue),
@@ -128,7 +127,7 @@ export function toComposerPayload(
           transactedAt: item.transactedAt,
           memo: item.memo,
         } satisfies TransferItemFormData)
-      : buildLedgerEntryPayload(item.type, isShared, {
+      : buildLedgerEntryPayload(item.type, item.bookId, {
           amount: item.amount,
           title: item.title,
           categoryId: item.categoryId ?? "",
@@ -137,15 +136,8 @@ export function toComposerPayload(
           transactedAt: item.transactedAt,
           memo: item.memo,
         } satisfies LedgerItemFormData);
-  const withoutVisibility =
-    "isShared" in base
-      ? (({ isShared: _legacyVisibility, ...payload }) => payload)(base)
-      : base;
-  const payload =
-    "tags" in withoutVisibility
-      ? (({ tags: _legacyTags, ...entry }) => entry)(withoutVisibility)
-      : withoutVisibility;
-  return { ...payload, bookId: item.bookId };
+  const { tags: _legacyTags, ...payload } = base;
+  return payload;
 }
 
 export function selectComposerReturnHref(input: {

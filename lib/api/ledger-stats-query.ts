@@ -3,10 +3,6 @@ import type {
   LedgerStatsMonth,
   LedgerStatsScope,
 } from "@/lib/api/ledger-stats";
-import {
-  type LegacyLedgerContract,
-  logLegacyLedgerContract,
-} from "@/lib/api/legacy-ledger-contract";
 import { getKstToday } from "@/lib/date";
 import { ledgerBookIdSchema } from "@/schemas/ledger-book";
 
@@ -33,29 +29,12 @@ export function parseLedgerStatsMonth(
   return { year, month };
 }
 
-// `book` is the contract. The pre-book `scope=shared|personal` is still
-// honoured for old clients as a visibility subset until the legacy removal.
 export function parseLedgerStatsScope(
   searchParams: URLSearchParams,
-  route: string,
-  legacyContract: LegacyLedgerContract = "stats-scope",
 ): LedgerStatsScope {
   const bookId = searchParams.get("book");
   if (bookId !== null && !ledgerBookIdSchema.safeParse(bookId).success) {
     throw new APIError("VALIDATION_ERROR", "유효하지 않은 장부 ID입니다.", 400);
   }
-  const scope = searchParams.get("scope");
-  if (scope !== null && !["all", "shared", "personal"].includes(scope)) {
-    throw new APIError(
-      "VALIDATION_ERROR",
-      "유효하지 않은 조회 범위입니다.",
-      400,
-    );
-  }
-  if (bookId) return { bookId };
-  if (scope === "shared" || scope === "personal") {
-    logLegacyLedgerContract(legacyContract, route);
-    return { visibility: scope };
-  }
-  return {};
+  return bookId ? { bookId } : {};
 }
