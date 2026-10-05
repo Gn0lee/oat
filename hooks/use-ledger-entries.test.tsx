@@ -28,12 +28,12 @@ describe("useCreateLedgerEntry", () => {
     const queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     });
-    const statsKey = queries.ledgerStats.byCategory(
-      2026,
-      6,
-      "expense",
-      "shared",
-    ).queryKey;
+    const statsKey = queries.ledgerStats.query({
+      name: "by-category",
+      params: { year: 2026, month: 6, type: "expense" },
+      userId: "user-1",
+      householdId: "household-1",
+    }).queryKey;
     const homeKey = queries.home.summary({ year: 2026, month: 6 }).queryKey;
     queryClient.setQueryData(statsKey, { items: [] });
     queryClient.setQueryData(homeKey, { topCategories: [] });

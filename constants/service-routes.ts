@@ -129,27 +129,27 @@ export function getServiceRouteTree(options?: {
             {
               href: "/ledger/analysis/trend",
               label: "월별 추이",
-              preserveSearchParams: ["scope"],
+              preserveSearchParams: ["book", "year", "month"],
             },
             {
               href: "/ledger/analysis/daily",
               label: "일별 지출 현황",
-              preserveSearchParams: ["scope"],
+              preserveSearchParams: ["book", "year", "month"],
             },
             {
               href: "/ledger/analysis/by-category",
               label: "카테고리별 지출",
-              preserveSearchParams: ["scope"],
+              preserveSearchParams: ["book", "year", "month"],
             },
             {
               href: "/ledger/analysis/by-payment-method",
               label: "결제수단별 지출",
-              preserveSearchParams: ["scope"],
+              preserveSearchParams: ["book", "year", "month"],
             },
             {
               href: "/ledger/analysis/by-member",
               label: "구성원별 지출",
-              preserveSearchParams: ["scope"],
+              preserveSearchParams: ["book", "year", "month"],
             },
           ],
         },
@@ -330,9 +330,11 @@ export function resolveServiceParentHref({
         "date",
         "book",
         "view",
+        "type",
         "categoryId",
         "childCategoryId",
         "categoryBreakdown",
+        "paymentMethodId",
       ]);
     }
     if (from === "search") {

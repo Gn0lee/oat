@@ -9,6 +9,14 @@ vi.mock("@/hooks/use-ledger-stats", () => ({
   useLedgerStatsByCategory: vi.fn(),
 }));
 
+const replace = vi.fn();
+const url = vi.hoisted(() => ({ search: "" }));
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/ledger/analysis/by-category",
+  useRouter: () => ({ replace, push: vi.fn() }),
+  useSearchParams: () => new URLSearchParams(url.search),
+}));
+
 vi.mock("framer-motion", () => ({
   AnimatePresence: ({ children }: { children: ReactNode }) => children,
   useReducedMotion: () => false,
@@ -75,7 +83,7 @@ vi.mock("./LedgerStatsDetailDrawer", () => ({
 
 const currentData = {
   type: "expense" as const,
-  scope: "shared" as const,
+  bookId: null,
   total: 76_300,
   items: [
     {
@@ -122,6 +130,8 @@ const currentData = {
 
 describe("ByCategoryClient", () => {
   beforeEach(() => {
+    url.search = "";
+    replace.mockClear();
     vi.mocked(useLedgerStatsByCategory).mockReturnValue({
       data: currentData,
       isLoading: false,
@@ -131,7 +141,7 @@ describe("ByCategoryClient", () => {
   it("child breakdown을 접어두고 parent를 누르면 금액과 비중을 펼친다", async () => {
     const user = userEvent.setup();
 
-    const { container } = render(<ByCategoryClient scope="shared" />);
+    const { container } = render(<ByCategoryClient />);
 
     expect(screen.queryByText("직접 0건")).not.toBeInTheDocument();
     expect(screen.queryByText("장보기")).not.toBeInTheDocument();
@@ -157,7 +167,7 @@ describe("ByCategoryClient", () => {
   it("child가 없는 parent는 accordion 없이 상세 내역을 연다", async () => {
     const user = userEvent.setup();
 
-    render(<ByCategoryClient scope="shared" />);
+    render(<ByCategoryClient />);
 
     const medical = screen.getByRole("button", {
       name: /의료비.*15,800원.*1건/,
@@ -174,5 +184,44 @@ describe("ByCategoryClient", () => {
       "data-expected-count",
       "1",
     );
+  });
+
+  it("reads the book, period and type from the URL and writes a type change back", async () => {
+    const user = userEvent.setup();
+    const book = "00000000-0000-4000-8000-000000000001";
+    url.search = `book=${book}&year=2026&month=4&type=income`;
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+      },
+    );
+    Element.prototype.scrollIntoView ??= () => {};
+
+    render(<ByCategoryClient />);
+
+    expect(useLedgerStatsByCategory).toHaveBeenCalledWith({
+      year: 2026,
+      month: 4,
+      type: "income",
+      bookId: book,
+    });
+    expect(useLedgerStatsByCategory).toHaveBeenCalledWith({
+      year: 2026,
+      month: 3,
+      type: "income",
+      bookId: book,
+    });
+
+    await user.click(screen.getByRole("button", { name: /개 선택/ }));
+    await user.click(screen.getByRole("button", { name: "지출" }));
+
+    expect(replace).toHaveBeenCalledWith(
+      `/ledger/analysis/by-category?book=${book}&year=2026&month=4&type=expense`,
+      { scroll: false },
+    );
+    vi.unstubAllGlobals();
   });
 });

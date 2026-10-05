@@ -336,4 +336,32 @@ describe("getServiceRouteMeta", () => {
       }),
     ).toBe("/notifications");
   });
+
+  it("가계부 분석 하위 화면은 장부와 기간을 유지한 채 분석 허브로 돌아간다", () => {
+    const meta = getServiceRouteMeta("/ledger/analysis/daily");
+
+    expect(
+      resolveServiceParentHref({
+        meta,
+        searchParams: new URLSearchParams(
+          "book=book-1&year=2026&month=4&scope=shared",
+        ),
+      }),
+    ).toBe("/ledger/analysis?book=book-1&year=2026&month=4");
+  });
+
+  it("분석에서 연 기록 상세는 유형·결제수단 조건을 유지해 달력으로 돌아간다", () => {
+    const meta = getServiceRouteMeta("/ledger/records/entry-1");
+
+    expect(
+      resolveServiceParentHref({
+        meta,
+        searchParams: new URLSearchParams(
+          "from=records&date=2026-10-31&type=expense&paymentMethodId=__none__",
+        ),
+      }),
+    ).toBe(
+      "/ledger/records?date=2026-10-31&type=expense&paymentMethodId=__none__",
+    );
+  });
 });

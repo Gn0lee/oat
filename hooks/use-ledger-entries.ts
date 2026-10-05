@@ -91,6 +91,8 @@ interface LedgerEntriesParams {
   categoryId?: string | null;
   childCategoryId?: string | null;
   categoryBreakdown?: "direct";
+  type?: string;
+  paymentMethodId?: string;
 }
 
 async function fetchLedgerEntries(
@@ -108,6 +110,10 @@ async function fetchLedgerEntries(
   }
   if (params?.categoryBreakdown) {
     searchParams.set("categoryBreakdown", params.categoryBreakdown);
+  }
+  if (params?.type) searchParams.set("type", params.type);
+  if (params?.paymentMethodId) {
+    searchParams.set("paymentMethodId", params.paymentMethodId);
   }
   if (params?.tagIds) {
     for (const tagId of params.tagIds) {

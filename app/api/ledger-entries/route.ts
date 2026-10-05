@@ -8,9 +8,11 @@ import {
   getLedgerEntries,
 } from "@/lib/api/ledger";
 import { notifyLedgerEntryCreated } from "@/lib/api/ledger-notifications";
+import { logLegacyLedgerContract } from "@/lib/api/legacy-ledger-contract";
 import { markNotificationsAsReadForLinkBestEffort } from "@/lib/api/notifications";
 import { createClient } from "@/lib/supabase/server";
 import { createLedgerEntrySchema } from "@/schemas/ledger-entry";
+import type { LedgerEntryType } from "@/types";
 
 /**
  * GET /api/ledger-entries
@@ -20,6 +22,9 @@ import { createLedgerEntrySchema } from "@/schemas/ledger-entry";
  *   ?year=2026&month=4   → 월간 목록
  *   ?date=2026-04-24     → 일별 목록 (캘린더 상세)
  *   (없음)               → 당월
+ *   ?book=<장부 ID>      → 해당 장부만 (없으면 전체 장부)
+ *   ?type, ?categoryId, ?childCategoryId, ?categoryBreakdown, ?paymentMethodId
+ *                        → 분석 전체보기 조건
  */
 export async function GET(request: NextRequest) {
   try {
@@ -94,6 +99,24 @@ export async function GET(request: NextRequest) {
         : undefined;
 
     const tagIdParams = searchParams.getAll("tagId");
+    if (scope) logLegacyLedgerContract("entries-scope", "ledger-entries");
+    if (tagIdParams.length > 0) {
+      logLegacyLedgerContract("entries-tag-filter", "ledger-entries");
+    }
+
+    const typeParam = searchParams.get("type");
+    if (
+      typeParam !== null &&
+      !["expense", "income", "transfer", "non_expense_withdrawal"].includes(
+        typeParam,
+      )
+    ) {
+      throw new APIError(
+        "VALIDATION_ERROR",
+        "유효하지 않은 기록 유형입니다.",
+        400,
+      );
+    }
 
     const categoryBreakdown =
       searchParams.get("categoryBreakdown") === "direct"
@@ -112,6 +135,8 @@ export async function GET(request: NextRequest) {
       categoryId: searchParams.get("categoryId") ?? undefined,
       childCategoryId: searchParams.get("childCategoryId") ?? undefined,
       categoryBreakdown,
+      type: (typeParam ?? undefined) as LedgerEntryType | undefined,
+      paymentMethodId: searchParams.get("paymentMethodId") ?? undefined,
     };
 
     const entries = await getLedgerEntries(supabase, householdId, options);

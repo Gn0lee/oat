@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { APIError } from "./error";
-import { getLedgerEntries, getLedgerEntrySummary } from "./ledger";
+import { getLedgerEntries } from "./ledger";
 import { getLedgerBook } from "./ledger-books";
 
 vi.mock("./ledger-books", () => ({ getLedgerBook: vi.fn() }));
@@ -77,61 +77,45 @@ describe("book-scoped ledger reads", () => {
       "2026-10-01T15:00:00.000Z",
     );
   });
-  it("whole summary includes every visible shared/personal/archived entry once, excluding transfers", async () => {
-    const db = database([
-      { type: "expense", amount: 100, is_shared: true, owner_id: "peer" },
-      { type: "expense", amount: 200, is_shared: false, owner_id: "owner" },
-      { type: "income", amount: 500, is_shared: true, owner_id: "owner" },
-      { type: "transfer", amount: 999, is_shared: true, owner_id: "owner" },
-      {
-        type: "non_expense_withdrawal",
-        amount: 999,
-        is_shared: true,
-        owner_id: "owner",
-      },
-    ]);
-    expect(
-      await getLedgerEntrySummary(
-        db as never,
-        "household",
-        2026,
-        10,
-        "all",
-        "owner",
-      ),
-    ).toEqual({ totalExpense: 300, totalIncome: 500, balance: 200 });
-    expect(getLedgerBook).not.toHaveBeenCalled();
-  });
-  it("specific summary verifies access and filters before aggregating", async () => {
-    const db = database([{ type: "expense", amount: 100 }]);
-    expect(
-      await getLedgerEntrySummary(
-        db as never,
-        "household",
-        2026,
-        10,
-        "all",
-        "owner",
-        "book",
-      ),
-    ).toEqual({ totalExpense: 100, totalIncome: 0, balance: -100 });
-    expect(getLedgerBook).toHaveBeenCalledWith(db, "household", "book");
-    expect(db.builder.eq).toHaveBeenCalledWith("book_id", "book");
-  });
-  it("retains the explicit legacy shared scope for home/MCP callers", async () => {
-    const db = database([
-      { type: "expense", amount: 100, is_shared: true, owner_id: "peer" },
-      { type: "expense", amount: 200, is_shared: false, owner_id: "owner" },
-    ]);
-    expect(
-      await getLedgerEntrySummary(
-        db as never,
-        "household",
-        2026,
-        10,
-        "shared",
-        "owner",
-      ),
-    ).toEqual({ totalExpense: 100, totalIncome: 0, balance: -100 });
+});
+
+describe("analysis view-all conditions on the records list", () => {
+  it("keeps only the given type and payment method (null with __none__)", async () => {
+    const { createFakeSupabase } = await import("@/lib/testing/fake-supabase");
+    const row = (id: string, type: string, pm: string | null) => ({
+      id,
+      household_id: "household",
+      book_id: "book",
+      owner_id: "owner",
+      type,
+      amount: 100,
+      transacted_at: "2026-10-05T03:00:00.000Z",
+      created_at: "2026-10-05T03:00:00.000Z",
+      updated_at: "2026-10-05T03:00:00.000Z",
+      category_id: null,
+      from_payment_method_id: pm,
+    });
+    const { supabase } = createFakeSupabase({
+      ledger_entries: [
+        row("cash", "expense", null),
+        row("card", "expense", "card"),
+        row("income", "income", null),
+      ],
+    });
+
+    const none = await getLedgerEntries(supabase, "household", {
+      year: 2026,
+      month: 10,
+      type: "expense",
+      paymentMethodId: "__none__",
+    });
+    const card = await getLedgerEntries(supabase, "household", {
+      year: 2026,
+      month: 10,
+      paymentMethodId: "card",
+    });
+
+    expect(none.map((entry) => entry.id)).toEqual(["cash"]);
+    expect(card.map((entry) => entry.id)).toEqual(["card"]);
   });
 });

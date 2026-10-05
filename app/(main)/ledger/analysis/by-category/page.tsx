@@ -1,17 +1,13 @@
 import { PageContainer } from "@/components/layout";
 import { ByCategoryClient } from "@/components/ledger/analysis/ByCategoryClient";
-import type { StatsScope } from "@/lib/api/ledger-stats";
+import { LedgerAnalysisScope } from "@/components/ledger/analysis/LedgerAnalysisScope";
 
-export default async function ByCategoryPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ scope?: string }>;
-}) {
-  const { scope: rawScope } = await searchParams;
-  const scope = (rawScope === "personal" ? "personal" : "shared") as StatsScope;
+export default function ByCategoryPage() {
   return (
     <PageContainer maxWidth="default">
-      <ByCategoryClient scope={scope} />
+      <LedgerAnalysisScope>
+        <ByCategoryClient />
+      </LedgerAnalysisScope>
     </PageContainer>
   );
 }

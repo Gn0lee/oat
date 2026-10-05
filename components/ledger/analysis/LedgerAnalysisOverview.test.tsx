@@ -12,9 +12,17 @@ vi.mock("@/hooks/use-ledger-stats", () => ({
   useLedgerStatsByCategory: vi.fn(),
 }));
 
+const BOOK = "00000000-0000-4000-8000-000000000001";
 const summary = {
   year: 2026,
   month: 5,
+  bookId: null,
+  total: {
+    totalIncome: 4_500_000,
+    totalExpense: 1_800_000,
+    balance: 2_700_000,
+    savingsRate: 60,
+  },
   shared: {
     totalIncome: 4_000_000,
     totalExpense: 1_500_000,
@@ -43,7 +51,7 @@ describe("LedgerAnalysisOverview", () => {
     } as unknown as ReturnType<typeof useLedgerStatsByCategory>);
 
     const { container } = render(
-      <LedgerAnalysisOverview year={2026} month={5} scope="shared" />,
+      <LedgerAnalysisOverview year={2026} month={5} />,
     );
 
     expect(
@@ -51,7 +59,7 @@ describe("LedgerAnalysisOverview", () => {
     ).toBeGreaterThan(0);
   });
 
-  it("개인 scope에서는 내 현금흐름 요약 문구를 사용한다", () => {
+  it("shows the all-books total with shared and my personal subtotals", () => {
     vi.mocked(useLedgerStatsSummary).mockReturnValue({
       data: summary,
       isLoading: false,
@@ -63,12 +71,50 @@ describe("LedgerAnalysisOverview", () => {
       error: null,
     } as unknown as ReturnType<typeof useLedgerStatsByCategory>);
 
-    render(<LedgerAnalysisOverview year={2026} month={5} scope="personal" />);
+    render(<LedgerAnalysisOverview year={2026} month={5} />);
 
-    expect(screen.getByText("5월 내 현금흐름")).toBeInTheDocument();
-    expect(
-      screen.getByText("이번 달 주요 개인 지출이 없어요"),
-    ).toBeInTheDocument();
+    expect(useLedgerStatsSummary).toHaveBeenCalledWith({
+      year: 2026,
+      month: 5,
+      bookId: undefined,
+    });
+    expect(screen.getByText("5월 전체 현금흐름")).toBeInTheDocument();
+    expect(screen.getByText("2,700,000원")).toBeInTheDocument();
+    expect(screen.getByText("공용 지출")).toBeInTheDocument();
+    expect(screen.getByText("1,500,000원")).toBeInTheDocument();
+    expect(screen.getByText("내 개인 지출")).toBeInTheDocument();
+    expect(screen.getByText("300,000원")).toBeInTheDocument();
+  });
+
+  it("uses only the selected book without subtotals", () => {
+    vi.mocked(useLedgerStatsSummary).mockReturnValue({
+      data: { ...summary, bookId: BOOK },
+      isLoading: false,
+      error: null,
+    } as unknown as ReturnType<typeof useLedgerStatsSummary>);
+    vi.mocked(useLedgerStatsByCategory).mockReturnValue({
+      data: { items: [], total: 0 },
+      isLoading: false,
+      error: null,
+    } as unknown as ReturnType<typeof useLedgerStatsByCategory>);
+
+    render(
+      <LedgerAnalysisOverview
+        year={2026}
+        month={5}
+        bookId={BOOK}
+        bookName="여행"
+      />,
+    );
+
+    expect(useLedgerStatsByCategory).toHaveBeenCalledWith({
+      year: 2026,
+      month: 5,
+      type: "expense",
+      bookId: BOOK,
+    });
+    expect(screen.getByText("5월 여행 현금흐름")).toBeInTheDocument();
+    expect(screen.queryByText("공용 지출")).toBeNull();
   });
 
   it("가구가 없으면 설정 전 상태로 표시한다", () => {
@@ -88,7 +134,7 @@ describe("LedgerAnalysisOverview", () => {
       error,
     } as unknown as ReturnType<typeof useLedgerStatsByCategory>);
 
-    render(<LedgerAnalysisOverview year={2026} month={5} scope="shared" />);
+    render(<LedgerAnalysisOverview year={2026} month={5} />);
 
     expect(
       screen.getAllByText("가구 정보를 불러올 수 없어요").length,

@@ -106,12 +106,12 @@ describe("ServiceHeader", () => {
     window.removeEventListener("oat:ledger-composer-close", onClose);
   });
 
-  it("ledger analysis 하위 화면의 scope 쿼리를 back href에 유지한다", async () => {
+  it("ledger analysis 하위 화면의 장부·기간 쿼리를 back href에 유지한다", async () => {
     navigationState.pathname = "/ledger/analysis/by-category";
     window.history.pushState(
       {},
       "",
-      "/ledger/analysis/by-category?scope=personal",
+      "/ledger/analysis/by-category?book=book-1&year=2026&month=4&type=income",
     );
 
     renderServiceHeader("mobile");
@@ -119,7 +119,7 @@ describe("ServiceHeader", () => {
     await waitFor(() =>
       expect(screen.getByLabelText("이전 화면으로 이동")).toHaveAttribute(
         "href",
-        "/ledger/analysis?scope=personal",
+        "/ledger/analysis?book=book-1&year=2026&month=4",
       ),
     );
   });

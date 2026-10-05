@@ -1,6 +1,5 @@
 "use client";
 
-import { startOfMonth } from "date-fns";
 import { AnimatePresence, motion } from "framer-motion";
 import { Banknote, CreditCard, Smartphone, Tag } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -10,9 +9,8 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
+import { useLedgerAnalysisUrl } from "@/hooks/use-ledger-analysis-url";
 import { useLedgerStatsByPaymentMethod } from "@/hooks/use-ledger-stats";
-import type { StatsScope } from "@/lib/api/ledger-stats";
-import { getKstNow } from "@/lib/date";
 import { formatCurrency } from "@/lib/utils/format";
 import { LedgerStatsDetailDrawer } from "./LedgerStatsDetailDrawer";
 import { MonthSelector } from "./MonthSelector";
@@ -35,23 +33,19 @@ function PaymentIcon({ type }: { type: string | null }) {
   return <Tag className="w-4 h-4" />;
 }
 
-interface ByPaymentMethodClientProps {
-  scope: StatsScope;
-}
-
-export function ByPaymentMethodClient({ scope }: ByPaymentMethodClientProps) {
-  const [currentMonth, setCurrentMonth] = useState<Date>(() =>
-    startOfMonth(getKstNow()),
-  );
+export function ByPaymentMethodClient() {
+  const { bookId, year, month, monthDate, setMonth } = useLedgerAnalysisUrl();
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [detail, setDetail] = useState<{
     title: string;
     paymentMethodId: string;
   } | null>(null);
 
-  const year = currentMonth.getFullYear();
-  const month = currentMonth.getMonth() + 1;
-  const { data, isLoading } = useLedgerStatsByPaymentMethod(year, month, scope);
+  const { data, isLoading } = useLedgerStatsByPaymentMethod({
+    year,
+    month,
+    bookId,
+  });
 
   const chartData = useMemo(
     () =>
@@ -77,7 +71,7 @@ export function ByPaymentMethodClient({ scope }: ByPaymentMethodClientProps) {
 
   return (
     <div className="space-y-4">
-      <MonthSelector value={currentMonth} onChange={setCurrentMonth} />
+      <MonthSelector value={monthDate} onChange={setMonth} />
 
       {/* 섹션 1: 도넛 차트 */}
       <div className="bg-white rounded-2xl p-5 shadow-sm">
@@ -226,7 +220,7 @@ export function ByPaymentMethodClient({ scope }: ByPaymentMethodClientProps) {
                 kind: "payment-method",
                 year,
                 month,
-                scope,
+                bookId,
                 paymentMethodId: detail.paymentMethodId,
               }
             : null

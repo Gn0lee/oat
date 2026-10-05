@@ -1,30 +1,27 @@
 "use client";
 
-import { startOfMonth } from "date-fns";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Cell, Pie, PieChart } from "recharts";
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
+import { useLedgerAnalysisUrl } from "@/hooks/use-ledger-analysis-url";
 import { useLedgerStatsByMember } from "@/hooks/use-ledger-stats";
-import { getKstNow } from "@/lib/date";
 import { formatCurrency } from "@/lib/utils/format";
 import { MonthSelector } from "./MonthSelector";
 
 const MEMBER_COLORS = ["#4F46E5", "#F04452", "#3182F6", "#F59E0B", "#10B981"];
 
 export function ByMemberClient() {
-  const [currentMonth, setCurrentMonth] = useState<Date>(() =>
-    startOfMonth(getKstNow()),
-  );
-
-  const year = currentMonth.getFullYear();
-  const month = currentMonth.getMonth() + 1;
-  const { data, isLoading } = useLedgerStatsByMember(year, month);
+  const { bookId, year, month, monthDate, setMonth } = useLedgerAnalysisUrl();
+  const { data, isLoading } = useLedgerStatsByMember({ year, month, bookId });
 
   const members = data?.members ?? [];
+  const isPersonalBook = data?.bookVisibility === "personal";
+  // Only the all-books view mixes shared rows with my personal spending.
+  const showsPersonalRow = data?.bookVisibility === null;
 
   const donutData = useMemo(
     () =>
@@ -54,7 +51,7 @@ export function ByMemberClient() {
 
   return (
     <div className="space-y-4">
-      <MonthSelector value={currentMonth} onChange={setCurrentMonth} />
+      <MonthSelector value={monthDate} onChange={setMonth} />
 
       {/* 섹션 1: 구성원 요약 카드 */}
       {isLoading ? (
@@ -63,15 +60,16 @@ export function ByMemberClient() {
           <div className="bg-gray-200 rounded-2xl h-24" />
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {members.map((member, i) => {
             const ratio =
               totalShared > 0
                 ? Math.round((member.sharedExpense / totalShared) * 1000) / 10
                 : 0;
             return (
-              <div
+              <li
                 key={member.memberId}
+                aria-label={member.memberName}
                 className="bg-white rounded-2xl p-4 shadow-sm"
               >
                 <div className="flex items-center gap-2 mb-3">
@@ -90,20 +88,42 @@ export function ByMemberClient() {
                     </span>
                   )}
                 </div>
-                <p className="text-lg font-bold text-gray-900">
-                  {formatCurrency(member.sharedExpense)}
-                </p>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  공용 지출 {ratio.toFixed(1)}% 기여
-                </p>
-              </div>
+                {isPersonalBook ? (
+                  <>
+                    <p className="text-xs text-gray-500">개인 지출</p>
+                    <p className="text-lg font-bold text-gray-900">
+                      {formatCurrency(member.personalExpense ?? 0)}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-lg font-bold text-gray-900">
+                      {formatCurrency(member.sharedExpense)}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      공용 지출 {ratio.toFixed(1)}% 기여
+                    </p>
+                  </>
+                )}
+                {showsPersonalRow && (
+                  <div className="mt-3 flex justify-between border-t border-gray-100 pt-2 text-sm">
+                    <span className="text-gray-500">개인 지출</span>
+                    <span className="text-gray-700">
+                      {member.personalExpenseVisible &&
+                      member.personalExpense !== null
+                        ? formatCurrency(member.personalExpense)
+                        : "비공개"}
+                    </span>
+                  </div>
+                )}
+              </li>
             );
           })}
-        </div>
+        </ul>
       )}
 
       {/* 섹션 2: 비중 도넛 차트 */}
-      {!isLoading && donutData.length > 0 && (
+      {!isLoading && !isPersonalBook && donutData.length > 0 && (
         <div className="bg-white rounded-2xl p-5 shadow-sm">
           <h3 className="text-sm font-semibold text-gray-900 mb-4">
             공용 지출 비중
@@ -151,7 +171,7 @@ export function ByMemberClient() {
       {!isLoading && members.length === 0 && (
         <div className="bg-white rounded-2xl p-8 shadow-sm text-center">
           <p className="text-gray-400 text-sm">
-            이번 달 공용 지출 데이터가 없어요
+            {month}월 지출 데이터가 없어요
           </p>
         </div>
       )}

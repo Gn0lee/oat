@@ -1,5 +1,4 @@
 import { createQueryKeyStore } from "@lukemorales/query-key-factory";
-import type { StatsScope } from "@/lib/api/ledger-stats";
 
 export const queries = createQueryKeyStore({
   auth: {
@@ -139,6 +138,8 @@ export const queries = createQueryKeyStore({
       categoryId?: string | null;
       childCategoryId?: string | null;
       categoryBreakdown?: string;
+      type?: string;
+      paymentMethodId?: string;
     }) => ({
       queryKey: [params],
     }),
@@ -185,33 +186,11 @@ export const queries = createQueryKeyStore({
 
   ledgerStats: {
     all: null,
-    summary: (year: number, month: number) => ({ queryKey: [year, month] }),
-    byMember: (year: number, month: number) => ({ queryKey: [year, month] }),
-    byCategory: (
-      year: number,
-      month: number,
-      type: "expense" | "income",
-      scope: StatsScope,
-    ) => ({ queryKey: [year, month, type, scope] }),
-    byPaymentMethod: (year: number, month: number, scope: StatsScope) => ({
-      queryKey: [year, month, scope],
-    }),
-    trend: (months: number, scope?: string) => ({ queryKey: [months, scope] }),
-    daily: (year: number, month: number, scope: StatsScope) => ({
-      queryKey: [year, month, scope],
-    }),
-    detail: (params?: {
-      kind?: string;
-      year?: number;
-      month?: number;
-      date?: string;
-      type?: string;
-      scope?: string;
-      categoryId?: string | null;
-      childCategoryId?: string | null;
-      categoryBreakdown?: string;
-      paymentMethodId?: string | null;
-      limit?: number;
+    query: (params: {
+      name: string;
+      params: Record<string, string | number | null | undefined>;
+      userId: string | null;
+      householdId: string | null;
     }) => ({ queryKey: [params] }),
   },
   ledgerTags: {

@@ -1,6 +1,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { APIError } from "@/lib/api/error";
 import { getLedgerBook } from "@/lib/api/ledger-books";
+import {
+  getLedgerStatsSummary,
+  type LedgerStatsMonth,
+  type LedgerStatsScope,
+} from "@/lib/api/ledger-stats";
 import { getKstDayRange, getKstMonthRange, getKstToday } from "@/lib/date";
 import {
   decodeLedgerSearchCursor,
@@ -170,6 +175,9 @@ export interface GetLedgerEntriesOptions {
   categoryId?: string | null;
   childCategoryId?: string | null;
   categoryBreakdown?: "direct";
+  type?: LedgerEntryType;
+  /** "__none__"이면 결제수단 없는 기록 */
+  paymentMethodId?: string;
 }
 
 export interface LedgerEntrySearchItem extends LedgerEntryWithDetails {
@@ -690,6 +698,13 @@ export async function getLedgerEntries(
     query.in("category_id", categoryFilterIds);
   }
 
+  if (options?.type) query.eq("type", options.type);
+  if (options?.paymentMethodId === "__none__") {
+    query.is("from_payment_method_id", null);
+  } else if (options?.paymentMethodId) {
+    query.eq("from_payment_method_id", options.paymentMethodId);
+  }
+
   const { data, error } = await query
     .order("transacted_at", { ascending: false })
     .order("created_at", { ascending: false });
@@ -878,45 +893,19 @@ export async function searchLedgerEntriesScoped(
   };
 }
 
+// The hub summary is the stats summary's total for the same scope, so both
+// screens always count one identical visible transaction set.
 export async function getLedgerEntrySummary(
   supabase: SupabaseClient<Database>,
   householdId: string,
-  year: number,
-  month: number,
-  scope: "shared" | "personal" | "all" = "shared",
-  userId?: string,
-  bookId?: string,
+  params: LedgerStatsMonth & LedgerStatsScope,
 ): Promise<LedgerEntrySummary> {
-  if (bookId) await getLedgerBook(supabase, householdId, bookId);
-  const { from, to } = getDateRange({ year, month });
-
-  const query = supabase
-    .from("ledger_entries")
-    .select("type, amount, is_shared, owner_id")
-    .eq("household_id", householdId)
-    .gte("transacted_at", from)
-    .lt("transacted_at", to);
-  if (bookId) query.eq("book_id", bookId);
-  const { data, error } = await query;
-
-  if (error) {
-    console.error("Ledger summary fetch error:", error);
-    throw new APIError(
-      "LEDGER_FETCH_ERROR",
-      "가계부 요약 조회에 실패했습니다.",
-      500,
-    );
-  }
-
-  const rows = (data ?? []).filter((row) =>
-    scope === "all"
-      ? true
-      : scope === "shared"
-        ? row.is_shared
-        : !row.is_shared && row.owner_id === userId,
-  );
-
-  return calculateLedgerSummary(rows);
+  const { total } = await getLedgerStatsSummary(supabase, householdId, params);
+  return {
+    totalIncome: total.totalIncome,
+    totalExpense: total.totalExpense,
+    balance: total.balance,
+  };
 }
 
 export async function getOwnLedgerActivity(

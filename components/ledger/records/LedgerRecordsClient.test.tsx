@@ -396,4 +396,48 @@ describe("LedgerRecordsClient", () => {
         .mock.calls.every(([params]) => params?.enabled === false),
     ).toBe(true);
   });
+
+  it("applies the analysis view-all conditions and shows them with a way to clear", async () => {
+    state.search =
+      "date=2026-06-16&type=expense&paymentMethodId=__none__&categoryId=__none__";
+    renderRecords();
+
+    expect(useLedgerEntries).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "expense",
+        paymentMethodId: "__none__",
+        categoryId: "__none__",
+      }),
+    );
+    expect(
+      screen.getByText("지출 · 미분류 · 결제수단 없음"),
+    ).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "조건 해제" }));
+
+    expect(replace).toHaveBeenCalledWith("/ledger/records?date=2026-06-16");
+  });
+
+  it("names the payment method of a filtered list from its records", () => {
+    state.search = "date=2026-06-16&paymentMethodId=card-1";
+    vi.mocked(useLedgerEntries).mockReturnValue({
+      data: [
+        {
+          ...entry,
+          fromPaymentMethodId: "card-1",
+          fromPaymentMethodName: "생활 카드",
+        },
+      ],
+      isLoading: false,
+    } as never);
+    renderRecords();
+
+    expect(screen.getByText("생활 카드")).toBeInTheDocument();
+  });
+
+  it("shows no condition bar without analysis conditions", () => {
+    renderRecords();
+
+    expect(screen.queryByRole("button", { name: "조건 해제" })).toBeNull();
+  });
 });

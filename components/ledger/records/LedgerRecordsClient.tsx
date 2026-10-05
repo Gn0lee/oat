@@ -37,6 +37,18 @@ interface LedgerRecordsClientProps {
 }
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"] as const;
+// Conditions carried over from an analysis "전체 기록 보기" link.
+const FILTER_PARAMS = [
+  "type",
+  "categoryId",
+  "childCategoryId",
+  "categoryBreakdown",
+  "paymentMethodId",
+] as const;
+const TYPE_LABELS: Record<string, string> = {
+  expense: "지출",
+  income: "수입",
+};
 
 function dayHeading(date: string) {
   const [year, month, day] = date.split("-").map(Number);
@@ -86,6 +98,8 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
     childCategoryId: searchParams.get("childCategoryId") ?? undefined,
     categoryBreakdown:
       searchParams.get("categoryBreakdown") === "direct" ? "direct" : undefined,
+    type: searchParams.get("type") ?? undefined,
+    paymentMethodId: searchParams.get("paymentMethodId") ?? undefined,
   });
   const summary = useMemo(() => calculateLedgerSummary(entries), [entries]);
   const entriesByDate = useMemo(() => {
@@ -107,6 +121,28 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
       entries: entriesByDate.get(date) ?? [],
     }));
   }, [entriesByDate, selectedDate]);
+
+  const filterLabel = useMemo(() => {
+    const parts: string[] = [];
+    const type = searchParams.get("type");
+    if (type) parts.push(TYPE_LABELS[type] ?? "선택한 유형");
+    const categoryId =
+      searchParams.get("childCategoryId") ?? searchParams.get("categoryId");
+    if (categoryId === "__none__") parts.push("미분류");
+    else if (categoryId)
+      parts.push(
+        entries.find((entry) => entry.categoryId === categoryId)
+          ?.categoryName ?? "선택한 분류",
+      );
+    const paymentMethodId = searchParams.get("paymentMethodId");
+    if (paymentMethodId === "__none__") parts.push("결제수단 없음");
+    else if (paymentMethodId)
+      parts.push(
+        entries.find((entry) => entry.fromPaymentMethodId === paymentMethodId)
+          ?.fromPaymentMethodName ?? "선택한 결제수단",
+      );
+    return parts.join(" · ");
+  }, [entries, searchParams]);
 
   const returnTo = `${pathname}${searchParams.size ? `?${searchParams}` : ""}`;
   const queryError = bookError || entriesError || booksError;
@@ -139,6 +175,10 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
     else next.delete("book");
     router.push(`${pathname}${next.size ? `?${next}` : ""}`);
   };
+  const clearFilters = () =>
+    replaceParams((next) => {
+      for (const key of FILTER_PARAMS) next.delete(key);
+    });
   const refresh = () => {
     void queryClient.invalidateQueries({ queryKey: ["ledgerBooks"] });
     void queryClient.invalidateQueries({
@@ -241,6 +281,21 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
           {book.isDefault ? " · 기본" : ""}
           {archived ? " · 보관됨 · 읽기 전용" : ""}
         </output>
+      )}
+
+      {filterLabel && (
+        <div className="flex items-center justify-between gap-3 rounded-xl bg-gray-50 pl-4">
+          <output className="min-w-0 truncate text-sm text-gray-700">
+            {filterLabel}
+          </output>
+          <Button
+            variant="ghost"
+            className="min-h-11 shrink-0 text-sm text-gray-500"
+            onClick={clearFilters}
+          >
+            조건 해제
+          </Button>
+        </div>
       )}
 
       {isLoading ? (

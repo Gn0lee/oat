@@ -1,65 +1,28 @@
 import type { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
-import { APIError, toErrorResponse } from "@/lib/api/error";
-import { getUserHouseholdId } from "@/lib/api/invitation";
 import { getLedgerStatsByMember } from "@/lib/api/ledger-stats";
-import { getKstNow } from "@/lib/date";
-import { createClient } from "@/lib/supabase/server";
+import {
+  parseLedgerStatsMonth,
+  parseLedgerStatsScope,
+} from "@/lib/api/ledger-stats-query";
+import { respondWithLedgerStats } from "@/lib/api/ledger-stats-route";
 
 /**
  * GET /api/ledger/stats/by-member
- * 가계부 통계 대시보드 - 멤버별 공용/개인 지출 집계
+ * 구성원별 공용 지출·수입과 본인 개인 지출. 다른 구성원의 개인 지출은 비공개(null)
  *
- * Query params:
- *   ?year=2026&month=4  (없으면 당월)
+ * Query params: ?year=2026&month=4, ?book=<장부 ID>
  */
-export async function GET(request: NextRequest) {
-  try {
-    const supabase = await createClient();
-
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      throw new APIError("AUTH_UNAUTHORIZED", "로그인이 필요합니다.", 401);
-    }
-
-    const householdId = await getUserHouseholdId(supabase, user.id);
-    if (!householdId) {
-      throw new APIError(
-        "HOUSEHOLD_NOT_FOUND",
-        "가구 정보를 찾을 수 없습니다.",
-        404,
-      );
-    }
-
-    const { searchParams } = request.nextUrl;
-    const now = getKstNow();
-    const year = Number(searchParams.get("year") ?? now.getFullYear());
-    const month = Number(searchParams.get("month") ?? now.getMonth() + 1);
-
-    const data = await getLedgerStatsByMember(
-      supabase,
-      householdId,
-      user.id,
-      year,
-      month,
-    );
-
-    return NextResponse.json({ data });
-  } catch (error) {
-    if (error instanceof APIError) {
-      return NextResponse.json(toErrorResponse(error), {
-        status: error.statusCode,
+export function GET(request: NextRequest) {
+  return respondWithLedgerStats(
+    request,
+    ({ supabase, householdId, userId, searchParams }) => {
+      // Member rows are always split by book visibility; a legacy scope has no
+      // meaning here and is ignored.
+      const { bookId } = parseLedgerStatsScope(searchParams, "by-member");
+      return getLedgerStatsByMember(supabase, householdId, userId, {
+        ...parseLedgerStatsMonth(searchParams),
+        ...(bookId ? { bookId } : {}),
       });
-    }
-    return NextResponse.json(
-      {
-        error: { code: "INTERNAL_ERROR", message: "서버 오류가 발생했습니다." },
-      },
-      { status: 500 },
-    );
-  }
+    },
+  );
 }

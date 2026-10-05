@@ -5,7 +5,6 @@ import {
   useLedgerStatsSummary,
 } from "@/hooks/use-ledger-stats";
 import { ApiQueryError } from "@/lib/api/client";
-import type { StatsScope } from "@/lib/api/ledger-stats";
 import { Skeleton } from "../../ui/skeleton";
 import { CategoryTopPreview } from "./CategoryTopPreview";
 import { SummaryStatCard } from "./SummaryStatCard";
@@ -13,7 +12,9 @@ import { SummaryStatCard } from "./SummaryStatCard";
 interface LedgerAnalysisOverviewProps {
   year: number;
   month: number;
-  scope: Extract<StatsScope, "shared" | "personal">;
+  /** 없으면 전체 장부 */
+  bookId?: string;
+  bookName?: string;
 }
 
 function isNoHouseholdState(error: unknown) {
@@ -69,12 +70,16 @@ function EmptyState({ children }: { children: React.ReactNode }) {
 export function LedgerAnalysisOverview({
   year,
   month,
-  scope,
+  bookId,
+  bookName,
 }: LedgerAnalysisOverviewProps) {
-  const summaryQuery = useLedgerStatsSummary(year, month);
-  const categoryQuery = useLedgerStatsByCategory(year, month, "expense", scope);
-
-  const scopeLabel = scope === "personal" ? "개인" : "공용";
+  const summaryQuery = useLedgerStatsSummary({ year, month, bookId });
+  const categoryQuery = useLedgerStatsByCategory({
+    year,
+    month,
+    type: "expense",
+    bookId,
+  });
 
   return (
     <>
@@ -87,11 +92,9 @@ export function LedgerAnalysisOverview({
             : "현금 흐름을 불러오지 못했어요"}
         </EmptyState>
       ) : summaryQuery.data ? (
-        <SummaryStatCard summary={summaryQuery.data} scope={scope} />
+        <SummaryStatCard summary={summaryQuery.data} bookName={bookName} />
       ) : (
-        <EmptyState>
-          {month}월 {scopeLabel} 요약이 없어요
-        </EmptyState>
+        <EmptyState>{month}월 요약이 없어요</EmptyState>
       )}
 
       {categoryQuery.isLoading ? (
@@ -104,10 +107,10 @@ export function LedgerAnalysisOverview({
         </EmptyState>
       ) : (
         <CategoryTopPreview
-          emptyLabel={`이번 달 주요 ${scopeLabel} 지출이 없어요`}
+          emptyLabel={`${month}월 지출 내역이 없어요`}
           items={categoryQuery.data?.items ?? []}
           total={categoryQuery.data?.total ?? 0}
-          title={`이번 달 주요 ${scopeLabel} 지출`}
+          title={`${month}월 주요 지출`}
         />
       )}
     </>

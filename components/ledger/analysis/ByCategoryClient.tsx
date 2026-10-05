@@ -1,6 +1,5 @@
 "use client";
 
-import { startOfMonth } from "date-fns";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Check, ChevronDown, ChevronRight, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -25,9 +24,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { useLedgerAnalysisUrl } from "@/hooks/use-ledger-analysis-url";
 import { useLedgerStatsByCategory } from "@/hooks/use-ledger-stats";
-import type { StatsScope } from "@/lib/api/ledger-stats";
-import { getKstNow } from "@/lib/date";
 import { formatCurrency } from "@/lib/utils/format";
 import { LedgerStatsDetailDrawer } from "./LedgerStatsDetailDrawer";
 import { MonthSelector } from "./MonthSelector";
@@ -42,16 +40,17 @@ const CHART_COLORS = [
   "#EC4899",
 ];
 
-interface ByCategoryClientProps {
-  scope: StatsScope;
-}
-
-export function ByCategoryClient({ scope }: ByCategoryClientProps) {
+export function ByCategoryClient() {
   const shouldReduceMotion = useReducedMotion();
-  const [currentMonth, setCurrentMonth] = useState<Date>(() =>
-    startOfMonth(getKstNow()),
-  );
-  const [entryType, setEntryType] = useState<"expense" | "income">("expense");
+  const {
+    bookId,
+    year,
+    month,
+    monthDate,
+    setMonth,
+    type: entryType,
+    setType: setEntryType,
+  } = useLedgerAnalysisUrl();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
@@ -66,23 +65,21 @@ export function ByCategoryClient({ scope }: ByCategoryClientProps) {
     expectedCount: number;
   } | null>(null);
 
-  const year = currentMonth.getFullYear();
-  const month = currentMonth.getMonth() + 1;
   const prevYear = month === 1 ? year - 1 : year;
   const prevMonth = month === 1 ? 12 : month - 1;
 
-  const { data, isLoading } = useLedgerStatsByCategory(
+  const { data, isLoading } = useLedgerStatsByCategory({
     year,
     month,
-    entryType,
-    scope,
-  );
-  const { data: prevData } = useLedgerStatsByCategory(
-    prevYear,
-    prevMonth,
-    entryType,
-    scope,
-  );
+    type: entryType,
+    bookId,
+  });
+  const { data: prevData } = useLedgerStatsByCategory({
+    year: prevYear,
+    month: prevMonth,
+    type: entryType,
+    bookId,
+  });
 
   useEffect(() => {
     if (data?.items && selectedIds.length === 0) {
@@ -157,7 +154,7 @@ export function ByCategoryClient({ scope }: ByCategoryClientProps) {
 
   return (
     <div className="space-y-4">
-      <MonthSelector value={currentMonth} onChange={setCurrentMonth} />
+      <MonthSelector value={monthDate} onChange={setMonth} />
 
       {/* Section 1: 도넛 차트 */}
       <div className="bg-white rounded-2xl p-5 shadow-sm">
@@ -581,7 +578,7 @@ export function ByCategoryClient({ scope }: ByCategoryClientProps) {
                 year,
                 month,
                 type: entryType,
-                scope,
+                bookId,
                 categoryId: detail.categoryId,
                 childCategoryId: detail.childCategoryId,
                 categoryBreakdown: detail.categoryBreakdown,

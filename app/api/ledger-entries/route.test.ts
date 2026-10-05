@@ -65,6 +65,46 @@ describe("GET /api/ledger-entries scope validation", () => {
       expect.objectContaining({ scope: undefined }),
     );
   });
+
+  it("passes the analysis type and payment-method conditions to the list", async () => {
+    const response = await GET(
+      new NextRequest(
+        "http://localhost/api/ledger-entries?date=2026-10-31&type=expense&paymentMethodId=__none__",
+      ),
+    );
+
+    expect(response.status).toBe(200);
+    expect(getLedgerEntries).toHaveBeenCalledWith(
+      expect.anything(),
+      "household-id",
+      expect.objectContaining({ type: "expense", paymentMethodId: "__none__" }),
+    );
+  });
+
+  it("rejects an unknown entry type", async () => {
+    const response = await GET(
+      new NextRequest("http://localhost/api/ledger-entries?type=gift"),
+    );
+
+    expect(response.status).toBe(400);
+    expect(getLedgerEntries).not.toHaveBeenCalled();
+  });
+
+  it("logs legacy scope and tag filters from pre-book clients", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    await GET(
+      new NextRequest(
+        "http://localhost/api/ledger-entries?scope=shared&tagId=tag-1",
+      ),
+    );
+
+    const contracts = warn.mock.calls.map(
+      ([line]) => JSON.parse(String(line)).contract,
+    );
+    expect(contracts).toEqual(["entries-scope", "entries-tag-filter"]);
+    warn.mockRestore();
+  });
 });
 
 describe("POST /api/ledger-entries selected book", () => {

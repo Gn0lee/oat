@@ -1,17 +1,13 @@
 import { PageContainer } from "@/components/layout";
 import { ByPaymentMethodClient } from "@/components/ledger/analysis/ByPaymentMethodClient";
-import type { StatsScope } from "@/lib/api/ledger-stats";
+import { LedgerAnalysisScope } from "@/components/ledger/analysis/LedgerAnalysisScope";
 
-export default async function ByPaymentMethodPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ scope?: string }>;
-}) {
-  const { scope: rawScope } = await searchParams;
-  const scope = (rawScope === "personal" ? "personal" : "shared") as StatsScope;
+export default function ByPaymentMethodPage() {
   return (
     <PageContainer maxWidth="default">
-      <ByPaymentMethodClient scope={scope} />
+      <LedgerAnalysisScope>
+        <ByPaymentMethodClient />
+      </LedgerAnalysisScope>
     </PageContainer>
   );
 }
