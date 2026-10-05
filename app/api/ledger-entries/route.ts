@@ -157,7 +157,12 @@ export async function POST(request: Request) {
       throw new APIError("AUTH_UNAUTHORIZED", "로그인이 필요합니다.", 401);
     }
 
-    const body = await request.json();
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      throw new APIError("VALIDATION_ERROR", "유효하지 않은 요청입니다.", 400);
+    }
     const result = createLedgerEntrySchema.safeParse(body);
 
     if (!result.success) {
@@ -184,6 +189,7 @@ export async function POST(request: Request) {
     const entry = await createLedgerEntryWithBalanceSync(supabase, {
       householdId,
       ownerId: user.id,
+      bookId: input.bookId,
       type: input.type,
       amount: input.amount,
       transactedAt: input.transactedAt,
@@ -193,7 +199,7 @@ export async function POST(request: Request) {
       fromPaymentMethodId: input.fromPaymentMethodId,
       toAccountId: input.toAccountId,
       toPaymentMethodId: input.toPaymentMethodId,
-      isShared: input.isShared,
+      isShared: "isShared" in input ? input.isShared : undefined,
       memo: input.memo,
       tags: input.tags,
     });

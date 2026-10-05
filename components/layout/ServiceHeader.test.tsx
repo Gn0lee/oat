@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { ServiceHeader } from "./ServiceHeader";
 
@@ -87,6 +87,23 @@ describe("ServiceHeader", () => {
       "href",
       "/ledger/payment-methods",
     );
+  });
+
+  it("ledger composer back and close actions are delegated to the active task", () => {
+    navigationState.pathname = "/ledger/records/new/daily";
+    const onBack = vi.fn();
+    const onClose = vi.fn();
+    window.addEventListener("oat:ledger-composer-back", onBack);
+    window.addEventListener("oat:ledger-composer-close", onClose);
+
+    renderServiceHeader("mobile");
+    fireEvent.click(screen.getByLabelText("이전 화면으로 이동"));
+    fireEvent.click(screen.getByLabelText("작업 닫기"));
+
+    expect(onBack).toHaveBeenCalledOnce();
+    expect(onClose).toHaveBeenCalledOnce();
+    window.removeEventListener("oat:ledger-composer-back", onBack);
+    window.removeEventListener("oat:ledger-composer-close", onClose);
   });
 
   it("ledger analysis 하위 화면의 scope 쿼리를 back href에 유지한다", async () => {

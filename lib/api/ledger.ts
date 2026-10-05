@@ -5,6 +5,7 @@ import { getKstDayRange, getKstMonthRange, getKstToday } from "@/lib/date";
 import type { CreateLedgerEntryInput } from "@/schemas/ledger-entry";
 import type {
   Database,
+  Json,
   LedgerEntry,
   LedgerEntryType,
   PaymentMethodType,
@@ -179,6 +180,7 @@ export interface LedgerEntrySearchResult {
 export interface CreateLedgerEntryParams {
   householdId: string;
   ownerId: string;
+  bookId?: string;
   type: LedgerEntryType;
   amount: number;
   transactedAt: string;
@@ -194,6 +196,9 @@ export interface CreateLedgerEntryParams {
 }
 
 export interface UpdateLedgerEntryParams {
+  bookId?: string;
+  expectedUpdatedAt?: string;
+  confirmVisibilityChange?: boolean;
   type?: LedgerEntryType;
   amount?: number;
   transactedAt?: string;
@@ -884,7 +889,16 @@ const ledgerWriteErrors: Record<string, [string, number]> = {
   LEDGER_FORBIDDEN: ["가계부 기록에 대한 권한이 없습니다.", 403],
   LEDGER_NOT_FOUND: ["가계부 항목을 찾을 수 없습니다.", 404],
   LEDGER_BOOK_UNAVAILABLE: ["장부를 사용할 수 없습니다.", 404],
+  BOOK_UNAVAILABLE: ["장부를 사용할 수 없습니다.", 404],
   LEDGER_BOOK_ARCHIVED: ["보관된 장부는 변경할 수 없습니다.", 409],
+  BOOK_ARCHIVED: ["보관된 장부는 변경할 수 없습니다.", 409],
+  ENTRY_CHANGED: ["기록이 다른 곳에서 변경되었습니다. 다시 불러와주세요.", 409],
+  ENTRY_VERSION_REQUIRED: ["기록을 다시 불러온 뒤 장부를 변경해주세요.", 400],
+  VISIBILITY_CHANGE_CONFIRMATION_REQUIRED: [
+    "공개 대상 변경을 확인해주세요.",
+    400,
+  ],
+  IDEMPOTENCY_CONFLICT: ["같은 저장 요청 키에 다른 내용이 있습니다.", 409],
   LEDGER_BOOK_NAME_CONFLICT: ["이미 사용 중인 장부 이름입니다.", 409],
   LEDGER_FINANCIAL_SOURCE_FORBIDDEN: [
     "계좌 또는 결제수단을 사용할 권한이 없습니다.",
@@ -892,7 +906,7 @@ const ledgerWriteErrors: Record<string, [string, number]> = {
   ],
   LEDGER_INVALID_TRANSFER_TARGET: ["사용할 수 없는 금융수단입니다.", 400],
   LEDGER_TRANSFER_EDIT_UNSUPPORTED: [
-    "이체 기록은 태그 외의 정보를 수정할 수 없습니다. 삭제 후 다시 등록해주세요.",
+    "이체 기록의 금액·금융수단·내용은 수정할 수 없습니다. 장부는 변경할 수 있습니다.",
     400,
   ],
   LEDGER_TAG_INVALID_NAME: ["태그 이름이 올바르지 않습니다.", 400],
@@ -928,7 +942,13 @@ async function writeLedgerEntry(
     const safeError =
       error?.code === "P0001" && ledgerWriteErrors[error.message];
     if (safeError) {
-      throw new APIError(error!.message, safeError[0], safeError[1]);
+      const code =
+        error!.message === "LEDGER_BOOK_UNAVAILABLE"
+          ? "BOOK_UNAVAILABLE"
+          : error!.message === "LEDGER_BOOK_ARCHIVED"
+            ? "BOOK_ARCHIVED"
+            : error!.message;
+      throw new APIError(code, safeError[0], safeError[1]);
     }
     throw new APIError(
       `LEDGER_${operation.toUpperCase()}_ERROR`,
@@ -937,6 +957,83 @@ async function writeLedgerEntry(
     );
   }
   return data;
+}
+
+function isObject(value: Json): value is { [key: string]: Json | undefined } {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isLedgerEntryJson(value: Json): value is LedgerEntry {
+  if (!isObject(value)) return false;
+  return (
+    typeof value.id === "string" &&
+    typeof value.household_id === "string" &&
+    typeof value.owner_id === "string" &&
+    typeof value.book_id === "string" &&
+    typeof value.type === "string" &&
+    typeof value.amount === "number" &&
+    typeof value.transacted_at === "string" &&
+    typeof value.updated_at === "string"
+  );
+}
+
+export interface BatchLedgerEntryWriteResult {
+  entries: LedgerEntry[];
+  replayed: boolean;
+}
+
+export async function createBatchLedgerEntriesWithBalanceSync(
+  supabase: SupabaseClient<Database>,
+  actorId: string,
+  householdId: string,
+  entries: CreateLedgerEntryParams[],
+  requestId?: string,
+): Promise<BatchLedgerEntryWriteResult> {
+  const payload = entries.map((entry) => ({
+    ...entry,
+    ownerId: actorId,
+    householdId,
+    ...(entry.tags !== undefined && {
+      tags: normalizeLedgerTagInputs(entry.tags),
+    }),
+  }));
+  const { data, error } = await supabase.rpc("write_ledger_entries_batch", {
+    p_actor_id: actorId,
+    p_household_id: householdId,
+    p_entries: payload as Json,
+    ...(requestId && { p_request_id: requestId }),
+  });
+  if (error) {
+    const safeError =
+      error.code === "P0001" && ledgerWriteErrors[error.message];
+    if (safeError) {
+      const code =
+        error.message === "LEDGER_BOOK_UNAVAILABLE"
+          ? "BOOK_UNAVAILABLE"
+          : error.message === "LEDGER_BOOK_ARCHIVED"
+            ? "BOOK_ARCHIVED"
+            : error.message;
+      throw new APIError(code, safeError[0], safeError[1]);
+    }
+    throw new APIError(
+      "LEDGER_CREATE_ERROR",
+      "가계부 항목 생성에 실패했습니다.",
+      500,
+    );
+  }
+  if (
+    !isObject(data) ||
+    !Array.isArray(data.entries) ||
+    typeof data.replayed !== "boolean" ||
+    !data.entries.every(isLedgerEntryJson)
+  ) {
+    throw new APIError(
+      "LEDGER_CREATE_ERROR",
+      "가계부 항목 생성에 실패했습니다.",
+      500,
+    );
+  }
+  return { entries: data.entries, replayed: data.replayed };
 }
 
 export async function createLedgerEntryWithBalanceSync(
@@ -959,8 +1056,15 @@ export async function deleteLedgerEntryWithBalanceSync(
   supabase: SupabaseClient<Database>,
   entryId: string,
   ownerId: string,
+  expectedUpdatedAt?: string,
 ): Promise<void> {
-  await writeLedgerEntry(supabase, "delete", ownerId, undefined, entryId);
+  await writeLedgerEntry(
+    supabase,
+    "delete",
+    ownerId,
+    { expectedUpdatedAt },
+    entryId,
+  );
 }
 
 // Keep legacy exports on the same transaction path, including balance and tags.

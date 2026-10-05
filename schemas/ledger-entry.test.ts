@@ -10,6 +10,7 @@ const batchSchema = z.object({
 });
 
 const validDatetime = "2026-04-24T10:00:00.000Z";
+const validBookId = "11111111-1111-4111-8111-111111111111";
 
 const validMinInput = {
   type: "expense" as const,
@@ -73,7 +74,26 @@ describe("createLedgerEntrySchema", () => {
     expect(result.success).toBe(false);
   });
 
-  it("isShared 기본값은 true다", () => {
+  it("selected bookId is preserved and isShared stays derived when book is explicit", () => {
+    const result = createLedgerEntrySchema.safeParse({
+      ...validMinInput,
+      bookId: validBookId,
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.bookId).toBe(validBookId);
+      expect("isShared" in result.data).toBe(false);
+    }
+  });
+
+  it("malformed bookId is rejected", () => {
+    expect(
+      createLedgerEntrySchema.safeParse({ ...validMinInput, bookId: "bad-id" })
+        .success,
+    ).toBe(false);
+  });
+
+  it("isShared 기본값은 true다 for the legacy no-book input", () => {
     const result = createLedgerEntrySchema.safeParse({
       type: "income",
       amount: 5000000,
@@ -82,7 +102,7 @@ describe("createLedgerEntrySchema", () => {
     });
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.isShared).toBe(true);
+      expect("isShared" in result.data && result.data.isShared).toBe(true);
     }
   });
 
@@ -218,6 +238,47 @@ describe("createLedgerEntrySchema", () => {
 });
 
 describe("updateLedgerEntrySchema", () => {
+  it("accepts a selected book only with a valid optimistic version", () => {
+    expect(
+      updateLedgerEntrySchema.safeParse({
+        bookId: validBookId,
+        expectedUpdatedAt: validDatetime,
+      }).success,
+    ).toBe(true);
+    expect(
+      updateLedgerEntrySchema.safeParse({ bookId: validBookId }).success,
+    ).toBe(false);
+  });
+
+  it("accepts Postgres UTC offsets and preserves microsecond version precision", () => {
+    const expectedUpdatedAt = "2026-10-04T08:30:01.123456+00:00";
+    const result = updateLedgerEntrySchema.safeParse({
+      bookId: validBookId,
+      expectedUpdatedAt,
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.expectedUpdatedAt).toBe(expectedUpdatedAt);
+    }
+  });
+
+  it("rejects malformed book, version, and confirmation values", () => {
+    expect(
+      updateLedgerEntrySchema.safeParse({
+        bookId: "bad-id",
+        expectedUpdatedAt: validDatetime,
+      }).success,
+    ).toBe(false);
+    expect(
+      updateLedgerEntrySchema.safeParse({ expectedUpdatedAt: "tomorrow" })
+        .success,
+    ).toBe(false);
+    expect(
+      updateLedgerEntrySchema.safeParse({ confirmVisibilityChange: "yes" })
+        .success,
+    ).toBe(false);
+  });
+
   it("모든 필드가 optional이라 빈 객체도 성공한다", () => {
     const result = updateLedgerEntrySchema.safeParse({});
     expect(result.success).toBe(true);

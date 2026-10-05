@@ -77,6 +77,12 @@ describe("ledgerRecordUpdateProposedChangesSchema", () => {
 });
 
 describe("listRecordChangeRequestsSchema", () => {
+  it("accepts the expired status for historical requests", () => {
+    expect(
+      listRecordChangeRequestsSchema.safeParse({ status: "expired" }).success,
+    ).toBe(true);
+  });
+
   it("box와 status 필터를 파싱한다", () => {
     const result = listRecordChangeRequestsSchema.safeParse({
       box: "received",

@@ -300,6 +300,17 @@ export function LedgerEntryDetailClient({
         entry={entry}
         open={editOpen}
         onOpenChange={setEditOpen}
+        onUpdated={({ bookId: destinationBookId, date, bookChanged }) => {
+          if (bookChanged) {
+            const params = new URLSearchParams({
+              book: destinationBookId,
+              date,
+            });
+            router.replace(`/ledger/records?${params.toString()}`);
+          } else {
+            router.refresh();
+          }
+        }}
       />
       <LedgerEntryDeleteDialog
         entry={entry}

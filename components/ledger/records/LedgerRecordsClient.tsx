@@ -184,18 +184,11 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
   if ((bookId && bookPending) || booksPending)
     return <Skeleton className="h-72 rounded-2xl" />;
   const archived = Boolean(book?.archivedAt);
-  // Until the input flow accepts bookId, only the legacy supported destinations
-  // may expose entry creation. Never silently create in a different book.
-  const canAdd =
-    !archived &&
-    (!bookId ||
-      book?.isDefault ||
-      (book?.visibility === "personal" &&
-        book.name.toLowerCase() === "개인 생활비"));
+  const canAdd = !bookId || Boolean(book && !archived);
   const addParams = new URLSearchParams({
     date: formatDateISO(selectedDate),
-    scope: book?.visibility === "personal" ? "personal" : "shared",
   });
+  if (bookId && book && !archived) addParams.set("book", book.id);
   const monthLabel = `${currentMonth.getFullYear()}년 ${currentMonth.getMonth() + 1}월`;
   return (
     <div className="space-y-4 pb-6">

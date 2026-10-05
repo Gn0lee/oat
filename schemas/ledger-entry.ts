@@ -37,7 +37,8 @@ const createLedgerEntryBaseSchema = z.object({
   fromPaymentMethodId: z.string().uuid().optional(),
   toAccountId: z.string().uuid().optional(),
   toPaymentMethodId: z.string().uuid().optional(),
-  isShared: z.boolean().default(true),
+  bookId: z.string().uuid().optional(),
+  isShared: z.boolean().optional(),
   memo: z.string().max(500, "메모는 500자 이내여야 합니다.").optional(),
   tags: z
     .array(ledgerTagNameSchema)
@@ -45,8 +46,8 @@ const createLedgerEntryBaseSchema = z.object({
     .optional(),
 });
 
-export const createLedgerEntrySchema = createLedgerEntryBaseSchema.superRefine(
-  (value, ctx) => {
+export const createLedgerEntrySchema = createLedgerEntryBaseSchema
+  .superRefine((value, ctx) => {
     if (value.type === "transfer") {
       const sourceCount =
         Number(Boolean(value.fromAccountId)) +
@@ -107,40 +108,62 @@ export const createLedgerEntrySchema = createLedgerEntryBaseSchema.superRefine(
         });
       }
     }
-  },
-);
+  })
+  .transform((value) => {
+    if (value.bookId) {
+      const { isShared: _legacyVisibility, ...entry } = value;
+      return entry;
+    }
+    return { ...value, isShared: value.isShared ?? true };
+  });
 
 export type CreateLedgerEntryInput = z.infer<typeof createLedgerEntrySchema>;
 
-export const updateLedgerEntrySchema = z.object({
-  type: z
-    .enum(ledgerEntryTypeValues, {
-      message: "유효한 항목 유형이 아닙니다.",
-    })
-    .optional(),
-  amount: z.number().positive("금액은 0보다 커야 합니다.").optional(),
-  transactedAt: z.string().datetime("올바른 날짜 형식이 아닙니다.").optional(),
-  title: z
-    .string()
-    .max(100, "내용은 100자 이내여야 합니다.")
-    .nullable()
-    .optional(),
-  categoryId: z.string().uuid().nullable().optional(),
-  fromAccountId: z.string().uuid().nullable().optional(),
-  fromPaymentMethodId: z.string().uuid().nullable().optional(),
-  toAccountId: z.string().uuid().nullable().optional(),
-  toPaymentMethodId: z.string().uuid().nullable().optional(),
-  isShared: z.never({ message: "공개범위는 수정할 수 없습니다." }).optional(),
-  memo: z
-    .string()
-    .max(500, "메모는 500자 이내여야 합니다.")
-    .nullable()
-    .optional(),
-  tags: z
-    .array(ledgerTagNameSchema)
-    .max(5, "태그는 최대 5개까지 지정할 수 있습니다.")
-    .nullable()
-    .optional(),
-});
+export const updateLedgerEntrySchema = z
+  .object({
+    bookId: z.string().uuid().optional(),
+    expectedUpdatedAt: z.string().datetime({ offset: true }).optional(),
+    confirmVisibilityChange: z.boolean().optional(),
+    type: z
+      .enum(ledgerEntryTypeValues, {
+        message: "유효한 항목 유형이 아닙니다.",
+      })
+      .optional(),
+    amount: z.number().positive("금액은 0보다 커야 합니다.").optional(),
+    transactedAt: z
+      .string()
+      .datetime("올바른 날짜 형식이 아닙니다.")
+      .optional(),
+    title: z
+      .string()
+      .max(100, "내용은 100자 이내여야 합니다.")
+      .nullable()
+      .optional(),
+    categoryId: z.string().uuid().nullable().optional(),
+    fromAccountId: z.string().uuid().nullable().optional(),
+    fromPaymentMethodId: z.string().uuid().nullable().optional(),
+    toAccountId: z.string().uuid().nullable().optional(),
+    toPaymentMethodId: z.string().uuid().nullable().optional(),
+    isShared: z.never({ message: "공개범위는 수정할 수 없습니다." }).optional(),
+    memo: z
+      .string()
+      .max(500, "메모는 500자 이내여야 합니다.")
+      .nullable()
+      .optional(),
+    tags: z
+      .array(ledgerTagNameSchema)
+      .max(5, "태그는 최대 5개까지 지정할 수 있습니다.")
+      .nullable()
+      .optional(),
+  })
+  .superRefine((value, ctx) => {
+    if (value.bookId && !value.expectedUpdatedAt) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["expectedUpdatedAt"],
+        message: "기록 버전을 확인한 뒤 장부를 변경해주세요.",
+      });
+    }
+  });
 
 export type UpdateLedgerEntryInput = z.infer<typeof updateLedgerEntrySchema>;

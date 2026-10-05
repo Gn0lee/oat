@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { APIError, toErrorResponse } from "@/lib/api/error";
 import { getUserHouseholdId } from "@/lib/api/invitation";
 import {
@@ -88,7 +89,12 @@ export async function PATCH(request: Request, { params }: RouteParams) {
       throw new APIError("AUTH_UNAUTHORIZED", "로그인이 필요합니다.", 401);
     }
 
-    const body = await request.json();
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      throw new APIError("VALIDATION_ERROR", "유효하지 않은 요청입니다.", 400);
+    }
     const result = updateLedgerEntrySchema.safeParse(body);
 
     if (!result.success) {
@@ -113,6 +119,9 @@ export async function PATCH(request: Request, { params }: RouteParams) {
       id,
       user.id,
       {
+        bookId: input.bookId,
+        expectedUpdatedAt: input.expectedUpdatedAt,
+        confirmVisibilityChange: input.confirmVisibilityChange,
         type: input.type,
         amount: input.amount,
         transactedAt: input.transactedAt,
@@ -157,7 +166,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
  * DELETE /api/ledger-entries/[id]
  * 가계부 항목 삭제 (본인 항목만)
  */
-export async function DELETE(_request: Request, { params }: RouteParams) {
+export async function DELETE(request: Request, { params }: RouteParams) {
   try {
     const { id } = await params;
     const supabase = await createClient();
@@ -171,13 +180,46 @@ export async function DELETE(_request: Request, { params }: RouteParams) {
       throw new APIError("AUTH_UNAUTHORIZED", "로그인이 필요합니다.", 401);
     }
 
+    const rawBody = await request.text();
+    let expectedUpdatedAt: string | undefined;
+    if (rawBody.trim()) {
+      let body: unknown;
+      try {
+        body = JSON.parse(rawBody);
+      } catch {
+        throw new APIError(
+          "VALIDATION_ERROR",
+          "유효하지 않은 요청입니다.",
+          400,
+        );
+      }
+      const bodyResult = z
+        .object({
+          expectedUpdatedAt: z.string().datetime({ offset: true }).optional(),
+        })
+        .safeParse(body);
+      if (!bodyResult.success) {
+        throw new APIError(
+          "VALIDATION_ERROR",
+          "유효하지 않은 요청입니다.",
+          400,
+        );
+      }
+      expectedUpdatedAt = bodyResult.data.expectedUpdatedAt;
+    }
+
     const { data: existingEntry } = await supabase
       .from("ledger_entries")
       .select("*")
       .eq("id", id)
       .maybeSingle();
 
-    await deleteLedgerEntryWithBalanceSync(supabase, id, user.id);
+    await deleteLedgerEntryWithBalanceSync(
+      supabase,
+      id,
+      user.id,
+      expectedUpdatedAt,
+    );
 
     if (existingEntry) {
       await notifyLedgerEntryDeleted(supabase, {

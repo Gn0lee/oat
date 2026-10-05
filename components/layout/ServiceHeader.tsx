@@ -25,31 +25,51 @@ export function ServiceHeader({ variant, mcpEnabled }: ServiceHeaderProps) {
   }
 
   return (
-    <Suspense fallback={<MobileServiceHeader meta={meta} />}>
-      <MobileServiceHeaderWithQuery meta={meta} />
+    <Suspense
+      fallback={
+        <MobileServiceHeader
+          meta={meta}
+          isLedgerComposer={pathname.startsWith("/ledger/records/new/")}
+        />
+      }
+    >
+      <MobileServiceHeaderWithQuery
+        meta={meta}
+        isLedgerComposer={pathname.startsWith("/ledger/records/new/")}
+      />
     </Suspense>
   );
 }
 
 function MobileServiceHeaderWithQuery({
   meta,
+  isLedgerComposer,
 }: {
   meta: ReturnType<typeof getServiceRouteMeta>;
+  isLedgerComposer: boolean;
 }) {
   const searchParams = useSearchParams();
   const parentHref = resolveServiceParentHref({
     meta,
     searchParams: new URLSearchParams(searchParams.toString()),
   });
-  return <MobileServiceHeader meta={meta} parentHref={parentHref} />;
+  return (
+    <MobileServiceHeader
+      meta={meta}
+      parentHref={parentHref}
+      isLedgerComposer={isLedgerComposer}
+    />
+  );
 }
 
 function MobileServiceHeader({
   meta,
   parentHref,
+  isLedgerComposer = false,
 }: {
   meta: ReturnType<typeof getServiceRouteMeta>;
   parentHref?: string;
+  isLedgerComposer?: boolean;
 }) {
   if (!meta) {
     return null;
@@ -68,23 +88,55 @@ function MobileServiceHeader({
 
   return (
     <header className="absolute inset-x-0 top-0 z-50 bg-gray-50/80 backdrop-blur-md h-14 px-1 flex items-center lg:hidden">
-      <IconLink
-        href={parentHref}
-        label="이전 화면으로 이동"
-        className="shrink-0"
-      >
-        <ChevronLeft className="size-6" />
-      </IconLink>
+      {isLedgerComposer ? (
+        <IconButton
+          label="이전 화면으로 이동"
+          onClick={() => {
+            window.dispatchEvent(
+              new CustomEvent("oat:ledger-composer-back", {
+                detail: { trigger: document.activeElement },
+              }),
+            );
+          }}
+          className="shrink-0"
+        >
+          <ChevronLeft className="size-6" />
+        </IconButton>
+      ) : (
+        <IconLink
+          href={parentHref}
+          label="이전 화면으로 이동"
+          className="shrink-0"
+        >
+          <ChevronLeft className="size-6" />
+        </IconLink>
+      )}
       <h1 className="min-w-0 flex-1 truncate pr-12 text-base font-semibold text-gray-900">
         {meta.label}
       </h1>
-      <IconLink
-        href={meta.closeHref}
-        label="작업 닫기"
-        className="absolute right-1"
-      >
-        <X className="size-5" />
-      </IconLink>
+      {isLedgerComposer ? (
+        <IconButton
+          label="작업 닫기"
+          onClick={() => {
+            window.dispatchEvent(
+              new CustomEvent("oat:ledger-composer-close", {
+                detail: { trigger: document.activeElement },
+              }),
+            );
+          }}
+          className="absolute right-1"
+        >
+          <X className="size-5" />
+        </IconButton>
+      ) : (
+        <IconLink
+          href={meta.closeHref}
+          label="작업 닫기"
+          className="absolute right-1"
+        >
+          <X className="size-5" />
+        </IconLink>
+      )}
     </header>
   );
 }
@@ -157,5 +209,31 @@ function IconLink({
     >
       {children}
     </Link>
+  );
+}
+
+function IconButton({
+  label,
+  className,
+  children,
+  onClick,
+}: {
+  label: string;
+  className?: string;
+  children: React.ReactNode;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      className={cn(
+        "inline-flex size-11 items-center justify-center rounded-full text-gray-700 transition-colors hover:bg-gray-100",
+        className,
+      )}
+      onClick={onClick}
+    >
+      {children}
+    </button>
   );
 }
