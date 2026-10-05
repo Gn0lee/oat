@@ -91,6 +91,8 @@ interface LedgerCategoryBaseProps {
 
 interface LedgerCategoryComboboxProps extends LedgerCategoryBaseProps {
   placeholder: string;
+  className?: string;
+  "aria-label"?: string;
   onValueChange: (value: string) => void;
 }
 
@@ -331,6 +333,8 @@ export function LedgerCategoryCombobox({
   categories,
   type = "expense",
   placeholder,
+  className,
+  "aria-label": ariaLabel,
   onValueChange,
 }: LedgerCategoryComboboxProps) {
   const [open, setOpen] = useState(false);
@@ -367,6 +371,8 @@ export function LedgerCategoryCombobox({
             label={selectedLabel}
             placeholder={placeholder}
             open={open}
+            className={className}
+            aria-label={ariaLabel}
           />
         </PopoverTrigger>
         <PopoverContent
@@ -518,7 +524,6 @@ export function LedgerCategoryPickerPanel({
                 aria-label="카테고리 선택으로 돌아가기"
                 onClick={() => {
                   handleBackToSelect();
-                  onBack?.();
                 }}
               >
                 <ChevronLeftIcon className="size-5" />

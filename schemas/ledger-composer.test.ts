@@ -55,4 +55,29 @@ describe("ledgerComposerSchema", () => {
       }).success,
     ).toBe(false);
   });
+
+  it("names the missing transfer endpoint", () => {
+    const transfer = { ...item, type: "transfer" as const };
+    const messages = (patch: object) => {
+      const result = ledgerComposerSchema.safeParse({
+        items: [{ ...transfer, ...patch }],
+      });
+      return result.success
+        ? []
+        : result.error.issues.map((issue) => [
+            issue.path.at(-1),
+            issue.message,
+          ]);
+    };
+    expect(messages({ fromValue: "", toValue: "" })).toEqual([
+      ["fromValue", "출발지를 선택해 주세요."],
+      ["toValue", "도착지를 선택해 주세요."],
+    ]);
+    expect(messages({ fromValue: "acc:1", toValue: "" })).toEqual([
+      ["toValue", "도착지를 선택해 주세요."],
+    ]);
+    expect(messages({ fromValue: "acc:1", toValue: "acc:1" })).toEqual([
+      ["fromValue", "서로 다른 출발지와 도착지를 선택해 주세요."],
+    ]);
+  });
 });

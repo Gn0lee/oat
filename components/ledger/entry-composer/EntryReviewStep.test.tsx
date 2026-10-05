@@ -108,10 +108,11 @@ function Wrapper({ children }: { children: React.ReactNode }) {
 
 describe("EntryReviewStep", () => {
   it("shows actual category, source and transfer values and retains independent expanded memos", () => {
+    const onEdit = vi.fn();
     render(
       <Wrapper>
         <EntryReviewStep
-          onEdit={vi.fn()}
+          onEdit={onEdit}
           onAdd={vi.fn()}
           onSave={vi.fn()}
           isSaving={false}
@@ -119,16 +120,28 @@ describe("EntryReviewStep", () => {
       </Wrapper>,
     );
     expect(
-      screen.getByRole("button", { name: /분류: 검증식비 > 검증카페/ }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /결제 방법: 주거래 통장 · 검증자/ }),
+      screen.getByRole("button", {
+        name: "기록 1 분류 수정: 검증식비 > 검증카페",
+      }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", {
-        name: /금융수단: 현금 · 검증자 → 주거래 통장 · 검증자/,
+        name: "기록 1 금융수단 수정: 주거래 통장 · 검증자",
       }),
     ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", {
+        name: "기록 3 금융수단 수정: 현금 · 검증자 → 주거래 통장 · 검증자",
+      }),
+    ).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", { name: "기록 2 내용 수정: 점심" }),
+    );
+    expect(onEdit).toHaveBeenCalledWith(
+      "expense-2",
+      "basics",
+      "review-expense-2-title",
+    );
 
     fireEvent.click(screen.getByRole("button", { name: "메모 1 편집" }));
     fireEvent.click(screen.getByRole("button", { name: "메모 2 편집" }));

@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { FormProvider, useForm } from "react-hook-form";
+import { FormProvider, useFieldArray, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -97,7 +97,9 @@ export function LedgerEntryComposer({
     resolver: zodResolver(ledgerComposerSchema),
     defaultValues: { items: [] },
   });
+  const itemsArray = useFieldArray({ control: form.control, name: "items" });
   const initialized = useRef(false);
+  const initializedBookId = useRef("");
   const requestRef = useRef<{ signature: string; requestId: string } | null>(
     null,
   );
@@ -120,6 +122,7 @@ export function LedgerEntryComposer({
       setInvalidContext(Boolean(requestedBookId));
       return;
     }
+    initializedBookId.current = initialBookId;
     form.reset({
       items: [
         createComposerDraft({
@@ -138,6 +141,9 @@ export function LedgerEntryComposer({
     initialDate,
     requestedBookId,
   ]);
+  const stableInitialBookId = initialized.current
+    ? initializedBookId.current
+    : initialBookId;
 
   const exitTask = useCallback(
     (target = safeOrigin, trigger?: HTMLElement | null) => {
@@ -148,6 +154,14 @@ export function LedgerEntryComposer({
     },
     [router, safeOrigin],
   );
+
+  useEffect(() => {
+    if (!isDesktop) return;
+    const handleBack = () => exitTask();
+    window.addEventListener("oat:ledger-composer-back", handleBack);
+    return () =>
+      window.removeEventListener("oat:ledger-composer-back", handleBack);
+  }, [exitTask, isDesktop]);
 
   useEffect(() => {
     const handleClose = (event: Event) =>
@@ -181,14 +195,19 @@ export function LedgerEntryComposer({
     };
   }, [exitTask, safeOrigin]);
 
+  const sentinelRef = useRef<string | null>(null);
   useEffect(() => {
-    if (booksPending || invalidContext || !initialBookId) return;
-    const sentinel = `ledger-composer-${crypto.randomUUID()}`;
-    window.history.pushState(
-      { ...window.history.state, [sentinel]: true },
-      "",
-      window.location.href,
-    );
+    if (booksPending || invalidContext || !stableInitialBookId) return;
+    // Push once per composer mount; StrictMode and dependency changes only rebind the listener.
+    if (!sentinelRef.current) {
+      sentinelRef.current = `ledger-composer-${crypto.randomUUID()}`;
+      window.history.pushState(
+        { ...window.history.state, [sentinelRef.current]: true },
+        "",
+        window.location.href,
+      );
+    }
+    const sentinel = sentinelRef.current;
     const handlePopState = (event: PopStateEvent) => {
       if (completedRef.current) {
         const destination = completedRef.current;
@@ -203,11 +222,8 @@ export function LedgerEntryComposer({
           "",
           window.location.href,
         );
-        const taskView = document.querySelector<HTMLElement>(
-          '[data-ssgoi-transition^="ledger-composer-"]',
-        );
-        const firstField = taskView?.querySelector<HTMLElement>(
-          "input:not([disabled]),button:not([disabled])",
+        const firstField = document.querySelector<HTMLElement>(
+          '[aria-label="내용 1"]',
         );
         exitFocusRef.current = firstField ?? null;
         setPendingExit(safeOrigin);
@@ -215,14 +231,14 @@ export function LedgerEntryComposer({
     };
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
-  }, [booksPending, initialBookId, invalidContext, router, safeOrigin]);
+  }, [booksPending, stableInitialBookId, invalidContext, router, safeOrigin]);
 
   const save = async () => {
     const values = form.getValues();
     const parsed = ledgerComposerSchema.safeParse(values);
     if (!parsed.success) {
       toast.error(
-        parsed.error.issues[0]?.message ?? "입력 내용을 확인해주세요.",
+        parsed.error.issues[0]?.message ?? "입력 내용을 확인해 주세요.",
       );
       return;
     }
@@ -252,6 +268,12 @@ export function LedgerEntryComposer({
             | undefined
         )?.length ?? 1;
       window.history.go(-(entryCount + 1));
+      // If the landing entry is not the pre-composer one, popstate still fires; this covers a missed pop.
+      window.setTimeout(() => {
+        if (completedRef.current !== target) return;
+        completedRef.current = null;
+        router.replace(target);
+      }, 1000);
     } catch (error) {
       if (
         error instanceof ApiQueryError &&
@@ -298,7 +320,7 @@ export function LedgerEntryComposer({
         </Button>
       </div>
     );
-  if (!initialBookId)
+  if (!stableInitialBookId)
     return (
       <div className="py-8 text-sm text-muted-foreground">
         사용할 수 있는 활성 장부가 없습니다.
@@ -307,10 +329,11 @@ export function LedgerEntryComposer({
 
   return (
     <FormProvider {...form}>
-      <div className="w-full">
-        <div className={isDesktop ? "block" : "hidden"}>
+      <div className="min-h-screen w-full bg-background text-foreground">
+        <div hidden={!isDesktop}>
           <ComposerListStep
-            initialBookId={initialBookId}
+            itemsArray={itemsArray}
+            initialBookId={stableInitialBookId}
             initialDate={initialDate}
             onEditItem={setEditingClientId}
             onSubmit={save}
@@ -331,10 +354,11 @@ export function LedgerEntryComposer({
             </DialogContent>
           </Dialog>
         </div>
-        <div className={isDesktop ? "hidden" : "block"}>
+        <div hidden={isDesktop}>
           <MobileLedgerEntryFunnel
+            itemsArray={itemsArray}
             active={!isDesktop}
-            initialBookId={initialBookId}
+            initialBookId={stableInitialBookId}
             initialDate={initialDate}
             onSave={save}
             isSaving={createBatch.isPending}

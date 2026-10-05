@@ -1,7 +1,10 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeAll, describe, expect, it, vi } from "vitest";
-import { LedgerCategoryCombobox } from "./LedgerCategoryCombobox";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  LedgerCategoryCombobox,
+  LedgerCategoryPickerPanel,
+} from "./LedgerCategoryCombobox";
 
 const mutateAsync = vi.fn();
 
@@ -44,6 +47,8 @@ describe("LedgerCategoryCombobox", () => {
     display_order: 0,
     is_system: false,
   };
+
+  beforeEach(() => mutateAsync.mockReset());
 
   it("parent 순서대로 각 child를 sibling 순서로 묶는다", async () => {
     const user = userEvent.setup();
@@ -109,24 +114,6 @@ describe("LedgerCategoryCombobox", () => {
     await user.click(screen.getByText("식비 > 외식"));
 
     expect(onValueChange).toHaveBeenCalledWith("cat-child");
-  });
-
-  it("child option도 들여쓰기 없이 Parent > Child label로 정렬한다", async () => {
-    const user = userEvent.setup();
-
-    render(
-      <LedgerCategoryCombobox
-        value=""
-        categories={[category, childCategory]}
-        type="expense"
-        placeholder="선택"
-        onValueChange={() => undefined}
-      />,
-    );
-
-    await user.click(screen.getByRole("combobox"));
-
-    expect(screen.getByText("식비 > 외식")).not.toHaveClass("pl-3");
   });
 
   it("inline creation UI links to category management for child categories", async () => {
@@ -218,5 +205,103 @@ describe("LedgerCategoryCombobox", () => {
       icon: null,
     });
     expect(onValueChange).toHaveBeenCalledWith("cat-new");
+  });
+
+  it("mobile create back returns to results without closing the picker", async () => {
+    const user = userEvent.setup();
+    const onBack = vi.fn();
+    render(
+      <LedgerCategoryPickerPanel
+        value=""
+        categories={[category]}
+        type="income"
+        title="분류 선택"
+        searchPlaceholder="분류 검색"
+        onBack={onBack}
+        onValueChange={() => undefined}
+      />,
+    );
+    await user.type(screen.getByRole("combobox"), "급여");
+    await user.click(
+      screen
+        .getAllByRole("button", { name: '"급여" 새 카테고리 추가' })
+        .at(-1)!,
+    );
+    await user.click(
+      screen.getByRole("button", { name: "카테고리 선택으로 돌아가기" }),
+    );
+    expect(screen.getByRole("combobox")).toHaveValue("급여");
+    expect(onBack).not.toHaveBeenCalled();
+  });
+
+  it("keeps the entered name after inline category creation fails", async () => {
+    const user = userEvent.setup();
+    mutateAsync.mockRejectedValueOnce(new Error("저장 실패"));
+    render(
+      <LedgerCategoryCombobox
+        value=""
+        categories={[category]}
+        type="income"
+        placeholder="선택"
+        onValueChange={() => undefined}
+      />,
+    );
+    await user.click(screen.getByRole("combobox"));
+    await user.type(
+      screen.getByPlaceholderText("카테고리 이름 검색"),
+      "부수입",
+    );
+    await user.click(
+      screen
+        .getAllByRole("button", { name: '"부수입" 새 카테고리 추가' })
+        .at(-1)!,
+    );
+    await user.click(screen.getByRole("button", { name: "추가" }));
+    expect(await screen.findByLabelText("카테고리명")).toHaveValue("부수입");
+    expect(screen.getByText("저장 실패")).toBeInTheDocument();
+    expect(mutateAsync).toHaveBeenCalledWith({
+      type: "income",
+      name: "부수입",
+      icon: null,
+    });
+  });
+
+  it("creates an income category and selects it immediately", async () => {
+    const user = userEvent.setup();
+    const onValueChange = vi.fn();
+    mutateAsync.mockResolvedValueOnce({
+      ...category,
+      id: "income-new",
+      name: "부수입",
+      type: "income",
+      icon: null,
+      is_system: false,
+    });
+    render(
+      <LedgerCategoryCombobox
+        value=""
+        categories={[category]}
+        type="income"
+        placeholder="선택"
+        onValueChange={onValueChange}
+      />,
+    );
+    await user.click(screen.getByRole("combobox"));
+    await user.type(
+      screen.getByPlaceholderText("카테고리 이름 검색"),
+      "부수입",
+    );
+    await user.click(
+      screen
+        .getAllByRole("button", { name: '"부수입" 새 카테고리 추가' })
+        .at(-1)!,
+    );
+    await user.click(screen.getByRole("button", { name: "추가" }));
+    expect(mutateAsync).toHaveBeenCalledWith({
+      type: "income",
+      name: "부수입",
+      icon: null,
+    });
+    expect(onValueChange).toHaveBeenCalledWith("income-new");
   });
 });

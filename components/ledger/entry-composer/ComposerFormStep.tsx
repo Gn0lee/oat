@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -15,6 +16,7 @@ import type {
   LedgerComposerValues,
 } from "@/schemas/ledger-composer";
 import { EntryFields } from "./EntryFields";
+import { ledgerFieldClassName } from "./field-styles";
 
 interface ComposerFormStepProps {
   clientId: string;
@@ -45,8 +47,8 @@ export function ComposerFormStep({ clientId, onBack }: ComposerFormStepProps) {
     if (missing) {
       toast.error(
         missing === "basics"
-          ? "내용과 금액을 입력해주세요."
-          : "필수 항목을 확인해주세요.",
+          ? "내용과 금액을 입력해 주세요."
+          : "필수 항목을 확인해 주세요.",
       );
       return;
     }
@@ -61,12 +63,15 @@ export function ComposerFormStep({ clientId, onBack }: ComposerFormStepProps) {
 
   return (
     <div className="max-h-[85dvh] overflow-y-auto p-5">
+      <DialogDescription className="sr-only">
+        기록의 유형과 내용을 수정합니다.
+      </DialogDescription>
       <div className="mb-5 flex items-center justify-between">
-        <h2 className="text-lg font-semibold">기록 수정</h2>
+        <DialogTitle className="text-lg font-semibold">기록 수정</DialogTitle>
         <Button
           type="button"
           variant="ghost"
-          className="min-h-11"
+          className="min-h-11 rounded-[12px]"
           onClick={cancel}
         >
           취소
@@ -88,7 +93,7 @@ export function ComposerFormStep({ clientId, onBack }: ComposerFormStepProps) {
                 key={type}
                 type="button"
                 variant={item.type === type ? "default" : "outline"}
-                className="min-h-11"
+                className="min-h-11 rounded-[12px]"
                 onClick={() => changeType(type)}
               >
                 {type === "expense"
@@ -105,6 +110,7 @@ export function ComposerFormStep({ clientId, onBack }: ComposerFormStepProps) {
         <div className="space-y-2">
           <Label htmlFor={`desktop-title-${clientId}`}>내용</Label>
           <Input
+            className={ledgerFieldClassName}
             id={`desktop-title-${clientId}`}
             value={item.title}
             onChange={(event) =>
@@ -117,6 +123,7 @@ export function ComposerFormStep({ clientId, onBack }: ComposerFormStepProps) {
         <div className="space-y-2">
           <Label htmlFor={`desktop-amount-${clientId}`}>금액 (원)</Label>
           <Input
+            className={ledgerFieldClassName}
             id={`desktop-amount-${clientId}`}
             type="number"
             inputMode="numeric"
@@ -132,7 +139,11 @@ export function ComposerFormStep({ clientId, onBack }: ComposerFormStepProps) {
           index={index}
           sections={["classification", "sources", "datesBooks", "memo"]}
         />
-        <Button type="button" className="min-h-12 w-full" onClick={confirm}>
+        <Button
+          type="button"
+          className="min-h-12 w-full rounded-[12px]"
+          onClick={confirm}
+        >
           완료
         </Button>
       </div>

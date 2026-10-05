@@ -20,11 +20,16 @@ export const ledgerComposerItemSchema = z
       ctx.addIssue({
         code: "custom",
         path: ["title"],
-        message: "내용을 입력해주세요.",
+        message: "내용을 입력해 주세요.",
       });
     }
-    if (
-      !item.amount.trim() ||
+    if (!item.amount.trim()) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["amount"],
+        message: "금액을 입력해 주세요.",
+      });
+    } else if (
       !Number.isFinite(Number(item.amount)) ||
       Number(item.amount) <= 0
     ) {
@@ -38,7 +43,7 @@ export const ledgerComposerItemSchema = z
       ctx.addIssue({
         code: "custom",
         path: ["transactedAt"],
-        message: "날짜를 선택해주세요.",
+        message: "날짜를 선택해 주세요.",
       });
     }
     if (
@@ -48,7 +53,7 @@ export const ledgerComposerItemSchema = z
       ctx.addIssue({
         code: "custom",
         path: ["categoryId"],
-        message: "카테고리를 선택해주세요.",
+        message: "카테고리를 선택해 주세요.",
       });
     }
     if (
@@ -59,18 +64,31 @@ export const ledgerComposerItemSchema = z
       ctx.addIssue({
         code: "custom",
         path: ["accountId"],
-        message: "출금처를 선택해주세요.",
+        message: "출금처를 선택해 주세요.",
       });
     }
-    if (
-      item.type === "transfer" &&
-      (!item.fromValue || !item.toValue || item.fromValue === item.toValue)
-    ) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["fromValue"],
-        message: "서로 다른 출발지와 도착지를 선택해주세요.",
-      });
+    if (item.type === "transfer") {
+      if (!item.fromValue) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["fromValue"],
+          message: "출발지를 선택해 주세요.",
+        });
+      }
+      if (!item.toValue) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["toValue"],
+          message: "도착지를 선택해 주세요.",
+        });
+      }
+      if (item.fromValue && item.fromValue === item.toValue) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["fromValue"],
+          message: "서로 다른 출발지와 도착지를 선택해 주세요.",
+        });
+      }
     }
   });
 

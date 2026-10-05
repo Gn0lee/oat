@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { ComposerType } from "./composer";
 import {
   createComposerDraft,
   getMissingComposerStep,
@@ -59,6 +60,66 @@ describe("ledger composer helpers", () => {
     });
     expect(next.categoryId).toBe("");
     expect(next.accountId).toBeUndefined();
+  });
+
+  it("keeps money sources that the new type can still use", () => {
+    const base = {
+      clientId: "x",
+      bookId: "book-a",
+      transactedAt: "2026-06-05",
+      amount: "200",
+      title: "coffee",
+      memo: "",
+      paymentMethodId: "pm",
+      accountId: "acc",
+      fromValue: "acc:from",
+      toValue: "acc:to",
+    };
+    const pick = (from: ComposerType, to: ComposerType) => {
+      const next = normalizeComposerTypeChange({ ...base, type: from }, to);
+      return {
+        paymentMethodId: next.paymentMethodId,
+        accountId: next.accountId,
+        fromValue: next.fromValue,
+        toValue: next.toValue,
+      };
+    };
+    const both = {
+      paymentMethodId: "pm",
+      accountId: "acc",
+      fromValue: "",
+      toValue: "",
+    };
+    expect(pick("income", "expense")).toEqual(both);
+    expect(pick("expense", "non_expense_withdrawal")).toEqual(both);
+    expect(pick("non_expense_withdrawal", "expense")).toEqual(both);
+    expect(pick("expense", "income")).toEqual({
+      paymentMethodId: undefined,
+      accountId: "acc",
+      fromValue: "",
+      toValue: "",
+    });
+    expect(pick("expense", "transfer")).toEqual({
+      paymentMethodId: undefined,
+      accountId: undefined,
+      fromValue: "acc:from",
+      toValue: "acc:to",
+    });
+  });
+
+  it("returns the item unchanged when the current type is selected again", () => {
+    const item = {
+      clientId: "x",
+      type: "expense" as const,
+      bookId: "book-a",
+      transactedAt: "2026-06-05",
+      amount: "200",
+      title: "coffee",
+      categoryId: "cat",
+      accountId: "acc",
+      memo: "",
+    };
+    expect(normalizeComposerTypeChange(item, "expense")).toBe(item);
   });
 
   it("routes a valid payload to selected books and derives visibility from the book", () => {

@@ -38,6 +38,14 @@ const TOP_LEVEL_ROUTES = [
   "/settings",
   "/household",
 ] as const;
+export const LEDGER_COMPOSER_STEP_PATHS = [
+  "/ledger/records/new/daily/composer-basics",
+  "/ledger/records/new/daily/composer-single-details",
+  "/ledger/records/new/daily/composer-classification",
+  "/ledger/records/new/daily/composer-money-sources",
+  "/ledger/records/new/daily/composer-dates-books",
+  "/ledger/records/new/daily/composer-review",
+] as const;
 
 export function getPageTransitionMode({
   hasMounted,
@@ -64,6 +72,12 @@ export function getPageTransitionRules(
     case "mobile":
       return [
         { kind: "fade", paths: TOP_LEVEL_ROUTES },
+        {
+          kind: "axis",
+          paths: LEDGER_COMPOSER_STEP_PATHS,
+          type: "x",
+          variant: "snappy",
+        },
         {
           kind: "drill",
           enter: "/ledger/*",
@@ -146,6 +160,7 @@ export function getPageTransitionRules(
     case "desktop":
       return [
         { kind: "fade", paths: TOP_LEVEL_ROUTES, speed: "fast" },
+        { kind: "fade", paths: LEDGER_COMPOSER_STEP_PATHS, speed: "fast" },
         {
           kind: "fade",
           paths: ["/ledger", "/ledger/records/new/full"],
@@ -156,6 +171,7 @@ export function getPageTransitionRules(
     case "initial":
       return [
         { kind: "fade", paths: TOP_LEVEL_ROUTES },
+        { kind: "fade", paths: LEDGER_COMPOSER_STEP_PATHS },
         { kind: "fade", paths: ["/ledger", "/ledger/records/new/full"] },
       ];
   }

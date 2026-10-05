@@ -1,12 +1,17 @@
 "use client";
 
 import { useFunnel } from "@use-funnel/browser";
-import { useEffect, useRef, useState } from "react";
-import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  type UseFieldArrayReturn,
+  useFormContext,
+  useWatch,
+} from "react-hook-form";
 import { toast } from "sonner";
 import type { ComposerStep } from "@/lib/ledger/composer";
 import {
   createComposerDraft,
+  getComposerStepIssues,
   getMissingComposerStep,
 } from "@/lib/ledger/composer";
 import type { LedgerComposerValues } from "@/schemas/ledger-composer";
@@ -27,6 +32,7 @@ type ComposerNavigation = {
 };
 
 interface MobileLedgerEntryFunnelProps {
+  itemsArray: UseFieldArrayReturn<LedgerComposerValues, "items">;
   active: boolean;
   initialBookId: string;
   initialDate: string;
@@ -36,6 +42,7 @@ interface MobileLedgerEntryFunnelProps {
 }
 
 export function MobileLedgerEntryFunnel({
+  itemsArray,
   active,
   initialBookId,
   initialDate,
@@ -44,14 +51,42 @@ export function MobileLedgerEntryFunnel({
   onExit,
 }: MobileLedgerEntryFunnelProps) {
   const form = useFormContext<LedgerComposerValues>();
-  const { append } = useFieldArray({ control: form.control, name: "items" });
+  const { append } = itemsArray;
   const items = useWatch({ control: form.control, name: "items" }) ?? [];
   const [ready, setReady] = useState(false);
+  const reviewFocusId = useRef<string | undefined>(undefined);
+  const clearReviewFocus = useCallback(() => {
+    reviewFocusId.current = undefined;
+  }, []);
   const funnel = useFunnel<ComposerNavigation>({
     id: "ledger-entry-composer",
     initial: { step: "EntryBasics", context: {} },
   });
   const resetHistory = useRef(funnel.history.replace);
+
+  const pushEditStep = (step: ComposerStep, clientId?: string) => {
+    if (step === "basics")
+      return funnel.history.push("EntryBasics", () => ({
+        clientId,
+        fromReview: true,
+      }));
+    if (step === "classification")
+      return funnel.history.push("EntryClassification", () => ({
+        clientId,
+        fromReview: true,
+      }));
+    if (step === "sources")
+      return funnel.history.push("EntryMoneySources", () => ({
+        clientId,
+        fromReview: true,
+      }));
+    if (step === "datesBooks")
+      return funnel.history.push("EntryDatesBooks", () => ({
+        clientId,
+        fromReview: true,
+      }));
+    return funnel.history.push("EntryReview", () => ({}));
+  };
 
   useEffect(() => {
     resetHistory.current("EntryBasics", () => ({}));
@@ -72,37 +107,13 @@ export function MobileLedgerEntryFunnel({
       const titlePath = `items.${index}.title` as const;
       const amountPath = `items.${index}.amount` as const;
       form.clearErrors([titlePath, amountPath]);
-      if (!item.title.trim()) {
-        form.setError(titlePath, {
-          type: "required",
-          message: "내용을 입력해주세요.",
-        });
-        firstInvalid ??= titlePath;
-      }
-      if (
-        !item.amount.trim() ||
-        !Number.isFinite(Number(item.amount)) ||
-        Number(item.amount) <= 0
-      ) {
-        form.setError(amountPath, {
-          type: "validate",
-          message: "금액은 0보다 커야 합니다.",
-        });
-        firstInvalid ??= amountPath;
+      for (const issue of getComposerStepIssues(item, "basics")) {
+        const path = issue.path[0] === "title" ? titlePath : amountPath;
+        form.setError(path, { type: "validate", message: issue.message });
+        firstInvalid ??= path;
       }
     }
-    if (firstInvalid) {
-      form.setFocus(firstInvalid);
-      requestAnimationFrame(() => {
-        const order = Number(firstInvalid?.split(".")[1]) + 1;
-        const field = firstInvalid?.endsWith(".title") ? "내용" : "금액";
-        document
-          .querySelector<HTMLInputElement>(
-            `input[aria-label="${field} ${order}"]`,
-          )
-          ?.focus();
-      });
-    }
+    if (firstInvalid) form.setFocus(firstInvalid);
     return firstInvalid === null;
   };
   const classificationValid = (clientId?: string) => {
@@ -112,14 +123,8 @@ export function MobileLedgerEntryFunnel({
       if (clientId && item.clientId !== clientId) continue;
       const path = `items.${index}.categoryId` as const;
       form.clearErrors(path);
-      if (
-        (item.type === "expense" || item.type === "income") &&
-        !item.categoryId
-      ) {
-        form.setError(path, {
-          type: "required",
-          message: "카테고리를 선택해주세요.",
-        });
+      for (const issue of getComposerStepIssues(item, "classification")) {
+        form.setError(path, { type: "validate", message: issue.message });
         invalid ??= { index, path };
       }
     }
@@ -139,36 +144,40 @@ export function MobileLedgerEntryFunnel({
     let invalid: {
       index: number;
       label: string;
-      path: `items.${number}.accountId` | `items.${number}.fromValue`;
+      path:
+        | `items.${number}.accountId`
+        | `items.${number}.fromValue`
+        | `items.${number}.toValue`;
     } | null = null;
     for (const [index, item] of items.entries()) {
       if (clientId && item.clientId !== clientId) continue;
       const fromPath = `items.${index}.fromValue` as const;
+      const toPath = `items.${index}.toValue` as const;
       const accountPath = `items.${index}.accountId` as const;
       form.clearErrors([
         fromPath,
+        toPath,
         accountPath,
         `items.${index}.paymentMethodId`,
       ]);
-      if (
-        item.type === "transfer" &&
-        (!item.fromValue || !item.toValue || item.fromValue === item.toValue)
-      ) {
-        form.setError(fromPath, {
-          type: "required",
-          message: "서로 다른 출발지와 도착지를 선택해주세요.",
-        });
-        invalid ??= { index, label: "출발지", path: fromPath };
-      } else if (
-        item.type === "non_expense_withdrawal" &&
-        !item.accountId &&
-        !item.paymentMethodId
-      ) {
-        form.setError(accountPath, {
-          type: "required",
-          message: "출금처를 선택해주세요.",
-        });
-        invalid ??= { index, label: "출금처", path: accountPath };
+      for (const issue of getComposerStepIssues(item, "sources")) {
+        const field = issue.path[0];
+        const path =
+          field === "fromValue"
+            ? fromPath
+            : field === "toValue"
+              ? toPath
+              : accountPath;
+        const label =
+          field === "fromValue"
+            ? "출발지"
+            : field === "toValue"
+              ? "도착지"
+              : item.type === "income"
+                ? "입금 계좌"
+                : "출금처";
+        form.setError(path, { type: "validate", message: issue.message });
+        invalid ??= { index, label, path };
       }
     }
     if (invalid) {
@@ -184,8 +193,8 @@ export function MobileLedgerEntryFunnel({
     return invalid === null;
   };
   const datesBooksValid = (clientId?: string) =>
-    selected(clientId).every((item) =>
-      Boolean(item.transactedAt && item.bookId),
+    selected(clientId).every(
+      (item) => getComposerStepIssues(item, "datesBooks").length === 0,
     );
 
   const nextFromReviewEdit = (
@@ -209,7 +218,7 @@ export function MobileLedgerEntryFunnel({
 
   useEffect(() => {
     const handleBack = () => {
-      if (!active || !ready) return;
+      if (!ready || !active) return;
       if (funnel.index > 0) void funnel.history.back();
       else onExit();
     };
@@ -219,47 +228,36 @@ export function MobileLedgerEntryFunnel({
   }, [active, ready, funnel.index, funnel.history, onExit]);
 
   if (!ready || !active) return <div hidden aria-hidden="true" />;
+  const transitionSegment = {
+    EntryBasics: "basics",
+    SingleEntryDetails: "single-details",
+    EntryClassification: "classification",
+    EntryMoneySources: "money-sources",
+    EntryDatesBooks: "dates-books",
+    EntryReview: "review",
+  }[funnel.step];
 
   return (
     <div
-      data-ssgoi-transition={`ledger-composer-${funnel.step}`}
+      key={funnel.step}
+      data-ssgoi-transition={`/ledger/records/new/daily/composer-${transitionSegment}`}
       className="min-h-[calc(100dvh-3.5rem)]"
     >
       <funnel.Render
         EntryBasics={({ context, history }) => (
           <EntryBasicsStep
+            itemsArray={itemsArray}
             date={initialDate}
             bookId={initialBookId}
             editingClientId={context.clientId}
             onNext={() => {
               if (!basicsValid(context.clientId)) {
-                toast.error("내용과 금액을 확인해주세요.");
                 return;
               }
               if (context.fromReview && context.clientId) {
-                nextFromReviewEdit(context.clientId, (step, clientId) => {
-                  if (step === "basics")
-                    void history.push("EntryBasics", {
-                      clientId,
-                      fromReview: true,
-                    });
-                  else if (step === "classification")
-                    void history.push("EntryClassification", {
-                      clientId,
-                      fromReview: true,
-                    });
-                  else if (step === "sources")
-                    void history.push("EntryMoneySources", {
-                      clientId,
-                      fromReview: true,
-                    });
-                  else if (step === "datesBooks")
-                    void history.push("EntryDatesBooks", {
-                      clientId,
-                      fromReview: true,
-                    });
-                  else void history.push("EntryReview", {});
-                });
+                nextFromReviewEdit(context.clientId, (step, clientId) =>
+                  pushEditStep(step, clientId),
+                );
                 return;
               }
               if (items.length === 1)
@@ -268,29 +266,23 @@ export function MobileLedgerEntryFunnel({
             }}
           />
         )}
-        SingleEntryDetails={({ history }) => (
+        SingleEntryDetails={() => (
           <SingleEntryDetailsStep
-            onBack={() => void history.back()}
             onSave={() => {
               if (!items[0]) {
-                toast.error("필수 항목을 확인해주세요.");
+                toast.error("필수 항목을 확인해 주세요.");
                 return;
               }
               const missing = getMissingComposerStep(items[0]);
               if (missing === "classification") {
                 classificationValid(items[0].clientId);
-                toast.error("카테고리를 선택해주세요.");
                 return;
               }
               if (missing === "sources") {
                 sourcesValid(items[0].clientId);
-                toast.error("금융수단을 선택해주세요.");
                 return;
               }
-              if (missing) {
-                toast.error("필수 항목을 확인해주세요.");
-                return;
-              }
+              if (missing) return;
               onSave();
             }}
             isSaving={isSaving}
@@ -299,36 +291,14 @@ export function MobileLedgerEntryFunnel({
         EntryClassification={({ context, history }) => (
           <EntryClassificationStep
             clientId={context.clientId}
-            onBack={() => void history.back()}
             onNext={() => {
               if (!classificationValid(context.clientId)) {
-                toast.error("카테고리를 선택해주세요.");
                 return;
               }
               if (context.fromReview) {
-                nextFromReviewEdit(context.clientId, (step, clientId) => {
-                  if (step === "basics")
-                    void history.push("EntryBasics", {
-                      clientId,
-                      fromReview: true,
-                    });
-                  else if (step === "classification")
-                    void history.push("EntryClassification", {
-                      clientId,
-                      fromReview: true,
-                    });
-                  else if (step === "sources")
-                    void history.push("EntryMoneySources", {
-                      clientId,
-                      fromReview: true,
-                    });
-                  else if (step === "datesBooks")
-                    void history.push("EntryDatesBooks", {
-                      clientId,
-                      fromReview: true,
-                    });
-                  else void history.push("EntryReview", {});
-                });
+                nextFromReviewEdit(context.clientId, (step, clientId) =>
+                  pushEditStep(step, clientId),
+                );
                 return;
               }
               history.push("EntryMoneySources", () => ({}));
@@ -338,36 +308,14 @@ export function MobileLedgerEntryFunnel({
         EntryMoneySources={({ context, history }) => (
           <EntryMoneySourcesStep
             clientId={context.clientId}
-            onBack={() => void history.back()}
             onNext={() => {
               if (!sourcesValid(context.clientId)) {
-                toast.error("금융수단을 확인해주세요.");
                 return;
               }
               if (context.fromReview) {
-                nextFromReviewEdit(context.clientId, (step, clientId) => {
-                  if (step === "basics")
-                    void history.push("EntryBasics", {
-                      clientId,
-                      fromReview: true,
-                    });
-                  else if (step === "classification")
-                    void history.push("EntryClassification", {
-                      clientId,
-                      fromReview: true,
-                    });
-                  else if (step === "sources")
-                    void history.push("EntryMoneySources", {
-                      clientId,
-                      fromReview: true,
-                    });
-                  else if (step === "datesBooks")
-                    void history.push("EntryDatesBooks", {
-                      clientId,
-                      fromReview: true,
-                    });
-                  else void history.push("EntryReview", {});
-                });
+                nextFromReviewEdit(context.clientId, (step, clientId) =>
+                  pushEditStep(step, clientId),
+                );
                 return;
               }
               history.push("EntryDatesBooks", () => ({}));
@@ -377,36 +325,15 @@ export function MobileLedgerEntryFunnel({
         EntryDatesBooks={({ context, history }) => (
           <EntryDatesBooksStep
             clientId={context.clientId}
-            onBack={() => void history.back()}
             onNext={() => {
               if (!datesBooksValid(context.clientId)) {
-                toast.error("날짜와 장부를 확인해주세요.");
+                toast.error("날짜와 장부를 확인해 주세요.");
                 return;
               }
               if (context.fromReview && context.clientId) {
-                nextFromReviewEdit(context.clientId, (step, clientId) => {
-                  if (step === "basics")
-                    void history.push("EntryBasics", {
-                      clientId,
-                      fromReview: true,
-                    });
-                  else if (step === "classification")
-                    void history.push("EntryClassification", {
-                      clientId,
-                      fromReview: true,
-                    });
-                  else if (step === "sources")
-                    void history.push("EntryMoneySources", {
-                      clientId,
-                      fromReview: true,
-                    });
-                  else if (step === "datesBooks")
-                    void history.push("EntryDatesBooks", {
-                      clientId,
-                      fromReview: true,
-                    });
-                  else void history.push("EntryReview", {});
-                });
+                nextFromReviewEdit(context.clientId, (step, clientId) =>
+                  pushEditStep(step, clientId),
+                );
                 return;
               }
               history.push("EntryReview", () => ({}));
@@ -415,27 +342,11 @@ export function MobileLedgerEntryFunnel({
         )}
         EntryReview={({ history }) => (
           <EntryReviewStep
-            onEdit={(clientId, step) => {
-              if (step === "basics")
-                void history.push("EntryBasics", () => ({
-                  clientId,
-                  fromReview: true,
-                }));
-              else if (step === "classification")
-                void history.push("EntryClassification", () => ({
-                  clientId,
-                  fromReview: true,
-                }));
-              else if (step === "sources")
-                void history.push("EntryMoneySources", () => ({
-                  clientId,
-                  fromReview: true,
-                }));
-              else
-                void history.push("EntryDatesBooks", () => ({
-                  clientId,
-                  fromReview: true,
-                }));
+            focusId={reviewFocusId.current}
+            onFocusRestored={clearReviewFocus}
+            onEdit={(clientId, step, anchorId) => {
+              reviewFocusId.current = anchorId;
+              void pushEditStep(step, clientId);
             }}
             onAdd={() => {
               const clientId = crypto.randomUUID();
@@ -454,7 +365,11 @@ export function MobileLedgerEntryFunnel({
                 parsed.items.length === 0 ||
                 parsed.items.some((item) => getMissingComposerStep(item))
               ) {
-                toast.error("필수 항목을 확인해주세요.");
+                const item = parsed.items.find((candidate) =>
+                  getMissingComposerStep(candidate),
+                );
+                const missing = item && getMissingComposerStep(item);
+                if (item && missing) pushEditStep(missing, item.clientId);
                 return;
               }
               onSave();

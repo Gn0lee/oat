@@ -1,14 +1,21 @@
 "use client";
 
 import { Plus, Trash2 } from "lucide-react";
-import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
+import {
+  type UseFieldArrayReturn,
+  useFormContext,
+  useWatch,
+} from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createComposerDraft } from "@/lib/ledger/composer";
+import { cn } from "@/lib/utils/cn";
 import type { LedgerComposerValues } from "@/schemas/ledger-composer";
 import { ComposerActionBar } from "./ComposerActionBar";
+import { ledgerFieldClassName } from "./field-styles";
 
 interface EntryBasicsStepProps {
+  itemsArray: UseFieldArrayReturn<LedgerComposerValues, "items">;
   date: string;
   bookId: string;
   editingClientId?: string;
@@ -16,16 +23,14 @@ interface EntryBasicsStepProps {
 }
 
 export function EntryBasicsStep({
+  itemsArray,
   date,
   bookId,
   editingClientId,
   onNext,
 }: EntryBasicsStepProps) {
   const form = useFormContext<LedgerComposerValues>();
-  const { fields, append, remove } = useFieldArray({
-    control: form.control,
-    name: "items",
-  });
+  const { fields, append, remove } = itemsArray;
   const items = useWatch({ control: form.control, name: "items" }) ?? [];
   const visible = fields
     .map((field, index) => ({ field, index }))
@@ -43,14 +48,16 @@ export function EntryBasicsStep({
         기록 내용과 금액
       </h1>
       <div className="space-y-5">
-        {visible.map(({ field, index }, order) => (
+        {visible.map(({ field, index }) => (
           <div
             key={field.id}
-            className="relative space-y-3 border-b border-gray-100 pb-5"
+            className="relative space-y-3 border-b border-border pb-5"
           >
             {(() => {
               const titlePath = `items.${index}.title` as const;
               const amountPath = `items.${index}.amount` as const;
+              const titleRegistration = form.register(titlePath);
+              const amountRegistration = form.register(amountPath);
               const titleError = form.getFieldState(titlePath, form.formState)
                 .error?.message;
               const amountError = form.getFieldState(amountPath, form.formState)
@@ -59,7 +66,7 @@ export function EntryBasicsStep({
                 <>
                   {visible.length > 1 && (
                     <p className="text-xs font-medium text-muted-foreground">
-                      {order + 1}번째 기록
+                      {index + 1}번째 기록
                     </p>
                   )}
                   <div className="space-y-2">
@@ -71,7 +78,8 @@ export function EntryBasicsStep({
                     </label>
                     <Input
                       id={`entry-title-${field.id}`}
-                      aria-label={`내용 ${order + 1}`}
+                      aria-label={`내용 ${index + 1}`}
+                      ref={titleRegistration.ref}
                       aria-invalid={Boolean(titleError)}
                       aria-describedby={
                         titleError ? `entry-title-error-${field.id}` : undefined
@@ -86,7 +94,7 @@ export function EntryBasicsStep({
                         if (event.target.value.trim())
                           form.clearErrors(titlePath);
                       }}
-                      className="h-12 text-base"
+                      className={cn(ledgerFieldClassName, "h-12")}
                     />
                     {titleError && (
                       <p
@@ -105,28 +113,37 @@ export function EntryBasicsStep({
                     >
                       금액 (원)
                     </label>
-                    <Input
-                      id={`entry-amount-${field.id}`}
-                      aria-label={`금액 ${order + 1}`}
-                      aria-invalid={Boolean(amountError)}
-                      aria-describedby={
-                        amountError
-                          ? `entry-amount-error-${field.id}`
-                          : undefined
-                      }
-                      type="number"
-                      inputMode="numeric"
-                      placeholder="0"
-                      value={items[index]?.amount ?? ""}
-                      onChange={(event) => {
-                        form.setValue(amountPath, event.target.value, {
-                          shouldDirty: true,
-                        });
-                        if (Number(event.target.value) > 0)
-                          form.clearErrors(amountPath);
-                      }}
-                      className="h-14 text-2xl font-semibold"
-                    />
+                    <div className="relative">
+                      <Input
+                        id={`entry-amount-${field.id}`}
+                        aria-label={`금액 ${index + 1}`}
+                        ref={amountRegistration.ref}
+                        aria-invalid={Boolean(amountError)}
+                        aria-describedby={
+                          amountError
+                            ? `entry-amount-error-${field.id}`
+                            : undefined
+                        }
+                        type="number"
+                        inputMode="numeric"
+                        placeholder="0"
+                        value={items[index]?.amount ?? ""}
+                        onChange={(event) => {
+                          form.setValue(amountPath, event.target.value, {
+                            shouldDirty: true,
+                          });
+                          if (Number(event.target.value) > 0)
+                            form.clearErrors(amountPath);
+                        }}
+                        className={cn(
+                          ledgerFieldClassName,
+                          "h-12 pr-10 text-xl font-semibold",
+                        )}
+                      />
+                      <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-base text-foreground">
+                        원
+                      </span>
+                    </div>
                     {amountError && (
                       <p
                         id={`entry-amount-error-${field.id}`}
@@ -141,7 +158,7 @@ export function EntryBasicsStep({
                     <Button
                       type="button"
                       variant="ghost"
-                      aria-label={`${order + 1}번째 기록 삭제`}
+                      aria-label={`${index + 1}번째 기록 삭제`}
                       className="min-h-11"
                       onClick={() => remove(index)}
                     >
@@ -159,7 +176,7 @@ export function EntryBasicsStep({
         <Button
           type="button"
           variant="outline"
-          className="min-h-11 w-full"
+          className="min-h-11 w-full rounded-[12px]"
           onClick={() =>
             append(
               createComposerDraft({
@@ -171,7 +188,7 @@ export function EntryBasicsStep({
           }
         >
           <Plus className="mr-2 size-4" />
-          내역 추가
+          기록 추가
         </Button>
       )}
       <ComposerActionBar label="다음" onClick={onNext} />

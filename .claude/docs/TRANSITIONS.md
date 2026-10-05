@@ -211,6 +211,7 @@ bottom sheet를 유지해도 되는 경우:
 
 적용 대상:
 - `components/ledger/funnel/*`
+- `components/ledger/entry-composer/*`
 - `components/transactions/funnel/*`
 - 계좌/결제수단 생성 flow
 - 카테고리/결제수단/종목 선택 화면
@@ -222,6 +223,12 @@ bottom sheet를 유지해도 되는 경우:
 - `account`: 특정 계좌를 기본값으로 진입
 
 Composer 화면에서 키보드가 올라오는 입력 필드와 검색형 선택기가 섞이면 모바일에서는 Popover보다 full-screen selector를 우선합니다. 여러 상세 카드가 동시에 펼쳐지는 구조는 피하고, 압축 행 목록에서 한 행만 상세 편집합니다.
+
+Entry Composer(`components/ledger/entry-composer/*`) 기준:
+- 모바일 step은 funnel 안의 key가 붙은 step 경계를 바꿔 전환하고, RHF form과 controller는 계속 마운트해 둡니다. step id는 `lib/transitions/page-transition-rules.ts`의 `LEDGER_COMPOSER_STEP_PATHS`(가상 경로)에서 가져옵니다.
+- 모바일은 x축 `snappy` 전환을 쓰고, reduced motion, 첫 렌더, 데스크톱은 fade를 씁니다.
+- 뒤로가기는 헤더에만 두고, 하단에는 주 액션 하나만 둡니다.
+- 768px 이상에서는 데스크톱 목록이 화면을 맡고, 헤더 뒤로가기는 입력 중인 내용을 확인하는 종료 흐름으로 이어집니다.
 
 권장 UX:
 - 각 step은 하나의 full-screen panel처럼 구성

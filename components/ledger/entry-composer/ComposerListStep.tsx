@@ -2,7 +2,11 @@
 
 import { Plus, Trash2 } from "lucide-react";
 import { useRef, useState } from "react";
-import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
+import {
+  type UseFieldArrayReturn,
+  useFormContext,
+  useWatch,
+} from "react-hook-form";
 import { toast } from "sonner";
 import { AmountText } from "@/components/layout/screen";
 import { Button } from "@/components/ui/button";
@@ -22,6 +26,7 @@ import { formatCurrency } from "@/lib/utils/format";
 import type { LedgerComposerValues } from "@/schemas/ledger-composer";
 
 interface ComposerListStepProps {
+  itemsArray: UseFieldArrayReturn<LedgerComposerValues, "items">;
   initialBookId: string;
   initialDate: string;
   onEditItem: (clientId: string) => void;
@@ -32,6 +37,7 @@ interface ComposerListStepProps {
 export function ComposerListStep({
   initialBookId,
   initialDate,
+  itemsArray,
   onEditItem,
   onSubmit,
   isSubmitting,
@@ -45,10 +51,7 @@ export function ComposerListStep({
     nextBalance: number;
   } | null>(null);
   const skipNegativeBalanceConfirmRef = useRef(false);
-  const { fields, append, remove } = useFieldArray({
-    control: form.control,
-    name: "items",
-  });
+  const { fields, append, remove } = itemsArray;
   const items = useWatch({ control: form.control, name: "items" }) ?? [];
 
   const handleAddItem = () => {
@@ -121,14 +124,14 @@ export function ComposerListStep({
         <Button
           type="button"
           variant="outline"
-          className="min-h-11"
+          className="min-h-11 rounded-[12px]"
           onClick={handleAddItem}
         >
           <Plus className="mr-2 size-4" />
-          내역 추가
+          기록 추가
         </Button>
       </div>
-      <div className="divide-y overflow-hidden rounded-xl bg-white ring-1 ring-gray-100">
+      <div className="divide-y divide-border overflow-hidden rounded-[12px] border border-border bg-card text-foreground">
         {fields.map((field, index) => {
           const item = items[index];
           if (!item) return null;
@@ -146,14 +149,14 @@ export function ComposerListStep({
               <button
                 type="button"
                 onClick={() => onEditItem(item.clientId)}
-                className="min-h-16 min-w-0 flex-1 rounded-lg text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                className="min-h-16 min-w-0 flex-1 rounded-[12px] text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
               >
                 <span className="block text-xs text-muted-foreground">
                   {typeLabel} · {book?.name ?? "장부 미선택"} ·{" "}
                   {item.transactedAt}
                 </span>
                 <span className="mt-1 line-clamp-2 break-words font-medium">
-                  {item.title || "내용을 입력해주세요"}
+                  {item.title || "내용을 입력해 주세요"}
                 </span>
                 <span className="mt-1 block text-xs text-muted-foreground">
                   {item.type === "transfer"
@@ -191,7 +194,7 @@ export function ComposerListStep({
       </div>
       <Button
         type="button"
-        className="min-h-12 w-full"
+        className="min-h-12 w-full rounded-[12px]"
         disabled={isSubmitting || fields.length === 0}
         onClick={form.handleSubmit(handleValidSubmit, onInvalid)}
       >
@@ -210,7 +213,7 @@ export function ComposerListStep({
                 : null}
             </DialogDescription>
           </DialogHeader>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-muted-foreground">
             실제 잔액과 다르면 나중에 실제 잔액 맞추기로 조정할 수 있어요.
           </p>
           <DialogFooter>

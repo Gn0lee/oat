@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   getPageTransitionMode,
   getPageTransitionRules,
+  LEDGER_COMPOSER_STEP_PATHS,
 } from "./page-transition-rules";
 
 describe("page transition rules", () => {
@@ -31,6 +32,21 @@ describe("page transition rules", () => {
         prefersReducedMotion: true,
       }),
     ).toBe("reduced");
+  });
+
+  it("composer steps use scoped ordered transitions", () => {
+    expect(getPageTransitionRules("mobile")).toContainEqual({
+      kind: "axis",
+      paths: LEDGER_COMPOSER_STEP_PATHS,
+      type: "x",
+      variant: "snappy",
+    });
+    expect(LEDGER_COMPOSER_STEP_PATHS[0]).toContain("composer-basics");
+    expect(LEDGER_COMPOSER_STEP_PATHS.at(-1)).toContain("composer-review");
+    expect(getPageTransitionRules("reduced")).toContainEqual({
+      kind: "fade",
+      paths: LEDGER_COMPOSER_STEP_PATHS,
+    });
   });
 
   it("mount 이후 viewport에 따라 mobile과 desktop 모드를 구분한다", () => {

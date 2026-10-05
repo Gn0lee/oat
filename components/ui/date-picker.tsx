@@ -16,6 +16,7 @@ interface DatePickerInputProps {
   onChange: (value: string) => void;
   className?: string;
   id?: string;
+  "aria-label"?: string;
 }
 
 export function DatePickerInput({
@@ -23,6 +24,7 @@ export function DatePickerInput({
   onChange,
   className,
   id,
+  "aria-label": ariaLabel,
 }: DatePickerInputProps) {
   const parsed = value ? parse(value, "yyyy-MM-dd", new Date()) : undefined;
   const selected = parsed && isValid(parsed) ? parsed : undefined;
@@ -32,6 +34,7 @@ export function DatePickerInput({
       <PopoverTrigger asChild>
         <Button
           id={id}
+          aria-label={ariaLabel}
           type="button"
           variant="outline"
           className={cn(

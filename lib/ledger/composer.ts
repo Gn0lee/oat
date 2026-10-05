@@ -8,6 +8,7 @@ import {
 } from "@/lib/api/ledger";
 import { formatKst } from "@/lib/date";
 import type { LedgerComposerItem } from "@/schemas/ledger-composer";
+import { ledgerComposerItemSchema } from "@/schemas/ledger-composer";
 import type { CreateLedgerEntryInput } from "@/schemas/ledger-entry";
 import type { LedgerBook } from "@/types/ledger-book";
 
@@ -44,14 +45,16 @@ export function normalizeComposerTypeChange<T extends LedgerComposerItem>(
   item: T,
   type: ComposerType,
 ): LedgerComposerItem {
-  const isCategoryType = type === "expense" || type === "income";
-  const sameCategoryType = item.type === type;
+  if (item.type === type) return item;
+  const keepsBothSources =
+    type === "expense" || type === "non_expense_withdrawal";
   return {
     ...item,
     type,
-    categoryId: isCategoryType && sameCategoryType ? item.categoryId : "",
-    paymentMethodId: type === "expense" ? item.paymentMethodId : undefined,
-    accountId: type === "income" ? item.accountId : undefined,
+    categoryId: "",
+    paymentMethodId: keepsBothSources ? item.paymentMethodId : undefined,
+    accountId:
+      keepsBothSources || type === "income" ? item.accountId : undefined,
     fromValue: type === "transfer" ? (item.fromValue ?? "") : "",
     toValue: type === "transfer" ? (item.toValue ?? "") : "",
   };
@@ -60,28 +63,34 @@ export function normalizeComposerTypeChange<T extends LedgerComposerItem>(
 export function getMissingComposerStep(
   item: LedgerComposerItem,
 ): ComposerStep | null {
-  if (
-    !item.title.trim() ||
-    !item.amount.trim() ||
-    !Number.isFinite(Number(item.amount)) ||
-    Number(item.amount) <= 0
-  )
-    return "basics";
-  if ((item.type === "expense" || item.type === "income") && !item.categoryId)
-    return "classification";
-  if (
-    item.type === "non_expense_withdrawal" &&
-    !item.accountId &&
-    !item.paymentMethodId
-  )
-    return "sources";
-  if (
-    item.type === "transfer" &&
-    (!item.fromValue || !item.toValue || item.fromValue === item.toValue)
-  )
-    return "sources";
-  if (!item.transactedAt || !item.bookId) return "datesBooks";
-  return null;
+  return getComposerStepIssues(item, "basics").length
+    ? "basics"
+    : getComposerStepIssues(item, "classification").length
+      ? "classification"
+      : getComposerStepIssues(item, "sources").length
+        ? "sources"
+        : getComposerStepIssues(item, "datesBooks").length
+          ? "datesBooks"
+          : null;
+}
+
+const STEP_FIELDS: Record<Exclude<ComposerStep, "review">, string[]> = {
+  basics: ["title", "amount"],
+  classification: ["categoryId"],
+  sources: ["accountId", "paymentMethodId", "fromValue", "toValue"],
+  datesBooks: ["transactedAt", "bookId"],
+};
+
+export function getComposerStepIssues(
+  item: LedgerComposerItem,
+  step: Exclude<ComposerStep, "review">,
+) {
+  const result = ledgerComposerItemSchema.safeParse(item);
+  return result.success
+    ? []
+    : result.error.issues.filter((issue) =>
+        STEP_FIELDS[step].includes(String(issue.path[0])),
+      );
 }
 
 function parseLocation(value: string | undefined) {
@@ -96,7 +105,7 @@ export function toComposerPayload(
   categories: Array<{ id: string; type?: string }>,
 ): CreateLedgerEntryInput {
   const book = books.find((candidate) => candidate.id === item.bookId);
-  if (!book || book.archivedAt) throw new Error("활성 장부를 선택해주세요.");
+  if (!book || book.archivedAt) throw new Error("활성 장부를 선택해 주세요.");
   const category = categories.find(
     (candidate) => candidate.id === item.categoryId,
   );
@@ -106,7 +115,7 @@ export function toComposerPayload(
     category?.type &&
     category.type !== item.type
   ) {
-    throw new Error("기록 유형에 맞는 카테고리를 선택해주세요.");
+    throw new Error("기록 유형에 맞는 카테고리를 선택해 주세요.");
   }
   const isShared = book.visibility === "shared";
   const base =

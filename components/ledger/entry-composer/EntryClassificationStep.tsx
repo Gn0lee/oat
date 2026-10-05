@@ -7,11 +7,9 @@ import { EntryFields } from "./EntryFields";
 
 export function EntryClassificationStep({
   clientId,
-  onBack,
   onNext,
 }: {
   clientId?: string;
-  onBack: () => void;
   onNext: () => void;
 }) {
   const form = useFormContext<LedgerComposerValues>();
@@ -33,12 +31,7 @@ export function EntryClassificationStep({
           <EntryFields index={index} sections={["classification"]} showType />
         </div>
       ))}
-      <ComposerActionBar
-        backLabel="이전"
-        onBack={onBack}
-        label="다음"
-        onClick={onNext}
-      />
+      <ComposerActionBar label="다음" onClick={onNext} />
     </section>
   );
 }

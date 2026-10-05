@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { FormProvider, useForm } from "react-hook-form";
+import { FormProvider, useFieldArray, useForm } from "react-hook-form";
 import { describe, expect, it, vi } from "vitest";
 import type { LedgerComposerValues } from "@/schemas/ledger-composer";
 import { ComposerListStep } from "./ComposerListStep";
@@ -31,11 +31,18 @@ const item = {
   memo: "",
 };
 
-function Wrapper({ children }: { children: React.ReactNode }) {
+function Wrapper({
+  children,
+}: {
+  children: (
+    itemsArray: ReturnType<typeof useFieldArray<LedgerComposerValues, "items">>,
+  ) => React.ReactNode;
+}) {
   const methods = useForm<LedgerComposerValues>({
     defaultValues: { items: [item] },
   });
-  return <FormProvider {...methods}>{children}</FormProvider>;
+  const itemsArray = useFieldArray({ control: methods.control, name: "items" });
+  return <FormProvider {...methods}>{children(itemsArray)}</FormProvider>;
 }
 
 describe("ComposerListStep", () => {
@@ -43,13 +50,16 @@ describe("ComposerListStep", () => {
     const onEditItem = vi.fn();
     render(
       <Wrapper>
-        <ComposerListStep
-          initialBookId={item.bookId}
-          initialDate={item.transactedAt}
-          onEditItem={onEditItem}
-          onSubmit={vi.fn()}
-          isSubmitting={false}
-        />
+        {(itemsArray) => (
+          <ComposerListStep
+            itemsArray={itemsArray}
+            initialBookId={item.bookId}
+            initialDate={item.transactedAt}
+            onEditItem={onEditItem}
+            onSubmit={vi.fn()}
+            isSubmitting={false}
+          />
+        )}
       </Wrapper>,
     );
     expect(screen.getByText("점심")).toBeInTheDocument();

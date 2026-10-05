@@ -7,11 +7,9 @@ import { EntryFields } from "./EntryFields";
 
 export function EntryDatesBooksStep({
   clientId,
-  onBack,
   onNext,
 }: {
   clientId?: string;
-  onBack: () => void;
   onNext: () => void;
 }) {
   const form = useFormContext<LedgerComposerValues>();
@@ -30,12 +28,7 @@ export function EntryDatesBooksStep({
           <EntryFields index={index} sections={["datesBooks"]} />
         </div>
       ))}
-      <ComposerActionBar
-        backLabel="이전"
-        onBack={onBack}
-        label="확인"
-        onClick={onNext}
-      />
+      <ComposerActionBar label="입력 확인" onClick={onNext} />
     </section>
   );
 }

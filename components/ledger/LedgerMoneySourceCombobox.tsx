@@ -71,6 +71,8 @@ interface LedgerMoneySourceBaseProps {
 
 interface LedgerMoneySourceComboboxProps extends LedgerMoneySourceBaseProps {
   placeholder: string;
+  className?: string;
+  "aria-label"?: string;
   onValueChange: (value: string) => void;
 }
 
@@ -571,6 +573,8 @@ export function LedgerMoneySourceCombobox({
   includeClearOption = true,
   excludedValues,
   placeholder,
+  className,
+  "aria-label": ariaLabel,
   onValueChange,
 }: LedgerMoneySourceComboboxProps) {
   const [open, setOpen] = useState(false);
@@ -628,6 +632,8 @@ export function LedgerMoneySourceCombobox({
             label={selectedLabel}
             placeholder={placeholder}
             open={open}
+            className={className}
+            aria-label={ariaLabel}
           />
         </PopoverTrigger>
         <PopoverContent
