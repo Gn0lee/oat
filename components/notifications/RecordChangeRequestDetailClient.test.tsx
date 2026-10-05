@@ -1,4 +1,5 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { toast } from "sonner";
 import { describe, expect, it, vi } from "vitest";
 import { useCurrentUserId } from "@/hooks/use-current-user";
 import {
@@ -161,5 +162,83 @@ describe("RecordChangeRequestDetailClient", () => {
     expect(screen.getAllByText("10주").length).toBeGreaterThan(0);
     expect(screen.getByText("단가")).toBeInTheDocument();
     expect(screen.getByText("200원")).toBeInTheDocument();
+  });
+
+  describe("장부 이동 요청", () => {
+    const reclassifyRequest = {
+      ...mockLedgerRequest,
+      id: "req-3",
+      request_type: "reclassify",
+      proposed_changes: { bookId: "book-trip" },
+      target_snapshot: {
+        targetType: "ledger_entry",
+        amount: 32000,
+        title: "저녁",
+        transactedAt: "2026-10-01T00:00:00.000Z",
+        sourceBookId: "book-living",
+        sourceBookName: "생활비",
+        destinationBookId: "book-trip",
+        destinationBookName: "여행",
+      },
+      message: "여행 경비예요",
+    };
+
+    function renderAs(userId: string, request: Record<string, unknown>) {
+      vi.mocked(useCurrentUserId).mockReturnValue({ userId, isLoading: false });
+      vi.mocked(useRecordChangeRequest).mockReturnValue({
+        data: request,
+        isLoading: false,
+        error: null,
+      } as never);
+      vi.mocked(useCancelRecordChangeRequest).mockReturnValue({
+        mutateAsync: vi.fn(),
+        isPending: false,
+      } as never);
+      vi.mocked(useResolveRecordChangeRequest).mockReturnValue({
+        mutateAsync: resolveMutateAsync,
+        isPending: false,
+      } as never);
+      render(<RecordChangeRequestDetailClient requestId="req-3" />);
+    }
+
+    const resolveMutateAsync = vi.fn();
+
+    it("출발·도착 장부를 보여주고 작성자는 승인·거절할 수 있다", () => {
+      renderAs("owner-1", reclassifyRequest);
+
+      expect(screen.getByText("장부 이동 요청")).toBeInTheDocument();
+      expect(screen.getByText("생활비")).toBeInTheDocument();
+      expect(screen.getByText("여행")).toBeInTheDocument();
+      expect(screen.queryByText("변경 내용")).not.toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /승인/ })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /거절/ })).toBeInTheDocument();
+    });
+
+    it("만료된 요청은 이유와 새 요청 가능 여부를 안내한다", () => {
+      renderAs("requester-1", { ...reclassifyRequest, status: "expired" });
+
+      expect(screen.getByText("만료됨")).toBeInTheDocument();
+      expect(
+        screen.getByText(
+          "요청 뒤 기록이나 장부가 바뀌어 만료되었습니다. 기록에서 새로 요청할 수 있습니다.",
+        ),
+      ).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /취소/ })).toBeNull();
+    });
+
+    it("승인 시점에 만료되면 서버 안내를 그대로 보여준다", async () => {
+      resolveMutateAsync.mockRejectedValueOnce(
+        new Error("기록이나 장부가 바뀌어 요청이 만료되었습니다."),
+      );
+      renderAs("owner-1", reclassifyRequest);
+
+      fireEvent.click(screen.getByRole("button", { name: /승인/ }));
+
+      await waitFor(() =>
+        expect(toast.error).toHaveBeenCalledWith(
+          "기록이나 장부가 바뀌어 요청이 만료되었습니다.",
+        ),
+      );
+    });
   });
 });

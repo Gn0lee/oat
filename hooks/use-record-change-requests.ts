@@ -1,7 +1,12 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { fetchApiData } from "@/lib/api/client";
+import {
+  type QueryClient,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
+import { ApiQueryError, fetchApiData } from "@/lib/api/client";
 import { queries } from "@/lib/queries/keys";
 import type {
   CreateRecordChangeRequestInput,
@@ -24,8 +29,11 @@ async function readApiJson<T>(response: Response): Promise<T> {
   const json = (await response.json()) as ApiDataResponse<T> | ApiErrorResponse;
 
   if (!response.ok) {
-    throw new Error(
-      (json as ApiErrorResponse).error?.message ?? "요청에 실패했습니다.",
+    const error = (json as ApiErrorResponse).error;
+    throw new ApiQueryError(
+      error?.code ?? "UNKNOWN_ERROR",
+      error?.message ?? "요청에 실패했습니다.",
+      response.status,
     );
   }
 
@@ -70,6 +78,27 @@ async function resolveRecordChangeRequest({
   return readApiJson<RecordChangeRequest>(response);
 }
 
+// 승인된 장부 이동은 옛·새 장부와 전체 범위를 함께 바꾸므로 장부 단위가 아닌 전체 키를 무효화한다.
+export function invalidateRecordChangeRequestQueries(
+  queryClient: QueryClient,
+  options: { recordsChanged?: boolean } = {},
+) {
+  queryClient.invalidateQueries({
+    queryKey: queries.recordChangeRequests._def,
+  });
+  queryClient.invalidateQueries({ queryKey: queries.notifications._def });
+  if (!options.recordsChanged) return;
+  queryClient.invalidateQueries({ queryKey: ["ledgerBooks"] });
+  queryClient.invalidateQueries({ queryKey: queries.ledgerEntries._def });
+  queryClient.invalidateQueries({ queryKey: queries.ledgerStats._def });
+  queryClient.invalidateQueries({ queryKey: queries.home._def });
+  queryClient.invalidateQueries({ queryKey: queries.accounts._def });
+  queryClient.invalidateQueries({ queryKey: queries.paymentMethods._def });
+  queryClient.invalidateQueries({ queryKey: queries.transactions._def });
+  queryClient.invalidateQueries({ queryKey: queries.holdings._def });
+  queryClient.invalidateQueries({ queryKey: queries.dashboard._def });
+}
+
 export function useRecordChangeRequest(id: string) {
   const queryClient = useQueryClient();
 
@@ -92,12 +121,7 @@ export function useCreateRecordChangeRequest() {
 
   return useMutation({
     mutationFn: createRecordChangeRequest,
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: queries.recordChangeRequests._def,
-      });
-      queryClient.invalidateQueries({ queryKey: queries.notifications._def });
-    },
+    onSettled: () => invalidateRecordChangeRequestQueries(queryClient),
   });
 }
 
@@ -106,14 +130,8 @@ export function useCancelRecordChangeRequest() {
 
   return useMutation({
     mutationFn: cancelRecordChangeRequest,
-    onSuccess: (request) => {
-      queryClient.invalidateQueries({
-        queryKey: queries.recordChangeRequests._def,
-      });
-      queryClient.invalidateQueries({
-        queryKey: queries.recordChangeRequests.detail(request.id).queryKey,
-      });
-    },
+    // 409(이미 처리됨)여도 현재 상태를 다시 읽는다.
+    onSettled: () => invalidateRecordChangeRequestQueries(queryClient),
   });
 }
 
@@ -122,19 +140,10 @@ export function useResolveRecordChangeRequest() {
 
   return useMutation({
     mutationFn: resolveRecordChangeRequest,
-    onSuccess: (request) => {
-      queryClient.invalidateQueries({
-        queryKey: queries.recordChangeRequests._def,
-      });
-      queryClient.invalidateQueries({
-        queryKey: queries.recordChangeRequests.detail(request.id).queryKey,
-      });
-      queryClient.invalidateQueries({ queryKey: queries.ledgerEntries._def });
-      queryClient.invalidateQueries({ queryKey: queries.accounts._def });
-      queryClient.invalidateQueries({ queryKey: queries.paymentMethods._def });
-      queryClient.invalidateQueries({ queryKey: queries.transactions._def });
-      queryClient.invalidateQueries({ queryKey: queries.holdings._def });
-      queryClient.invalidateQueries({ queryKey: queries.dashboard._def });
-    },
+    // 만료(409)도 요청 상태가 바뀐 결과이므로 성공과 같이 다시 읽는다.
+    onSettled: () =>
+      invalidateRecordChangeRequestQueries(queryClient, {
+        recordsChanged: true,
+      }),
   });
 }

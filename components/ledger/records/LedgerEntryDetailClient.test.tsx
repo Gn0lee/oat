@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { useCurrentUserId } from "@/hooks/use-current-user";
 import { useLedgerEntry } from "@/hooks/use-ledger-entries";
@@ -36,6 +36,11 @@ vi.mock("@/components/ledger/LedgerEntryDeleteDialog", () => ({
 
 vi.mock("@/components/ledger/LedgerEntryChangeRequestDialog", () => ({
   LedgerEntryChangeRequestDialog: () => null,
+}));
+
+vi.mock("@/components/ledger/LedgerEntryReclassifyRequestDialog", () => ({
+  LedgerEntryReclassifyRequestDialog: ({ open }: { open: boolean }) =>
+    open ? <div role="dialog" aria-label="장부 이동 요청 열림" /> : null,
 }));
 
 const mockEntry: LedgerEntryWithDetails = {
@@ -239,5 +244,54 @@ describe("LedgerEntryDetailClient", () => {
     expect(
       screen.queryByRole("button", { name: "기록 수정 요청" }),
     ).not.toBeInTheDocument();
+  });
+
+  describe("장부 이동 요청", () => {
+    const activeShared = {
+      ...mockEntry,
+      bookId: "book-1",
+      book: { name: "생활비", visibility: "shared", archivedAt: null },
+    };
+
+    it.each([
+      ["다른 구성원의 활성 공용 기록", "non-owner", activeShared, true],
+      [
+        "다른 구성원의 공용 이체 기록",
+        "non-owner",
+        { ...activeShared, type: "transfer" },
+        true,
+      ],
+      ["작성자 본인 기록", "owner-1", activeShared, false],
+      [
+        "보관된 장부의 기록",
+        "non-owner",
+        {
+          ...activeShared,
+          book: { ...activeShared.book, archivedAt: "2026-09-01T00:00:00Z" },
+        },
+        false,
+      ],
+    ])("%s: 노출=%s", (_label, userId, entry, visible) => {
+      vi.mocked(useCurrentUserId).mockReturnValue({
+        userId: userId as string,
+        isLoading: false,
+      });
+      vi.mocked(useLedgerEntry).mockReturnValue({
+        data: entry,
+        isLoading: false,
+        error: null,
+      } as never);
+      render(<LedgerEntryDetailClient entryId="entry-1" />);
+      const button = screen.queryByRole("button", { name: "장부 이동 요청" });
+      if (visible) {
+        expect(button).toBeInTheDocument();
+        fireEvent.click(button as HTMLElement);
+        expect(
+          screen.getByRole("dialog", { name: "장부 이동 요청 열림" }),
+        ).toBeInTheDocument();
+      } else {
+        expect(button).not.toBeInTheDocument();
+      }
+    });
   });
 });
