@@ -129,8 +129,8 @@ const REQUEST_TYPE_LABELS: Record<RecordChangeRequest["request_type"], string> =
 
 function getExpiredNote(requestType: RecordChangeRequest["request_type"]) {
   return requestType === "reclassify"
-    ? "요청 뒤 기록이나 장부가 바뀌어 만료되었습니다. 기록에서 새로 요청할 수 있습니다."
-    : "요청 뒤 기록이 바뀌어 만료되었습니다.";
+    ? "요청한 뒤 기록이나 장부가 바뀌어 만료되었습니다. 기록 상세에서 다시 요청할 수 있습니다."
+    : "요청한 뒤 기록이 바뀌어 만료되었습니다.";
 }
 
 export function RecordChangeRequestDetailClient({
@@ -220,9 +220,9 @@ export function RecordChangeRequestDetailClient({
           }
         />
         {request.status === "expired" ? (
-          <output className="mb-3 block text-sm text-gray-600">
+          <p className="mb-3 text-sm text-gray-600">
             {getExpiredNote(request.request_type)}
-          </output>
+          </p>
         ) : null}
         <GroupedList>
           {getSnapshotMeta(snapshot).map((item) => (
@@ -237,10 +237,7 @@ export function RecordChangeRequestDetailClient({
 
       {request.request_type === "reclassify" ? (
         <ScreenSection>
-          <SectionHeader
-            title="장부 이동"
-            description="작성자가 승인하면 장부만 바뀌고 금액과 돈 위치는 그대로입니다."
-          />
+          <SectionHeader title="장부 이동" />
           <GroupedList>
             <DetailInfoRow
               label="현재 장부"

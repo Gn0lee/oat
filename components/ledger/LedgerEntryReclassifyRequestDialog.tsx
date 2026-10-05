@@ -11,6 +11,7 @@ import { useLedgerBooks } from "@/hooks/use-ledger-books";
 import { useCreateRecordChangeRequest } from "@/hooks/use-record-change-requests";
 import { ApiQueryError } from "@/lib/api/client";
 import type { LedgerEntryWithDetails } from "@/lib/api/ledger";
+import { getReclassifyDestinations } from "@/lib/ledger/record-change-request";
 import { queries } from "@/lib/queries/keys";
 import { cn } from "@/lib/utils/cn";
 import { formatCurrency } from "@/lib/utils/format";
@@ -31,7 +32,7 @@ export function LedgerEntryReclassifyRequestDialog({
 }: LedgerEntryReclassifyRequestDialogProps) {
   const queryClient = useQueryClient();
   const createMutation = useCreateRecordChangeRequest();
-  const { data: books = [], isLoading } = useLedgerBooks();
+  const { data: books = [], isLoading, isError } = useLedgerBooks();
   const [bookId, setBookId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
 
@@ -43,12 +44,7 @@ export function LedgerEntryReclassifyRequestDialog({
 
   if (!entry) return null;
 
-  const candidates = books.filter(
-    (book) =>
-      book.visibility === "shared" &&
-      !book.archivedAt &&
-      book.id !== entry.bookId,
-  );
+  const candidates = getReclassifyDestinations(books, entry.bookId);
 
   const handleSubmit = async () => {
     if (!bookId) return;
@@ -71,7 +67,7 @@ export function LedgerEntryReclassifyRequestDialog({
         queryClient.invalidateQueries({ queryKey: ["ledgerBooks"] });
       }
       toast.error(
-        error instanceof Error ? error.message : "요청 생성에 실패했습니다.",
+        error instanceof Error ? error.message : "요청을 보내지 못했습니다.",
       );
     }
   };
@@ -81,7 +77,7 @@ export function LedgerEntryReclassifyRequestDialog({
       open={open}
       onOpenChange={onOpenChange}
       title="장부 이동 요청"
-      description="작성자가 승인하면 이 기록이 선택한 공용 장부로 옮겨집니다. 금액과 돈 위치는 그대로입니다."
+      description="작성자가 승인하면 장부만 바뀝니다. 금액과 돈 위치는 그대로입니다."
     >
       <div className="space-y-5">
         <div className="flex items-center justify-between gap-3 border-b border-gray-100 pb-4 text-sm">
@@ -104,6 +100,10 @@ export function LedgerEntryReclassifyRequestDialog({
           </legend>
           {isLoading ? (
             <p className="text-sm text-gray-500">장부를 불러오는 중입니다.</p>
+          ) : isError ? (
+            <p role="alert" className="text-sm text-destructive">
+              장부 목록을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.
+            </p>
           ) : candidates.length === 0 ? (
             <p className="text-sm text-gray-500">
               옮길 수 있는 다른 공용 장부가 없습니다.
@@ -116,8 +116,8 @@ export function LedgerEntryReclassifyRequestDialog({
                   <label
                     key={book.id}
                     className={cn(
-                      "flex min-h-11 cursor-pointer items-center gap-3 border-b border-gray-100 px-1 py-3 text-base text-gray-900 last:border-b-0",
-                      isSelected && "font-semibold text-primary",
+                      "flex min-h-11 cursor-pointer items-center gap-3 rounded-lg px-3 py-3 text-base text-gray-900",
+                      isSelected && "bg-primary/5 font-semibold",
                     )}
                   >
                     <input
@@ -137,9 +137,7 @@ export function LedgerEntryReclassifyRequestDialog({
         </fieldset>
 
         <div className="space-y-2">
-          <Label htmlFor="reclassify-request-message">
-            작성자에게 남길 말 (선택)
-          </Label>
+          <Label htmlFor="reclassify-request-message">요청 메시지 (선택)</Label>
           <Textarea
             id="reclassify-request-message"
             value={message}

@@ -20,6 +20,16 @@ vi.mock("@/hooks/use-ledger-entries", () => ({
   useLedgerEntry: vi.fn(),
 }));
 
+const ledgerBooks = vi.hoisted(() => ({
+  data: [
+    { id: "book-1", name: "생활비", visibility: "shared", archivedAt: null },
+    { id: "book-2", name: "여행", visibility: "shared", archivedAt: null },
+  ] as unknown[],
+}));
+vi.mock("@/hooks/use-ledger-books", () => ({
+  useLedgerBooks: () => ledgerBooks,
+}));
+
 vi.mock("@/components/ledger/CategoryIcon", () => ({
   CategoryIcon: ({ iconName }: { iconName: string | null }) => (
     <span data-icon-name={iconName ?? "fallback"} />
@@ -292,6 +302,25 @@ describe("LedgerEntryDetailClient", () => {
       } else {
         expect(button).not.toBeInTheDocument();
       }
+    });
+
+    it("옮길 수 있는 다른 공용 장부가 없으면 요청 버튼을 숨긴다", () => {
+      const original = ledgerBooks.data;
+      ledgerBooks.data = [original[0]];
+      vi.mocked(useCurrentUserId).mockReturnValue({
+        userId: "non-owner",
+        isLoading: false,
+      });
+      vi.mocked(useLedgerEntry).mockReturnValue({
+        data: activeShared,
+        isLoading: false,
+        error: null,
+      } as never);
+      render(<LedgerEntryDetailClient entryId="entry-1" />);
+      expect(
+        screen.queryByRole("button", { name: "장부 이동 요청" }),
+      ).not.toBeInTheDocument();
+      ledgerBooks.data = original;
     });
   });
 });

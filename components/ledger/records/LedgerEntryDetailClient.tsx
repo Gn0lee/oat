@@ -28,10 +28,12 @@ import {
   resolveServiceParentHref,
 } from "@/constants/service-routes";
 import { useCurrentUserId } from "@/hooks/use-current-user";
+import { useLedgerBooks } from "@/hooks/use-ledger-books";
 import { useLedgerEntry } from "@/hooks/use-ledger-entries";
 import { ApiQueryError } from "@/lib/api/client";
 import type { LedgerEntryWithDetails } from "@/lib/api/ledger";
 import { formatKst } from "@/lib/date";
+import { getReclassifyDestinations } from "@/lib/ledger/record-change-request";
 import { safeLedgerReturnTo } from "@/lib/ledger-books/navigation";
 
 interface LedgerEntryDetailClientProps {
@@ -76,6 +78,7 @@ export function LedgerEntryDetailClient({
   const searchParams = useSearchParams();
   const { userId } = useCurrentUserId();
   const { data: entry, isLoading, error } = useLedgerEntry(entryId);
+  const { data: books = [] } = useLedgerBooks();
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [requestMode, setRequestMode] = useState<RequestMode>("update");
@@ -132,7 +135,10 @@ export function LedgerEntryDetailClient({
   const showDeleteAction = hasActions;
   // 타인 공용 기록은 장부를 직접 바꿀 수 없고 작성자에게 이동을 요청한다 (#437).
   const canRequestReclassify =
-    canRequest && entry.book?.visibility === "shared" && !entry.book.archivedAt;
+    canRequest &&
+    entry.book?.visibility === "shared" &&
+    !entry.book.archivedAt &&
+    getReclassifyDestinations(books, entry.bookId).length > 0;
   const typeLabel = getTypeLabel(entry.type);
   const typeVariant =
     entry.type === "expense" || entry.type === "non_expense_withdrawal"
@@ -311,9 +317,6 @@ export function LedgerEntryDetailClient({
               <FolderInput aria-hidden className="size-4" />
               장부 이동 요청
             </Button>
-            <p className="mt-2 text-center text-xs text-gray-500">
-              작성자가 승인하면 다른 공용 장부로 옮겨집니다.
-            </p>
           </ScreenSection>
         )}
       </div>

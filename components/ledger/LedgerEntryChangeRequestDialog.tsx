@@ -106,8 +106,8 @@ export function LedgerEntryChangeRequestDialog({
   const isUpdate = mode === "update";
   const title = isUpdate ? "수정 요청" : "삭제 요청";
   const description = isUpdate
-    ? "바꾸고 싶은 값을 입력하면 기록 소유자에게 요청이 전달됩니다."
-    : "기록 소유자에게 삭제 사유가 전달됩니다.";
+    ? "바꾸고 싶은 값을 입력하면 작성자에게 요청이 전달됩니다."
+    : "작성자에게 삭제 사유가 전달됩니다.";
 
   const handleSubmit = async () => {
     try {
@@ -335,7 +335,7 @@ export function LedgerEntryChangeRequestDialog({
             className="resize-none"
             placeholder={
               isUpdate
-                ? "소유자가 확인할 수 있는 설명을 남겨주세요."
+                ? "작성자가 확인할 수 있는 설명을 남겨주세요."
                 : "삭제가 필요한 이유를 입력해주세요."
             }
             onChange={(event) => setMessage(event.target.value)}

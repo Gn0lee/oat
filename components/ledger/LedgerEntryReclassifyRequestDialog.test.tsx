@@ -94,7 +94,7 @@ describe("LedgerEntryReclassifyRequestDialog", () => {
     const submit = screen.getByRole("button", { name: "요청 보내기" });
     expect(submit).toBeDisabled();
     fireEvent.click(screen.getByRole("radio", { name: "여행" }));
-    fireEvent.change(screen.getByLabelText("작성자에게 남길 말 (선택)"), {
+    fireEvent.change(screen.getByLabelText("요청 메시지 (선택)"), {
       target: { value: "여행 경비예요" },
     });
     fireEvent.click(submit);
@@ -150,6 +150,29 @@ describe("LedgerEntryReclassifyRequestDialog", () => {
     expect(
       screen.getByText("옮길 수 있는 다른 공용 장부가 없습니다."),
     ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "요청 보내기" })).toBeDisabled();
+  });
+
+  it("장부 목록을 불러오지 못하면 빈 상태 대신 오류를 알린다", () => {
+    vi.mocked(useLedgerBooks).mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: true,
+    } as never);
+    render(
+      <LedgerEntryReclassifyRequestDialog
+        entry={entry}
+        open
+        onOpenChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "장부 목록을 불러오지 못했습니다.",
+    );
+    expect(
+      screen.queryByText("옮길 수 있는 다른 공용 장부가 없습니다."),
+    ).toBeNull();
     expect(screen.getByRole("button", { name: "요청 보내기" })).toBeDisabled();
   });
 });

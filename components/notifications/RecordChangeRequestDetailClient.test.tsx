@@ -220,7 +220,7 @@ describe("RecordChangeRequestDetailClient", () => {
       expect(screen.getByText("만료됨")).toBeInTheDocument();
       expect(
         screen.getByText(
-          "요청 뒤 기록이나 장부가 바뀌어 만료되었습니다. 기록에서 새로 요청할 수 있습니다.",
+          "요청한 뒤 기록이나 장부가 바뀌어 만료되었습니다. 기록 상세에서 다시 요청할 수 있습니다.",
         ),
       ).toBeInTheDocument();
       expect(screen.queryByRole("button", { name: /취소/ })).toBeNull();
