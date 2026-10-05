@@ -91,7 +91,7 @@ describe("NotificationInboxClient", () => {
     expect(
       screen.getByText("홍길동님이 수정을 요청했습니다."),
     ).toBeInTheDocument();
-    expect(screen.getByText("가계부 수정/삭제 요청")).toBeInTheDocument();
+    expect(screen.getByText("가계부 변경 요청")).toBeInTheDocument();
 
     // 5. GroupedList should be used for the list of notifications.
     const groupedList = screen.getByTestId("grouped-list");

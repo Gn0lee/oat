@@ -25,8 +25,8 @@ interface NotificationTypeConfig {
 
 export const NOTIFICATION_TYPE_CONFIG = {
   ledger_record_change_request: {
-    label: "가계부 수정/삭제 요청",
-    description: "공용 가계부 기록에 대한 수정 또는 삭제 요청",
+    label: "가계부 변경 요청",
+    description: "공용 가계부 기록에 대한 수정·삭제·장부 이동 요청",
     group: "requests",
     defaults: { inAppEnabled: true, pushEnabled: false },
   },
