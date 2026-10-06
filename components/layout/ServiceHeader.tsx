@@ -16,6 +16,19 @@ import {
 } from "@/constants/service-routes";
 import { cn } from "@/lib/utils/cn";
 
+const STOCK_TRADE_COMPOSER_PATHS = [
+  "/assets/stock/transactions/new/full",
+  "/assets/stock/transactions/new/daily",
+];
+
+/** 헤더 뒤로가기·닫기를 활성 컴포저에 맡기는 화면 */
+function isComposerPath(pathname: string) {
+  return (
+    pathname.startsWith("/ledger/records/new/") ||
+    STOCK_TRADE_COMPOSER_PATHS.includes(pathname)
+  );
+}
+
 interface ServiceHeaderProps {
   variant: "mobile" | "desktop";
 }
@@ -33,13 +46,13 @@ export function ServiceHeader({ variant }: ServiceHeaderProps) {
       fallback={
         <MobileServiceHeader
           meta={meta}
-          isLedgerComposer={pathname.startsWith("/ledger/records/new/")}
+          isComposer={isComposerPath(pathname)}
         />
       }
     >
       <MobileServiceHeaderWithQuery
         meta={meta}
-        isLedgerComposer={pathname.startsWith("/ledger/records/new/")}
+        isComposer={isComposerPath(pathname)}
       />
     </Suspense>
   );
@@ -47,10 +60,10 @@ export function ServiceHeader({ variant }: ServiceHeaderProps) {
 
 function MobileServiceHeaderWithQuery({
   meta,
-  isLedgerComposer,
+  isComposer,
 }: {
   meta: ReturnType<typeof getServiceRouteMeta>;
-  isLedgerComposer: boolean;
+  isComposer: boolean;
 }) {
   const searchParams = useSearchParams();
   const parentHref = resolveServiceParentHref({
@@ -61,7 +74,7 @@ function MobileServiceHeaderWithQuery({
     <MobileServiceHeader
       meta={meta}
       parentHref={parentHref}
-      isLedgerComposer={isLedgerComposer}
+      isComposer={isComposer}
     />
   );
 }
@@ -69,11 +82,11 @@ function MobileServiceHeaderWithQuery({
 function MobileServiceHeader({
   meta,
   parentHref,
-  isLedgerComposer = false,
+  isComposer = false,
 }: {
   meta: ReturnType<typeof getServiceRouteMeta>;
   parentHref?: string;
-  isLedgerComposer?: boolean;
+  isComposer?: boolean;
 }) {
   if (!meta) {
     return null;
@@ -92,7 +105,7 @@ function MobileServiceHeader({
 
   return (
     <header className="absolute inset-x-0 top-0 z-50 bg-gray-50/80 backdrop-blur-md h-14 px-1 flex items-center lg:hidden">
-      {isLedgerComposer ? (
+      {isComposer ? (
         <IconButton
           label="이전 화면으로 이동"
           onClick={() => dispatchComposerEvent(COMPOSER_BACK_EVENT)}
@@ -112,7 +125,7 @@ function MobileServiceHeader({
       <h1 className="min-w-0 flex-1 truncate pr-12 text-base font-semibold text-gray-900">
         {meta.label}
       </h1>
-      {isLedgerComposer ? (
+      {isComposer ? (
         <IconButton
           label="작업 닫기"
           onClick={() => dispatchComposerEvent(COMPOSER_CLOSE_EVENT)}
