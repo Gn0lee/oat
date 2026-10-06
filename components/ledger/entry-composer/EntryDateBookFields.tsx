@@ -1,6 +1,7 @@
 "use client";
 
 import { useFormContext, useWatch } from "react-hook-form";
+import { composerFieldClassName } from "@/components/composer/field-styles";
 import { DatePickerInput } from "@/components/ui/date-picker";
 import { Label } from "@/components/ui/label";
 import {
@@ -12,7 +13,6 @@ import {
 } from "@/components/ui/select";
 import { useLedgerBooks } from "@/hooks/use-ledger-books";
 import type { LedgerComposerValues } from "@/schemas/ledger-composer";
-import { ledgerFieldClassName } from "./field-styles";
 
 export function EntryDateBookFields({ index }: { index: number }) {
   const form = useFormContext<LedgerComposerValues>();
@@ -29,7 +29,7 @@ export function EntryDateBookFields({ index }: { index: number }) {
         <DatePickerInput
           id={`entry-date-${rowNumber}`}
           aria-label={`날짜 ${rowNumber}`}
-          className={ledgerFieldClassName}
+          className={composerFieldClassName}
           value={item.transactedAt}
           onChange={(value) =>
             form.setValue(`items.${index}.transactedAt`, value, {
@@ -52,7 +52,7 @@ export function EntryDateBookFields({ index }: { index: number }) {
         >
           <SelectTrigger
             id={`entry-book-${rowNumber}`}
-            className={ledgerFieldClassName}
+            className={composerFieldClassName}
             aria-label={`장부 ${rowNumber}`}
           >
             <SelectValue placeholder="장부 선택" />

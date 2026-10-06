@@ -1,6 +1,7 @@
 "use client";
 
 import { useFormContext, useWatch } from "react-hook-form";
+import { composerFieldClassName } from "@/components/composer/field-styles";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -15,7 +16,6 @@ import { ComposerMemoField } from "./ComposerMemoField";
 import { EntryCategoryField } from "./EntryCategoryField";
 import { EntryDateBookFields } from "./EntryDateBookFields";
 import { EntryMoneySourceFields } from "./EntryMoneySourceFields";
-import { ledgerFieldClassName } from "./field-styles";
 
 type FieldSection = "classification" | "sources" | "datesBooks" | "memo";
 
@@ -49,7 +49,7 @@ export function EntryFields({
             }}
           >
             <SelectTrigger
-              className={ledgerFieldClassName}
+              className={composerFieldClassName}
               aria-label={`기록 유형 ${index + 1}`}
             >
               <SelectValue />

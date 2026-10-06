@@ -4,6 +4,11 @@ import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
+import {
+  COMPOSER_BACK_EVENT,
+  COMPOSER_CLOSE_EVENT,
+  dispatchComposerEvent,
+} from "@/components/composer/composer-events";
 import { NotificationBell } from "@/components/notifications";
 import {
   getServiceRouteMeta,
@@ -90,13 +95,7 @@ function MobileServiceHeader({
       {isLedgerComposer ? (
         <IconButton
           label="이전 화면으로 이동"
-          onClick={() => {
-            window.dispatchEvent(
-              new CustomEvent("oat:ledger-composer-back", {
-                detail: { trigger: document.activeElement },
-              }),
-            );
-          }}
+          onClick={() => dispatchComposerEvent(COMPOSER_BACK_EVENT)}
           className="shrink-0"
         >
           <ChevronLeft className="size-6" />
@@ -116,13 +115,7 @@ function MobileServiceHeader({
       {isLedgerComposer ? (
         <IconButton
           label="작업 닫기"
-          onClick={() => {
-            window.dispatchEvent(
-              new CustomEvent("oat:ledger-composer-close", {
-                detail: { trigger: document.activeElement },
-              }),
-            );
-          }}
+          onClick={() => dispatchComposerEvent(COMPOSER_CLOSE_EVENT)}
           className="absolute right-1"
         >
           <X className="size-5" />

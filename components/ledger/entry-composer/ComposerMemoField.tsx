@@ -1,11 +1,11 @@
 "use client";
 
 import { useFormContext, useWatch } from "react-hook-form";
+import { composerFieldClassName } from "@/components/composer/field-styles";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils/cn";
 import type { LedgerComposerValues } from "@/schemas/ledger-composer";
-import { ledgerFieldClassName } from "./field-styles";
 
 export function ComposerMemoField({ index }: { index: number }) {
   const form = useFormContext<LedgerComposerValues>();
@@ -17,7 +17,7 @@ export function ComposerMemoField({ index }: { index: number }) {
       <Textarea
         id={`entry-memo-${index + 1}`}
         aria-label={`메모 ${index + 1}`}
-        className={cn(ledgerFieldClassName, "min-h-20")}
+        className={cn(composerFieldClassName, "min-h-20")}
         rows={3}
         maxLength={500}
         placeholder="추가로 남길 내용"

@@ -6,13 +6,13 @@ import {
   useFormContext,
   useWatch,
 } from "react-hook-form";
+import { ComposerActionBar } from "@/components/composer/ComposerActionBar";
+import { composerFieldClassName } from "@/components/composer/field-styles";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createComposerDraft } from "@/lib/ledger/composer";
 import { cn } from "@/lib/utils/cn";
 import type { LedgerComposerValues } from "@/schemas/ledger-composer";
-import { ComposerActionBar } from "./ComposerActionBar";
-import { ledgerFieldClassName } from "./field-styles";
 
 interface EntryBasicsStepProps {
   itemsArray: UseFieldArrayReturn<LedgerComposerValues, "items">;
@@ -95,7 +95,7 @@ export function EntryBasicsStep({
                         if (event.target.value.trim())
                           form.clearErrors(titlePath);
                       }}
-                      className={cn(ledgerFieldClassName, "h-12")}
+                      className={cn(composerFieldClassName, "h-12")}
                     />
                     {titleError && (
                       <p
@@ -137,7 +137,7 @@ export function EntryBasicsStep({
                             form.clearErrors(amountPath);
                         }}
                         className={cn(
-                          ledgerFieldClassName,
+                          composerFieldClassName,
                           "h-12 pr-10 text-xl font-semibold",
                         )}
                       />
