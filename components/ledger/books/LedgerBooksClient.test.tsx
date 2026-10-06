@@ -57,7 +57,7 @@ describe("LedgerBooksClient", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("lists active books in recently used order before archived books", () => {
+  it("lists active books in recently used order before archived books without row icons", () => {
     const base = {
       visibility: "shared" as const,
       createdBy: "me",
@@ -91,15 +91,19 @@ describe("LedgerBooksClient", () => {
 
     render(<LedgerBooksClient />);
 
-    expect(
-      screen
-        .getAllByRole("link")
-        .filter((link) =>
-          link.getAttribute("href")?.startsWith("/ledger/books/"),
-        )
-        .filter((link) => !link.getAttribute("href")?.includes("/new"))
-        .map((link) => link.querySelector("p")?.textContent),
-    ).toEqual(["생활비", "여행", "빈 장부", "지난 여행"]);
+    const rows = screen
+      .getAllByRole("link")
+      .filter((link) => link.getAttribute("href")?.startsWith("/ledger/books/"))
+      .filter((link) => !link.getAttribute("href")?.includes("/new"));
+    expect(rows.map((link) => link.querySelector("p")?.textContent)).toEqual([
+      "생활비",
+      "여행",
+      "빈 장부",
+      "지난 여행",
+    ]);
+    for (const row of rows) {
+      expect(row.querySelector("svg.lucide-book-open")).toBeNull();
+    }
   });
 
   it("offers household setup instead of an empty list when membership is missing", () => {

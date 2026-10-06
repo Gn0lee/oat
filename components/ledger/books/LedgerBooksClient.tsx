@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import Link from "next/link";
 import {
   EntryRow,
@@ -73,7 +73,6 @@ export function LedgerBooksClient({ returnTo }: { returnTo?: string | null }) {
               <EntryRow
                 key={book.id}
                 href={`/ledger/books/${encodeURIComponent(book.id)}?returnTo=${encodeURIComponent(safeReturn)}`}
-                icon={BookOpen}
                 title={
                   <span className="line-clamp-2 whitespace-normal break-words">
                     {book.name}
