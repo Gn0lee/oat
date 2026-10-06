@@ -28,7 +28,7 @@ export function GET(request: NextRequest) {
       return getLedgerStatsByCategory(supabase, householdId, {
         ...parseLedgerStatsMonth(searchParams),
         type,
-        ...parseLedgerStatsScope(searchParams, "by-category"),
+        ...parseLedgerStatsScope(searchParams),
       });
     },
   );

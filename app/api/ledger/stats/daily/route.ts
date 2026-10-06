@@ -18,7 +18,7 @@ export function GET(request: NextRequest) {
     ({ supabase, householdId, searchParams }) =>
       getLedgerStatsDaily(supabase, householdId, {
         ...parseLedgerStatsMonth(searchParams),
-        ...parseLedgerStatsScope(searchParams, "daily"),
+        ...parseLedgerStatsScope(searchParams),
       }),
   );
 }

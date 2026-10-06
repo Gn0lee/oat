@@ -12,8 +12,8 @@ set local lock_timeout = '5s';
 
 do $$
 begin
-  if current_database() <> 'oat_ledger_books_442_test' then
-    raise exception 'Run only in oat_ledger_books_442_test (never the shared postgres DB)';
+  if current_database() !~ '^oat_ledger_books_[0-9a-z_]+_test$' then
+    raise exception 'Run only in an oat_ledger_books_*_test scratch DB (never the shared postgres DB)';
   end if;
   assert to_regprocedure('public.mutate_ledger_book(uuid,text,text)') is not null,
     'missing public.mutate_ledger_book';
@@ -105,18 +105,18 @@ insert into public.ledger_tags (id, household_id, name, name_normalized)
 values (pg_temp.fid('tag'), pg_temp.fid('h1'), 'PreservedTag', 'preservedtag');
 insert into public.ledger_entries
   (id, household_id, owner_id, book_id, type, amount, from_account_id, from_payment_method_id,
-   category_id, title, memo, transacted_at, is_shared)
+   category_id, title, memo, transacted_at)
 values (pg_temp.fid('entry'), pg_temp.fid('h1'), pg_temp.fid('a1'), pg_temp.fid('occupied'),
   'expense', 17.25, pg_temp.fid('account'), pg_temp.fid('payment'), pg_temp.fid('category'),
-  'Keep me', 'Original memo', '2026-09-04 09:00:00+00', true);
+  'Keep me', 'Original memo', '2026-09-04 09:00:00+00');
 insert into public.ledger_entry_tags (ledger_entry_id, tag_id, household_id)
 values (pg_temp.fid('entry'), pg_temp.fid('tag'), pg_temp.fid('h1'));
 insert into public.ledger_entries
   (id, household_id, owner_id, book_id, type, amount, from_account_id, category_id, title,
-   transacted_at, is_shared)
+   transacted_at)
 values (pg_temp.fid('private_entry'), pg_temp.fid('h1'), pg_temp.fid('a1'),
   pg_temp.fid('shared'), 'expense', 9.00, pg_temp.fid('account'), pg_temp.fid('category'),
-  'Private history target', '2026-09-03 09:00:00+00', true);
+  'Private history target', '2026-09-03 09:00:00+00');
 insert into public.record_change_requests (id, household_id, requester_id, target_owner_id,
   target_type, target_id, request_type, message, target_snapshot)
 values (pg_temp.fid('pending_request'), pg_temp.fid('h1'), pg_temp.fid('a2'), pg_temp.fid('a1'),
@@ -157,8 +157,8 @@ begin
       'transactedAt', '2026-09-05T09:00:00Z', 'title', 'Selected shared book',
       'categoryId', pg_temp.fid('category'), 'fromAccountId', pg_temp.fid('account'),
       'tags', jsonb_build_array('Keeptag')));
-  perform pg_temp.ok(created.owner_id = pg_temp.fid('a1') and created.book_id = pg_temp.fid('shared')
-    and created.is_shared, 'create uses the selected active shared book');
+  perform pg_temp.ok(created.owner_id = pg_temp.fid('a1') and created.book_id = pg_temp.fid('shared'),
+    'create uses the selected active shared book');
   original_updated_at := created.updated_at;
   select balance into before_account from public.accounts where id = pg_temp.fid('account');
   select balance into before_payment from public.payment_methods where id = pg_temp.fid('payment');
@@ -173,7 +173,7 @@ begin
     'update', pg_temp.fid('a1'), jsonb_build_object('bookId', pg_temp.fid('shared'))::text, created.id),
     'P0001', 'ENTRY_VERSION_REQUIRED');
   perform pg_temp.ok(moved.id = created.id and moved.book_id = pg_temp.fid('personal_a1')
-    and not moved.is_shared and moved.amount = created.amount and moved.owner_id = created.owner_id
+    and moved.amount = created.amount and moved.owner_id = created.owner_id
     and moved.from_account_id = created.from_account_id and moved.transacted_at = created.transacted_at
     and (select balance = before_account from public.accounts where id = pg_temp.fid('account'))
     and (select balance = before_payment from public.payment_methods where id = pg_temp.fid('payment'))
@@ -188,7 +188,7 @@ begin
       'confirmVisibilityChange', true), created.id);
   select * into moved from public.write_ledger_entry('update', pg_temp.fid('a1'),
     jsonb_build_object('bookId', pg_temp.fid('shared2'), 'expectedUpdatedAt', moved.updated_at), created.id);
-  perform pg_temp.ok(moved.book_id = pg_temp.fid('shared2') and moved.is_shared,
+  perform pg_temp.ok(moved.book_id = pg_temp.fid('shared2'),
     'shared-to-shared move does not need visibility confirmation');
   perform public.mutate_ledger_book(pg_temp.fid('shared2'), 'archive');
   perform pg_temp.expect_book_error(format('select public.write_ledger_entry(%L,%L,%L::jsonb,%L)',
@@ -220,7 +220,7 @@ begin
   select * into moved from public.write_ledger_entry('update', pg_temp.fid('a1'),
     jsonb_build_object('bookId', pg_temp.fid('shared2'), 'expectedUpdatedAt', moved.updated_at),
     pg_temp.fid('entry'));
-  perform pg_temp.ok(moved.book_id = pg_temp.fid('shared2') and moved.is_shared,
+  perform pg_temp.ok(moved.book_id = pg_temp.fid('shared2'),
     'shared-to-shared movement needs no visibility confirmation');
 
   select balance into before_balance from public.accounts where id = pg_temp.fid('account');

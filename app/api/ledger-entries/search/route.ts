@@ -3,12 +3,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { APIError, toErrorResponse } from "@/lib/api/error";
 import { getUserHouseholdId } from "@/lib/api/invitation";
-import {
-  searchLedgerEntries,
-  searchLedgerEntriesScoped,
-} from "@/lib/api/ledger";
+import { searchLedgerEntriesScoped } from "@/lib/api/ledger";
 import { getLedgerBook } from "@/lib/api/ledger-books";
-import { logLegacyLedgerContract } from "@/lib/api/legacy-ledger-contract";
 import { createClient } from "@/lib/supabase/server";
 
 const SEARCH_PAGE_SIZE = 20;
@@ -42,29 +38,6 @@ export async function GET(request: NextRequest) {
         "가구 정보를 찾을 수 없습니다.",
         404,
       );
-    }
-
-    const scope = searchParams.get("scope");
-    // Legacy clients (before #445) still send scope+offset. Removed in #446.
-    if (scope !== null) {
-      if (scope !== "shared" && scope !== "personal") {
-        throw new APIError(
-          "LEDGER_SEARCH_SCOPE_INVALID",
-          "검색 범위를 선택해주세요.",
-          400,
-        );
-      }
-      logLegacyLedgerContract("search-scope-offset", "ledger-entries/search");
-      const offsetParam = Number(searchParams.get("offset") ?? 0);
-      const offset =
-        Number.isInteger(offsetParam) && offsetParam >= 0 ? offsetParam : 0;
-      const result = await searchLedgerEntries(supabase, householdId, {
-        query,
-        scope,
-        offset,
-        limit: SEARCH_PAGE_SIZE,
-      });
-      return NextResponse.json({ data: result });
     }
 
     const bookId = searchParams.get("book") ?? undefined;

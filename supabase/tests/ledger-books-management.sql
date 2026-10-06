@@ -12,8 +12,8 @@ set local lock_timeout = '5s';
 
 do $$
 begin
-  if current_database() <> 'oat_ledger_books_440_test' then
-    raise exception 'Run only in oat_ledger_books_440_test (never the shared postgres DB)';
+  if current_database() !~ '^oat_ledger_books_[0-9a-z_]+_test$' then
+    raise exception 'Run only in an oat_ledger_books_*_test scratch DB (never the shared postgres DB)';
   end if;
   assert to_regprocedure('public.mutate_ledger_book(uuid,text,text)') is not null,
     'missing public.mutate_ledger_book';
@@ -104,10 +104,10 @@ insert into public.ledger_tags (id, household_id, name, name_normalized)
 values (pg_temp.fid('tag'), pg_temp.fid('h1'), 'PreservedTag', 'preservedtag');
 insert into public.ledger_entries
   (id, household_id, owner_id, book_id, type, amount, from_account_id, from_payment_method_id,
-   category_id, title, memo, transacted_at, is_shared)
+   category_id, title, memo, transacted_at)
 values (pg_temp.fid('entry'), pg_temp.fid('h1'), pg_temp.fid('a1'), pg_temp.fid('occupied'),
   'expense', 17.25, pg_temp.fid('account'), pg_temp.fid('payment'), pg_temp.fid('category'),
-  'Keep me', 'Original memo', '2026-09-04 09:00:00+00', true);
+  'Keep me', 'Original memo', '2026-09-04 09:00:00+00');
 insert into public.ledger_entry_tags (ledger_entry_id, tag_id, household_id)
 values (pg_temp.fid('entry'), pg_temp.fid('tag'), pg_temp.fid('h1'));
 
@@ -193,11 +193,20 @@ select (public.mutate_ledger_book(pg_temp.fid('shared2'), 'archive')).id;
 select pg_temp.expect_book_error(format('select public.mutate_ledger_book(%L,%L,%L)',
   pg_temp.fid('occupied'), 'rename', 'Shared duplicate target'), '23505', 'unique constraint');
 
--- Legacy personal books reject rename/delete, and occupied books reject delete.
-select pg_temp.expect_book_error(format('select public.mutate_ledger_book(%L,%L,%L)',
-  pg_temp.fid('legacy_a1'), 'rename', 'New legacy name'), '23514', 'BOOK_LEGACY_PROTECTED');
-select pg_temp.expect_book_error(format('select public.mutate_ledger_book(%L,%L)',
-  pg_temp.fid('legacy_a1'), 'delete'), '23514', 'BOOK_LEGACY_PROTECTED');
+-- #446: the old-client personal '개인 생활비' is an ordinary personal book once the
+-- legacy contract is gone; occupied books still reject delete.
+select public.mutate_ledger_book(pg_temp.fid('legacy_a1'), 'rename', 'New legacy name');
+do $$ begin
+  if (select name from public.ledger_books where id = pg_temp.fid('legacy_a1')) <> 'New legacy name' then
+    raise exception 'former legacy personal book must be renamable';
+  end if;
+end $$;
+select public.mutate_ledger_book(pg_temp.fid('legacy_a1'), 'delete');
+do $$ begin
+  if exists (select 1 from public.ledger_books where id = pg_temp.fid('legacy_a1')) then
+    raise exception 'empty former legacy personal book must be deletable';
+  end if;
+end $$;
 select pg_temp.expect_book_error(format('select public.mutate_ledger_book(%L,%L)',
   pg_temp.fid('occupied'), 'delete'), '23503', 'BOOK_NOT_EMPTY');
 select pg_temp.ok((select count(*) = 1 and bool_and(title = 'Keep me' and amount = 17.25

@@ -12,8 +12,8 @@ set local lock_timeout = '5s';
 
 do $$
 begin
-  if current_database() <> 'oat_ledger_books_444_test' then
-    raise exception 'Run only in oat_ledger_books_444_test (never the shared postgres DB)';
+  if current_database() !~ '^oat_ledger_books_[0-9a-z_]+_test$' then
+    raise exception 'Run only in an oat_ledger_books_*_test scratch DB (never the shared postgres DB)';
   end if;
   assert to_regprocedure('public.create_ledger_reclassify_request(uuid,uuid,timestamptz,text)') is not null,
     'missing public.create_ledger_reclassify_request';
@@ -263,7 +263,7 @@ begin
   select * into after_entry from public.ledger_entries where id = pg_temp.fid('e1');
   perform pg_temp.ok(resolved.status = 'approved' and resolved.resolved_at is not null
     and resolved.response_message = 'ok', 'author approval transitions pending -> approved');
-  perform pg_temp.ok(after_entry.book_id = pg_temp.fid('s2') and after_entry.is_shared
+  perform pg_temp.ok(after_entry.book_id = pg_temp.fid('s2')
     and after_entry.id = before_entry.id and after_entry.owner_id = before_entry.owner_id
     and after_entry.amount = before_entry.amount and after_entry.from_account_id = before_entry.from_account_id
     and after_entry.transacted_at = before_entry.transacted_at and after_entry.title = before_entry.title

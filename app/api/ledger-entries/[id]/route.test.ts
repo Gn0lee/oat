@@ -28,7 +28,6 @@ const updatedAt = "2026-04-24T10:00:00.123456+00:00";
 const previousEntry = {
   id: "entry-id",
   owner_id: "user-id",
-  is_shared: true,
 };
 const maybeSingle = vi.fn();
 

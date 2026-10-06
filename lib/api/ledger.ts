@@ -63,7 +63,7 @@ export function isTransferCapablePaymentMethod(
 
 export function buildLedgerEntryPayload(
   type: "expense" | "income" | "non_expense_withdrawal",
-  isShared: boolean,
+  bookId: string,
   item: LedgerItemFormData,
 ): CreateLedgerEntryInput {
   const base: CreateLedgerEntryInput = {
@@ -73,7 +73,7 @@ export function buildLedgerEntryPayload(
       ? item.transactedAt
       : `${item.transactedAt}T00:00:00.000Z`,
     title: item.title,
-    isShared,
+    bookId,
     memo: item.memo || undefined,
     tags: item.tagNames || undefined,
   };
@@ -94,7 +94,7 @@ export function buildLedgerEntryPayload(
 }
 
 export function buildTransferLedgerEntryPayload(
-  isShared: boolean,
+  bookId: string,
   item: TransferItemFormData,
 ): CreateLedgerEntryInput {
   const base: CreateLedgerEntryInput = {
@@ -104,7 +104,7 @@ export function buildTransferLedgerEntryPayload(
       ? item.transactedAt
       : `${item.transactedAt}T00:00:00.000Z`,
     title: item.title,
-    isShared,
+    bookId,
     memo: item.memo || undefined,
     tags: item.tagNames || undefined,
   };
@@ -169,9 +169,6 @@ export interface GetLedgerEntriesOptions {
   year?: number;
   month?: number;
   date?: string;
-  scope?: "shared" | "personal";
-  userId?: string;
-  tagIds?: string[];
   categoryId?: string | null;
   childCategoryId?: string | null;
   categoryBreakdown?: "direct";
@@ -184,11 +181,6 @@ export interface LedgerEntrySearchItem extends LedgerEntryWithDetails {
   memoMatched: boolean;
 }
 
-export interface LedgerEntrySearchResult {
-  items: LedgerEntrySearchItem[];
-  nextOffset: number | null;
-}
-
 export interface LedgerEntryScopedSearchResult {
   items: LedgerEntrySearchItem[];
   nextCursor: string | null;
@@ -197,7 +189,7 @@ export interface LedgerEntryScopedSearchResult {
 export interface CreateLedgerEntryParams {
   householdId: string;
   ownerId: string;
-  bookId?: string;
+  bookId: string;
   type: LedgerEntryType;
   amount: number;
   transactedAt: string;
@@ -207,7 +199,6 @@ export interface CreateLedgerEntryParams {
   fromPaymentMethodId?: string;
   toAccountId?: string;
   toPaymentMethodId?: string;
-  isShared?: boolean;
   memo?: string;
   tags?: string[];
 }
@@ -402,16 +393,6 @@ export function calculateLedgerSummary(
   return { totalIncome, totalExpense, balance: totalIncome - totalExpense };
 }
 
-export function filterLedgerEntriesByScope<
-  T extends Pick<LedgerEntryWithDetails, "isShared" | "ownerId">,
->(entries: T[], scope: "shared" | "personal", userId: string): T[] {
-  return entries.filter((entry) =>
-    scope === "shared"
-      ? entry.isShared
-      : !entry.isShared && entry.ownerId === userId,
-  );
-}
-
 function getDateRange(options: GetLedgerEntriesOptions): {
   from: string;
   to: string;
@@ -457,12 +438,14 @@ async function attachLedgerEntryDetails(
       ].filter(Boolean) as string[],
     ),
   ];
+  const bookIds = [...new Set(rows.map((r) => r.book_id))];
 
   const [
     { data: profiles },
     { data: categories },
     { data: accounts },
     { data: paymentMethods },
+    { data: books },
     tagMap,
   ] = await Promise.all([
     ownerIds.length > 0
@@ -483,6 +466,11 @@ async function attachLedgerEntryDetails(
           .select("id, name")
           .in("id", paymentMethodIds)
       : Promise.resolve({ data: [] }),
+    // Visibility comes from the book; a row's book is visible whenever the row is.
+    supabase
+      .from("ledger_books")
+      .select("id, visibility")
+      .in("id", bookIds),
     attachTagsToLedgerEntries(supabase, rows),
   ]);
 
@@ -513,6 +501,11 @@ async function attachLedgerEntryDetails(
   const accountMap = new Map((accounts ?? []).map((a) => [a.id, a.name]));
   const paymentMethodMap = new Map(
     (paymentMethods ?? []).map((pm) => [pm.id, pm.name]),
+  );
+  const sharedBookIds = new Set(
+    (books ?? [])
+      .filter((book) => book.visibility === "shared")
+      .map((book) => book.id),
   );
 
   return rows.map((r) => ({
@@ -560,7 +553,7 @@ async function attachLedgerEntryDetails(
     toPaymentMethodName: r.to_payment_method_id
       ? (paymentMethodMap.get(r.to_payment_method_id) ?? null)
       : null,
-    isShared: r.is_shared,
+    isShared: sharedBookIds.has(r.book_id),
     memo: r.memo,
     transactedAt: r.transacted_at,
     createdAt: r.created_at,
@@ -617,42 +610,6 @@ export async function getLedgerEntries(
     : null;
   const { from, to } = getDateRange(options ?? {});
 
-  let matchingIds: string[] | null = null;
-  if (options?.tagIds && options.tagIds.length > 0) {
-    const { data: tagMappings, error: tagErr } = await supabase
-      .from("ledger_entry_tags")
-      .select("ledger_entry_id, tag_id")
-      .in("tag_id", options.tagIds);
-
-    if (tagErr) {
-      console.error("Ledger tag mappings fetch error:", tagErr);
-      throw new APIError(
-        "LEDGER_TAG_FETCH_ERROR",
-        "태그 매핑 조회에 실패했습니다.",
-        500,
-      );
-    }
-
-    const entryTagCount = new Map<string, number>();
-    for (const m of tagMappings || []) {
-      entryTagCount.set(
-        m.ledger_entry_id,
-        (entryTagCount.get(m.ledger_entry_id) || 0) + 1,
-      );
-    }
-
-    matchingIds = [];
-    for (const [entryId, count] of entryTagCount.entries()) {
-      if (count === options.tagIds.length) {
-        matchingIds.push(entryId);
-      }
-    }
-
-    if (matchingIds.length === 0) {
-      return [];
-    }
-  }
-
   let categoryFilterIds: string[] | null = null;
   if (options?.childCategoryId) {
     categoryFilterIds = [options.childCategoryId];
@@ -688,10 +645,6 @@ export async function getLedgerEntries(
 
   if (book) query.eq("book_id", book.id);
 
-  if (matchingIds !== null) {
-    query.in("id", matchingIds);
-  }
-
   if (options?.categoryId === "__none__" || options?.categoryId === null) {
     query.is("category_id", null);
   } else if (categoryFilterIds) {
@@ -719,19 +672,13 @@ export async function getLedgerEntries(
   }
 
   const rows = data ?? [];
-  const scopedRows = rows.filter((row) => {
-    if (!options?.scope) return true;
-    if (options.scope === "shared") return row.is_shared;
-    return !row.is_shared && row.owner_id === options.userId;
-  });
-
-  if (scopedRows.length === 0) {
+  if (rows.length === 0) {
     return [];
   }
 
-  const entries = await attachLedgerEntryDetails(supabase, scopedRows);
+  const entries = await attachLedgerEntryDetails(supabase, rows);
   return options?.includeBookDetails
-    ? attachLedgerBookDetails(supabase, householdId, scopedRows, entries)
+    ? attachLedgerBookDetails(supabase, householdId, rows, entries)
     : entries;
 }
 
@@ -778,50 +725,6 @@ async function attachLedgerBookDetails(
       }),
     };
   });
-}
-
-export async function searchLedgerEntries(
-  supabase: SupabaseClient<Database>,
-  householdId: string,
-  options: {
-    query: string;
-    scope: "shared" | "personal";
-    offset: number;
-    limit: number;
-  },
-): Promise<LedgerEntrySearchResult> {
-  const query = options.query.trim();
-  const { data, error } = await supabase.rpc("search_ledger_entries", {
-    hh_id: householdId,
-    search_query: query,
-    search_scope: options.scope,
-    result_offset: options.offset,
-    result_limit: options.limit + 1,
-  });
-
-  if (error) {
-    console.error("Ledger entry search error:", error);
-    throw new APIError(
-      "LEDGER_SEARCH_ERROR",
-      "가계부 내역 검색에 실패했습니다.",
-      500,
-    );
-  }
-
-  const rows = data ?? [];
-  const pageRows = rows.slice(0, options.limit);
-  const entries = await attachLedgerEntryDetails(supabase, pageRows);
-  const normalizedQuery = query.toLocaleLowerCase();
-
-  return {
-    items: entries.map((entry) => ({
-      ...entry,
-      memoMatched:
-        entry.memo?.toLocaleLowerCase().includes(normalizedQuery) ?? false,
-    })),
-    nextOffset:
-      rows.length > options.limit ? options.offset + pageRows.length : null,
-  };
 }
 
 // All-books (bookId omitted) or single-book title·memo search. Book access must be

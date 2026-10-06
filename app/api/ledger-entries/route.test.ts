@@ -21,7 +21,7 @@ vi.mock("@/lib/api/notifications", () => ({
 }));
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 
-describe("GET /api/ledger-entries scope validation", () => {
+describe("GET /api/ledger-entries", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(createClient).mockResolvedValue({
@@ -39,31 +39,17 @@ describe("GET /api/ledger-entries scope validation", () => {
     } as never);
   });
 
-  it("rejects an unknown scope, including when a book is selected", async () => {
+  it("ignores the removed scope and tag filters and reads the visible books", async () => {
     const response = await GET(
       new NextRequest(
-        "http://localhost/api/ledger-entries?scope=unknown&book=11111111-1111-4111-8111-111111111111",
+        "http://localhost/api/ledger-entries?scope=personal&tagId=tag-1",
       ),
     );
 
-    expect(response.status).toBe(400);
-    await expect(response.json()).resolves.toMatchObject({
-      error: { code: "VALIDATION_ERROR" },
-    });
-    expect(getLedgerEntries).not.toHaveBeenCalled();
-  });
-
-  it("accepts all scope and lets the selected book define the read set", async () => {
-    const response = await GET(
-      new NextRequest("http://localhost/api/ledger-entries?scope=all"),
-    );
-
     expect(response.status).toBe(200);
-    expect(getLedgerEntries).toHaveBeenCalledWith(
-      expect.anything(),
-      "household-id",
-      expect.objectContaining({ scope: undefined }),
-    );
+    const options = vi.mocked(getLedgerEntries).mock.calls[0]?.[2];
+    expect(options).not.toHaveProperty("scope");
+    expect(options).not.toHaveProperty("tagIds");
   });
 
   it("passes the analysis type and payment-method conditions to the list", async () => {
@@ -88,22 +74,6 @@ describe("GET /api/ledger-entries scope validation", () => {
 
     expect(response.status).toBe(400);
     expect(getLedgerEntries).not.toHaveBeenCalled();
-  });
-
-  it("logs legacy scope and tag filters from pre-book clients", async () => {
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-
-    await GET(
-      new NextRequest(
-        "http://localhost/api/ledger-entries?scope=shared&tagId=tag-1",
-      ),
-    );
-
-    const contracts = warn.mock.calls.map(
-      ([line]) => JSON.parse(String(line)).contract,
-    );
-    expect(contracts).toEqual(["entries-scope", "entries-tag-filter"]);
-    warn.mockRestore();
   });
 });
 
@@ -147,7 +117,6 @@ describe("POST /api/ledger-entries selected book", () => {
         householdId: "household-id",
         ownerId: "user-id",
         bookId: "11111111-1111-4111-8111-111111111111",
-        isShared: undefined,
       }),
     );
   });
@@ -167,10 +136,8 @@ describe("POST /api/ledger-entries selected book", () => {
     expect(createLedgerEntryWithBalanceSync).not.toHaveBeenCalled();
   });
 
-  it("logs a pre-book create that only sends isShared", async () => {
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-
-    await POST(
+  it("rejects a create without a selected book", async () => {
+    const response = await POST(
       new NextRequest("http://localhost/api/ledger-entries", {
         method: "POST",
         body: JSON.stringify({
@@ -183,29 +150,10 @@ describe("POST /api/ledger-entries selected book", () => {
       }),
     );
 
-    expect(String(warn.mock.calls[0]?.[0])).toContain(
-      '"entry-create-is-shared"',
-    );
-    warn.mockRestore();
-  });
-
-  it("does not log a create with a selected book", async () => {
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-
-    await POST(
-      new NextRequest("http://localhost/api/ledger-entries", {
-        method: "POST",
-        body: JSON.stringify({
-          type: "expense",
-          amount: 1200,
-          title: "Tea",
-          transactedAt: "2026-04-24T10:00:00.000Z",
-          bookId: "11111111-1111-4111-8111-111111111111",
-        }),
-      }),
-    );
-
-    expect(warn).not.toHaveBeenCalled();
-    warn.mockRestore();
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({
+      error: { code: "VALIDATION_ERROR", message: "장부를 선택해주세요." },
+    });
+    expect(createLedgerEntryWithBalanceSync).not.toHaveBeenCalled();
   });
 });

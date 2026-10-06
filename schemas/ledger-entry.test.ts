@@ -17,6 +17,7 @@ const validMinInput = {
   amount: 50000,
   title: "테스트 내역",
   transactedAt: validDatetime,
+  bookId: validBookId,
 };
 
 describe("createLedgerEntrySchema", () => {
@@ -74,10 +75,10 @@ describe("createLedgerEntrySchema", () => {
     expect(result.success).toBe(false);
   });
 
-  it("selected bookId is preserved and isShared stays derived when book is explicit", () => {
+  it("selected bookId is preserved and a legacy isShared is not carried", () => {
     const result = createLedgerEntrySchema.safeParse({
       ...validMinInput,
-      bookId: validBookId,
+      isShared: false,
     });
     expect(result.success).toBe(true);
     if (result.success) {
@@ -93,16 +94,15 @@ describe("createLedgerEntrySchema", () => {
     ).toBe(false);
   });
 
-  it("isShared 기본값은 true다 for the legacy no-book input", () => {
+  it("a create without a selected book is rejected, even with legacy isShared", () => {
+    const { bookId: _book, ...withoutBook } = validMinInput;
     const result = createLedgerEntrySchema.safeParse({
-      type: "income",
-      amount: 5000000,
-      title: "월급",
-      transactedAt: validDatetime,
+      ...withoutBook,
+      isShared: true,
     });
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect("isShared" in result.data && result.data.isShared).toBe(true);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0]?.message).toBe("장부를 선택해주세요.");
     }
   });
 
@@ -112,6 +112,7 @@ describe("createLedgerEntrySchema", () => {
       amount: 3000000,
       title: "월급",
       transactedAt: validDatetime,
+      bookId: validBookId,
     });
     expect(incomeResult.success).toBe(true);
   });
@@ -122,7 +123,7 @@ describe("createLedgerEntrySchema", () => {
       amount: 50000,
       transactedAt: "2026-05-08T00:00:00.000Z",
       title: "카카오페이 충전",
-      isShared: true,
+      bookId: validBookId,
     };
 
     it("이체는 출발지와 도착지가 필요하다", () => {
@@ -148,7 +149,7 @@ describe("createLedgerEntrySchema", () => {
       amount: 50000,
       transactedAt: "2026-06-12T00:00:00.000Z",
       title: "카드대금 결제",
-      isShared: true,
+      bookId: validBookId,
     };
 
     it("비지출 출금은 출금처(계좌 또는 결제수단) 중 하나만 필요하다", () => {
@@ -337,6 +338,7 @@ const validEntry = {
   amount: 10000,
   title: "테스트 내역",
   transactedAt: "2026-04-24T00:00:00.000Z",
+  bookId: validBookId,
 };
 
 describe("batchSchema", () => {

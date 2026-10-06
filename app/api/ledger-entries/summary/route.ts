@@ -43,11 +43,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = request.nextUrl;
     const summary = await getLedgerEntrySummary(supabase, householdId, {
       ...parseLedgerStatsMonth(searchParams),
-      ...parseLedgerStatsScope(
-        searchParams,
-        "ledger-entries/summary",
-        "summary-scope",
-      ),
+      ...parseLedgerStatsScope(searchParams),
     });
 
     return NextResponse.json({ data: summary });

@@ -8,7 +8,6 @@ import {
   getLedgerEntries,
 } from "@/lib/api/ledger";
 import { notifyLedgerEntryCreated } from "@/lib/api/ledger-notifications";
-import { logLegacyLedgerContract } from "@/lib/api/legacy-ledger-contract";
 import { markNotificationsAsReadForLinkBestEffort } from "@/lib/api/notifications";
 import { createClient } from "@/lib/supabase/server";
 import { createLedgerEntrySchema } from "@/schemas/ledger-entry";
@@ -74,17 +73,6 @@ export async function GET(request: NextRequest) {
         400,
       );
     }
-    const scopeParam = searchParams.get("scope");
-    if (
-      scopeParam !== null &&
-      !["all", "shared", "personal"].includes(scopeParam)
-    ) {
-      throw new APIError(
-        "VALIDATION_ERROR",
-        "유효하지 않은 조회 범위입니다.",
-        400,
-      );
-    }
     const bookId = searchParams.get("book") ?? undefined;
     if (bookId !== undefined && !z.uuid().safeParse(bookId).success) {
       throw new APIError(
@@ -93,17 +81,6 @@ export async function GET(request: NextRequest) {
         400,
       );
     }
-    const scope: "shared" | "personal" | undefined =
-      scopeParam === "personal" || scopeParam === "shared"
-        ? scopeParam
-        : undefined;
-
-    const tagIdParams = searchParams.getAll("tagId");
-    if (scope) logLegacyLedgerContract("entries-scope", "ledger-entries");
-    if (tagIdParams.length > 0) {
-      logLegacyLedgerContract("entries-tag-filter", "ledger-entries");
-    }
-
     const typeParam = searchParams.get("type");
     if (
       typeParam !== null &&
@@ -129,9 +106,6 @@ export async function GET(request: NextRequest) {
       year: yearParam ? Number(yearParam) : undefined,
       month: monthParam ? Number(monthParam) : undefined,
       date: dateParam ?? undefined,
-      scope: bookId ? undefined : scope,
-      userId: user.id,
-      tagIds: tagIdParams.length > 0 ? tagIdParams : undefined,
       categoryId: searchParams.get("categoryId") ?? undefined,
       childCategoryId: searchParams.get("childCategoryId") ?? undefined,
       categoryBreakdown,
@@ -211,10 +185,6 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!input.bookId) {
-      logLegacyLedgerContract("entry-create-is-shared", "ledger-entries");
-    }
-
     const entry = await createLedgerEntryWithBalanceSync(supabase, {
       householdId,
       ownerId: user.id,
@@ -228,7 +198,6 @@ export async function POST(request: Request) {
       fromPaymentMethodId: input.fromPaymentMethodId,
       toAccountId: input.toAccountId,
       toPaymentMethodId: input.toPaymentMethodId,
-      isShared: "isShared" in input ? input.isShared : undefined,
       memo: input.memo,
       tags: input.tags,
     });

@@ -140,8 +140,7 @@ interface ResolvedScope {
 }
 
 // A specific book is checked first so hidden, foreign and missing IDs all get
-// the same 404. Book visibility (not the legacy is_shared column) decides the
-// shared/personal split.
+// the same 404. Book visibility decides the shared/personal split.
 async function resolveScope(
   supabase: SupabaseClient<Database>,
   householdId: string,

@@ -53,7 +53,7 @@ const sharedLedgerEntry = {
   amount: 12000,
   title: "점심",
   category_id: "category-1",
-  is_shared: true,
+  ledger_books: { visibility: "shared" },
   memo: "김밥",
   transacted_at: "2026-06-01T00:00:00.000Z",
   categories: { name: "식비", icon: "utensils" },
@@ -107,7 +107,7 @@ describe("validateRecordChangeRequestTarget", () => {
   it("개인 가계부 기록은 요청 대상으로 거부한다", async () => {
     const supabase = createTargetSupabaseMock({
       ...sharedLedgerEntry,
-      is_shared: false,
+      ledger_books: { visibility: "personal" },
     });
 
     await expect(

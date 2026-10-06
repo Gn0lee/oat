@@ -15,13 +15,8 @@ interface LedgerTagError {
   };
 }
 
-async function fetchLedgerTags(params?: {
-  scope?: "shared" | "personal";
-}): Promise<LedgerTag[]> {
-  const url = params?.scope
-    ? `/api/ledger-tags?scope=${params.scope}`
-    : "/api/ledger-tags";
-  const response = await fetch(url);
+async function fetchLedgerTags(): Promise<LedgerTag[]> {
+  const response = await fetch("/api/ledger-tags");
   const json = await response.json();
 
   if (!response.ok) {
@@ -32,10 +27,10 @@ async function fetchLedgerTags(params?: {
   return (json as LedgerTagListResponse).data;
 }
 
-export function useLedgerTags(params?: { scope?: "shared" | "personal" }) {
+export function useLedgerTags() {
   return useQuery({
-    queryKey: queries.ledgerTags.list(params).queryKey,
-    queryFn: () => fetchLedgerTags(params),
+    queryKey: queries.ledgerTags.list.queryKey,
+    queryFn: fetchLedgerTags,
     staleTime: 1000 * 60 * 5,
   });
 }

@@ -33,7 +33,7 @@ beforeEach(() => {
   vi.mocked(getLedgerBook).mockResolvedValue(book);
 });
 describe("book-scoped ledger reads", () => {
-  it("validates access before a tag filter can short-circuit into an empty success", async () => {
+  it("validates access before querying entries", async () => {
     const db = database([]);
     vi.mocked(getLedgerBook).mockRejectedValue(
       new APIError("BOOK_UNAVAILABLE", "hidden", 404),
@@ -41,7 +41,6 @@ describe("book-scoped ledger reads", () => {
     await expect(
       getLedgerEntries(db as never, "household", {
         bookId: "hidden",
-        tagIds: ["tag"],
       }),
     ).rejects.toMatchObject({ code: "BOOK_UNAVAILABLE", statusCode: 404 });
     expect(db.from).not.toHaveBeenCalled();
@@ -117,5 +116,39 @@ describe("analysis view-all conditions on the records list", () => {
 
     expect(none.map((entry) => entry.id)).toEqual(["cash"]);
     expect(card.map((entry) => entry.id)).toEqual(["card"]);
+  });
+});
+
+describe("entry visibility", () => {
+  it("derives isShared from the book's visibility, not a stored column", async () => {
+    const { createFakeSupabase } = await import("@/lib/testing/fake-supabase");
+    const row = (id: string, bookId: string) => ({
+      id,
+      household_id: "household",
+      book_id: bookId,
+      owner_id: "owner",
+      type: "expense",
+      amount: 100,
+      transacted_at: "2026-10-05T03:00:00.000Z",
+      created_at: "2026-10-05T03:00:00.000Z",
+      updated_at: "2026-10-05T03:00:00.000Z",
+      category_id: null,
+    });
+    const { supabase } = createFakeSupabase({
+      ledger_entries: [row("shared", "living"), row("mine", "personal")],
+      ledger_books: [
+        { id: "living", household_id: "household", visibility: "shared" },
+        { id: "personal", household_id: "household", visibility: "personal" },
+      ],
+    });
+
+    const entries = await getLedgerEntries(supabase, "household", {
+      year: 2026,
+      month: 10,
+    });
+
+    expect(
+      Object.fromEntries(entries.map((entry) => [entry.id, entry.isShared])),
+    ).toEqual({ shared: true, mine: false });
   });
 });

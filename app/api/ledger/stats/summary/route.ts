@@ -18,7 +18,7 @@ export function GET(request: NextRequest) {
     ({ supabase, householdId, searchParams }) =>
       getLedgerStatsSummary(supabase, householdId, {
         ...parseLedgerStatsMonth(searchParams),
-        ...parseLedgerStatsScope(searchParams, "summary"),
+        ...parseLedgerStatsScope(searchParams),
       }),
   );
 }

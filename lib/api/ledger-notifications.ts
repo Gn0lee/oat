@@ -10,7 +10,7 @@ type LedgerNotificationEntry = Pick<
   | "owner_id"
   | "amount"
   | "title"
-  | "is_shared"
+  | "book_id"
   | "transacted_at"
   | "updated_at"
 >;
@@ -142,101 +142,120 @@ async function runBestEffort(
   }
 }
 
+// Only entries in shared books notify the household. Visibility is read from
+// the books (RLS lets the author see their own and every shared book).
+async function getSharedBookIds(
+  supabase: SupabaseClient<Database>,
+  entries: LedgerNotificationEntry[],
+): Promise<Set<string>> {
+  const bookIds = [...new Set(entries.map((entry) => entry.book_id))];
+  const { data, error } = await supabase
+    .from("ledger_books")
+    .select("id, visibility")
+    .in("id", bookIds);
+  if (error) throw error;
+  return new Set(
+    (data ?? [])
+      .filter((book) => book.visibility === "shared")
+      .map((book) => book.id),
+  );
+}
+
 export async function notifyLedgerEntryCreated(
   supabase: SupabaseClient<Database>,
   input: LedgerEntryCreatedInput,
 ): Promise<void> {
-  if (!input.entry.is_shared) return;
-
-  await runBestEffort(
-    () =>
-      createLedgerNotifications(supabase, {
-        actorId: input.actorId,
-        householdId: input.householdId,
-        type: "ledger_record_created",
-        title: "공용 가계부 기록이 추가되었습니다",
-        body: `{actorName}님이 "${input.entry.title ?? "제목 없음"}" ${formatKrw(input.entry.amount)}을 추가했습니다.`,
-        date: getLedgerEntryDate(input.entry),
-        source: { type: "ledger_entry", id: input.entry.id },
-        dedupeKey: `ledger_entry_created:${input.entry.id}`,
-      }),
-    "created",
-  );
+  await runBestEffort(async () => {
+    const shared = await getSharedBookIds(supabase, [input.entry]);
+    if (!shared.has(input.entry.book_id)) return;
+    await createLedgerNotifications(supabase, {
+      actorId: input.actorId,
+      householdId: input.householdId,
+      type: "ledger_record_created",
+      title: "공용 가계부 기록이 추가되었습니다",
+      body: `{actorName}님이 "${input.entry.title ?? "제목 없음"}" ${formatKrw(input.entry.amount)}을 추가했습니다.`,
+      date: getLedgerEntryDate(input.entry),
+      source: { type: "ledger_entry", id: input.entry.id },
+      dedupeKey: `ledger_entry_created:${input.entry.id}`,
+    });
+  }, "created");
 }
 
 export async function notifyBatchLedgerEntriesCreated(
   supabase: SupabaseClient<Database>,
   input: BatchLedgerEntriesCreatedInput,
 ): Promise<void> {
-  const sharedEntries = input.entries.filter((entry) => entry.is_shared);
-  if (sharedEntries.length === 0) return;
+  await runBestEffort(async () => {
+    const shared = await getSharedBookIds(supabase, input.entries);
+    const sharedEntries = input.entries.filter((entry) =>
+      shared.has(entry.book_id),
+    );
+    const latestEntry = [...sharedEntries].sort((a, b) =>
+      b.transacted_at.localeCompare(a.transacted_at),
+    )[0];
+    if (!latestEntry) return;
 
-  const latestEntry = [...sharedEntries].sort((a, b) =>
-    b.transacted_at.localeCompare(a.transacted_at),
-  )[0];
-  if (!latestEntry) return;
+    const latestDate = getLedgerEntryDate(latestEntry);
+    const count = sharedEntries.length;
 
-  const latestDate = getLedgerEntryDate(latestEntry);
-  const count = sharedEntries.length;
-
-  await runBestEffort(
-    () =>
-      createLedgerNotifications(supabase, {
-        actorId: input.actorId,
-        householdId: input.householdId,
-        type: "ledger_record_created",
-        title: `공용 가계부 기록 ${count}건이 추가되었습니다`,
-        body: `{actorName}님이 ${latestDate} 기준 공용 기록 ${count}건을 추가했습니다.`,
-        date: latestDate,
-        source: null,
-        dedupeKey: `ledger_entry_batch_created:${input.actorId}:${sharedEntries
-          .map((entry) => entry.id)
-          .join(",")}`,
-      }),
-    "batch-created",
-  );
+    await createLedgerNotifications(supabase, {
+      actorId: input.actorId,
+      householdId: input.householdId,
+      type: "ledger_record_created",
+      title: `공용 가계부 기록 ${count}건이 추가되었습니다`,
+      body: `{actorName}님이 ${latestDate} 기준 공용 기록 ${count}건을 추가했습니다.`,
+      date: latestDate,
+      source: null,
+      dedupeKey: `ledger_entry_batch_created:${input.actorId}:${sharedEntries
+        .map((entry) => entry.id)
+        .join(",")}`,
+    });
+  }, "batch-created");
 }
 
 export async function notifyLedgerEntryUpdated(
   supabase: SupabaseClient<Database>,
   input: LedgerEntryUpdatedInput,
 ): Promise<void> {
-  if (!input.previousEntry.is_shared || !input.updatedEntry.is_shared) return;
-
-  await runBestEffort(
-    () =>
-      createLedgerNotifications(supabase, {
-        actorId: input.actorId,
-        householdId: input.previousEntry.household_id,
-        type: "ledger_record_changed",
-        title: "공용 가계부 기록이 수정되었습니다",
-        body: `{actorName}님이 "${input.previousEntry.title ?? "제목 없음"}" 기록을 수정했습니다.`,
-        date: getLedgerEntryDate(input.updatedEntry),
-        source: { type: "ledger_entry", id: input.previousEntry.id },
-        dedupeKey: `ledger_entry_updated:${input.previousEntry.id}:${input.updatedEntry.updated_at ?? Date.now()}`,
-      }),
-    "updated",
-  );
+  await runBestEffort(async () => {
+    const shared = await getSharedBookIds(supabase, [
+      input.previousEntry,
+      input.updatedEntry,
+    ]);
+    if (
+      !shared.has(input.previousEntry.book_id) ||
+      !shared.has(input.updatedEntry.book_id)
+    )
+      return;
+    await createLedgerNotifications(supabase, {
+      actorId: input.actorId,
+      householdId: input.previousEntry.household_id,
+      type: "ledger_record_changed",
+      title: "공용 가계부 기록이 수정되었습니다",
+      body: `{actorName}님이 "${input.previousEntry.title ?? "제목 없음"}" 기록을 수정했습니다.`,
+      date: getLedgerEntryDate(input.updatedEntry),
+      source: { type: "ledger_entry", id: input.previousEntry.id },
+      dedupeKey: `ledger_entry_updated:${input.previousEntry.id}:${input.updatedEntry.updated_at ?? Date.now()}`,
+    });
+  }, "updated");
 }
 
 export async function notifyLedgerEntryDeleted(
   supabase: SupabaseClient<Database>,
   input: LedgerEntryDeletedInput,
 ): Promise<void> {
-  if (!input.entry.is_shared) return;
-
-  await runBestEffort(
-    () =>
-      createLedgerNotifications(supabase, {
-        actorId: input.actorId,
-        householdId: input.entry.household_id,
-        type: "ledger_record_changed",
-        title: "공용 가계부 기록이 삭제되었습니다",
-        body: `{actorName}님이 "${input.entry.title ?? "제목 없음"}" 기록을 삭제했습니다.`,
-        date: getLedgerEntryDate(input.entry),
-        source: { type: "ledger_entry", id: input.entry.id },
-        dedupeKey: `ledger_entry_deleted:${input.entry.id}`,
-      }),
-    "deleted",
-  );
+  await runBestEffort(async () => {
+    const shared = await getSharedBookIds(supabase, [input.entry]);
+    if (!shared.has(input.entry.book_id)) return;
+    await createLedgerNotifications(supabase, {
+      actorId: input.actorId,
+      householdId: input.entry.household_id,
+      type: "ledger_record_changed",
+      title: "공용 가계부 기록이 삭제되었습니다",
+      body: `{actorName}님이 "${input.entry.title ?? "제목 없음"}" 기록을 삭제했습니다.`,
+      date: getLedgerEntryDate(input.entry),
+      source: { type: "ledger_entry", id: input.entry.id },
+      dedupeKey: `ledger_entry_deleted:${input.entry.id}`,
+    });
+  }, "deleted");
 }

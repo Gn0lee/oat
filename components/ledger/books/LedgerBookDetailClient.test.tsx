@@ -240,6 +240,29 @@ describe("LedgerBookDetailClient", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("lets the creator rename and delete the migrated 개인 생활비 like any personal book", () => {
+    vi.mocked(useLedgerBook).mockReturnValue({
+      data: {
+        ...sharedBook,
+        name: "개인 생활비",
+        visibility: "personal",
+        createdBy: "member-2",
+      },
+      isLoading: false,
+      error: null,
+    } as never);
+
+    render(<LedgerBookDetailClient id="personal-id" />);
+
+    expect(screen.getByRole("button", { name: "저장" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "삭제하기" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("현재 이 장부는 이름을 바꾸거나 삭제할 수 없어요."),
+    ).not.toBeInTheDocument();
+  });
+
   it("shows an unavailable state instead of exposing inaccessible personal books", () => {
     vi.mocked(useLedgerBook).mockReturnValue({
       data: undefined,

@@ -18,7 +18,6 @@ import {
   getLedgerEntryById,
   getOwnLedgerActivity,
   isTransferCapablePaymentMethod,
-  searchLedgerEntries,
   searchLedgerEntriesScoped,
   updateLedgerEntry,
   updateLedgerEntryWithBalanceSync,
@@ -172,7 +171,6 @@ describe("getLedgerEntryById", () => {
         from_payment_method_id: "pm-1",
         to_account_id: null,
         to_payment_method_id: null,
-        is_shared: true,
         memo: "메모 전체",
         transacted_at: "2026-06-08T03:00:00.000Z",
         created_at: "2026-06-08T03:10:00.000Z",
@@ -212,67 +210,6 @@ describe("getLedgerEntryById", () => {
   });
 });
 
-describe("searchLedgerEntries", () => {
-  it("검색 조건을 서버 RPC에 적용한 뒤 20건 단위로 페이지를 나눈다", async () => {
-    const rows = Array.from({ length: 21 }, (_, index) => ({
-      id: `entry-${index}`,
-      household_id: "household-1",
-      owner_id: "user-1",
-      type: "expense" as const,
-      amount: 1000,
-      title: index === 0 ? "백화점" : "생일 지출",
-      category_id: null,
-      from_account_id: null,
-      from_payment_method_id: null,
-      to_account_id: null,
-      to_payment_method_id: null,
-      is_shared: false,
-      memo: index === 0 ? "생일 선물" : null,
-      transacted_at: "2026-06-08T03:00:00.000Z",
-      created_at: "2026-06-08T03:10:00.000Z",
-      updated_at: "2026-06-08T03:10:00.000Z",
-    }));
-    const emptyBuilder = {
-      select: vi.fn().mockReturnThis(),
-      in: vi.fn().mockResolvedValue({ data: [] }),
-    };
-    const profilesBuilder = {
-      select: vi.fn().mockReturnThis(),
-      in: vi.fn().mockResolvedValue({ data: [{ id: "user-1", name: "진호" }] }),
-    };
-    const tagsBuilder = {
-      select: vi.fn().mockReturnThis(),
-      in: vi.fn().mockResolvedValue({ data: [] }),
-    };
-    const supabase = {
-      rpc: vi.fn().mockResolvedValue({ data: rows, error: null }),
-      from: vi.fn((table: string) => {
-        if (table === "profiles") return profilesBuilder;
-        if (table === "ledger_entry_tags") return tagsBuilder;
-        return emptyBuilder;
-      }),
-    };
-
-    const result = await searchLedgerEntries(supabase as never, "household-1", {
-      query: " 생일 ",
-      scope: "personal",
-      offset: 0,
-      limit: 20,
-    });
-
-    expect(supabase.rpc).toHaveBeenCalledWith("search_ledger_entries", {
-      hh_id: "household-1",
-      search_query: "생일",
-      search_scope: "personal",
-      result_offset: 0,
-      result_limit: 21,
-    });
-    expect(result.items).toHaveLength(20);
-    expect(result.items[0]).toMatchObject({ memoMatched: true });
-    expect(result.nextOffset).toBe(20);
-  });
-});
-
 describe("searchLedgerEntriesScoped", () => {
   const bookId = "0a6b9d64-3a4c-4f61-8d45-3fd3c40d2b0e";
   const row = (index: number) => ({
@@ -288,7 +225,6 @@ describe("searchLedgerEntriesScoped", () => {
     from_payment_method_id: null,
     to_account_id: null,
     to_payment_method_id: null,
-    is_shared: true,
     memo: index === 0 ? "커피 원두" : null,
     transacted_at: "2026-10-03T01:00:00+00:00",
     created_at: `2026-10-03T01:00:${String(59 - index).padStart(2, "0")}+00:00`,
@@ -414,9 +350,11 @@ describe("searchLedgerEntriesScoped", () => {
 
 const validDate = "2026-04-24T00:00:00.000Z";
 
+const BOOK_ID = "11111111-1111-4111-8111-111111111111";
+
 describe("buildLedgerEntryPayload", () => {
   it("지출 + 결제수단 → fromPaymentMethodId 설정", () => {
-    const result = buildLedgerEntryPayload("expense", true, {
+    const result = buildLedgerEntryPayload("expense", BOOK_ID, {
       amount: "50000",
       title: "이마트 장보기",
       categoryId: "cat-1",
@@ -429,7 +367,7 @@ describe("buildLedgerEntryPayload", () => {
   });
 
   it("지출 + 계좌 → fromAccountId 설정 (계좌이체)", () => {
-    const result = buildLedgerEntryPayload("expense", true, {
+    const result = buildLedgerEntryPayload("expense", BOOK_ID, {
       amount: "200000",
       title: "월세",
       categoryId: "cat-1",
@@ -442,7 +380,7 @@ describe("buildLedgerEntryPayload", () => {
   });
 
   it("수입 + 계좌 → toAccountId 설정", () => {
-    const result = buildLedgerEntryPayload("income", true, {
+    const result = buildLedgerEntryPayload("income", BOOK_ID, {
       amount: "3000000",
       title: "월급",
       categoryId: "cat-2",
@@ -453,25 +391,19 @@ describe("buildLedgerEntryPayload", () => {
     expect(result.fromPaymentMethodId).toBeUndefined();
   });
 
-  it("isShared가 payload에 그대로 반영된다", () => {
-    const shared = buildLedgerEntryPayload("expense", true, {
+  it("선택한 장부가 payload에 들어가고 공개 범위는 보내지 않는다", () => {
+    const result = buildLedgerEntryPayload("expense", BOOK_ID, {
       amount: "10000",
       title: "테스트",
       categoryId: "cat-1",
       transactedAt: validDate,
     });
-    const private_ = buildLedgerEntryPayload("expense", false, {
-      amount: "10000",
-      title: "테스트",
-      categoryId: "cat-1",
-      transactedAt: validDate,
-    });
-    expect("isShared" in shared && shared.isShared).toBe(true);
-    expect("isShared" in private_ && private_.isShared).toBe(false);
+    expect(result.bookId).toBe(BOOK_ID);
+    expect("isShared" in result).toBe(false);
   });
 
   it("amount string → number 변환", () => {
-    const result = buildLedgerEntryPayload("expense", true, {
+    const result = buildLedgerEntryPayload("expense", BOOK_ID, {
       amount: "85000",
       title: "테스트",
       categoryId: "cat-1",
@@ -482,7 +414,7 @@ describe("buildLedgerEntryPayload", () => {
   });
 
   it("memo가 없으면 undefined로 설정", () => {
-    const result = buildLedgerEntryPayload("expense", true, {
+    const result = buildLedgerEntryPayload("expense", BOOK_ID, {
       amount: "10000",
       title: "테스트",
       categoryId: "cat-1",
@@ -493,7 +425,7 @@ describe("buildLedgerEntryPayload", () => {
   });
 
   it("memo가 있으면 그대로 반영된다", () => {
-    const result = buildLedgerEntryPayload("expense", true, {
+    const result = buildLedgerEntryPayload("expense", BOOK_ID, {
       amount: "10000",
       title: "이마트 장보기",
       categoryId: "cat-1",
@@ -504,7 +436,7 @@ describe("buildLedgerEntryPayload", () => {
   });
 
   it("tagNames가 있으면 tags로 전달된다", () => {
-    const result = buildLedgerEntryPayload("expense", true, {
+    const result = buildLedgerEntryPayload("expense", BOOK_ID, {
       amount: "10000",
       title: "이마트 장보기",
       categoryId: "cat-1",
@@ -525,7 +457,7 @@ describe("transfer helpers", () => {
   });
 
   it("이체 payload는 카테고리 없이 출발지/도착지를 설정한다", () => {
-    const result = buildTransferLedgerEntryPayload(true, {
+    const result = buildTransferLedgerEntryPayload(BOOK_ID, {
       amount: "30000",
       title: "카카오페이 충전",
       from: { kind: "account", id: "acc-1" },
@@ -542,7 +474,7 @@ describe("transfer helpers", () => {
   });
 
   it("이체 payload는 tagNames가 있으면 tags로 전달한다", () => {
-    const result = buildTransferLedgerEntryPayload(true, {
+    const result = buildTransferLedgerEntryPayload(BOOK_ID, {
       amount: "30000",
       title: "카카오페이 충전",
       from: { kind: "account", id: "acc-1" },
@@ -939,6 +871,7 @@ describe("atomic ledger writes", () => {
   const params = {
     householdId: "household-1",
     ownerId: "user-1",
+    bookId: "book-1",
     type: "expense" as const,
     amount: 12000,
     transactedAt: validDate,
@@ -954,7 +887,7 @@ describe("atomic ledger writes", () => {
     };
   }
 
-  it("legacy create needs neither bookId nor isShared, normalizes tags, and returns the RPC row", async () => {
+  it("create sends the selected book, normalizes tags, and returns the RPC row", async () => {
     const supabase = client();
     await expect(
       createLedgerEntryWithBalanceSync(supabase as never, {

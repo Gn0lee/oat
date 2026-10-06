@@ -491,7 +491,6 @@ export type Database = {
           from_payment_method_id: string | null;
           household_id: string;
           id: string;
-          is_shared: boolean;
           memo: string | null;
           owner_id: string;
           title: string | null;
@@ -511,7 +510,6 @@ export type Database = {
           from_payment_method_id?: string | null;
           household_id: string;
           id?: string;
-          is_shared?: boolean;
           memo?: string | null;
           owner_id: string;
           title?: string | null;
@@ -530,7 +528,6 @@ export type Database = {
           from_payment_method_id?: string | null;
           household_id?: string;
           id?: string;
-          is_shared?: boolean;
           memo?: string | null;
           owner_id?: string;
           title?: string | null;
@@ -676,127 +673,6 @@ export type Database = {
             columns: ["household_id"];
             isOneToOne: false;
             referencedRelation: "households";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      mcp_audit_logs: {
-        Row: {
-          created_at: string;
-          duration_ms: number | null;
-          error_code: string | null;
-          household_id: string;
-          id: string;
-          input_summary: Json | null;
-          result_status: string;
-          token_id: string | null;
-          tool_name: string;
-          user_id: string;
-        };
-        Insert: {
-          created_at?: string;
-          duration_ms?: number | null;
-          error_code?: string | null;
-          household_id: string;
-          id?: string;
-          input_summary?: Json | null;
-          result_status: string;
-          token_id?: string | null;
-          tool_name: string;
-          user_id: string;
-        };
-        Update: {
-          created_at?: string;
-          duration_ms?: number | null;
-          error_code?: string | null;
-          household_id?: string;
-          id?: string;
-          input_summary?: Json | null;
-          result_status?: string;
-          token_id?: string | null;
-          tool_name?: string;
-          user_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "mcp_audit_logs_household_id_fkey";
-            columns: ["household_id"];
-            isOneToOne: false;
-            referencedRelation: "households";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "mcp_audit_logs_token_id_fkey";
-            columns: ["token_id"];
-            isOneToOne: false;
-            referencedRelation: "mcp_tokens";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "mcp_audit_logs_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      mcp_tokens: {
-        Row: {
-          created_at: string;
-          expires_at: string;
-          household_id: string;
-          id: string;
-          last_used_at: string | null;
-          name: string;
-          revoked_at: string | null;
-          scopes: string[];
-          token_hash: string;
-          token_last4: string;
-          token_prefix: string;
-          user_id: string;
-        };
-        Insert: {
-          created_at?: string;
-          expires_at: string;
-          household_id: string;
-          id?: string;
-          last_used_at?: string | null;
-          name: string;
-          revoked_at?: string | null;
-          scopes: string[];
-          token_hash: string;
-          token_last4: string;
-          token_prefix: string;
-          user_id: string;
-        };
-        Update: {
-          created_at?: string;
-          expires_at?: string;
-          household_id?: string;
-          id?: string;
-          last_used_at?: string | null;
-          name?: string;
-          revoked_at?: string | null;
-          scopes?: string[];
-          token_hash?: string;
-          token_last4?: string;
-          token_prefix?: string;
-          user_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "mcp_tokens_household_id_fkey";
-            columns: ["household_id"];
-            isOneToOne: false;
-            referencedRelation: "households";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "mcp_tokens_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
             referencedColumns: ["id"];
           },
         ];
@@ -1460,40 +1336,6 @@ export type Database = {
         Args: { p_book_id: string };
         Returns: Database["public"]["Tables"]["ledger_books"]["Row"];
       };
-      search_ledger_entries: {
-        Args: {
-          hh_id: string;
-          result_limit?: number;
-          result_offset?: number;
-          search_query: string;
-          search_scope: string;
-        };
-        Returns: {
-          amount: number;
-          book_id: string;
-          category_id: string | null;
-          created_at: string;
-          from_account_id: string | null;
-          from_payment_method_id: string | null;
-          household_id: string;
-          id: string;
-          is_shared: boolean;
-          memo: string | null;
-          owner_id: string;
-          title: string | null;
-          to_account_id: string | null;
-          to_payment_method_id: string | null;
-          transacted_at: string;
-          type: Database["public"]["Enums"]["ledger_entry_type"];
-          updated_at: string;
-        }[];
-        SetofOptions: {
-          from: "*";
-          to: "ledger_entries";
-          isOneToOne: false;
-          isSetofReturn: true;
-        };
-      };
       search_ledger_entries_scoped: {
         Args: {
           cursor_created_at?: string;
@@ -1513,7 +1355,6 @@ export type Database = {
           from_payment_method_id: string | null;
           household_id: string;
           id: string;
-          is_shared: boolean;
           memo: string | null;
           owner_id: string;
           title: string | null;

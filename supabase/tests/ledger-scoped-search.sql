@@ -15,15 +15,15 @@ declare
   v_fn regprocedure := to_regprocedure(
     'public.search_ledger_entries_scoped(uuid,text,uuid,timestamptz,timestamptz,uuid,integer)');
 begin
-  if current_database() <> 'oat_ledger_books_445_test' then
-    raise exception 'Run only in oat_ledger_books_445_test (never the shared postgres DB)';
+  if current_database() !~ '^oat_ledger_books_[0-9a-z_]+_test$' then
+    raise exception 'Run only in an oat_ledger_books_*_test scratch DB (never the shared postgres DB)';
   end if;
   assert v_fn is not null, 'missing public.search_ledger_entries_scoped';
   assert not (select prosecdef from pg_proc where oid = v_fn), 'scoped search must be SECURITY INVOKER';
   assert has_function_privilege('authenticated', v_fn, 'execute'), 'authenticated must execute scoped search';
   assert not has_function_privilege('anon', v_fn, 'execute'), 'anon must not execute scoped search';
-  assert to_regprocedure('public.search_ledger_entries(uuid,text,text,integer,integer)') is not null,
-    'legacy search RPC must remain until #446';
+  assert to_regprocedure('public.search_ledger_entries(uuid,text,text,integer,integer)') is null,
+    'legacy search RPC is removed in #446';
 end;
 $$;
 

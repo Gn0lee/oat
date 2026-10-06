@@ -22,7 +22,7 @@ export function LedgerSummarySection({
     data: summary,
     isLoading,
     error,
-  } = useLedgerEntrySummary(year, month, "all");
+  } = useLedgerEntrySummary(year, month);
 
   return (
     <div className="bg-white rounded-2xl p-6 shadow-sm mb-6">

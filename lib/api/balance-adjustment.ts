@@ -195,7 +195,6 @@ async function fetchAccountStockValue(
 async function getAccountTimeline(
   supabase: SupabaseClient<Database>,
   householdId: string,
-  userId: string,
   accountId: string,
 ): Promise<BalanceTimelineItem[]> {
   const [{ data: ledgerRows }, { data: stockRows }, { data: adjustments }] =
@@ -203,7 +202,7 @@ async function getAccountTimeline(
       supabase
         .from("ledger_entries")
         .select(
-          "id,type,amount,title,memo,from_account_id,to_account_id,is_shared,owner_id,transacted_at,categories(name)",
+          "id,type,amount,title,memo,from_account_id,to_account_id,owner_id,transacted_at,categories(name)",
         )
         .eq("household_id", householdId)
         .or(`from_account_id.eq.${accountId},to_account_id.eq.${accountId}`)
@@ -226,32 +225,31 @@ async function getAccountTimeline(
     ]);
 
   const ledgerItems =
-    ledgerRows
-      ?.filter((row) => row.is_shared || row.owner_id === userId)
-      .map((row) => {
-        const amount = toNumber(row.amount);
-        const delta =
-          row.to_account_id === accountId
-            ? amount
-            : row.from_account_id === accountId
-              ? -amount
-              : 0;
-        const category = row.categories as { name: string } | null;
-        return {
-          id: row.id,
-          kind: "ledger" as const,
-          label: mapLedgerLabel(row.type, delta),
-          title: row.title ?? category?.name ?? "가계부 기록",
-          amount,
-          delta,
-          occurredAt: row.transacted_at,
-          memo: row.memo,
-          meta: {
-            ledgerType: row.type,
-            categoryName: category?.name ?? null,
-          },
-        };
-      }) ?? [];
+    // RLS returns only rows the viewer may see: shared books and own personal books.
+    ledgerRows?.map((row) => {
+      const amount = toNumber(row.amount);
+      const delta =
+        row.to_account_id === accountId
+          ? amount
+          : row.from_account_id === accountId
+            ? -amount
+            : 0;
+      const category = row.categories as { name: string } | null;
+      return {
+        id: row.id,
+        kind: "ledger" as const,
+        label: mapLedgerLabel(row.type, delta),
+        title: row.title ?? category?.name ?? "가계부 기록",
+        amount,
+        delta,
+        occurredAt: row.transacted_at,
+        memo: row.memo,
+        meta: {
+          ledgerType: row.type,
+          categoryName: category?.name ?? null,
+        },
+      };
+    }) ?? [];
 
   const stockItems =
     stockRows?.map((row) => {
@@ -297,14 +295,13 @@ async function getAccountTimeline(
 async function getPaymentMethodTimeline(
   supabase: SupabaseClient<Database>,
   householdId: string,
-  userId: string,
   paymentMethodId: string,
 ): Promise<BalanceTimelineItem[]> {
   const [{ data: ledgerRows }, { data: adjustments }] = await Promise.all([
     supabase
       .from("ledger_entries")
       .select(
-        "id,type,amount,title,memo,from_payment_method_id,to_payment_method_id,is_shared,owner_id,transacted_at,categories(name)",
+        "id,type,amount,title,memo,from_payment_method_id,to_payment_method_id,owner_id,transacted_at,categories(name)",
       )
       .eq("household_id", householdId)
       .or(
@@ -322,32 +319,31 @@ async function getPaymentMethodTimeline(
   ]);
 
   const ledgerItems =
-    ledgerRows
-      ?.filter((row) => row.is_shared || row.owner_id === userId)
-      .map((row) => {
-        const amount = toNumber(row.amount);
-        const delta =
-          row.to_payment_method_id === paymentMethodId
-            ? amount
-            : row.from_payment_method_id === paymentMethodId
-              ? -amount
-              : 0;
-        const category = row.categories as { name: string } | null;
-        return {
-          id: row.id,
-          kind: "ledger" as const,
-          label: mapLedgerLabel(row.type, delta),
-          title: row.title ?? category?.name ?? "가계부 기록",
-          amount,
-          delta,
-          occurredAt: row.transacted_at,
-          memo: row.memo,
-          meta: {
-            ledgerType: row.type,
-            categoryName: category?.name ?? null,
-          },
-        };
-      }) ?? [];
+    // RLS returns only rows the viewer may see: shared books and own personal books.
+    ledgerRows?.map((row) => {
+      const amount = toNumber(row.amount);
+      const delta =
+        row.to_payment_method_id === paymentMethodId
+          ? amount
+          : row.from_payment_method_id === paymentMethodId
+            ? -amount
+            : 0;
+      const category = row.categories as { name: string } | null;
+      return {
+        id: row.id,
+        kind: "ledger" as const,
+        label: mapLedgerLabel(row.type, delta),
+        title: row.title ?? category?.name ?? "가계부 기록",
+        amount,
+        delta,
+        occurredAt: row.transacted_at,
+        memo: row.memo,
+        meta: {
+          ledgerType: row.type,
+          categoryName: category?.name ?? null,
+        },
+      };
+    }) ?? [];
 
   const adjustmentItems =
     adjustments?.map((row) => ({
@@ -371,7 +367,6 @@ async function getPaymentMethodTimeline(
 export async function getAccountBalanceDetail(
   supabase: SupabaseClient<Database>,
   householdId: string,
-  userId: string,
   accountId: string,
 ): Promise<AccountBalanceDetail> {
   const { data: account, error } = await supabase
@@ -412,19 +407,13 @@ export async function getAccountBalanceDetail(
     stockValue,
     totalValue:
       category === "investment" ? (balance ?? 0) + (stockValue ?? 0) : balance,
-    timeline: await getAccountTimeline(
-      supabase,
-      householdId,
-      userId,
-      accountId,
-    ),
+    timeline: await getAccountTimeline(supabase, householdId, accountId),
   };
 }
 
 export async function getPaymentMethodBalanceDetail(
   supabase: SupabaseClient<Database>,
   householdId: string,
-  userId: string,
   paymentMethodId: string,
 ): Promise<PaymentMethodBalanceDetail> {
   const { data: paymentMethod, error } = await supabase
@@ -475,7 +464,6 @@ export async function getPaymentMethodBalanceDetail(
     timeline: await getPaymentMethodTimeline(
       supabase,
       householdId,
-      userId,
       paymentMethodId,
     ),
   };

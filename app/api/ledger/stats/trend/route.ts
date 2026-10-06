@@ -19,7 +19,7 @@ export function GET(request: NextRequest) {
         : 6;
       return getLedgerStatsTrend(supabase, householdId, {
         months,
-        ...parseLedgerStatsScope(searchParams, "trend"),
+        ...parseLedgerStatsScope(searchParams),
       });
     },
   );
