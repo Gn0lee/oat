@@ -600,6 +600,9 @@ export async function getLedgerEntryById(
   return entry;
 }
 
+// Matches supabase/config.toml [api] max_rows.
+const LEDGER_ENTRIES_PAGE_SIZE = 1000;
+
 export async function getLedgerEntries(
   supabase: SupabaseClient<Database>,
   householdId: string,
@@ -636,42 +639,56 @@ export async function getLedgerEntries(
     }
   }
 
-  const query = supabase
-    .from("ledger_entries")
-    .select("*")
-    .eq("household_id", householdId)
-    .gte("transacted_at", from)
-    .lt("transacted_at", to);
+  const buildQuery = () => {
+    const query = supabase
+      .from("ledger_entries")
+      .select("*")
+      .eq("household_id", householdId)
+      .gte("transacted_at", from)
+      .lt("transacted_at", to);
 
-  if (book) query.eq("book_id", book.id);
+    if (book) query.eq("book_id", book.id);
 
-  if (options?.categoryId === "__none__" || options?.categoryId === null) {
-    query.is("category_id", null);
-  } else if (categoryFilterIds) {
-    query.in("category_id", categoryFilterIds);
+    if (options?.categoryId === "__none__" || options?.categoryId === null) {
+      query.is("category_id", null);
+    } else if (categoryFilterIds) {
+      query.in("category_id", categoryFilterIds);
+    }
+
+    if (options?.type) query.eq("type", options.type);
+    if (options?.paymentMethodId === "__none__") {
+      query.is("from_payment_method_id", null);
+    } else if (options?.paymentMethodId) {
+      query.eq("from_payment_method_id", options.paymentMethodId);
+    }
+
+    return query;
+  };
+
+  // PostgREST caps each response at LEDGER_ENTRIES_PAGE_SIZE rows, so a busy
+  // month is read range by range. id breaks ties so ranges never overlap.
+  const rows: LedgerEntryRow[] = [];
+  for (let offset = 0; ; offset += LEDGER_ENTRIES_PAGE_SIZE) {
+    const { data, error } = await buildQuery()
+      .order("transacted_at", { ascending: false })
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false })
+      .range(offset, offset + LEDGER_ENTRIES_PAGE_SIZE - 1);
+
+    if (error) {
+      console.error("Ledger entries fetch error:", error);
+      throw new APIError(
+        "LEDGER_FETCH_ERROR",
+        "가계부 내역 조회에 실패했습니다.",
+        500,
+      );
+    }
+
+    const page = data ?? [];
+    rows.push(...page);
+    if (page.length < LEDGER_ENTRIES_PAGE_SIZE) break;
   }
 
-  if (options?.type) query.eq("type", options.type);
-  if (options?.paymentMethodId === "__none__") {
-    query.is("from_payment_method_id", null);
-  } else if (options?.paymentMethodId) {
-    query.eq("from_payment_method_id", options.paymentMethodId);
-  }
-
-  const { data, error } = await query
-    .order("transacted_at", { ascending: false })
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    console.error("Ledger entries fetch error:", error);
-    throw new APIError(
-      "LEDGER_FETCH_ERROR",
-      "가계부 내역 조회에 실패했습니다.",
-      500,
-    );
-  }
-
-  const rows = data ?? [];
   if (rows.length === 0) {
     return [];
   }
