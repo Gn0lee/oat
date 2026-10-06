@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { APIError } from "@/lib/api/error";
 import { ledgerBookIdSchema } from "@/schemas/ledger-book";
 import type { Database } from "@/types";
-import type { LedgerBook } from "@/types/ledger-book";
+import type { LedgerBook, LedgerBookListItem } from "@/types/ledger-book";
 
 type LedgerBookRow = Database["public"]["Tables"]["ledger_books"]["Row"];
 type BookAction = "rename" | "archive" | "reactivate" | "delete";
@@ -115,6 +115,26 @@ export async function getLedgerBooks(
 
   if (error) throwQueryError();
   return (data ?? []).map(toLedgerBook);
+}
+
+/** 생성순 장부 목록에 RLS 범위 안의 장부별 최근 입력 시각을 붙인다. */
+export async function getLedgerBookList(
+  supabase: SupabaseClient<Database>,
+  householdId: string,
+): Promise<LedgerBookListItem[]> {
+  const [books, { data, error }] = await Promise.all([
+    getLedgerBooks(supabase, householdId),
+    supabase.rpc("ledger_book_last_entries", { hh_id: householdId }),
+  ]);
+
+  if (error) throwQueryError();
+  const lastEntryAtByBook = new Map(
+    (data ?? []).map((row) => [row.book_id, row.last_entry_at]),
+  );
+  return books.map((book) => ({
+    ...book,
+    lastEntryAt: lastEntryAtByBook.get(book.id) ?? null,
+  }));
 }
 
 export async function getLedgerBook(

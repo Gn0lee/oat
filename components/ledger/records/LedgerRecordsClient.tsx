@@ -444,9 +444,9 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
         }
       />
     );
-  if ((bookId && bookPending) || booksPending)
-    return <Skeleton className="h-72 rounded-2xl" />;
+  if (booksPending) return <Skeleton className="h-72 rounded-2xl" />;
 
+  const isBookLoading = Boolean(bookId && bookPending);
   const archived = Boolean(book?.archivedAt);
   const canAdd = !bookId || Boolean(book && !archived);
   const addParams = new URLSearchParams({ date: selectedDate });
@@ -513,7 +513,7 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
           onSelect={handleBookChange}
         />
 
-        {filterLabel && (
+        {!isBookLoading && filterLabel && (
           <div className="flex items-center justify-between gap-3 rounded-xl bg-gray-50 pl-4">
             <output className="min-w-0 truncate text-sm text-gray-700">
               {filterLabel}
@@ -528,7 +528,7 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
           </div>
         )}
 
-        {isLoading ? (
+        {isLoading || isBookLoading ? (
           <Skeleton className="h-24 rounded-2xl" />
         ) : (
           <LedgerDateStrip
@@ -540,109 +540,120 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
         )}
       </div>
 
-      <div className="space-y-3 pt-4">
-        {isLoading ? (
-          <Skeleton className="h-16 rounded-2xl" />
-        ) : (
-          <div>
-            <dl className="grid grid-cols-2 gap-4">
-              {(
-                [
-                  ["지출", summary.totalExpense, "-"],
-                  ["수입", summary.totalIncome, "+"],
-                ] as const
-              ).map(([label, amount, sign]) => (
-                <div key={label}>
-                  <dt className="text-sm text-gray-500">{label}</dt>
-                  <dd>
-                    <AmountText
-                      value={`${amount > 0 ? sign : ""}${formatCurrency(amount)}`}
-                      align="left"
-                      className="text-2xl font-bold"
-                    />
-                  </dd>
-                </div>
-              ))}
-            </dl>
-            <Link
-              href={ledgerScopeHref("/ledger/analysis", bookId)}
-              className="mt-3 inline-flex min-h-11 items-center text-sm text-gray-500"
-            >
-              분석 보기
-              <ChevronRight className="size-4" aria-hidden="true" />
-            </Link>
-          </div>
-        )}
-
-        {book && (
-          <output className="block text-sm text-gray-500">
-            {book.visibility === "shared" ? "공용 장부" : "개인 장부"}
-            {book.isDefault ? " · 기본" : ""}
-            {archived && (
-              <>
-                {" · 보관됨 · 읽기 전용"}
-                <span className="block">
-                  기록을 바꾸려면 장부 관리에서 다시 활성화해주세요.
-                </span>
-              </>
-            )}
-          </output>
-        )}
-      </div>
-
-      <div ref={listRef} className="mt-4 border-t border-gray-100 pt-2">
-        {isLoading ? (
-          <Skeleton className="mt-4 h-40 rounded-2xl" />
-        ) : dayGroups.length === 0 ? (
-          <ScreenState
-            type="empty"
-            title={`${monthLabel} 기록이 없어요`}
-            description={
-              canAdd ? "+ 버튼으로 이 달의 기록을 추가해보세요." : undefined
-            }
-            className="mt-4"
-          />
-        ) : (
-          dayGroups.map((group) => (
-            <section key={group.date} data-date={group.date} className="pt-4">
-              <h3 className="text-sm text-gray-500">
-                {dayHeading(group.date)}
-              </h3>
-              {group.entries.length === 0 ? (
-                <p className="py-4 text-sm text-gray-500">기록이 없어요</p>
-              ) : (
-                <ul>
-                  {group.entries.map((entry) => (
-                    <li key={entry.id}>
-                      <LedgerEntryRow
-                        entry={entry}
-                        href={`/ledger/records/${entry.id}?from=records&date=${selectedDate}&returnTo=${encodeURIComponent(returnTo)}`}
-                        showBook={!bookId}
-                        currentUserId={userId}
-                      />
-                    </li>
+      {/* Keep the chips mounted while the picked book loads so focus stays on them. */}
+      {isBookLoading ? (
+        <Skeleton className="mt-4 h-72 rounded-2xl" />
+      ) : (
+        <>
+          <div className="space-y-3 pt-4">
+            {isLoading ? (
+              <Skeleton className="h-16 rounded-2xl" />
+            ) : (
+              <div>
+                <dl className="grid grid-cols-2 gap-4">
+                  {(
+                    [
+                      ["지출", summary.totalExpense, "-"],
+                      ["수입", summary.totalIncome, "+"],
+                    ] as const
+                  ).map(([label, amount, sign]) => (
+                    <div key={label}>
+                      <dt className="text-sm text-gray-500">{label}</dt>
+                      <dd>
+                        <AmountText
+                          value={`${amount > 0 ? sign : ""}${formatCurrency(amount)}`}
+                          align="left"
+                          className="text-2xl font-bold"
+                        />
+                      </dd>
+                    </div>
                   ))}
-                </ul>
-              )}
-            </section>
-          ))
-        )}
-      </div>
+                </dl>
+                <Link
+                  href={ledgerScopeHref("/ledger/analysis", bookId)}
+                  className="mt-3 inline-flex min-h-11 items-center text-sm text-gray-500"
+                >
+                  분석 보기
+                  <ChevronRight className="size-4" aria-hidden="true" />
+                </Link>
+              </div>
+            )}
 
-      {canAdd && (
-        // 16px above the mobile tab bar (h-16 + safe area); bottom-right of
-        // the content area on desktop.
-        <Button
-          asChild
-          className="fixed right-4 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-10 size-14 rounded-full p-0 shadow-lg lg:right-8 lg:bottom-8"
-        >
-          <Link
-            href={`/ledger/records/new/daily?${addParams}`}
-            aria-label="기록 추가"
-          >
-            <Plus className="size-6" aria-hidden="true" />
-          </Link>
-        </Button>
+            {book && (
+              <output className="block text-sm text-gray-500">
+                {book.visibility === "shared" ? "공용 장부" : "개인 장부"}
+                {book.isDefault ? " · 기본" : ""}
+                {archived && (
+                  <>
+                    {" · 보관됨 · 읽기 전용"}
+                    <span className="block">
+                      기록을 바꾸려면 장부 관리에서 다시 활성화해주세요.
+                    </span>
+                  </>
+                )}
+              </output>
+            )}
+          </div>
+
+          <div ref={listRef} className="mt-4 border-t border-gray-100 pt-2">
+            {isLoading ? (
+              <Skeleton className="mt-4 h-40 rounded-2xl" />
+            ) : dayGroups.length === 0 ? (
+              <ScreenState
+                type="empty"
+                title={`${monthLabel} 기록이 없어요`}
+                description={
+                  canAdd ? "+ 버튼으로 이 달의 기록을 추가해보세요." : undefined
+                }
+                className="mt-4"
+              />
+            ) : (
+              dayGroups.map((group) => (
+                <section
+                  key={group.date}
+                  data-date={group.date}
+                  className="pt-4"
+                >
+                  <h3 className="text-sm text-gray-500">
+                    {dayHeading(group.date)}
+                  </h3>
+                  {group.entries.length === 0 ? (
+                    <p className="py-4 text-sm text-gray-500">기록이 없어요</p>
+                  ) : (
+                    <ul>
+                      {group.entries.map((entry) => (
+                        <li key={entry.id}>
+                          <LedgerEntryRow
+                            entry={entry}
+                            href={`/ledger/records/${entry.id}?from=records&date=${selectedDate}&returnTo=${encodeURIComponent(returnTo)}`}
+                            showBook={!bookId}
+                            currentUserId={userId}
+                          />
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </section>
+              ))
+            )}
+          </div>
+
+          {canAdd && (
+            // 16px above the mobile tab bar (h-16 + safe area); bottom-right of
+            // the content area on desktop.
+            <Button
+              asChild
+              className="fixed right-4 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-10 size-14 rounded-full p-0 shadow-lg lg:right-8 lg:bottom-8"
+            >
+              <Link
+                href={`/ledger/records/new/daily?${addParams}`}
+                aria-label="기록 추가"
+              >
+                <Plus className="size-6" aria-hidden="true" />
+              </Link>
+            </Button>
+          )}
+        </>
       )}
     </div>
   );
