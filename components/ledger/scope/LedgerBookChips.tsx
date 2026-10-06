@@ -56,11 +56,9 @@ export function LedgerBookChips({
     ...chipBooks.map((book) => ({
       id: book.id,
       name: book.name,
-      note: book.archivedAt
-        ? "보관"
-        : book.visibility === "personal"
-          ? "개인"
-          : null,
+      // Only a status that changes what the book allows. Shared/personal is
+      // shown once the book is selected.
+      note: book.archivedAt ? "보관" : null,
     })),
   ];
 

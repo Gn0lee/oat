@@ -25,6 +25,8 @@ const entriesByDate = new Map<string, LedgerEntryWithDetails[]>([
   ["2026-10-13", [entry("expense", 99_999_999)]],
   ["2026-10-14", [entry("expense", 100_000_000)]],
   ["2026-10-15", [entry("income", 110_000_000)]],
+  ["2026-10-16", [entry("expense", 10_000)]],
+  ["2026-10-17", [entry("expense", 28_990)]],
   ["2026-10-20", [entry("expense", 1250000)]],
   ["2026-09-30", [entry("expense", 5000)]],
 ]);
@@ -86,8 +88,8 @@ describe("LedgerDateStrip", () => {
   it("한 칸에 수입은 위(빨강), 지출은 아래(무채색)로 두고 이체·비지출 출금은 뺀다", () => {
     renderStrip();
     const day = screen.getByRole("button", { name: /^10월 4일/ });
-    const income = within(day).getByText("+100,025");
-    const expense = within(day).getByText("-231,700");
+    const income = within(day).getByText("+10만");
+    const expense = within(day).getByText("-23만");
     expect(income).toHaveClass("text-red-600");
     expect(expense).toHaveClass("text-gray-600");
     expect(
@@ -100,19 +102,24 @@ describe("LedgerDateStrip", () => {
   it.each([
     ["2026-10-11", "-999"],
     ["2026-10-12", "-1,000"],
-    ["2026-10-13", "-99,999,999"],
+    ["2026-10-13", "-9,999만"],
     ["2026-10-14", "-1억"],
     ["2026-10-15", "+1.1억"],
-    ["2026-10-20", "-1,250,000"],
-  ])("%s 금액은 %s로 쓴다 (1억 미만은 원 단위 전체)", (date, text) => {
-    renderStrip({ selectedDate: date });
-    const day = Number(date.slice(-2));
-    expect(
-      within(
-        screen.getByRole("button", { name: new RegExp(`^10월 ${day}일`) }),
-      ).getByText(text),
-    ).toBeInTheDocument();
-  });
+    ["2026-10-16", "-1만"],
+    ["2026-10-17", "-2.8만"],
+    ["2026-10-20", "-125만"],
+  ])(
+    "%s 금액은 %s로 쓴다 (1만 미만은 원 단위, 그 위는 만·억으로 내림)",
+    (date, text) => {
+      renderStrip({ selectedDate: date });
+      const day = Number(date.slice(-2));
+      expect(
+        within(
+          screen.getByRole("button", { name: new RegExp(`^10월 ${day}일`) }),
+        ).getByText(text),
+      ).toBeInTheDocument();
+    },
+  );
 
   it("접근성 이름에 날짜, 수입·지출, 선택 상태를 담는다", () => {
     renderStrip();

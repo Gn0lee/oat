@@ -239,10 +239,9 @@ describe("LedgerRecordsClient", () => {
 
   it("only queries the selected month", () => {
     renderRecords();
-    expect(useLedgerEntries).toHaveBeenCalledTimes(1);
-    expect(useLedgerEntries).toHaveBeenCalledWith(
-      expect.objectContaining({ year: 2026, month: 6 }),
-    );
+    expect(vi.mocked(useLedgerEntries).mock.calls.length).toBeGreaterThan(0);
+    for (const [options] of vi.mocked(useLedgerEntries).mock.calls)
+      expect(options).toMatchObject({ year: 2026, month: 6 });
   });
 
   it("shows month expense and income as the summary without a balance", () => {
@@ -542,6 +541,17 @@ describe("LedgerRecordsClient", () => {
       "/ledger/records?date=2026-06-17",
     );
     await userEvent.click(screen.getByRole("button", { name: "이전 달" }));
+    expect(replace).toHaveBeenLastCalledWith("/ledger/records?month=2026-05", {
+      scroll: false,
+    });
+  });
+
+  it("opens the previous month from the end of the list", async () => {
+    state.search = "date=2026-06-16";
+    renderRecords();
+    await userEvent.click(
+      screen.getByRole("button", { name: "5월 내역 보기" }),
+    );
     expect(replace).toHaveBeenLastCalledWith("/ledger/records?month=2026-05", {
       scroll: false,
     });

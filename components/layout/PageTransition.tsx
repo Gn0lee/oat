@@ -15,7 +15,7 @@ export function PageTransition({ children, className }: PageTransitionProps) {
     <main
       key={pathname}
       data-ssgoi-transition={pathname}
-      className={cn("min-h-full w-full bg-gray-50 overflow-x-clip", className)}
+      className={cn("min-h-full w-full bg-gray-50", className)}
     >
       {children}
     </main>
