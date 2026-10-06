@@ -29,7 +29,7 @@ import {
 } from "@/lib/ledger-books/navigation";
 import { queries } from "@/lib/queries/keys";
 import { formatCurrency } from "@/lib/utils/format";
-import { type LedgerCalendarView, LedgerDateStrip } from "./LedgerDateStrip";
+import { LedgerDateStrip } from "./LedgerDateStrip";
 import { LedgerEntryRow } from "./LedgerEntryRow";
 
 interface LedgerRecordsClientProps {
@@ -71,8 +71,6 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
       ? initialDate
       : today;
   const [year, month] = selectedDate.split("-").map(Number);
-  const view: LedgerCalendarView =
-    searchParams.get("view") === "month" ? "month" : "week";
   const {
     data: books = [],
     isPending: booksPending,
@@ -151,8 +149,15 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
     queryError instanceof ApiQueryError &&
     (queryError.status === 404 || queryError.status === 400);
 
-  const replaceParams = (update: (next: URLSearchParams) => void) => {
+  // The calendar's expanded state is local to the strip; drop any legacy
+  // `view` param whenever the URL is rewritten.
+  const nextParams = () => {
     const next = new URLSearchParams(searchParams.toString());
+    next.delete("view");
+    return next;
+  };
+  const replaceParams = (update: (next: URLSearchParams) => void) => {
+    const next = nextParams();
     update(next);
     router.replace(`${pathname}${next.size ? `?${next}` : ""}`);
   };
@@ -160,14 +165,8 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
     replaceParams((next) => next.set("date", date));
   const handleMonthMove = (offset: number) =>
     handleDateSelect(ledgerMonthAnchorDate(year, month + offset, today));
-  const handleViewChange = (nextView: LedgerCalendarView) =>
-    replaceParams((next) => {
-      next.set("date", selectedDate);
-      if (nextView === "month") next.set("view", "month");
-      else next.delete("view");
-    });
   const handleBookChange = (nextBookId: string | undefined) => {
-    const next = new URLSearchParams(searchParams.toString());
+    const next = nextParams();
     next.delete("scope");
     next.delete("date");
     next.delete("tagId");
@@ -337,10 +336,8 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
         <LedgerDateStrip
           selectedDate={selectedDate}
           today={today}
-          view={view}
           entriesByDate={entriesByDate}
           onSelect={handleDateSelect}
-          onViewChange={handleViewChange}
         />
       )}
 
