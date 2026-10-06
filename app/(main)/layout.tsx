@@ -17,7 +17,10 @@ export default function MainLayout({
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden relative">
         <ServiceHeader variant="desktop" />
         <ServiceHeader variant="mobile" />
-        <div className="size-full overflow-y-scroll overflow-x-clip relative z-0">
+        {/* Horizontal overflow is cut here, at the scroll container itself. iOS
+            Safari makes sticky elements tremble while scrolling when an
+            ancestor between them and the scroller clips overflow. */}
+        <div className="size-full overflow-y-scroll overflow-x-hidden relative z-0">
           <ServiceHeader variant="mobile" placement="scroll" />
           <PageTransitionProvider>
             <PageTransition className="flex-1 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-14 lg:pb-4 lg:pt-0">

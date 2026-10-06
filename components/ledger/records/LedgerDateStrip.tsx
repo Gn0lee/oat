@@ -22,6 +22,7 @@ interface CalendarDay {
 }
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"] as const;
+const TEN_THOUSAND = 10_000;
 const HUNDRED_MILLION = 100_000_000;
 
 // Weeks (Sun-Sat) covering the selected month, padded with the neighboring
@@ -44,9 +45,15 @@ function buildMonthWeeks(year: number, month: number): CalendarDay[][] {
   );
 }
 
-// Full won amount with commas; 1억 and above shortened to one decimal (내림).
+// Short enough for a seventh of a phone width: under 1만 in full won, then
+// 만 (one decimal under 10만), then 억 (one decimal). Rounded down.
 function formatDayAmount(amount: number) {
-  if (amount < HUNDRED_MILLION) return amount.toLocaleString("ko-KR");
+  if (amount < TEN_THOUSAND) return amount.toLocaleString("ko-KR");
+  if (amount < HUNDRED_MILLION) {
+    const man = amount / TEN_THOUSAND;
+    const rounded = man < 10 ? Math.floor(man * 10) / 10 : Math.floor(man);
+    return `${rounded.toLocaleString("ko-KR", { maximumFractionDigits: 1 })}만`;
+  }
   const tenths = Math.floor(amount / (HUNDRED_MILLION / 10)) / 10;
   return `${tenths.toLocaleString("ko-KR", { maximumFractionDigits: 1 })}억`;
 }
@@ -139,7 +146,10 @@ export function LedgerDateStrip({
                   >
                     {cell.day}
                   </span>
-                  <span className="flex min-h-5 flex-col items-center pt-0.5 text-[11px] leading-3 tabular-nums">
+                  {/* Always two lines tall: a week whose height changed with
+                      its amounts would shift the list under the sticky
+                      header and fight the scroll sync. */}
+                  <span className="flex h-[26px] flex-col items-center pt-0.5 text-[11px] leading-3 whitespace-nowrap tabular-nums">
                     {income > 0 && (
                       <span className="text-red-600">
                         +{formatDayAmount(income)}
