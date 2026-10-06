@@ -49,6 +49,8 @@ export const LEDGER_COMPOSER_STEP_PATHS = [
 export const STOCK_TRADE_COMPOSER_STEP_PATHS = [
   "/assets/stock/transactions/new/daily/composer-basics",
   "/assets/stock/transactions/new/daily/composer-single-details",
+  "/assets/stock/transactions/new/daily/composer-date-account",
+  "/assets/stock/transactions/new/daily/composer-review",
 ] as const;
 
 export function getPageTransitionMode({

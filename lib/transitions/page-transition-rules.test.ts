@@ -61,6 +61,7 @@ describe("page transition rules", () => {
     expect(STOCK_TRADE_COMPOSER_STEP_PATHS).toContain(
       "/assets/stock/transactions/new/daily/composer-single-details",
     );
+    expect(STOCK_TRADE_COMPOSER_STEP_PATHS.at(-1)).toContain("composer-review");
     const mobile = getPageTransitionRules("mobile");
     const axisIndex = mobile.findIndex(
       (rule) =>

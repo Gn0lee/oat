@@ -1,5 +1,6 @@
 "use client";
 
+import { Plus, Trash2 } from "lucide-react";
 import {
   type UseFieldArrayReturn,
   useFormContext,
@@ -8,12 +9,16 @@ import {
 import { ComposerActionBar } from "@/components/composer/ComposerActionBar";
 import { composerFieldClassName } from "@/components/composer/field-styles";
 import { StockSearchDialog } from "@/components/stocks/StockSearchDialog";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { createTradeDraft } from "@/lib/stock-trades/composer";
 import { cn } from "@/lib/utils/cn";
 import { formatCurrency } from "@/lib/utils/format";
 import type { StockTradeComposerValues } from "@/schemas/stock-trade-composer";
 import type { StockMaster } from "@/types";
+
+export const MAX_TRADES = 20;
 
 const TRADE_TYPES = [
   { value: "buy", label: "매수", selectedClassName: "bg-[#F04452] text-white" },
@@ -36,9 +41,11 @@ function FieldError({ id, message }: { id: string; message?: string }) {
 function TradeBasicsRow({
   index,
   showNumber,
+  onRemove,
 }: {
   index: number;
   showNumber: boolean;
+  onRemove?: () => void;
 }) {
   const form = useFormContext<StockTradeComposerValues>();
   const item = useWatch({ control: form.control, name: `items.${index}` });
@@ -58,9 +65,23 @@ function TradeBasicsRow({
   return (
     <div className="space-y-5 border-b border-border pb-5">
       {showNumber && (
-        <p className="text-xs font-medium text-muted-foreground">
-          {row}번째 거래
-        </p>
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-xs font-medium text-muted-foreground">
+            {row}번째 거래
+          </p>
+          {onRemove && (
+            <Button
+              type="button"
+              variant="ghost"
+              aria-label={`${row}번째 거래 삭제`}
+              className="min-h-11"
+              onClick={onRemove}
+            >
+              <Trash2 className="mr-2 size-4" />
+              삭제
+            </Button>
+          )}
+        </div>
       )}
       <div className="space-y-2">
         <p className="text-sm font-medium">매수/매도</p>
@@ -199,11 +220,27 @@ function TradeBasicsRow({
 
 interface TradeBasicsStepProps {
   itemsArray: UseFieldArrayReturn<StockTradeComposerValues, "items">;
+  /** 검토에서 들어오면 그 거래만 보여 주고 행 추가·삭제는 숨긴다. */
+  editingClientId?: string;
   onNext: () => void;
 }
 
-export function TradeBasicsStep({ itemsArray, onNext }: TradeBasicsStepProps) {
-  const { fields } = itemsArray;
+export function TradeBasicsStep({
+  itemsArray,
+  editingClientId,
+  onNext,
+}: TradeBasicsStepProps) {
+  const form = useFormContext<StockTradeComposerValues>();
+  const { fields, append, remove } = itemsArray;
+  const items = useWatch({ control: form.control, name: "items" }) ?? [];
+  const visible = fields
+    .map((field, index) => ({ field, index }))
+    .filter(
+      ({ index }) =>
+        !editingClientId || items[index]?.clientId === editingClientId,
+    );
+  const canEditRows = !editingClientId;
+
   return (
     <section
       aria-labelledby="trade-basics-heading"
@@ -213,13 +250,41 @@ export function TradeBasicsStep({ itemsArray, onNext }: TradeBasicsStepProps) {
       <h1 id="trade-basics-heading" className="sr-only">
         거래 내용
       </h1>
-      {fields.map((field, index) => (
+      {visible.map(({ field, index }) => (
         <TradeBasicsRow
           key={field.id}
           index={index}
           showNumber={fields.length > 1}
+          onRemove={
+            canEditRows && fields.length > 1 ? () => remove(index) : undefined
+          }
         />
       ))}
+      {canEditRows &&
+        (fields.length < MAX_TRADES ? (
+          <Button
+            type="button"
+            variant="outline"
+            className="min-h-11 w-full rounded-[12px]"
+            onClick={() =>
+              // 새 거래는 첫 거래의 거래일·계좌로 시작한다.
+              append(
+                createTradeDraft({
+                  clientId: crypto.randomUUID(),
+                  date: items[0]?.transactedAt ?? "",
+                  accountId: items[0]?.accountId,
+                }),
+              )
+            }
+          >
+            <Plus className="mr-2 size-4" />
+            종목 추가
+          </Button>
+        ) : (
+          <p className="text-center text-sm text-muted-foreground">
+            한 번에 최대 {MAX_TRADES}건까지 입력할 수 있어요.
+          </p>
+        ))}
       <ComposerActionBar label="다음" onClick={onNext} />
     </section>
   );
