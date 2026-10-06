@@ -8,7 +8,7 @@ import { createBatchTransactionSchema } from "@/schemas/transaction";
 
 /**
  * POST /api/transactions/batch
- * 배치 거래 기록 생성 (여러 거래 일괄 등록)
+ * 여러 주식 거래를 한 번에 생성 (거래마다 매수/매도·거래일·계좌를 가짐)
  */
 export async function POST(request: Request) {
   try {
@@ -54,10 +54,8 @@ export async function POST(request: Request) {
     const transactions = await createBatchTransactions(supabase, {
       householdId,
       ownerId: user.id,
-      type: input.type,
-      transactedAt: input.transactedAt,
-      accountId: input.accountId,
       items: input.items.map((item) => ({
+        type: item.type,
         ticker: item.ticker,
         quantity: item.quantity,
         price: item.price,

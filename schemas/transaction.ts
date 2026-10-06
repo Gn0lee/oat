@@ -74,6 +74,9 @@ export type UpdateTransactionInput = z.infer<typeof updateTransactionSchema>;
  * 배치 거래 항목 스키마
  */
 export const batchTransactionItemSchema = z.object({
+  type: z.enum(["buy", "sell"], {
+    message: "거래 유형은 buy 또는 sell이어야 합니다.",
+  }),
   ticker: z.string().min(1, "종목 코드는 필수입니다."),
   quantity: z
     .number()
@@ -86,9 +89,8 @@ export const batchTransactionItemSchema = z.object({
   memo: z.string().max(500, "메모는 500자 이내여야 합니다.").optional(),
   transactedAt: z
     .string()
-    .datetime({ message: "유효한 날짜 형식이 아닙니다." })
-    .optional(),
-  accountId: z.string().uuid("유효한 계좌 ID가 아닙니다.").optional(),
+    .datetime({ message: "유효한 날짜 형식이 아닙니다." }),
+  accountId: z.string().uuid("유효한 계좌 ID가 아닙니다."),
   stock: z.object({
     name: z.string().min(1, "종목명은 필수입니다."),
     market: z.enum(["KR", "US", "OTHER"]),
@@ -104,16 +106,9 @@ export type BatchTransactionItem = z.infer<typeof batchTransactionItemSchema>;
 
 /**
  * 배치 거래 생성 요청 스키마
- * - type은 전역으로 지정 (모든 아이템에 동일 적용)
+ * - 거래마다 매수/매도·거래일·계좌를 각자 가진다 (묶음 단위 값 없음)
  */
 export const createBatchTransactionSchema = z.object({
-  type: z.enum(["buy", "sell"], {
-    message: "거래 유형은 buy 또는 sell이어야 합니다.",
-  }),
-  transactedAt: z
-    .string()
-    .datetime({ message: "유효한 날짜 형식이 아닙니다." }),
-  accountId: z.string().uuid("유효한 계좌 ID가 아닙니다."),
   items: z
     .array(batchTransactionItemSchema)
     .min(1, "최소 1개 이상의 거래가 필요합니다.")
