@@ -20,77 +20,123 @@ const entriesByDate = new Map<string, LedgerEntryWithDetails[]>([
       entry("non_expense_withdrawal", 888),
     ],
   ],
+  ["2026-10-11", [entry("expense", 999)]],
+  ["2026-10-12", [entry("expense", 1000)]],
+  ["2026-10-13", [entry("expense", 99_999_999)]],
+  ["2026-10-14", [entry("expense", 100_000_000)]],
+  ["2026-10-15", [entry("income", 110_000_000)]],
   ["2026-10-20", [entry("expense", 1250000)]],
+  ["2026-09-30", [entry("expense", 5000)]],
 ]);
 
 function renderStrip(
   props: Partial<React.ComponentProps<typeof LedgerDateStrip>> = {},
 ) {
   const onSelect = vi.fn();
-  const onViewChange = vi.fn();
   render(
     <LedgerDateStrip
       selectedDate="2026-10-04"
       today="2026-10-05"
-      view="week"
       entriesByDate={entriesByDate}
       onSelect={onSelect}
-      onViewChange={onViewChange}
       {...props}
     />,
   );
-  return { onSelect, onViewChange };
+  return { onSelect };
+}
+
+function dayButtons() {
+  return screen.getAllByRole("button", { name: /^\d+월 \d+일/ });
 }
 
 describe("LedgerDateStrip", () => {
   it("주간 보기는 선택한 날이 속한 한 주 7칸만 보여준다", () => {
     renderStrip();
-    const days = screen.getAllByRole("button", { name: /^10월 \d+일/ });
-    expect(days.map((day) => day.textContent?.match(/^\d+/)?.[0])).toEqual([
-      "4",
-      "5",
-      "6",
-      "7",
-      "8",
-      "9",
-      "10",
-    ]);
+    expect(
+      dayButtons().map((day) => day.textContent?.match(/^\d+/)?.[0]),
+    ).toEqual(["4", "5", "6", "7", "8", "9", "10"]);
   });
 
-  it("다른 달에 속한 칸은 비워 둔다", () => {
-    renderStrip({ selectedDate: "2026-10-01" });
-    // 2026-10-01은 목요일: 일~수는 9월이라 버튼이 없다.
-    const days = screen.getAllByRole("button", { name: /^10월 \d+일/ });
-    expect(days).toHaveLength(3);
-    expect(days[0]).toHaveAccessibleName(/^10월 1일 목요일/);
+  it("다른 달 날짜는 흐린 숫자만 보이고 금액 없이 누를 수 없다", () => {
+    const { onSelect } = renderStrip({ selectedDate: "2026-10-01" });
+    // 2026-10-01은 목요일: 일~수는 9월 27~30일이다.
+    const days = dayButtons();
+    expect(days).toHaveLength(7);
+    const lastOfSeptember = screen.getByRole("button", {
+      name: "9월 30일 수요일",
+    });
+    expect(lastOfSeptember).toBeDisabled();
+    expect(lastOfSeptember).toHaveTextContent(/^30$/);
+    expect(within(lastOfSeptember).getByText("30")).toHaveClass(
+      "text-gray-300",
+    );
+    fireEvent.click(lastOfSeptember);
+    expect(onSelect).not.toHaveBeenCalled();
+    expect(days[4]).toHaveAccessibleName(/^10월 1일 목요일/);
+    expect(days[4]).toBeEnabled();
   });
 
-  it("날짜 밑에 지출(무채색)·수입(빨강)을 따로 표시하고 이체·비지출 출금은 뺀다", () => {
+  it("연말 주는 다음 해 1월 날짜를 비활성으로 이어 보여준다", () => {
+    renderStrip({ selectedDate: "2026-12-31" });
+    expect(
+      screen.getByRole("button", { name: "1월 2일 토요일" }),
+    ).toBeDisabled();
+  });
+
+  it("한 칸에 수입은 위(빨강), 지출은 아래(무채색)로 두고 이체·비지출 출금은 뺀다", () => {
     renderStrip();
     const day = screen.getByRole("button", { name: /^10월 4일/ });
-    expect(day).toHaveAccessibleName(
-      "10월 4일 일요일, 지출 231,700원, 수입 100,025원",
-    );
-    expect(within(day).getByText("-231,700")).toHaveClass("text-gray-600");
-    expect(within(day).getByText("+100,025")).toHaveClass("text-red-600");
+    const income = within(day).getByText("+100,025");
+    const expense = within(day).getByText("-231,700");
+    expect(income).toHaveClass("text-red-600");
+    expect(expense).toHaveClass("text-gray-600");
+    expect(
+      income.compareDocumentPosition(expense) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     expect(within(day).queryByText(/999|888/)).toBeNull();
   });
 
-  it("백만 원 이상은 만 단위로 줄여 칸을 넘지 않는다", () => {
-    renderStrip({ selectedDate: "2026-10-20" });
-    expect(screen.getByText("-125만")).toBeInTheDocument();
+  it.each([
+    ["2026-10-11", "-999"],
+    ["2026-10-12", "-1,000"],
+    ["2026-10-13", "-99,999,999"],
+    ["2026-10-14", "-1억"],
+    ["2026-10-15", "+1.1억"],
+    ["2026-10-20", "-1,250,000"],
+  ])("%s 금액은 %s로 쓴다 (1억 미만은 원 단위 전체)", (date, text) => {
+    renderStrip({ selectedDate: date });
+    const day = Number(date.slice(-2));
+    expect(
+      within(
+        screen.getByRole("button", { name: new RegExp(`^10월 ${day}일`) }),
+      ).getByText(text),
+    ).toBeInTheDocument();
   });
 
-  it("선택한 날은 aria-pressed, 오늘은 aria-current로 알린다", () => {
+  it("접근성 이름에 날짜, 수입·지출, 선택 상태를 담는다", () => {
     renderStrip();
-    expect(screen.getByRole("button", { name: /^10월 4일/ })).toHaveAttribute(
-      "aria-pressed",
-      "true",
+    expect(
+      screen.getByRole("button", { name: /^10월 4일/ }),
+    ).toHaveAccessibleName(
+      "10월 4일 일요일, 수입 100,025원, 지출 231,700원, 선택됨",
     );
-    expect(screen.getByRole("button", { name: /^10월 5일/ })).toHaveAttribute(
-      "aria-current",
-      "date",
+    expect(
+      screen.getByRole("button", { name: /^10월 5일/ }),
+    ).toHaveAccessibleName("10월 5일 월요일");
+  });
+
+  it("선택한 날은 검은 원 위 흰 숫자, 오늘은 굵은 숫자와 aria-current로 표시한다", () => {
+    renderStrip();
+    const selected = screen.getByRole("button", { name: /^10월 4일/ });
+    expect(within(selected).getByText("4")).toHaveClass(
+      "bg-gray-900",
+      "text-white",
     );
+    const today = screen.getByRole("button", { name: /^10월 5일/ });
+    expect(today).toHaveAttribute("aria-current", "date");
+    expect(within(today).getByText("5")).toHaveClass("font-semibold");
+    expect(within(today).getByText("5")).not.toHaveClass("bg-gray-900");
   });
 
   it("날짜를 누르면 YYYY-MM-DD로 알린다", () => {
@@ -99,23 +145,50 @@ describe("LedgerDateStrip", () => {
     expect(onSelect).toHaveBeenCalledWith("2026-10-07");
   });
 
-  it("펼치기 버튼으로 월간 보기를 요청한다", () => {
-    const { onViewChange } = renderStrip();
+  it("펼침 토글은 로컬 상태로 월 전체를 열고 닫으며 펼침 상태를 알린다", () => {
+    renderStrip();
     const toggle = screen.getByRole("button", { name: "월간 달력 펼치기" });
     expect(toggle).toHaveAttribute("aria-expanded", "false");
     fireEvent.click(toggle);
-    expect(onViewChange).toHaveBeenCalledWith("month");
+
+    // 2026-10: 9/27~10/31 다섯 주 35칸 중 10월 31일만 누를 수 있다.
+    expect(dayButtons()).toHaveLength(35);
+    expect(
+      dayButtons().filter((button) => !(button as HTMLButtonElement).disabled),
+    ).toHaveLength(31);
+    const collapse = screen.getByRole("button", { name: "주간 달력으로 접기" });
+    expect(collapse).toHaveAttribute("aria-expanded", "true");
+
+    fireEvent.click(collapse);
+    expect(dayButtons()).toHaveLength(7);
   });
 
-  it("월간 보기는 그 달 전체를 보여주고 접기 버튼을 둔다", () => {
-    const { onViewChange } = renderStrip({ view: "month" });
-    expect(screen.getAllByRole("button", { name: /^10월 \d+일/ })).toHaveLength(
-      31,
-    );
-    const toggle = screen.getByRole("button", { name: "주간 달력으로 접기" });
-    expect(toggle).toHaveAttribute("aria-expanded", "true");
-    fireEvent.click(toggle);
-    expect(onViewChange).toHaveBeenCalledWith("week");
+  it("펼친 달력에서 날짜를 누르면 접히고 그 날짜를 알린다", () => {
+    const { onSelect } = renderStrip();
+    fireEvent.click(screen.getByRole("button", { name: "월간 달력 펼치기" }));
+    fireEvent.click(screen.getByRole("button", { name: /^10월 20일/ }));
+
+    expect(onSelect).toHaveBeenCalledWith("2026-10-20");
+    expect(dayButtons()).toHaveLength(7);
+    expect(
+      screen.getByRole("button", { name: "월간 달력 펼치기" }),
+    ).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("펼친 달력 바깥의 흐린 가림막을 누르면 날짜를 바꾸지 않고 접힌다", () => {
+    const { onSelect } = renderStrip();
+    expect(
+      screen.queryByRole("button", { name: "달력 닫기" }),
+    ).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "월간 달력 펼치기" }));
+
+    fireEvent.click(screen.getByRole("button", { name: "달력 닫기" }));
+
+    expect(onSelect).not.toHaveBeenCalled();
+    expect(dayButtons()).toHaveLength(7);
+    expect(
+      screen.queryByRole("button", { name: "달력 닫기" }),
+    ).not.toBeInTheDocument();
   });
 
   it("날짜와 토글 버튼은 44px 이상이다", () => {

@@ -1336,6 +1336,10 @@ export type Database = {
         Args: { p_book_id: string };
         Returns: Database["public"]["Tables"]["ledger_books"]["Row"];
       };
+      ledger_book_last_entries: {
+        Args: { hh_id: string };
+        Returns: { book_id: string; last_entry_at: string }[];
+      };
       search_ledger_entries_scoped: {
         Args: {
           cursor_created_at?: string;
