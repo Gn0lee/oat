@@ -215,12 +215,6 @@ export function getServiceRouteTree(): readonly ServiceRouteNode[] {
                   mobile: "task",
                   closeHref: "/assets/stock/transactions",
                 },
-                {
-                  href: "/assets/stock/transactions/new/account",
-                  label: "계좌 거래 등록",
-                  mobile: "task",
-                  closeHref: "/assets/stock/transactions",
-                },
               ],
             },
             { href: "/assets/stock/accounts", label: "증권 계좌" },

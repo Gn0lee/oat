@@ -212,20 +212,27 @@ bottom sheet를 유지해도 되는 경우:
 적용 대상:
 - `components/ledger/funnel/*`
 - `components/ledger/entry-composer/*`
-- `components/transactions/funnel/*`
+- `components/transactions/trade-composer/*`
+- `components/composer/*` (가계부·주식 공통 컴포저 셸)
 - 계좌/결제수단 생성 flow
 - 카테고리/결제수단/종목 선택 화면
 
-여러 기록을 한 번에 입력하는 화면은 **Entry Composer** 패턴을 우선합니다.
+여러 기록을 한 번에 입력하는 화면은 **Entry Composer** 패턴을 우선합니다. 가계부 기록(`components/ledger/entry-composer/*`)과 주식 거래(`components/transactions/trade-composer/*`)가 같은 공통 컴포저 셸(`components/composer/*`)을 씁니다.
 
-- `full`: 맥락 없이 진입해 기본값을 정하고 기록 행을 조립
-- `daily`: 캘린더 날짜를 기본값으로 진입
-- `account`: 특정 계좌를 기본값으로 진입
+입력 모드는 `full`과 `daily` 둘뿐입니다.
+
+- `full`: 맥락 없이 진입해 기록 행을 조립
+- `daily`: 캘린더 날짜를 기본값으로 진입. 날짜는 미리 채워질 뿐 바꿀 수 있음
 
 Composer 화면에서 키보드가 올라오는 입력 필드와 검색형 선택기가 섞이면 모바일에서는 Popover보다 full-screen selector를 우선합니다. 여러 상세 카드가 동시에 펼쳐지는 구조는 피하고, 압축 행 목록에서 한 행만 상세 편집합니다.
 
-Entry Composer(`components/ledger/entry-composer/*`) 기준:
-- 모바일 step은 funnel 안의 key가 붙은 step 경계를 바꿔 전환하고, RHF form과 controller는 계속 마운트해 둡니다. step id는 `lib/transitions/page-transition-rules.ts`의 `LEDGER_COMPOSER_STEP_PATHS`(가상 경로)에서 가져옵니다.
+공통 컴포저 셸(`components/composer/*`) 기준:
+- 하단 고정 주요 버튼, 필드 스타일, 이탈 확인 다이얼로그, history sentinel·popstate 가드, 저장 요청 멱등 키, 검토에서 단계로 돌아가는 helper, 데스크톱 압축 목록·편집 Dialog 틀을 도메인 구분 없이 한 벌로 공유합니다.
+- 헤더 뒤로가기·닫기는 도메인 중립 이벤트(`oat:composer-back`, `oat:composer-close`)로 컴포저에 전달합니다.
+- 단계 컴포넌트, 스키마, 단계별 누락 판정은 도메인별 모듈에 둡니다.
+
+모바일 step 기준 (가계부와 주식 공통):
+- step은 funnel 안의 key가 붙은 step 경계를 바꿔 전환하고, RHF form과 controller는 계속 마운트해 둡니다. step id는 `lib/transitions/page-transition-rules.ts`의 가상 경로(`LEDGER_COMPOSER_STEP_PATHS`, `STOCK_TRADE_COMPOSER_STEP_PATHS`)에서 가져옵니다.
 - 모바일은 x축 `snappy` 전환을 쓰고, reduced motion, 첫 렌더, 데스크톱은 fade를 씁니다.
 - 뒤로가기는 헤더에만 두고, 하단에는 주 액션 하나만 둡니다.
 - 768px 이상에서는 데스크톱 목록이 화면을 맡고, 헤더 뒤로가기는 입력 중인 내용을 확인하는 종료 흐름으로 이어집니다.

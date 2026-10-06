@@ -205,8 +205,7 @@ app/(main)/
 │           ├── page.tsx           # /assets/stock/transactions - 주식 거래 내역
 │           └── new/
 │               ├── daily/page.tsx # /assets/stock/transactions/new/daily?date=YYYY-MM-DD
-│               ├── full/page.tsx  # /assets/stock/transactions/new/full
-│               └── account/page.tsx # /assets/stock/transactions/new/account
+│               └── full/page.tsx  # /assets/stock/transactions/new/full
 └── settings/                      # /settings - 설정
 ```
 
@@ -226,7 +225,7 @@ assets/
 - `holdings/` - 보유 현황
 - `transactions/` - 거래/기록 내역
 - `transactions/new/full/` - 맥락 없는 전체 기록 추가
-- `transactions/new/account/` - 특정 계좌 맥락의 기록 추가
+- `transactions/new/daily/` - 날짜를 기본값으로 둔 기록 추가
 
 여러 기록을 한 번에 만드는 입력 화면은 route segment로 입력 모드를 드러냅니다.
 
@@ -242,8 +241,7 @@ assets/
     └── transactions/
         └── new/
             ├── full/             # /assets/stock/transactions/new/full
-            ├── daily/            # /assets/stock/transactions/new/daily?date=YYYY-MM-DD
-            └── account/          # /assets/stock/transactions/new/account?accountId=...
+            └── daily/            # /assets/stock/transactions/new/daily?date=YYYY-MM-DD
 ```
 
 기존 짧은 진입 경로는 필요한 동안 redirect로 유지합니다.

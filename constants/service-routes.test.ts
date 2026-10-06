@@ -96,17 +96,6 @@ describe("getServiceRouteMeta", () => {
 
     expect(
       getServiceRouteMeta(
-        "/assets/stock/transactions/new/account?accountId=account-123",
-      ),
-    ).toMatchObject({
-      label: "계좌 거래 등록",
-      mobileVariant: "task",
-      parentHref: "/assets/stock/transactions",
-      closeHref: "/assets/stock/transactions",
-    });
-
-    expect(
-      getServiceRouteMeta(
         "/assets/stock/transactions/new/daily?date=2026-05-29",
       ),
     ).toMatchObject({
