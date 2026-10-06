@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import Link from "next/link";
 import {
   EntryRow,
@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { useLedgerBooks } from "@/hooks/use-ledger-books";
 import { useLedgerIdentity } from "@/hooks/use-ledger-identity";
 import { safeLedgerReturnTo } from "@/lib/ledger-books/navigation";
+import { orderRecentBooks } from "@/lib/ledger-books/recent-books";
 
 export function LedgerBooksClient({ returnTo }: { returnTo?: string | null }) {
   const { data: books, isLoading, error } = useLedgerBooks();
@@ -68,11 +69,10 @@ export function LedgerBooksClient({ returnTo }: { returnTo?: string | null }) {
           />
         ) : books?.length ? (
           <GroupedList>
-            {books.map((book) => (
+            {orderRecentBooks(books).map((book) => (
               <EntryRow
                 key={book.id}
                 href={`/ledger/books/${encodeURIComponent(book.id)}?returnTo=${encodeURIComponent(safeReturn)}`}
-                icon={BookOpen}
                 title={
                   <span className="line-clamp-2 whitespace-normal break-words">
                     {book.name}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { orderRecentBooks } from "@/lib/ledger-books/recent-books";
 import { cn } from "@/lib/utils/cn";
 import type { LedgerBook } from "@/types/ledger-book";
 
@@ -9,15 +10,6 @@ interface LedgerBookChipsProps {
   /** 없으면 전체 장부 범위 */
   selectedBookId?: string;
   onSelect: (bookId: string | undefined) => void;
-}
-
-function orderBooks(books: LedgerBook[]) {
-  const active = books.filter((book) => !book.archivedAt);
-  return [
-    ...active.filter((book) => book.isDefault),
-    ...active.filter((book) => !book.isDefault),
-    ...books.filter((book) => book.archivedAt),
-  ];
 }
 
 export function LedgerBookChips({
@@ -38,7 +30,7 @@ export function LedgerBookChips({
 
   const chips = [
     { id: undefined, name: "전체", note: null },
-    ...orderBooks(books).map((book) => ({
+    ...orderRecentBooks(books).map((book) => ({
       id: book.id,
       name: book.name,
       note: book.archivedAt
