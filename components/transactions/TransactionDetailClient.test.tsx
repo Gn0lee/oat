@@ -86,6 +86,9 @@ describe("TransactionDetailClient", () => {
 
     // 3. 배지
     expect(screen.getAllByText("매수").length).toBeGreaterThan(0);
+    expect(
+      screen.getByText("매수", { selector: "[data-slot=badge]" }),
+    ).toHaveClass("text-red-600");
     expect(screen.getByText("KRW")).toBeInTheDocument();
 
     // 4. 인포 로우
@@ -108,6 +111,24 @@ describe("TransactionDetailClient", () => {
     expect(
       screen.getByRole("button", { name: "거래 삭제" }),
     ).toBeInTheDocument();
+  });
+
+  it("매도 배지는 파랑이다", () => {
+    vi.mocked(useCurrentUserId).mockReturnValue({
+      userId: "owner-1",
+      isLoading: false,
+    });
+    vi.mocked(useTransaction).mockReturnValue({
+      data: { ...mockTransaction, type: "sell" },
+      isLoading: false,
+      error: null,
+    } as any);
+
+    render(<TransactionDetailClient transactionId="tx-1" />);
+
+    expect(
+      screen.getByText("매도", { selector: "[data-slot=badge]" }),
+    ).toHaveClass("text-blue-600");
   });
 
   it("비소유자 뷰: 수정 요청/삭제 요청 버튼 렌더링", () => {

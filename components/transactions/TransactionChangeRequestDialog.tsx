@@ -17,6 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useCreateRecordChangeRequest } from "@/hooks/use-record-change-requests";
 import type { TransactionWithDetails } from "@/lib/api/transaction";
 import { formatCurrency } from "@/lib/utils/format";
+import { tradeTypeBadgeClassName } from "@/lib/utils/trade-type-style";
 import type { StockTransactionUpdateProposedChanges } from "@/schemas/record-change-request";
 
 type RequestMode = "update" | "delete";
@@ -106,7 +107,6 @@ export function TransactionChangeRequestDialog({
 
   const isUpdate = mode === "update";
   const typeLabel = transaction.type === "buy" ? "매수" : "매도";
-  const typeVariant = transaction.type === "buy" ? "default" : "secondary";
   const watchTransactedAt = form.watch("transactedAt");
 
   const handleUpdateSubmit = form.handleSubmit(async (values) => {
@@ -177,7 +177,12 @@ export function TransactionChangeRequestDialog({
       <div className="rounded-md border p-4 space-y-2">
         <div className="flex items-center justify-between">
           <span className="font-medium">{transaction.stockName}</span>
-          <Badge variant={typeVariant}>{typeLabel}</Badge>
+          <Badge
+            variant="secondary"
+            className={tradeTypeBadgeClassName(transaction.type)}
+          >
+            {typeLabel}
+          </Badge>
         </div>
         <div className="space-y-1 text-muted-foreground text-sm">
           <div className="flex justify-between">

@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+import { composerFieldClassName } from "@/components/composer/field-styles";
 import { AccountSelector } from "@/components/transactions/AccountSelector";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { useUpdateTransaction } from "@/hooks/use-transaction";
 import type { TransactionWithDetails } from "@/lib/api/transaction";
+import { cn } from "@/lib/utils/cn";
+import { tradeTypeBadgeClassName } from "@/lib/utils/trade-type-style";
 
 interface TransactionEditDialogProps {
   transaction: TransactionWithDetails | null;
@@ -124,7 +127,6 @@ export function TransactionEditDialog({
   if (!transaction) return null;
 
   const typeLabel = transaction.type === "buy" ? "매수" : "매도";
-  const typeVariant = transaction.type === "buy" ? "default" : "secondary";
 
   const descriptionContent = (
     <div className="flex items-center gap-2">
@@ -132,7 +134,12 @@ export function TransactionEditDialog({
         {transaction.stockName}
       </span>
       <span className="text-muted-foreground">({transaction.ticker})</span>
-      <Badge variant={typeVariant}>{typeLabel}</Badge>
+      <Badge
+        variant="secondary"
+        className={tradeTypeBadgeClassName(transaction.type)}
+      >
+        {typeLabel}
+      </Badge>
     </div>
   );
 
@@ -154,6 +161,7 @@ export function TransactionEditDialog({
           inputMode="numeric"
           step="any"
           min="0"
+          className={composerFieldClassName}
           {...register("quantity")}
         />
         {errors.quantity && (
@@ -172,6 +180,7 @@ export function TransactionEditDialog({
           inputMode="decimal"
           step="any"
           min="0"
+          className={composerFieldClassName}
           {...register("price")}
         />
         {errors.price && (
@@ -184,6 +193,7 @@ export function TransactionEditDialog({
         <Label htmlFor="transactedAt">거래일</Label>
         <DatePickerInput
           id="transactedAt"
+          className={composerFieldClassName}
           value={watchTransactedAt ?? ""}
           onChange={(v) =>
             setValue("transactedAt", v, { shouldValidate: true })
@@ -203,6 +213,7 @@ export function TransactionEditDialog({
         variant="inline"
         placeholder="계좌 선택"
         allowClear={true}
+        triggerClassName={composerFieldClassName}
         ownerId={transaction.owner.id}
       />
 
@@ -213,6 +224,7 @@ export function TransactionEditDialog({
           id="memo"
           placeholder="메모를 입력하세요"
           rows={2}
+          className={cn(composerFieldClassName, "resize-none")}
           {...register("memo")}
         />
         {errors.memo && (
