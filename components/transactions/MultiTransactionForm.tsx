@@ -174,9 +174,6 @@ export function MultiTransactionForm({
     data: MultiTransactionFormData,
   ): CreateBatchTransactionInput => {
     return {
-      type: data.type,
-      transactedAt: new Date(data.transactedAt).toISOString(),
-      accountId: data.accountId,
       items: data.items.map((item) => {
         const itemTransactedAt = item.transactedAt
           ? item.transactedAt.includes("T")
@@ -185,6 +182,7 @@ export function MultiTransactionForm({
           : new Date(data.transactedAt).toISOString();
 
         return {
+          type: data.type,
           ticker: item.stock!.code,
           quantity: Number(item.quantity),
           price: Number(item.price),

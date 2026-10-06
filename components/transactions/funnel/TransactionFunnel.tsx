@@ -60,15 +60,16 @@ export function TransactionFunnel({ defaultDate }: TransactionFunnelProps) {
       return;
     }
 
+    const transactedAt = new Date(context.transactedAt).toISOString();
     const input: CreateBatchTransactionInput = {
-      type: context.type,
-      transactedAt: new Date(context.transactedAt).toISOString(),
-      accountId: context.accountId,
       items: validItems.map((item) => ({
+        type: context.type,
         ticker: item.stock!.code,
         quantity: Number(item.quantity),
         price: Number(item.price) || 0,
         memo: item.memo || undefined,
+        transactedAt,
+        accountId: context.accountId,
         stock: {
           name: item.stock!.name,
           market: item.stock!.market,

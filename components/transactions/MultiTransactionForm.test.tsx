@@ -299,11 +299,9 @@ describe("MultiTransactionForm", () => {
 
     await waitFor(() => expect(mocks.mutateAsync).toHaveBeenCalledTimes(1));
     expect(mocks.mutateAsync).toHaveBeenCalledWith({
-      type: "buy",
-      transactedAt: new Date("2026-10-02").toISOString(),
-      accountId: "global-account",
       items: [
         {
+          type: "buy",
           ticker: "005930",
           quantity: 1.5,
           price: 0,
@@ -318,6 +316,7 @@ describe("MultiTransactionForm", () => {
           },
         },
         {
+          type: "buy",
           ticker: "AAPL",
           quantity: 2.25,
           price: 123.45,
