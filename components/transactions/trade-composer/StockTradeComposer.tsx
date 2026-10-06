@@ -8,7 +8,6 @@ import { ComposerExitDialog } from "@/components/composer/ComposerExitDialog";
 import { useComposerBack } from "@/components/composer/use-composer-back";
 import { useComposerExitGuard } from "@/components/composer/use-composer-exit-guard";
 import { useIdempotentRequestId } from "@/components/composer/use-idempotent-request-id";
-import { MultiTransactionFormWrapper } from "@/components/transactions/MultiTransactionFormWrapper";
 import { useAccounts } from "@/hooks/use-accounts";
 import { useCurrentUserId } from "@/hooks/use-current-user";
 import { useMediaQuery } from "@/hooks/use-media-query";
@@ -23,6 +22,7 @@ import {
   type StockTradeComposerValues,
   stockTradeComposerSchema,
 } from "@/schemas/stock-trade-composer";
+import { DesktopStockTradeComposer } from "./DesktopStockTradeComposer";
 import {
   MobileStockTradeFunnel,
   STOCK_TRADE_COMPOSER_FUNNEL_ID,
@@ -88,17 +88,16 @@ export function StockTradeComposer({
     setInitialized(true);
   }, [initialized, loading, form, initialDate, firstAccountId]);
 
-  const isMobile = viewportKnown && !isDesktop;
   const { requestExit, leaveAfterSave, exitDialog } = useComposerExitGuard({
     sentinelPrefix: "stock-trade-composer",
     funnelId: STOCK_TRADE_COMPOSER_FUNNEL_ID,
     origin,
     isDirty: form.formState.isDirty,
-    isActive: initialized && isMobile,
+    isActive: initialized && viewportKnown,
     getPopFocusTarget: () =>
       document.querySelector<HTMLElement>('[aria-label="수량 1"]'),
   });
-  // 데스크톱(태블릿 폭)은 아직 예전 입력이라 헤더 뒤로가기는 바로 나간다.
+  // 데스크톱(태블릿 폭)은 단계가 없어 헤더 뒤로가기가 곧 이탈 요청이다.
   useComposerBack(() => requestExit(), viewportKnown && isDesktop);
 
   const save = async () => {
@@ -129,26 +128,29 @@ export function StockTradeComposer({
     }
   };
 
-  if (!viewportKnown) return <ComposerSkeleton />;
-  if (isDesktop)
-    return (
-      <MultiTransactionFormWrapper
-        mode={mode}
-        defaultDate={mode === "daily" ? initialDate : undefined}
-      />
-    );
-  if (!initialized) return <ComposerSkeleton />;
+  if (!viewportKnown || !initialized) return <ComposerSkeleton />;
 
   return (
     <FormProvider {...form}>
       <div className="w-full bg-background text-foreground">
-        <MobileStockTradeFunnel
-          itemsArray={itemsArray}
-          ownerId={userId ?? ""}
-          onSave={save}
-          isSaving={isSaving}
-          onExit={() => requestExit()}
-        />
+        {isDesktop ? (
+          <DesktopStockTradeComposer
+            itemsArray={itemsArray}
+            ownerId={userId ?? ""}
+            initialDate={initialDate}
+            defaultAccountId={firstAccountId}
+            onSave={save}
+            isSaving={isSaving}
+          />
+        ) : (
+          <MobileStockTradeFunnel
+            itemsArray={itemsArray}
+            ownerId={userId ?? ""}
+            onSave={save}
+            isSaving={isSaving}
+            onExit={() => requestExit()}
+          />
+        )}
       </div>
       <ComposerExitDialog {...exitDialog} />
     </FormProvider>
