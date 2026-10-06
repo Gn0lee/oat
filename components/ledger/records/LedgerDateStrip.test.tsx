@@ -163,6 +163,34 @@ describe("LedgerDateStrip", () => {
     expect(dayButtons()).toHaveLength(7);
   });
 
+  it("펼친 달력에서 날짜를 누르면 접히고 그 날짜를 알린다", () => {
+    const { onSelect } = renderStrip();
+    fireEvent.click(screen.getByRole("button", { name: "월간 달력 펼치기" }));
+    fireEvent.click(screen.getByRole("button", { name: /^10월 20일/ }));
+
+    expect(onSelect).toHaveBeenCalledWith("2026-10-20");
+    expect(dayButtons()).toHaveLength(7);
+    expect(
+      screen.getByRole("button", { name: "월간 달력 펼치기" }),
+    ).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("펼친 달력 바깥의 흐린 가림막을 누르면 날짜를 바꾸지 않고 접힌다", () => {
+    const { onSelect } = renderStrip();
+    expect(
+      screen.queryByRole("button", { name: "달력 닫기" }),
+    ).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "월간 달력 펼치기" }));
+
+    fireEvent.click(screen.getByRole("button", { name: "달력 닫기" }));
+
+    expect(onSelect).not.toHaveBeenCalled();
+    expect(dayButtons()).toHaveLength(7);
+    expect(
+      screen.queryByRole("button", { name: "달력 닫기" }),
+    ).not.toBeInTheDocument();
+  });
+
   it("날짜와 토글 버튼은 44px 이상이다", () => {
     renderStrip();
     for (const button of screen.getAllByRole("button")) {

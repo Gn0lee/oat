@@ -35,11 +35,18 @@ vi.mock("./LedgerDateStrip", () => ({
     ...props
   }: {
     onSelect: (date: string) => void;
+    selectedDate: string;
   }) => (
-    <div data-testid="date-strip" data-props={Object.keys(props).join(",")}>
-      <button type="button" onClick={() => onSelect("2026-06-17")}>
-        다음 날짜 선택
-      </button>
+    <div
+      data-testid="date-strip"
+      data-selected={props.selectedDate}
+      data-props={Object.keys(props).join(",")}
+    >
+      {["2026-06-14", "2026-06-17"].map((date) => (
+        <button key={date} type="button" onClick={() => onSelect(date)}>
+          {date} 선택
+        </button>
+      ))}
     </div>
   ),
 }));
@@ -78,19 +85,37 @@ const entry = {
   createdAt: "",
   updatedAt: "",
 } satisfies LedgerEntryWithDetails;
-function renderRecords() {
+function renderRecords(initialDate = "2026-06-16") {
   return render(
     <QueryClientProvider
       client={
         new QueryClient({ defaultOptions: { queries: { retry: false } } })
       }
     >
-      <LedgerRecordsClient initialDate="2026-06-16" />
+      <div data-testid="scroller" style={{ overflowY: "scroll" }}>
+        <LedgerRecordsClient initialDate={initialDate} />
+      </div>
     </QueryClientProvider>,
   );
 }
+const scrollIntoView = vi.fn();
+const scrollTo = vi.fn();
+function scrolledSections() {
+  return scrollIntoView.mock.contexts as HTMLElement[];
+}
+function dayHeadings() {
+  return screen
+    .getAllByRole("heading", { level: 3 })
+    .map((heading) => heading.textContent);
+}
+function section(name: string) {
+  return screen.getByRole("heading", { level: 3, name }).closest("section");
+}
 beforeEach(() => {
   vi.clearAllMocks();
+  Element.prototype.scrollIntoView = scrollIntoView;
+  Element.prototype.scrollTo = scrollTo as never;
+  vi.spyOn(window.history, "replaceState").mockImplementation(() => {});
   state.search = "date=2026-06-16";
   ledgerIdentity.userId = "user";
   ledgerIdentity.householdId = "household";
@@ -160,30 +185,177 @@ describe("LedgerRecordsClient", () => {
     expect(screen.queryByText("잔액")).not.toBeInTheDocument();
   });
 
-  it("lists the selected day then earlier days of the month, newest first", () => {
+  it("lists every day of the month with records as headers, newest first", () => {
     vi.mocked(useLedgerEntries).mockReturnValue({
       data: [laterEntry, entry, earlierEntry],
       isLoading: false,
     } as never);
     renderRecords();
-    const headings = screen
-      .getAllByRole("heading", { level: 3 })
-      .map((heading) => heading.textContent);
-    expect(headings).toEqual(["16일 화요일", "14일 일요일"]);
-    expect(screen.queryByText("나중 기록")).not.toBeInTheDocument();
+    expect(dayHeadings()).toEqual([
+      "20일 토요일",
+      "16일 화요일",
+      "14일 일요일",
+    ]);
+    expect(screen.getByRole("link", { name: /나중 기록/ })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /지난 기록/ })).toBeInTheDocument();
+    expect(screen.queryByText("기록이 없어요")).not.toBeInTheDocument();
   });
 
-  it("keeps the selected day heading with an empty line when it has no records", () => {
+  it("shows an empty-state guide for a month without records", () => {
     vi.mocked(useLedgerEntries).mockReturnValue({
-      data: [earlierEntry],
+      data: [],
       isLoading: false,
     } as never);
     renderRecords();
-    expect(
-      screen.getByRole("heading", { level: 3, name: "16일 화요일" }),
-    ).toBeInTheDocument();
-    expect(screen.getByText("기록이 없어요")).toBeInTheDocument();
+    expect(screen.getByText("6월 기록이 없어요")).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { level: 3 })).toBeNull();
+  });
+
+  it("entering with a date scrolls to that day's header", () => {
+    vi.mocked(useLedgerEntries).mockReturnValue({
+      data: [laterEntry, entry, earlierEntry],
+      isLoading: false,
+    } as never);
+    renderRecords();
+    expect(scrolledSections()).toEqual([section("16일 화요일")]);
+    expect(screen.getByTestId("date-strip")).toHaveAttribute(
+      "data-selected",
+      "2026-06-16",
+    );
+  });
+
+  it("entering without a date starts at the top and selects the newest day", () => {
+    state.search = "";
+    vi.mocked(useLedgerEntries).mockReturnValue({
+      data: [laterEntry, entry, earlierEntry],
+      isLoading: false,
+    } as never);
+    renderRecords();
+    expect(scrollIntoView).not.toHaveBeenCalled();
+    expect(screen.getByTestId("date-strip")).toHaveAttribute(
+      "data-selected",
+      "2026-06-20",
+    );
+    expect(screen.getByRole("link", { name: "기록 추가" })).toHaveAttribute(
+      "href",
+      "/ledger/records/new/daily?date=2026-06-20",
+    );
+  });
+
+  it("opens the month in the URL and selects its anchor day when it has no records", () => {
+    state.search = "month=2026-05";
+    vi.mocked(useLedgerEntries).mockReturnValue({
+      data: [],
+      isLoading: false,
+    } as never);
+    renderRecords();
+    expect(useLedgerEntries).toHaveBeenCalledWith(
+      expect.objectContaining({ year: 2026, month: 5 }),
+    );
+    expect(screen.getByText("5월 기록이 없어요")).toBeInTheDocument();
+    expect(screen.getByTestId("date-strip")).toHaveAttribute(
+      "data-selected",
+      "2026-05-31",
+    );
+    expect(screen.getByRole("link", { name: "기록 추가" })).toHaveAttribute(
+      "href",
+      "/ledger/records/new/daily?date=2026-05-31",
+    );
+  });
+
+  it("selects an entered date without records but adds no empty section", () => {
+    state.search = "date=2026-06-17";
+    vi.mocked(useLedgerEntries).mockReturnValue({
+      data: [laterEntry, entry, earlierEntry],
+      isLoading: false,
+    } as never);
+    renderRecords();
+    expect(screen.getByTestId("date-strip")).toHaveAttribute(
+      "data-selected",
+      "2026-06-17",
+    );
+    expect(dayHeadings()).toEqual([
+      "20일 토요일",
+      "16일 화요일",
+      "14일 일요일",
+    ]);
+    expect(scrollIntoView).not.toHaveBeenCalled();
+  });
+
+  it("tapping a date scrolls to its header and updates the date without navigating", async () => {
+    vi.mocked(useLedgerEntries).mockReturnValue({
+      data: [laterEntry, entry, earlierEntry],
+      isLoading: false,
+    } as never);
+    renderRecords();
+    scrollIntoView.mockClear();
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "2026-06-14 선택" }),
+    );
+
+    expect(scrolledSections()).toEqual([section("14일 일요일")]);
+    expect(window.history.replaceState).toHaveBeenLastCalledWith(
+      null,
+      "",
+      "/ledger/records?date=2026-06-14",
+    );
+    expect(replace).not.toHaveBeenCalled();
+    expect(push).not.toHaveBeenCalled();
+    expect(screen.getByTestId("date-strip")).toHaveAttribute(
+      "data-selected",
+      "2026-06-14",
+    );
+    expect(screen.getByRole("link", { name: "기록 추가" })).toHaveAttribute(
+      "href",
+      "/ledger/records/new/daily?date=2026-06-14",
+    );
+  });
+
+  it("tapping a day without records inserts a temporary empty section in place until another day is tapped", async () => {
+    vi.mocked(useLedgerEntries).mockReturnValue({
+      data: [laterEntry, entry, earlierEntry],
+      isLoading: false,
+    } as never);
+    renderRecords();
+    scrollIntoView.mockClear();
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "2026-06-17 선택" }),
+    );
+
+    expect(dayHeadings()).toEqual([
+      "20일 토요일",
+      "17일 수요일",
+      "16일 화요일",
+      "14일 일요일",
+    ]);
+    expect(section("17일 수요일")).toHaveTextContent("기록이 없어요");
+    expect(scrolledSections()).toEqual([section("17일 수요일")]);
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "2026-06-14 선택" }),
+    );
+
+    expect(dayHeadings()).toEqual([
+      "20일 토요일",
+      "16일 화요일",
+      "14일 일요일",
+    ]);
+    expect(screen.queryByText("기록이 없어요")).not.toBeInTheDocument();
+  });
+
+  it("tapping a day in an empty month shows only that day's empty section", async () => {
+    vi.mocked(useLedgerEntries).mockReturnValue({
+      data: [],
+      isLoading: false,
+    } as never);
+    renderRecords();
+    await userEvent.click(
+      screen.getByRole("button", { name: "2026-06-17 선택" }),
+    );
+    expect(dayHeadings()).toEqual(["17일 수요일"]);
+    expect(screen.queryByText("6월 기록이 없어요")).not.toBeInTheDocument();
   });
 
   it("whole scope rows show the book name", () => {
@@ -219,8 +391,8 @@ describe("LedgerRecordsClient", () => {
     );
   });
 
-  it("selecting a book chip keeps the screen and drops the date", async () => {
-    state.search = "date=2026-06-16&view=month";
+  it("selecting a book chip keeps the screen and drops the date and month", async () => {
+    state.search = "date=2026-06-16&month=2026-06&view=month";
     renderRecords();
     await userEvent.click(screen.getByRole("button", { name: "여행비" }));
     expect(push).toHaveBeenCalledWith("/ledger/records?book=book-1");
@@ -244,16 +416,41 @@ describe("LedgerRecordsClient", () => {
     expect(push).not.toHaveBeenCalled();
   });
 
-  it("month arrows move to the last day of that month (today in the current month)", async () => {
+  it("month arrows replace the URL with that month, drop the date and scroll to the top", async () => {
+    state.search = "book=book-1&date=2026-06-16&type=expense";
+    vi.mocked(useLedgerBook).mockReturnValue({
+      data: book,
+      isPending: false,
+    } as never);
     renderRecords();
     await userEvent.click(screen.getByRole("button", { name: "이전 달" }));
-    expect(replace).toHaveBeenLastCalledWith("/ledger/records?date=2026-05-31");
-    await userEvent.click(screen.getByRole("button", { name: "다음 달" }));
-    expect(replace).toHaveBeenLastCalledWith("/ledger/records?date=2026-07-31");
-    await userEvent.click(
-      screen.getByRole("button", { name: "5월 기록 보기" }),
+    expect(replace).toHaveBeenLastCalledWith(
+      "/ledger/records?book=book-1&type=expense&month=2026-05",
+      { scroll: false },
     );
-    expect(replace).toHaveBeenLastCalledWith("/ledger/records?date=2026-05-31");
+    expect(scrollTo.mock.contexts.at(-1)).toBe(screen.getByTestId("scroller"));
+    expect(scrollTo).toHaveBeenLastCalledWith({ top: 0 });
+    await userEvent.click(screen.getByRole("button", { name: "다음 달" }));
+    expect(replace).toHaveBeenLastCalledWith(
+      "/ledger/records?book=book-1&type=expense&month=2026-07",
+      { scroll: false },
+    );
+    expect(push).not.toHaveBeenCalled();
+  });
+
+  it("month arrows cross the year boundary from a month-only URL", async () => {
+    state.search = "month=2026-01";
+    renderRecords();
+    await userEvent.click(screen.getByRole("button", { name: "이전 달" }));
+    expect(replace).toHaveBeenLastCalledWith("/ledger/records?month=2025-12", {
+      scroll: false,
+    });
+  });
+
+  it("has no bottom add or previous-month buttons", () => {
+    renderRecords();
+    expect(screen.getAllByRole("link", { name: /기록 추가/ })).toHaveLength(1);
+    expect(screen.queryByRole("button", { name: /월 기록 보기/ })).toBeNull();
   });
 
   it("ignores a legacy view param and never writes view to the URL", async () => {
@@ -264,14 +461,20 @@ describe("LedgerRecordsClient", () => {
       "selectedDate,today,entriesByDate",
     );
     await userEvent.click(
-      screen.getByRole("button", { name: "다음 날짜 선택" }),
+      screen.getByRole("button", { name: "2026-06-17 선택" }),
     );
-    expect(replace).toHaveBeenLastCalledWith("/ledger/records?date=2026-06-17");
+    expect(window.history.replaceState).toHaveBeenLastCalledWith(
+      null,
+      "",
+      "/ledger/records?date=2026-06-17",
+    );
     await userEvent.click(screen.getByRole("button", { name: "이전 달" }));
-    expect(replace).toHaveBeenLastCalledWith("/ledger/records?date=2026-05-31");
+    expect(replace).toHaveBeenLastCalledWith("/ledger/records?month=2026-05", {
+      scroll: false,
+    });
   });
 
-  it("specific active non-default book exposes creation scoped to that book", () => {
+  it("specific active non-default book exposes the floating add button scoped to that book", () => {
     state.search = "book=book-1&date=2026-06-16";
     vi.mocked(useLedgerBook).mockReturnValue({
       data: book,
@@ -287,10 +490,13 @@ describe("LedgerRecordsClient", () => {
       "href",
       "/ledger/books/book-1?returnTo=%2Fledger%2Frecords%3Fbook%3Dbook-1%26date%3D2026-06-16",
     );
-    expect(screen.getByRole("link", { name: /기록 추가/ })).toHaveAttribute(
+    const add = screen.getByRole("link", { name: "기록 추가" });
+    expect(add).toHaveAttribute(
       "href",
       "/ledger/records/new/daily?date=2026-06-16&book=book-1",
     );
+    expect(add).toHaveClass("fixed", "size-14", "rounded-full");
+    expect(screen.getByRole("status")).toHaveTextContent("공용 장부");
     expect(screen.getByRole("button", { name: "여행비" })).toHaveAttribute(
       "aria-pressed",
       "true",
@@ -305,6 +511,9 @@ describe("LedgerRecordsClient", () => {
     } as never);
     renderRecords();
     expect(screen.getByRole("status")).toHaveTextContent("읽기 전용");
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "기록을 바꾸려면 장부 관리에서 다시 활성화해주세요.",
+    );
     expect(
       screen.queryByRole("link", { name: /기록 추가/ }),
     ).not.toBeInTheDocument();
@@ -323,33 +532,49 @@ describe("LedgerRecordsClient", () => {
       screen.getByRole("link", { name: "전체 장부로 이동" }),
     ).toHaveAttribute("href", "/ledger/records");
     expect(screen.queryByText("여행 기록")).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /기록 추가/ })).toBeNull();
     expect(useLedgerEntries).toHaveBeenCalledWith(
       expect.objectContaining({ enabled: false }),
     );
   });
 
-  it("date change preserves book and filters in URL", async () => {
-    state.search = "book=book-1&date=2026-06-16&categoryId=category-1";
+  it("date tap preserves book and filters in URL and drops the month", async () => {
+    state.search = "book=book-1&month=2026-06&categoryId=category-1&view=month";
     vi.mocked(useLedgerBook).mockReturnValue({
       data: book,
       isPending: false,
     } as never);
     renderRecords();
     await userEvent.click(
-      screen.getByRole("button", { name: "다음 날짜 선택" }),
+      screen.getByRole("button", { name: "2026-06-17 선택" }),
     );
-    expect(replace).toHaveBeenCalledWith(
-      "/ledger/records?book=book-1&date=2026-06-17&categoryId=category-1",
+    expect(window.history.replaceState).toHaveBeenLastCalledWith(
+      null,
+      "",
+      "/ledger/records?book=book-1&categoryId=category-1&date=2026-06-17",
     );
   });
 
-  it("falls back to the validated initial date for malformed date query values", () => {
+  it("falls back to the initial date's month for malformed date query values", () => {
     state.search = "date=2026-02-31";
     renderRecords();
 
-    expect(
-      screen.getByRole("heading", { level: 3, name: "16일 화요일" }),
-    ).toBeInTheDocument();
+    expect(useLedgerEntries).toHaveBeenCalledWith(
+      expect.objectContaining({ year: 2026, month: 6 }),
+    );
+    expect(screen.getByTestId("date-strip")).toHaveAttribute(
+      "data-selected",
+      "2026-06-16",
+    );
+  });
+
+  it("opens an archived book on the month of the server's initial date", () => {
+    state.search = "book=book-1";
+    vi.mocked(useLedgerBook).mockReturnValue({
+      data: { ...book, archivedAt: "2026-09-01Z" },
+      isPending: false,
+    } as never);
+    renderRecords("2026-06-14");
     expect(useLedgerEntries).toHaveBeenCalledWith(
       expect.objectContaining({ year: 2026, month: 6 }),
     );

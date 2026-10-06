@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   isLedgerRecordDate,
+  isLedgerRecordMonth,
   ledgerMonthAnchorDate,
   ledgerScopeHref,
   safeLedgerReturnTo,
@@ -37,6 +38,20 @@ describe("isLedgerRecordDate", () => {
     [null, false],
   ])("%s → %s", (value, expected) => {
     expect(isLedgerRecordDate(value)).toBe(expected);
+  });
+});
+
+describe("isLedgerRecordMonth", () => {
+  it.each([
+    ["2026-06", true],
+    ["2026-12", true],
+    ["2026-13", false],
+    ["2026-00", false],
+    ["2026-6", false],
+    ["2026-06-16", false],
+    [null, false],
+  ])("%s → %s", (value, expected) => {
+    expect(isLedgerRecordMonth(value)).toBe(expected);
   });
 });
 

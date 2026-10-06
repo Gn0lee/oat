@@ -121,7 +121,10 @@ export function LedgerDateStrip({
                   type="button"
                   aria-label={label}
                   aria-current={isToday ? "date" : undefined}
-                  onClick={() => onSelect(cell.key)}
+                  onClick={() => {
+                    setIsExpanded(false);
+                    onSelect(cell.key);
+                  }}
                   className="flex min-h-11 min-w-0 flex-col items-center"
                 >
                   <span
@@ -167,6 +170,17 @@ export function LedgerDateStrip({
           <ChevronDown className="size-5" />
         )}
       </button>
+      {isExpanded && (
+        // The strip sits in the records screen's sticky header; this dims
+        // everything below that header and closes the calendar on tap.
+        <button
+          type="button"
+          tabIndex={-1}
+          aria-label="달력 닫기"
+          onClick={() => setIsExpanded(false)}
+          className="absolute inset-x-0 top-full h-dvh min-h-11 cursor-default bg-black/30"
+        />
+      )}
     </div>
   );
 }
