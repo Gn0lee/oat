@@ -2,6 +2,8 @@ import { describe, expect, it, vi } from "vitest";
 import { APIError } from "./error";
 import {
   assertTransactionAccountOwnership,
+  type BatchTransactionItem,
+  createBatchTransactions,
   deleteTransaction,
   getTransactionAccountBalanceDelta,
   getTransactions,
@@ -316,5 +318,207 @@ describe("deleteTransaction", () => {
       }),
     );
     expect(deleteBuilder.delete).toHaveBeenCalled();
+  });
+});
+
+describe("createBatchTransactions", () => {
+  const accountA = "account-a";
+  const accountB = "account-b";
+
+  function createBatchSupabaseMock(holdings: Record<string, number>) {
+    const holdingQueries: Record<string, string>[] = [];
+    const insert = vi.fn((rows: Record<string, unknown>[]) => ({
+      select: vi.fn().mockResolvedValue({
+        data: rows.map((row, index) => ({ id: `tx-${index}`, ...row })),
+        error: null,
+      }),
+    }));
+
+    function createHoldingsBuilder() {
+      const filters: Record<string, string> = {};
+      const builder = {
+        select: vi.fn(() => builder),
+        eq: vi.fn((column: string, value: string) => {
+          filters[column] = value;
+          return builder;
+        }),
+        single: vi.fn(async () => {
+          holdingQueries.push({ ...filters });
+          const quantity = holdings[`${filters.ticker}:${filters.account_id}`];
+          return quantity === undefined
+            ? { data: null, error: { code: "PGRST116" } }
+            : { data: { quantity }, error: null };
+        }),
+      };
+      return builder;
+    }
+
+    function createAccountsBuilder() {
+      const filters: Record<string, string> = {};
+      const builder = {
+        select: vi.fn(() => builder),
+        eq: vi.fn((column: string, value: string) => {
+          filters[column] = value;
+          return builder;
+        }),
+        single: vi.fn(async () => ({
+          data: {
+            id: filters.id,
+            household_id: "household-1",
+            owner_id: "user-1",
+            balance: null,
+          },
+          error: null,
+        })),
+      };
+      return builder;
+    }
+
+    const supabase = {
+      from: vi.fn((table: string) => {
+        if (table === "accounts") return createAccountsBuilder();
+        if (table === "holdings") return createHoldingsBuilder();
+        if (table === "household_stock_settings") {
+          return { upsert: vi.fn().mockResolvedValue({ error: null }) };
+        }
+        return { insert };
+      }),
+    };
+
+    return { supabase, insert, holdingQueries };
+  }
+
+  function item(
+    overrides: Partial<BatchTransactionItem> = {},
+  ): BatchTransactionItem {
+    return {
+      type: "buy",
+      ticker: "005930",
+      quantity: 1,
+      price: 70000,
+      transactedAt: "2026-10-02T00:00:00.000Z",
+      accountId: accountA,
+      stock: {
+        name: "삼성전자",
+        market: "KR",
+        currency: "KRW",
+        assetType: "equity",
+      },
+      ...overrides,
+    };
+  }
+
+  it("매수와 매도가 섞인 거래를 행별 type·거래일·계좌로 저장한다", async () => {
+    const { supabase, insert } = createBatchSupabaseMock({
+      "005930:account-a": 10,
+    });
+
+    await createBatchTransactions(supabase as never, {
+      householdId: "household-1",
+      ownerId: "user-1",
+      items: [
+        item({ type: "sell", quantity: 4 }),
+        item({
+          type: "buy",
+          ticker: "AAPL",
+          price: 195.5,
+          transactedAt: "2026-10-01T00:00:00.000Z",
+          accountId: accountB,
+          memo: "리밸런싱",
+          stock: {
+            name: "Apple",
+            market: "US",
+            currency: "USD",
+            assetType: "equity",
+          },
+        }),
+      ],
+    });
+
+    expect(insert).toHaveBeenCalledWith([
+      expect.objectContaining({
+        ticker: "005930",
+        type: "sell",
+        quantity: 4,
+        transacted_at: "2026-10-02T00:00:00.000Z",
+        account_id: accountA,
+        memo: null,
+      }),
+      expect.objectContaining({
+        ticker: "AAPL",
+        type: "buy",
+        quantity: 1,
+        transacted_at: "2026-10-01T00:00:00.000Z",
+        account_id: accountB,
+        memo: "리밸런싱",
+      }),
+    ]);
+  });
+
+  it("매도 행만 (종목, 계좌)별로 보유 수량을 조회한다", async () => {
+    const { supabase, holdingQueries } = createBatchSupabaseMock({
+      "005930:account-a": 5,
+      "005930:account-b": 5,
+    });
+
+    await createBatchTransactions(supabase as never, {
+      householdId: "household-1",
+      ownerId: "user-1",
+      items: [
+        item({ type: "sell", quantity: 3, accountId: accountA }),
+        item({ type: "sell", quantity: 5, accountId: accountB }),
+        item({ type: "buy", ticker: "AAPL", quantity: 100 }),
+      ],
+    });
+
+    expect(
+      holdingQueries.map((query) => `${query.ticker}:${query.account_id}`),
+    ).toEqual(["005930:account-a", "005930:account-b"]);
+  });
+
+  it("같은 요청의 매수 행은 보유 수량에 더하지 않는다", async () => {
+    const { supabase, insert } = createBatchSupabaseMock({
+      "005930:account-a": 5,
+    });
+
+    await expect(
+      createBatchTransactions(supabase as never, {
+        householdId: "household-1",
+        ownerId: "user-1",
+        items: [
+          item({ type: "buy", quantity: 10 }),
+          item({ type: "sell", quantity: 6 }),
+        ],
+      }),
+    ).rejects.toMatchObject(
+      new APIError(
+        "INSUFFICIENT_QUANTITY",
+        "해당 계좌의 보유 수량이 부족합니다.\n삼성전자(선택한 계좌): 해당 계좌 보유 5주, 매도 6주",
+        400,
+      ),
+    );
+    expect(insert).not.toHaveBeenCalled();
+  });
+
+  it("같은 종목·계좌의 매도 행을 합산해 저장 전 보유 수량과 비교한다", async () => {
+    const { supabase, insert } = createBatchSupabaseMock({
+      "005930:account-a": 5,
+    });
+
+    await expect(
+      createBatchTransactions(supabase as never, {
+        householdId: "household-1",
+        ownerId: "user-1",
+        items: [
+          item({ type: "sell", quantity: 3 }),
+          item({ type: "sell", quantity: 3 }),
+        ],
+      }),
+    ).rejects.toMatchObject({
+      code: "INSUFFICIENT_QUANTITY",
+      message:
+        "해당 계좌의 보유 수량이 부족합니다.\n삼성전자(선택한 계좌): 해당 계좌 보유 5주, 매도 6주",
+    });
+    expect(insert).not.toHaveBeenCalled();
   });
 });

@@ -4,12 +4,30 @@ import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
+import {
+  COMPOSER_BACK_EVENT,
+  COMPOSER_CLOSE_EVENT,
+  dispatchComposerEvent,
+} from "@/components/composer/composer-events";
 import { NotificationBell } from "@/components/notifications";
 import {
   getServiceRouteMeta,
   resolveServiceParentHref,
 } from "@/constants/service-routes";
 import { cn } from "@/lib/utils/cn";
+
+const STOCK_TRADE_COMPOSER_PATHS = [
+  "/assets/stock/transactions/new/full",
+  "/assets/stock/transactions/new/daily",
+];
+
+/** 헤더 뒤로가기·닫기를 활성 컴포저에 맡기는 화면 */
+function isComposerPath(pathname: string) {
+  return (
+    pathname.startsWith("/ledger/records/new/") ||
+    STOCK_TRADE_COMPOSER_PATHS.includes(pathname)
+  );
+}
 
 // The records screen's mobile header scrolls away with the list, so it is
 // rendered inside the layout's scroll container instead of above it.
@@ -45,13 +63,13 @@ export function ServiceHeader({
       fallback={
         <MobileServiceHeader
           meta={meta}
-          isLedgerComposer={pathname.startsWith("/ledger/records/new/")}
+          isComposer={isComposerPath(pathname)}
         />
       }
     >
       <MobileServiceHeaderWithQuery
         meta={meta}
-        isLedgerComposer={pathname.startsWith("/ledger/records/new/")}
+        isComposer={isComposerPath(pathname)}
       />
     </Suspense>
   );
@@ -59,10 +77,10 @@ export function ServiceHeader({
 
 function MobileServiceHeaderWithQuery({
   meta,
-  isLedgerComposer,
+  isComposer,
 }: {
   meta: ReturnType<typeof getServiceRouteMeta>;
-  isLedgerComposer: boolean;
+  isComposer: boolean;
 }) {
   const searchParams = useSearchParams();
   const parentHref = resolveServiceParentHref({
@@ -73,7 +91,7 @@ function MobileServiceHeaderWithQuery({
     <MobileServiceHeader
       meta={meta}
       parentHref={parentHref}
-      isLedgerComposer={isLedgerComposer}
+      isComposer={isComposer}
     />
   );
 }
@@ -81,11 +99,11 @@ function MobileServiceHeaderWithQuery({
 function MobileServiceHeader({
   meta,
   parentHref,
-  isLedgerComposer = false,
+  isComposer = false,
 }: {
   meta: ReturnType<typeof getServiceRouteMeta>;
   parentHref?: string;
-  isLedgerComposer?: boolean;
+  isComposer?: boolean;
 }) {
   if (!meta) {
     return null;
@@ -104,16 +122,10 @@ function MobileServiceHeader({
 
   return (
     <header className="absolute inset-x-0 top-0 z-50 bg-gray-50/80 backdrop-blur-md h-14 px-1 flex items-center lg:hidden">
-      {isLedgerComposer ? (
+      {isComposer ? (
         <IconButton
           label="이전 화면으로 이동"
-          onClick={() => {
-            window.dispatchEvent(
-              new CustomEvent("oat:ledger-composer-back", {
-                detail: { trigger: document.activeElement },
-              }),
-            );
-          }}
+          onClick={() => dispatchComposerEvent(COMPOSER_BACK_EVENT)}
           className="shrink-0"
         >
           <ChevronLeft className="size-6" />
@@ -130,16 +142,10 @@ function MobileServiceHeader({
       <h1 className="min-w-0 flex-1 truncate pr-12 text-base font-semibold text-gray-900">
         {meta.label}
       </h1>
-      {isLedgerComposer ? (
+      {isComposer ? (
         <IconButton
           label="작업 닫기"
-          onClick={() => {
-            window.dispatchEvent(
-              new CustomEvent("oat:ledger-composer-close", {
-                detail: { trigger: document.activeElement },
-              }),
-            );
-          }}
+          onClick={() => dispatchComposerEvent(COMPOSER_CLOSE_EVENT)}
           className="absolute right-1"
         >
           <X className="size-5" />

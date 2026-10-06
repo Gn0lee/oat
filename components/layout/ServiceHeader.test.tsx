@@ -96,8 +96,8 @@ describe("ServiceHeader", () => {
     navigationState.pathname = "/ledger/records/new/daily";
     const onBack = vi.fn();
     const onClose = vi.fn();
-    window.addEventListener("oat:ledger-composer-back", onBack);
-    window.addEventListener("oat:ledger-composer-close", onClose);
+    window.addEventListener("oat:composer-back", onBack);
+    window.addEventListener("oat:composer-close", onClose);
 
     renderServiceHeader("mobile");
     fireEvent.click(screen.getByLabelText("이전 화면으로 이동"));
@@ -105,9 +105,32 @@ describe("ServiceHeader", () => {
 
     expect(onBack).toHaveBeenCalledOnce();
     expect(onClose).toHaveBeenCalledOnce();
-    window.removeEventListener("oat:ledger-composer-back", onBack);
-    window.removeEventListener("oat:ledger-composer-close", onClose);
+    window.removeEventListener("oat:composer-back", onBack);
+    window.removeEventListener("oat:composer-close", onClose);
   });
+
+  it.each([
+    "/assets/stock/transactions/new/full",
+    "/assets/stock/transactions/new/daily",
+  ])(
+    "stock trade composer back and close actions are delegated to the active task (%s)",
+    (pathname) => {
+      navigationState.pathname = pathname;
+      const onBack = vi.fn();
+      const onClose = vi.fn();
+      window.addEventListener("oat:composer-back", onBack);
+      window.addEventListener("oat:composer-close", onClose);
+
+      renderServiceHeader("mobile");
+      fireEvent.click(screen.getByLabelText("이전 화면으로 이동"));
+      fireEvent.click(screen.getByLabelText("작업 닫기"));
+
+      expect(onBack).toHaveBeenCalledOnce();
+      expect(onClose).toHaveBeenCalledOnce();
+      window.removeEventListener("oat:composer-back", onBack);
+      window.removeEventListener("oat:composer-close", onClose);
+    },
+  );
 
   it("ledger analysis 하위 화면의 장부·기간 쿼리를 back href에 유지한다", async () => {
     navigationState.pathname = "/ledger/analysis/by-category";

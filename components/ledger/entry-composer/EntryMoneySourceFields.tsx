@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
+import { composerFieldClassName } from "@/components/composer/field-styles";
 import {
   getLedgerMoneySourceLabel,
   LedgerMoneySourceCombobox,
@@ -21,7 +22,6 @@ import { useLedgerBooks } from "@/hooks/use-ledger-books";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { usePaymentMethods } from "@/hooks/use-payment-methods";
 import type { LedgerComposerValues } from "@/schemas/ledger-composer";
-import { ledgerFieldClassName } from "./field-styles";
 
 type Picker = "source" | "from" | "to" | null;
 export function EntryMoneySourceFields({ index }: { index: number }) {
@@ -127,7 +127,7 @@ export function EntryMoneySourceFields({ index }: { index: number }) {
             ownerId={userId}
             isShared={isShared}
             placeholder={sourcePlaceholder}
-            className={ledgerFieldClassName}
+            className={composerFieldClassName}
             aria-label={sourceLabel}
             onValueChange={(value) => setSource(value, "source")}
           />
@@ -137,7 +137,7 @@ export function EntryMoneySourceFields({ index }: { index: number }) {
               ref={(node) => {
                 triggerRefs.current.source = node;
               }}
-              className={ledgerFieldClassName}
+              className={composerFieldClassName}
               aria-label={sourceLabel}
               aria-invalid={Boolean(sourceError)}
               aria-describedby={sourceError ? `source-error-${row}` : undefined}
@@ -227,7 +227,7 @@ export function EntryMoneySourceFields({ index }: { index: number }) {
                 includeClearOption={false}
                 excludedValues={excludedValues}
                 placeholder="선택"
-                className={ledgerFieldClassName}
+                className={composerFieldClassName}
                 aria-label={name}
                 onValueChange={(next) => setSource(next, field)}
               />
@@ -237,7 +237,7 @@ export function EntryMoneySourceFields({ index }: { index: number }) {
                   ref={(node) => {
                     triggerRefs.current[field] = node;
                   }}
-                  className={ledgerFieldClassName}
+                  className={composerFieldClassName}
                   aria-label={name}
                   aria-invalid={Boolean(fieldError)}
                   aria-describedby={

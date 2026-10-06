@@ -138,11 +138,11 @@ describe("transaction routes stock notifications", () => {
 
     await postBatchTransactions(
       createJsonRequest({
-        type: "buy",
-        transactedAt: "2026-06-03T03:00:00.000Z",
-        accountId,
         items: [
           {
+            type: "buy",
+            transactedAt: "2026-06-03T03:00:00.000Z",
+            accountId,
             ticker: "AAPL",
             quantity: 3,
             price: 195.5,

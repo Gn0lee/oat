@@ -4,6 +4,7 @@ import { ChevronsUpDownIcon } from "lucide-react";
 import type { ComponentPropsWithoutRef } from "react";
 import { forwardRef, useEffect, useRef, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
+import { composerFieldClassName } from "@/components/composer/field-styles";
 import { LedgerBookPickerPanel } from "@/components/ledger/LedgerBookPickerPanel";
 import { Button } from "@/components/ui/button";
 import { DatePickerInput } from "@/components/ui/date-picker";
@@ -23,7 +24,6 @@ import { useLedgerBooks } from "@/hooks/use-ledger-books";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { cn } from "@/lib/utils/cn";
 import type { LedgerComposerValues } from "@/schemas/ledger-composer";
-import { ledgerFieldClassName } from "./field-styles";
 
 const BOOK_PLACEHOLDER = "장부 선택";
 
@@ -82,7 +82,7 @@ export function EntryDateBookFields({ index }: { index: number }) {
   };
   const bookTriggerProps = {
     id: `entry-book-${rowNumber}`,
-    className: ledgerFieldClassName,
+    className: composerFieldClassName,
     "aria-label": `장부 ${rowNumber}`,
     label: book
       ? `${book.name}${book.archivedAt ? " (보관됨)" : ""}`
@@ -107,7 +107,7 @@ export function EntryDateBookFields({ index }: { index: number }) {
         <DatePickerInput
           id={`entry-date-${rowNumber}`}
           aria-label={`날짜 ${rowNumber}`}
-          className={ledgerFieldClassName}
+          className={composerFieldClassName}
           value={item.transactedAt}
           onChange={(value) =>
             form.setValue(`items.${index}.transactedAt`, value, {

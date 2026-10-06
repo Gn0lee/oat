@@ -3,6 +3,7 @@
 import { ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
+import { ComposerActionBar } from "@/components/composer/ComposerActionBar";
 import { getLedgerMoneySourceLabel } from "@/components/ledger/LedgerMoneySourceCombobox";
 import { Button } from "@/components/ui/button";
 import { useAccounts } from "@/hooks/use-accounts";
@@ -14,7 +15,6 @@ import type {
   LedgerComposerItem,
   LedgerComposerValues,
 } from "@/schemas/ledger-composer";
-import { ComposerActionBar } from "./ComposerActionBar";
 import { ComposerMemoField } from "./ComposerMemoField";
 
 interface EntryReviewStepProps {

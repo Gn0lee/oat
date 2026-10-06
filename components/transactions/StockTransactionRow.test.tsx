@@ -56,4 +56,19 @@ describe("StockTransactionRow", () => {
     expect(chevron).toBeInTheDocument();
     expect(chevron.parentElement).not.toContain(amountText);
   });
+
+  it("매수는 빨강, 매도는 파랑으로 구분한다", () => {
+    const { rerender } = render(
+      <StockTransactionRow href="/t/1" transaction={mockTransaction} />,
+    );
+    expect(screen.getByText("매수")).toHaveClass("text-[#F04452]");
+
+    rerender(
+      <StockTransactionRow
+        href="/t/1"
+        transaction={{ ...mockTransaction, type: "sell" }}
+      />,
+    );
+    expect(screen.getByText("매도")).toHaveClass("text-[#3182F6]");
+  });
 });

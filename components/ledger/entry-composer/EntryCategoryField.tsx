@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
+import { composerFieldClassName } from "@/components/composer/field-styles";
 import {
   LedgerCategoryCombobox,
   LedgerCategoryPickerPanel,
@@ -17,7 +18,6 @@ import { Label } from "@/components/ui/label";
 import { useCategories } from "@/hooks/use-categories";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import type { LedgerComposerValues } from "@/schemas/ledger-composer";
-import { ledgerFieldClassName } from "./field-styles";
 
 export function EntryCategoryField({ index }: { index: number }) {
   const form = useFormContext<LedgerComposerValues>();
@@ -55,7 +55,7 @@ export function EntryCategoryField({ index }: { index: number }) {
           categories={categories}
           type={type}
           placeholder="카테고리 선택"
-          className={ledgerFieldClassName}
+          className={composerFieldClassName}
           aria-label={`카테고리 ${rowNumber}`}
           onValueChange={selectCategory}
         />
@@ -63,7 +63,7 @@ export function EntryCategoryField({ index }: { index: number }) {
         <>
           <LedgerCategoryTrigger
             ref={triggerRef}
-            className={ledgerFieldClassName}
+            className={composerFieldClassName}
             aria-label={`카테고리 ${rowNumber}`}
             aria-invalid={Boolean(error)}
             aria-describedby={error ? `category-error-${rowNumber}` : undefined}

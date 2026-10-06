@@ -57,6 +57,7 @@ interface AccountSelectorProps<T extends FieldValues> {
   allowClear?: boolean;
   ownerId?: string | null;
   onChange?: (value: string) => void;
+  triggerClassName?: string;
 }
 
 interface AccountSelectorTriggerProps
@@ -327,6 +328,7 @@ export function AccountSelector<T extends FieldValues>({
   allowClear = false,
   ownerId,
   onChange,
+  triggerClassName,
 }: AccountSelectorProps<T>) {
   const { data: allAccounts = [], isLoading } = useAccounts();
   const accounts = ownerId
@@ -459,6 +461,7 @@ export function AccountSelector<T extends FieldValues>({
             label={triggerLabel}
             placeholder={triggerPlaceholder}
             open={open}
+            className={triggerClassName}
           />
         </PopoverTrigger>
         <PopoverContent
@@ -512,6 +515,7 @@ export function AccountSelector<T extends FieldValues>({
         label={triggerLabel}
         placeholder={triggerPlaceholder}
         open={open}
+        className={triggerClassName}
         onClick={() => {
           setMobileCreateOpen(false);
           setOpen(true);

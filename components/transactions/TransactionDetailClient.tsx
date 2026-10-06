@@ -29,6 +29,7 @@ import { useCurrentUserId } from "@/hooks/use-current-user";
 import { useTransaction } from "@/hooks/use-transaction";
 import { ApiQueryError } from "@/lib/api/client";
 import { formatCurrency } from "@/lib/utils/format";
+import { tradeTypeBadgeClassName } from "@/lib/utils/trade-type-style";
 
 interface TransactionDetailClientProps {
   transactionId: string;
@@ -160,7 +161,10 @@ export function TransactionDetailClient({
                 className="mt-4 block max-w-full text-2xl font-bold leading-tight sm:text-3xl"
               />
               <div className="mt-3 flex flex-wrap gap-2">
-                <Badge variant={isBuy ? "default" : "secondary"}>
+                <Badge
+                  variant="secondary"
+                  className={tradeTypeBadgeClassName(transaction.type)}
+                >
                   {typeLabel}
                 </Badge>
                 <Badge variant="outline">{transaction.currency}</Badge>

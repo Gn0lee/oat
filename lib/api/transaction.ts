@@ -754,12 +754,13 @@ export async function deleteTransaction(
 // ============================================================================
 
 export interface BatchTransactionItem {
+  type: TransactionType;
   ticker: string;
   quantity: number;
   price: number;
   memo?: string;
-  transactedAt?: string;
-  accountId?: string;
+  transactedAt: string;
+  accountId: string;
   stock: {
     name: string;
     market: MarketType;
@@ -771,31 +772,23 @@ export interface BatchTransactionItem {
 export interface CreateBatchTransactionsParams {
   householdId: string;
   ownerId: string;
-  type: "buy" | "sell";
-  transactedAt: string;
-  accountId: string;
   items: BatchTransactionItem[];
 }
 
 /**
  * 배치 거래 생성
  * 1. 모든 종목의 stock_settings UPSERT
- * 2. 매도 시 종목별 보유 수량 검증 (같은 종목 매도 수량 누적)
+ * 2. 매도 행만 (종목, 계좌)별로 합산해 저장 전 보유 수량과 비교
+ *    (같은 요청의 매수 행은 보유 수량에 더하지 않음)
  * 3. 트랜잭션으로 일괄 INSERT
  */
 export async function createBatchTransactions(
   supabase: SupabaseClient<Database>,
   params: CreateBatchTransactionsParams,
 ): Promise<Transaction[]> {
-  const { householdId, ownerId, type, transactedAt, accountId, items } = params;
+  const { householdId, ownerId, items } = params;
 
-  const accountIds = [
-    ...new Set(
-      [accountId, ...items.map((item) => item.accountId)].filter(
-        Boolean,
-      ) as string[],
-    ),
-  ];
+  const accountIds = [...new Set(items.map((item) => item.accountId))];
   for (const targetAccountId of accountIds) {
     await assertTransactionAccountOwnership(
       supabase,
@@ -838,51 +831,50 @@ export async function createBatchTransactions(
     }
   }
 
-  // 2. 매도 시 해당 계좌의 종목별 누적 수량 검증
-  if (type === "sell") {
-    // 종목과 계좌 조합별 매도 수량 합산 (개별 계좌 override 고려)
-    const sellQuantityKeyMap = items.reduce(
-      (acc, item) => {
-        const targetAccountId = item.accountId ?? accountId;
-        const key = `${item.ticker}:${targetAccountId}`;
-        acc[key] = (acc[key] || 0) + item.quantity;
-        return acc;
-      },
-      {} as Record<string, number>,
+  // 2. 매도 행만 종목과 계좌 조합별로 합산해 저장 전 보유 수량과 비교
+  const sellQuantities = new Map<
+    string,
+    { ticker: string; accountId: string; quantity: number }
+  >();
+  for (const item of items) {
+    if (item.type !== "sell") continue;
+    const key = `${item.ticker}:${item.accountId}`;
+    const current = sellQuantities.get(key);
+    sellQuantities.set(key, {
+      ticker: item.ticker,
+      accountId: item.accountId,
+      quantity: (current?.quantity ?? 0) + item.quantity,
+    });
+  }
+
+  // 모든 초과 종목 수집
+  const insufficientStocks: string[] = [];
+
+  for (const sell of sellQuantities.values()) {
+    const currentQuantity = await getHoldingQuantity(
+      supabase,
+      householdId,
+      ownerId,
+      sell.ticker,
+      sell.accountId,
     );
 
-    // 모든 초과 종목 수집
-    const insufficientStocks: string[] = [];
-
-    for (const [key, totalSellQuantity] of Object.entries(sellQuantityKeyMap)) {
-      const [ticker, targetAccountId] = key.split(":");
-      const currentQuantity = await getHoldingQuantity(
-        supabase,
-        householdId,
-        ownerId,
-        ticker,
-        targetAccountId,
-      );
-
-      if (currentQuantity < totalSellQuantity) {
-        const stockName =
-          items.find((i) => i.ticker === ticker)?.stock.name || ticker;
-        const accountName =
-          targetAccountId === accountId ? "기본 계좌" : "선택한 계좌";
-        insufficientStocks.push(
-          `${stockName}(${accountName}): 해당 계좌 보유 ${currentQuantity}주, 매도 ${totalSellQuantity}주`,
-        );
-      }
-    }
-
-    // 초과 종목이 있으면 모두 표시
-    if (insufficientStocks.length > 0) {
-      throw new APIError(
-        "INSUFFICIENT_QUANTITY",
-        `해당 계좌의 보유 수량이 부족합니다.\n${insufficientStocks.join("\n")}`,
-        400,
+    if (currentQuantity < sell.quantity) {
+      const stockName =
+        items.find((i) => i.ticker === sell.ticker)?.stock.name || sell.ticker;
+      insufficientStocks.push(
+        `${stockName}(선택한 계좌): 해당 계좌 보유 ${currentQuantity}주, 매도 ${sell.quantity}주`,
       );
     }
+  }
+
+  // 초과 종목이 있으면 모두 표시
+  if (insufficientStocks.length > 0) {
+    throw new APIError(
+      "INSUFFICIENT_QUANTITY",
+      `해당 계좌의 보유 수량이 부족합니다.\n${insufficientStocks.join("\n")}`,
+      400,
+    );
   }
 
   // 3. 일괄 INSERT
@@ -890,17 +882,17 @@ export async function createBatchTransactions(
     household_id: householdId,
     owner_id: ownerId,
     ticker: item.ticker,
-    type,
+    type: item.type,
     quantity: item.quantity,
     price: item.price,
-    transacted_at: item.transactedAt ?? transactedAt,
+    transacted_at: item.transactedAt,
     memo: item.memo || null,
-    account_id: item.accountId ?? accountId,
+    account_id: item.accountId,
   }));
   const balanceEffects = insertData.map((item) => ({
     accountId: item.account_id,
     delta: getTransactionAccountBalanceDelta({
-      type,
+      type: item.type,
       quantity: Number(item.quantity),
       price: Number(item.price),
     }),

@@ -46,6 +46,12 @@ export const LEDGER_COMPOSER_STEP_PATHS = [
   "/ledger/records/new/daily/composer-dates-books",
   "/ledger/records/new/daily/composer-review",
 ] as const;
+export const STOCK_TRADE_COMPOSER_STEP_PATHS = [
+  "/assets/stock/transactions/new/daily/composer-basics",
+  "/assets/stock/transactions/new/daily/composer-single-details",
+  "/assets/stock/transactions/new/daily/composer-date-account",
+  "/assets/stock/transactions/new/daily/composer-review",
+] as const;
 
 export function getPageTransitionMode({
   hasMounted,
@@ -75,6 +81,12 @@ export function getPageTransitionRules(
         {
           kind: "axis",
           paths: LEDGER_COMPOSER_STEP_PATHS,
+          type: "x",
+          variant: "snappy",
+        },
+        {
+          kind: "axis",
+          paths: STOCK_TRADE_COMPOSER_STEP_PATHS,
           type: "x",
           variant: "snappy",
         },
@@ -163,6 +175,11 @@ export function getPageTransitionRules(
         { kind: "fade", paths: LEDGER_COMPOSER_STEP_PATHS, speed: "fast" },
         {
           kind: "fade",
+          paths: STOCK_TRADE_COMPOSER_STEP_PATHS,
+          speed: "fast",
+        },
+        {
+          kind: "fade",
           paths: ["/ledger", "/ledger/records/new/full"],
           speed: "fast",
         },
@@ -172,6 +189,7 @@ export function getPageTransitionRules(
       return [
         { kind: "fade", paths: TOP_LEVEL_ROUTES },
         { kind: "fade", paths: LEDGER_COMPOSER_STEP_PATHS },
+        { kind: "fade", paths: STOCK_TRADE_COMPOSER_STEP_PATHS },
         { kind: "fade", paths: ["/ledger", "/ledger/records/new/full"] },
       ];
   }

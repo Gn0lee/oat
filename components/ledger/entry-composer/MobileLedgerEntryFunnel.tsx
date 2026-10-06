@@ -1,14 +1,15 @@
 "use client";
 
 import { useFunnel } from "@use-funnel/browser";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   type UseFieldArrayReturn,
   useFormContext,
   useWatch,
 } from "react-hook-form";
 import { toast } from "sonner";
-import type { ComposerStep } from "@/lib/ledger/composer";
+import { useComposerBack } from "@/components/composer/use-composer-back";
+import { useReviewEditNavigation } from "@/components/composer/use-review-edit-navigation";
 import {
   createComposerDraft,
   getComposerStepIssues,
@@ -30,6 +31,8 @@ type ComposerNavigation = {
   EntryDatesBooks: { clientId?: string; fromReview?: boolean };
   EntryReview: Record<string, never>;
 };
+
+export const LEDGER_COMPOSER_FUNNEL_ID = "ledger-entry-composer";
 
 interface MobileLedgerEntryFunnelProps {
   itemsArray: UseFieldArrayReturn<LedgerComposerValues, "items">;
@@ -54,39 +57,21 @@ export function MobileLedgerEntryFunnel({
   const { append } = itemsArray;
   const items = useWatch({ control: form.control, name: "items" }) ?? [];
   const [ready, setReady] = useState(false);
-  const reviewFocusId = useRef<string | undefined>(undefined);
-  const clearReviewFocus = useCallback(() => {
-    reviewFocusId.current = undefined;
-  }, []);
   const funnel = useFunnel<ComposerNavigation>({
-    id: "ledger-entry-composer",
+    id: LEDGER_COMPOSER_FUNNEL_ID,
     initial: { step: "EntryBasics", context: {} },
   });
   const resetHistory = useRef(funnel.history.replace);
-
-  const pushEditStep = (step: ComposerStep, clientId?: string) => {
-    if (step === "basics")
-      return funnel.history.push("EntryBasics", () => ({
-        clientId,
-        fromReview: true,
-      }));
-    if (step === "classification")
-      return funnel.history.push("EntryClassification", () => ({
-        clientId,
-        fromReview: true,
-      }));
-    if (step === "sources")
-      return funnel.history.push("EntryMoneySources", () => ({
-        clientId,
-        fromReview: true,
-      }));
-    if (step === "datesBooks")
-      return funnel.history.push("EntryDatesBooks", () => ({
-        clientId,
-        fromReview: true,
-      }));
-    return funnel.history.push("EntryReview", () => ({}));
-  };
+  const reviewEdit = useReviewEditNavigation({
+    steps: {
+      basics: "EntryBasics",
+      classification: "EntryClassification",
+      sources: "EntryMoneySources",
+      datesBooks: "EntryDatesBooks",
+    },
+    reviewStep: "EntryReview",
+    push: (step, context) => funnel.history.push(step, () => context),
+  });
 
   useEffect(() => {
     resetHistory.current("EntryBasics", () => ({}));
@@ -197,35 +182,17 @@ export function MobileLedgerEntryFunnel({
       (item) => getComposerStepIssues(item, "datesBooks").length === 0,
     );
 
-  const nextFromReviewEdit = (
-    clientId: string | undefined,
-    push: (step: ComposerStep, clientId?: string) => void,
-  ) => {
+  const nextFromReviewEdit = (clientId: string | undefined) => {
     const target = selected(clientId)[0];
     if (!target) return;
-    const missing = getMissingComposerStep(target);
-    if (
-      missing === "basics" ||
-      missing === "classification" ||
-      missing === "sources" ||
-      missing === "datesBooks"
-    ) {
-      push(missing, clientId);
-      return;
-    }
-    push("review");
+    reviewEdit.openStep(getMissingComposerStep(target), clientId);
   };
 
-  useEffect(() => {
-    const handleBack = () => {
-      if (!ready || !active) return;
-      if (funnel.index > 0) void funnel.history.back();
-      else onExit();
-    };
-    window.addEventListener("oat:ledger-composer-back", handleBack);
-    return () =>
-      window.removeEventListener("oat:ledger-composer-back", handleBack);
-  }, [active, ready, funnel.index, funnel.history, onExit]);
+  useComposerBack(() => {
+    if (!ready || !active) return;
+    if (funnel.index > 0) void funnel.history.back();
+    else onExit();
+  });
 
   if (!ready || !active) return <div hidden aria-hidden="true" />;
   const transitionSegment = {
@@ -254,9 +221,7 @@ export function MobileLedgerEntryFunnel({
                 return;
               }
               if (context.fromReview && context.clientId) {
-                nextFromReviewEdit(context.clientId, (step, clientId) =>
-                  pushEditStep(step, clientId),
-                );
+                nextFromReviewEdit(context.clientId);
                 return;
               }
               if (items.length === 1)
@@ -295,9 +260,7 @@ export function MobileLedgerEntryFunnel({
                 return;
               }
               if (context.fromReview) {
-                nextFromReviewEdit(context.clientId, (step, clientId) =>
-                  pushEditStep(step, clientId),
-                );
+                nextFromReviewEdit(context.clientId);
                 return;
               }
               history.push("EntryMoneySources", () => ({}));
@@ -312,9 +275,7 @@ export function MobileLedgerEntryFunnel({
                 return;
               }
               if (context.fromReview) {
-                nextFromReviewEdit(context.clientId, (step, clientId) =>
-                  pushEditStep(step, clientId),
-                );
+                nextFromReviewEdit(context.clientId);
                 return;
               }
               history.push("EntryDatesBooks", () => ({}));
@@ -330,9 +291,7 @@ export function MobileLedgerEntryFunnel({
                 return;
               }
               if (context.fromReview && context.clientId) {
-                nextFromReviewEdit(context.clientId, (step, clientId) =>
-                  pushEditStep(step, clientId),
-                );
+                nextFromReviewEdit(context.clientId);
                 return;
               }
               history.push("EntryReview", () => ({}));
@@ -341,12 +300,9 @@ export function MobileLedgerEntryFunnel({
         )}
         EntryReview={({ history }) => (
           <EntryReviewStep
-            focusId={reviewFocusId.current}
-            onFocusRestored={clearReviewFocus}
-            onEdit={(clientId, step, anchorId) => {
-              reviewFocusId.current = anchorId;
-              void pushEditStep(step, clientId);
-            }}
+            focusId={reviewEdit.focusId}
+            onFocusRestored={reviewEdit.clearFocus}
+            onEdit={reviewEdit.editFromReview}
             onAdd={() => {
               const clientId = crypto.randomUUID();
               append(
@@ -368,7 +324,8 @@ export function MobileLedgerEntryFunnel({
                   getMissingComposerStep(candidate),
                 );
                 const missing = item && getMissingComposerStep(item);
-                if (item && missing) pushEditStep(missing, item.clientId);
+                if (item && missing)
+                  reviewEdit.openStep(missing, item.clientId);
                 return;
               }
               onSave();
