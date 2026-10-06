@@ -6,12 +6,12 @@ import {
 
 describe("tradeTypeTextClassName", () => {
   it("매수는 빨강, 매도는 파랑이다", () => {
-    expect(tradeTypeTextClassName("buy")).toBe("text-red-600");
-    expect(tradeTypeTextClassName("sell")).toBe("text-blue-600");
+    expect(tradeTypeTextClassName("buy")).toBe("text-[#F04452]");
+    expect(tradeTypeTextClassName("sell")).toBe("text-[#3182F6]");
   });
 
   it("배지도 매수는 빨강, 매도는 파랑 계열이다", () => {
-    expect(tradeTypeBadgeClassName("buy")).toContain("text-red-600");
-    expect(tradeTypeBadgeClassName("sell")).toContain("text-blue-600");
+    expect(tradeTypeBadgeClassName("buy")).toContain("text-[#F04452]");
+    expect(tradeTypeBadgeClassName("sell")).toContain("text-[#3182F6]");
   });
 });

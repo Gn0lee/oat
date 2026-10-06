@@ -88,7 +88,7 @@ describe("TransactionDetailClient", () => {
     expect(screen.getAllByText("매수").length).toBeGreaterThan(0);
     expect(
       screen.getByText("매수", { selector: "[data-slot=badge]" }),
-    ).toHaveClass("text-red-600");
+    ).toHaveClass("text-[#F04452]");
     expect(screen.getByText("KRW")).toBeInTheDocument();
 
     // 4. 인포 로우
@@ -128,7 +128,7 @@ describe("TransactionDetailClient", () => {
 
     expect(
       screen.getByText("매도", { selector: "[data-slot=badge]" }),
-    ).toHaveClass("text-blue-600");
+    ).toHaveClass("text-[#3182F6]");
   });
 
   it("비소유자 뷰: 수정 요청/삭제 요청 버튼 렌더링", () => {

@@ -94,8 +94,8 @@ describe("StockComposerListStep", () => {
   });
 
   it.each([
-    ["buy", "매수", "text-red-600"],
-    ["sell", "매도", "text-blue-600"],
+    ["buy", "매수", "text-[#F04452]"],
+    ["sell", "매도", "text-[#3182F6]"],
   ] as const)(
     "%s 거래 행의 라벨은 %s 색(%s)으로 표시한다",
     (type, label, color) => {

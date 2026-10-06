@@ -62,6 +62,6 @@ describe("TransactionEditDialog", () => {
 
     expect(
       screen.getByText("매도", { selector: "[data-slot=badge]" }),
-    ).toHaveClass("text-blue-600");
+    ).toHaveClass("text-[#3182F6]");
   });
 });

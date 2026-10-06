@@ -61,7 +61,7 @@ describe("StockTransactionRow", () => {
     const { rerender } = render(
       <StockTransactionRow href="/t/1" transaction={mockTransaction} />,
     );
-    expect(screen.getByText("매수")).toHaveClass("text-red-600");
+    expect(screen.getByText("매수")).toHaveClass("text-[#F04452]");
 
     rerender(
       <StockTransactionRow
@@ -69,6 +69,6 @@ describe("StockTransactionRow", () => {
         transaction={{ ...mockTransaction, type: "sell" }}
       />,
     );
-    expect(screen.getByText("매도")).toHaveClass("text-blue-600");
+    expect(screen.getByText("매도")).toHaveClass("text-[#3182F6]");
   });
 });
