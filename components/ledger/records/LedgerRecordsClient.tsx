@@ -437,11 +437,13 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
 
   return (
     <div className="pb-24">
-      {/* Sticks to the layout's scroll container, just below the mobile app
-          header. The negative margins cover the layout's side padding. */}
+      {/* Sticks to the top of the layout's scroll container. The mobile app
+          header scrolls away with the list on this screen, so it only pushes
+          the sticky area down at scroll position 0. The negative margins
+          cover the layout's side padding. */}
       <div
         ref={stickyRef}
-        className="sticky top-14 z-20 -mx-4 space-y-3 bg-gray-50 px-4 sm:-mx-6 sm:px-6 lg:top-0 lg:-mx-8 lg:px-8"
+        className="sticky top-[env(safe-area-inset-top)] z-20 -mx-4 space-y-3 bg-gray-50 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8"
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center">
