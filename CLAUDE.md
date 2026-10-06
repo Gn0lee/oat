@@ -311,3 +311,17 @@ const totalReturn = ((totalCurrentValue - totalInvestedAmount) / totalInvestedAm
 - `.claude/docs/API.md` - API 설계 원칙
 - `.claude/docs/DESIGN.md` - UI/UX 원칙
 - `.claude/docs/EXAMPLES.md` - 코드 예시 모음
+
+## Agent skills
+
+### Issue tracker
+
+Issues are tracked in GitHub Issues (`Gn0lee/oat`, via the `gh` CLI). See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Uses the default five triage labels as-is (needs-triage, needs-info, ready-for-agent, ready-for-human, wontfix). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: `GLOSSARY.md` at the repo root plus `docs/adr/`. See `docs/agents/domain.md`.
