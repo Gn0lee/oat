@@ -38,7 +38,7 @@ function FieldError({ id, message }: { id: string; message?: string }) {
   );
 }
 
-function TradeBasicsRow({
+export function TradeBasicsRow({
   index,
   showNumber,
   onRemove,

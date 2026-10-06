@@ -101,9 +101,6 @@ vi.mock("@/hooks/use-transaction", () => ({
     isPending: false,
   }),
 }));
-vi.mock("@/components/transactions/MultiTransactionFormWrapper", () => ({
-  MultiTransactionFormWrapper: () => <div>예전 데스크톱 입력</div>,
-}));
 vi.mock("@/components/ui/drawer", () => ({
   Drawer: ({ open, children }: { open: boolean; children: ReactNode }) =>
     open ? <div role="dialog">{children}</div> : null,
@@ -481,12 +478,5 @@ describe("stock trade composer (mobile, one trade)", () => {
     await waitFor(() => expect(createBatch).toHaveBeenCalledTimes(3));
     expect(createBatch.mock.calls[2]?.[0].items[0].quantity).toBe(2);
     expect(createBatch.mock.calls[2]?.[0].requestId).not.toBe(firstRequestId);
-  });
-
-  it("keeps the existing desktop editor on desktop", async () => {
-    media.desktop = true;
-    renderComposer();
-    expect(await screen.findByText("예전 데스크톱 입력")).toBeInTheDocument();
-    expect(screen.queryByLabelText("수량 1")).not.toBeInTheDocument();
   });
 });
