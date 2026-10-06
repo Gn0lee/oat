@@ -11,13 +11,30 @@ import {
 } from "@/constants/service-routes";
 import { cn } from "@/lib/utils/cn";
 
+// The records screen's mobile header scrolls away with the list, so it is
+// rendered inside the layout's scroll container instead of above it.
+const SCROLLING_HEADER_PATHNAME = "/ledger/records";
+
 interface ServiceHeaderProps {
   variant: "mobile" | "desktop";
+  // "fixed" (default) sits above the scroll container; "scroll" sits inside it
+  // and only renders on the screens that scroll their header away.
+  placement?: "fixed" | "scroll";
 }
 
-export function ServiceHeader({ variant }: ServiceHeaderProps) {
+export function ServiceHeader({
+  variant,
+  placement = "fixed",
+}: ServiceHeaderProps) {
   const pathname = usePathname();
   const meta = getServiceRouteMeta(pathname);
+
+  if (
+    variant === "mobile" &&
+    (pathname === SCROLLING_HEADER_PATHNAME) !== (placement === "scroll")
+  ) {
+    return null;
+  }
 
   if (variant === "desktop") {
     return <DesktopServiceHeader meta={meta} />;

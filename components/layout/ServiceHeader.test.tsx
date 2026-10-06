@@ -27,7 +27,10 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-function renderServiceHeader(variant: "mobile" | "desktop") {
+function renderServiceHeader(
+  variant: "mobile" | "desktop",
+  placement?: "fixed" | "scroll",
+) {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: { retry: false },
@@ -36,7 +39,7 @@ function renderServiceHeader(variant: "mobile" | "desktop") {
 
   return render(
     <QueryClientProvider client={queryClient}>
-      <ServiceHeader variant={variant} />
+      <ServiceHeader variant={variant} placement={placement} />
     </QueryClientProvider>,
   );
 }
@@ -122,6 +125,40 @@ describe("ServiceHeader", () => {
         "/ledger/analysis?book=book-1&year=2026&month=4",
       ),
     );
+  });
+
+  it("기록 조회 화면에서는 고정 위치 모바일 헤더를 렌더링하지 않는다", () => {
+    navigationState.pathname = "/ledger/records";
+
+    renderServiceHeader("mobile");
+
+    expect(screen.queryByRole("banner")).not.toBeInTheDocument();
+  });
+
+  it("기록 조회 화면에서는 스크롤 영역 안의 헤더가 뒤로가기와 제목을 보여준다", () => {
+    navigationState.pathname = "/ledger/records";
+
+    renderServiceHeader("mobile", "scroll");
+
+    expect(screen.getByText("기록 조회")).toBeInTheDocument();
+    expect(screen.getByLabelText("이전 화면으로 이동")).toBeInTheDocument();
+    expect(screen.getByRole("banner")).toHaveClass("absolute");
+  });
+
+  it("다른 화면에서는 스크롤 영역 안의 헤더를 렌더링하지 않는다", () => {
+    navigationState.pathname = "/assets/stock/holdings";
+
+    renderServiceHeader("mobile", "scroll");
+
+    expect(screen.queryByRole("banner")).not.toBeInTheDocument();
+  });
+
+  it("기록 상세 화면의 헤더는 그대로 고정 위치다", () => {
+    navigationState.pathname = "/ledger/records/entry-1";
+
+    renderServiceHeader("mobile");
+
+    expect(screen.getByRole("banner")).toBeInTheDocument();
   });
 
   it("desktop 화면에는 breadcrumb를 렌더링한다", () => {
