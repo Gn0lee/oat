@@ -23,7 +23,7 @@ export function SectionHeader({
 }: SectionHeaderProps) {
   return (
     <div
-      className={cn("flex items-start justify-between gap-3 px-1", className)}
+      className={cn("flex items-center justify-between gap-3 px-1", className)}
       {...props}
     >
       <div className="min-w-0">

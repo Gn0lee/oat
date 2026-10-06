@@ -38,14 +38,9 @@ export function EntryMoneySourceFields({ index }: { index: number }) {
   const { data: paymentMethods = [] } = usePaymentMethods();
   const { userId } = useCurrentUserId();
 
+  // 모바일 드로어는 검색창에 자동 포커스하지 않는다. 키보드는 사용자가 검색창을 탭할 때만 올라온다.
   useEffect(() => {
-    if (picker) {
-      requestAnimationFrame(() =>
-        document
-          .querySelector<HTMLElement>('[data-slot="command-input"]')
-          ?.focus(),
-      );
-    } else if (previousPicker.current) {
+    if (!picker && previousPicker.current) {
       triggerRefs.current[previousPicker.current]?.focus();
     }
     previousPicker.current = picker;

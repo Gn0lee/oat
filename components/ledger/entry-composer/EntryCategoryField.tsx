@@ -33,14 +33,9 @@ export function EntryCategoryField({ index }: { index: number }) {
     .error?.message;
   const rowNumber = index + 1;
 
+  // 모바일 드로어는 검색창에 자동 포커스하지 않는다. 키보드는 사용자가 검색창을 탭할 때만 올라온다.
   useEffect(() => {
-    if (open) {
-      requestAnimationFrame(() =>
-        document
-          .querySelector<HTMLElement>('[data-slot="command-input"]')
-          ?.focus(),
-      );
-    } else if (previousOpen.current) triggerRef.current?.focus();
+    if (!open && previousOpen.current) triggerRef.current?.focus();
     previousOpen.current = open;
   }, [open]);
 

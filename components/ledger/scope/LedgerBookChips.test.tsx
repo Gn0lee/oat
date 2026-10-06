@@ -79,4 +79,21 @@ describe("LedgerBookChips", () => {
       expect(button).toHaveClass("min-h-11");
     }
   });
+
+  it("긴 장부 이름이 페이지를 가로로 넓히지 않도록 칩 안에서 말줄임한다", () => {
+    const longName = "아주 긴 이름을 가진 가족 여행 적립 장부";
+    render(
+      <LedgerBookChips
+        books={[book({ id: "long", name: longName })]}
+        onSelect={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("group", { name: "조회 장부" })).toHaveClass(
+      "min-w-0",
+    );
+    const name = screen.getByText(longName);
+    expect(name).toHaveClass("truncate");
+    expect(name.className).toMatch(/max-w-/);
+  });
 });

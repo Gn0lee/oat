@@ -192,7 +192,7 @@ export function StockOverviewAllocationSection() {
               <Command className="border-none">
                 <CommandInput
                   placeholder="종목명 또는 티커 검색..."
-                  className="h-11 border-none text-sm focus:ring-0"
+                  className="h-11 border-none focus:ring-0"
                 />
                 <CommandList className="max-h-[300px] custom-scrollbar">
                   <CommandEmpty className="py-6 text-center text-gray-400 text-sm">

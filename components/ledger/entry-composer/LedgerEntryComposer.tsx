@@ -329,7 +329,7 @@ export function LedgerEntryComposer({
 
   return (
     <FormProvider {...form}>
-      <div className="min-h-screen w-full bg-background text-foreground">
+      <div className="w-full bg-background text-foreground">
         <div hidden={!isDesktop}>
           <ComposerListStep
             itemsArray={itemsArray}
