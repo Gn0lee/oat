@@ -835,15 +835,16 @@ describe("mobile ledger composer", () => {
     expect(bookPicker).toHaveTextContent("공용 생활비 (보관됨)");
     expect(bookPicker).toBeEnabled();
     fireEvent.click(bookPicker);
-    const archivedOption = screen.getByRole("option", {
-      name: "공용 생활비 (보관됨)",
+    const archivedOption = screen.getByRole("button", {
+      name: /^공용 생활비 \(보관됨\)/,
     });
-    expect(archivedOption).toHaveAttribute("aria-disabled", "true");
-    const personalOption = await screen.findByRole("option", {
-      name: "개인 장부 · 개인",
+    expect(archivedOption).toBeDisabled();
+    const personalOption = await screen.findByRole("button", {
+      name: /^개인 장부개인/,
     });
     expect(personalOption).toBeEnabled();
     fireEvent.click(personalOption);
+    await waitFor(() => expect(bookPicker).toHaveTextContent("개인 장부"));
     fireEvent.click(screen.getByRole("button", { name: "입력 확인" }));
     expect(
       await screen.findByRole("heading", { name: "입력 확인" }),
@@ -859,7 +860,7 @@ describe("mobile ledger composer", () => {
     expect(secondBookPicker).toHaveTextContent("공용 생활비 (보관됨)");
     fireEvent.click(secondBookPicker);
     fireEvent.click(
-      await screen.findByRole("option", { name: "개인 장부 · 개인" }),
+      await screen.findByRole("button", { name: /^개인 장부개인/ }),
     );
     fireEvent.click(screen.getByRole("button", { name: "입력 확인" }));
     expect(
