@@ -4,7 +4,9 @@ import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { AmountText } from "@/components/layout/screen";
 import type { TransactionWithDetails } from "@/lib/api/transaction";
+import { cn } from "@/lib/utils/cn";
 import { formatCurrency } from "@/lib/utils/format";
+import { tradeTypeTextClassName } from "@/lib/utils/trade-type-style";
 
 interface StockTransactionRowProps {
   href: string;
@@ -30,7 +32,9 @@ export function StockTransactionRow({
     >
       {/* Top Row: type label on left, chevron on right */}
       <div className="flex items-center justify-between text-xs text-gray-500 font-medium">
-        <span>{typeLabel}</span>
+        <span className={cn(tradeTypeTextClassName(transaction.type))}>
+          {typeLabel}
+        </span>
         <ChevronRight
           data-testid="stock-transaction-row-chevron"
           className="h-4 w-4 flex-shrink-0 text-gray-300 transition-colors group-hover:text-gray-500"

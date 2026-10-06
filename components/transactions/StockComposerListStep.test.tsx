@@ -92,4 +92,45 @@ describe("StockComposerListStep", () => {
     expect(onEditItemMock).not.toHaveBeenCalled();
     expect(screen.queryByText("Berkshire Hathaway Class B")).toBeNull();
   });
+
+  it.each([
+    ["buy", "매수", "text-[#F04452]"],
+    ["sell", "매도", "text-[#3182F6]"],
+  ] as const)(
+    "%s 거래 행의 라벨은 %s 색(%s)으로 표시한다",
+    (type, label, color) => {
+      render(
+        <FormWrapper
+          defaultValues={{
+            type,
+            items: [
+              {
+                stock: {
+                  code: "005930",
+                  name: "삼성전자",
+                  market: "KR" as const,
+                  exchange: "KOSPI",
+                },
+                quantity: "1",
+                price: "70000",
+                memo: "",
+                transactedAt: "2026-06-23",
+                accountId: "acc-1",
+              },
+            ],
+          }}
+        >
+          <StockComposerListStep
+            mode="full"
+            ownerId="owner-1"
+            onEditItem={vi.fn()}
+            onSubmit={vi.fn()}
+            isSubmitting={false}
+          />
+        </FormWrapper>,
+      );
+
+      expect(screen.getByText(label)).toHaveClass(color);
+    },
+  );
 });

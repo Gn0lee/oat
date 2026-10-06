@@ -15,6 +15,7 @@ import {
 import { useDeleteTransaction } from "@/hooks/use-transaction";
 import type { TransactionWithDetails } from "@/lib/api/transaction";
 import { formatCurrency } from "@/lib/utils/format";
+import { tradeTypeBadgeClassName } from "@/lib/utils/trade-type-style";
 
 interface TransactionDeleteDialogProps {
   transaction: TransactionWithDetails | null;
@@ -51,7 +52,6 @@ export function TransactionDeleteDialog({
   if (!transaction) return null;
 
   const typeLabel = transaction.type === "buy" ? "매수" : "매도";
-  const typeVariant = transaction.type === "buy" ? "default" : "secondary";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -70,7 +70,12 @@ export function TransactionDeleteDialog({
         <div className="rounded-md border p-4 space-y-2">
           <div className="flex items-center justify-between">
             <span className="font-medium">{transaction.stockName}</span>
-            <Badge variant={typeVariant}>{typeLabel}</Badge>
+            <Badge
+              variant="secondary"
+              className={tradeTypeBadgeClassName(transaction.type)}
+            >
+              {typeLabel}
+            </Badge>
           </div>
           <div className="text-sm text-muted-foreground space-y-1">
             <div className="flex justify-between">

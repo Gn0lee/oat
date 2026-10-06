@@ -12,6 +12,7 @@ import { DatePickerInput } from "@/components/ui/date-picker";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils/cn";
 import { formatCurrency } from "@/lib/utils/format";
+import { tradeTypeTextClassName } from "@/lib/utils/trade-type-style";
 import type { MultiTransactionFormData } from "@/schemas/multi-transaction-form";
 import {
   DEFAULT_TRANSACTION_ITEM,
@@ -147,8 +148,7 @@ export function StockComposerListStep({
               const hasError = !!form.formState.errors.items?.[index];
 
               const typeLabel = watchType === "buy" ? "매수" : "매도";
-              const typeColor =
-                watchType === "buy" ? "text-blue-600" : "text-red-600";
+              const typeColor = tradeTypeTextClassName(watchType);
               const detailText = `${item.quantity || 0}주 x ${formatCurrency(Number(item.price) || 0, currency)}`;
 
               return (
