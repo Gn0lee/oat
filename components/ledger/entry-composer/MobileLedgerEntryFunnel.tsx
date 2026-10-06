@@ -241,7 +241,6 @@ export function MobileLedgerEntryFunnel({
     <div
       key={funnel.step}
       data-ssgoi-transition={`/ledger/records/new/daily/composer-${transitionSegment}`}
-      className="min-h-[calc(100dvh-3.5rem)]"
     >
       <funnel.Render
         EntryBasics={({ context, history }) => (

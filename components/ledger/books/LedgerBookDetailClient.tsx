@@ -1,6 +1,6 @@
 "use client";
 
-import { Archive, ArrowLeft, RotateCcw, Star, Trash2 } from "lucide-react";
+import { Archive, RotateCcw, Star, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -115,6 +115,8 @@ export function LedgerBookDetailClient({
     (isCreator || (book.visibility === "shared" && role === "owner")) &&
     !archived &&
     !book.isDefault;
+  const trimmedName = (name ?? book.name).trim();
+  const isNameChanged = Boolean(trimmedName) && trimmedName !== book.name;
   const isBusy =
     actions.rename.isPending ||
     actions.archive.isPending ||
@@ -153,14 +155,7 @@ export function LedgerBookDetailClient({
         if (!isBusy) setDeleteOpen(open);
       }}
     >
-      <div className="space-y-6">
-        <Link
-          href={safeReturn}
-          className="inline-flex min-h-11 items-center gap-2 px-2 text-sm font-medium text-gray-600"
-        >
-          <ArrowLeft className="size-4" aria-hidden="true" /> 관리 마치기
-        </Link>
-
+      <div className="space-y-8">
         <section className="space-y-5" aria-labelledby="book-detail-title">
           <div>
             <p className="mb-2 text-sm text-gray-500">
@@ -181,12 +176,11 @@ export function LedgerBookDetailClient({
               className="space-y-3"
               onSubmit={(event) => {
                 event.preventDefault();
-                const nextName = (name ?? book.name).trim();
-                if (nextName && nextName !== book.name) {
+                if (isNameChanged) {
                   void run(async () => {
                     await actions.rename.mutateAsync({
                       id: book.id,
-                      name: nextName,
+                      name: trimmedName,
                     });
                     setName(null);
                   });
@@ -208,13 +202,8 @@ export function LedgerBookDetailClient({
                 />
                 <Button
                   type="submit"
-                  variant="outline"
                   className="min-h-11"
-                  disabled={
-                    isBusy ||
-                    !(name ?? book.name).trim() ||
-                    (name ?? book.name).trim() === book.name
-                  }
+                  disabled={isBusy || !isNameChanged}
                 >
                   저장
                 </Button>
@@ -222,70 +211,81 @@ export function LedgerBookDetailClient({
             </form>
           )}
 
-          <div className="space-y-2 border-t border-gray-100 pt-4">
-            {canDefault && (
-              <Button
-                variant="outline"
-                className="min-h-11 w-full justify-start"
-                disabled={isBusy}
-                onClick={() =>
-                  void run(() =>
-                    actions.makeDefault.mutateAsync({ id: book.id }),
-                  )
-                }
-              >
-                <Star className="mr-2 size-4" /> 기본 장부로 설정
-              </Button>
-            )}
-            {canArchive && (
-              <Button
-                variant="outline"
-                className="min-h-11 w-full justify-start"
-                disabled={isBusy}
-                onClick={() =>
-                  void run(() => actions.archive.mutateAsync({ id: book.id }))
-                }
-              >
-                <Archive className="mr-2 size-4" /> 보관하기
-              </Button>
-            )}
+          {canDefault && (
+            <Button
+              variant="secondary"
+              className="min-h-11"
+              disabled={isBusy}
+              onClick={() =>
+                void run(() => actions.makeDefault.mutateAsync({ id: book.id }))
+              }
+            >
+              <Star className="size-4" aria-hidden="true" /> 기본 장부로 설정
+            </Button>
+          )}
+        </section>
+
+        {(canArchive ||
+          canReactivate ||
+          canDelete ||
+          (book.isDefault && !archived) ||
+          (!deleteOpen && actionError)) && (
+          <div className="space-y-1 border-t border-gray-100 pt-4 text-center">
             {book.isDefault && !archived && (
               <p className="py-2 text-sm text-gray-500">
                 다른 공용 장부를 기본으로 바꾼 뒤 보관할 수 있어요.
               </p>
             )}
-            {canReactivate && (
-              <Button
-                variant="outline"
-                className="min-h-11 w-full justify-start"
-                disabled={isBusy}
-                onClick={() =>
-                  void run(() =>
-                    actions.reactivate.mutateAsync({ id: book.id }),
-                  )
-                }
-              >
-                <RotateCcw className="mr-2 size-4" /> 다시 사용하기
-              </Button>
-            )}
-            {canDelete && (
-              <DialogTrigger asChild>
+            <div className="flex flex-wrap items-center justify-center gap-x-2">
+              {canArchive && (
                 <Button
-                  variant="outline"
-                  className="min-h-11 w-full justify-start text-destructive hover:text-destructive"
+                  variant="ghost"
+                  size="sm"
+                  className="min-h-11 text-gray-500"
                   disabled={isBusy}
+                  onClick={() =>
+                    void run(() => actions.archive.mutateAsync({ id: book.id }))
+                  }
                 >
-                  <Trash2 className="mr-2 size-4" /> 삭제하기
+                  <Archive className="size-4" aria-hidden="true" /> 보관하기
                 </Button>
-              </DialogTrigger>
-            )}
+              )}
+              {canReactivate && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="min-h-11 text-gray-500"
+                  disabled={isBusy}
+                  onClick={() =>
+                    void run(() =>
+                      actions.reactivate.mutateAsync({ id: book.id }),
+                    )
+                  }
+                >
+                  <RotateCcw className="size-4" aria-hidden="true" /> 다시
+                  사용하기
+                </Button>
+              )}
+              {canDelete && (
+                <DialogTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="min-h-11 text-destructive hover:text-destructive"
+                    disabled={isBusy}
+                  >
+                    <Trash2 className="size-4" aria-hidden="true" /> 삭제하기
+                  </Button>
+                </DialogTrigger>
+              )}
+            </div>
             {!deleteOpen && actionError && (
               <p role="alert" className="pt-2 text-sm text-destructive">
                 {actionError}
               </p>
             )}
           </div>
-        </section>
+        )}
 
         <DialogContent>
           <DialogHeader>

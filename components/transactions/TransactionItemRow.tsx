@@ -135,8 +135,8 @@ export function TransactionItemRow<T extends FormWithItems>({
             aria-invalid={quantityState.invalid}
             aria-describedby={quantityState.error ? quantityErrorId : undefined}
             className={cn(
-              "h-11 rounded-xl text-sm",
-              prominent && "h-14 text-2xl",
+              "h-11 rounded-xl",
+              prominent ? "h-14 text-2xl md:text-2xl" : "text-base md:text-sm",
             )}
             {...quantityField}
           />
@@ -160,8 +160,8 @@ export function TransactionItemRow<T extends FormWithItems>({
             aria-invalid={priceState.invalid}
             aria-describedby={priceState.error ? priceErrorId : undefined}
             className={cn(
-              "h-11 rounded-xl text-sm",
-              prominent && "h-14 text-2xl",
+              "h-11 rounded-xl",
+              prominent ? "h-14 text-2xl md:text-2xl" : "text-base md:text-sm",
             )}
             {...priceField}
           />

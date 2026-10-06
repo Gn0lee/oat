@@ -205,6 +205,47 @@ describe("mobile ledger composer", () => {
     expect(screen.getByLabelText("금액 1")).toHaveValue(4200);
   });
 
+  it("sizes the first mobile screen to its content instead of the viewport", async () => {
+    const { container } = renderComposer();
+    const basics = (await screen.findByLabelText("내용 1")).closest("section");
+
+    expect(basics?.className).not.toMatch(/min-h-/);
+    expect(container.querySelector('[class*="min-h-screen"]')).toBeNull();
+    expect(container.querySelector('[class*="100dvh"]')).toBeNull();
+  });
+
+  it("leaves the keyboard down when a mobile picker drawer opens", async () => {
+    renderComposer();
+    fireEvent.change(await screen.findByLabelText("내용 1"), {
+      target: { value: "점심" },
+    });
+    fireEvent.change(screen.getByLabelText("금액 1"), {
+      target: { value: "12000" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "다음" }));
+
+    const categoryTrigger = await screen.findByRole("combobox", {
+      name: "카테고리 1",
+    });
+    fireEvent.click(categoryTrigger);
+    const categorySearch =
+      await screen.findByPlaceholderText("카테고리 이름 검색");
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    expect(categorySearch).not.toHaveFocus();
+    fireEvent.click(screen.getByRole("button", { name: "Dismiss drawer" }));
+    await waitFor(() => expect(categoryTrigger).toHaveFocus());
+
+    const sourceTrigger = screen.getByRole("combobox", { name: "결제 방법 1" });
+    fireEvent.click(sourceTrigger);
+    const sourceSearch = await screen.findByPlaceholderText(
+      "이름, 기관, 소유자 검색",
+    );
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    expect(sourceSearch).not.toHaveFocus();
+    fireEvent.click(screen.getByRole("button", { name: "Dismiss drawer" }));
+    await waitFor(() => expect(sourceTrigger).toHaveFocus());
+  });
+
   it("focuses and identifies the missing first basics field", async () => {
     renderComposer();
     const next = await screen.findByRole("button", { name: "다음" });

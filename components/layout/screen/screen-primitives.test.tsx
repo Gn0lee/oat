@@ -81,6 +81,18 @@ describe("screen primitives", () => {
     expect(list.className).not.toContain("shadow");
   });
 
+  it("vertically centers the SectionHeader action against the title", () => {
+    render(
+      <SectionHeader
+        data-testid="section-header"
+        title="장부 목록"
+        action={<a href="/ledger/books">관리</a>}
+      />,
+    );
+
+    expect(screen.getByTestId("section-header")).toHaveClass("items-center");
+  });
+
   it("renders ScreenSection and SectionHeader without wrapping the whole section in a card", () => {
     render(
       <ScreenSection data-testid="screen-section">

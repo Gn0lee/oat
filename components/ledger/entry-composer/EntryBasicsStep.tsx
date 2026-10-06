@@ -42,7 +42,8 @@ export function EntryBasicsStep({
   return (
     <section
       aria-labelledby="entry-basics-heading"
-      className="flex min-h-full flex-col gap-5 px-4 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-4"
+      // 레이아웃이 하단 탭 높이만큼 여백을 주므로, 그 위에 뜨는 고정 액션바 높이만 더 비운다.
+      className="flex flex-col gap-5 px-4 pb-14 pt-4"
     >
       <h1 id="entry-basics-heading" className="sr-only">
         기록 내용과 금액

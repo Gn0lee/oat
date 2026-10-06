@@ -52,7 +52,7 @@ export function LedgerBookChips({
   return (
     <fieldset
       aria-label="조회 장부"
-      className="-mx-4 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      className="-mx-4 flex min-w-0 gap-2 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
     >
       {chips.map((chip) => {
         const isSelected = chip.id === selectedBookId;
@@ -72,7 +72,7 @@ export function LedgerBookChips({
                 : "text-gray-500 active:bg-gray-50",
             )}
           >
-            {chip.name}
+            <span className="max-w-40 truncate">{chip.name}</span>
             {chip.note && (
               <span className="text-xs font-medium text-gray-500">
                 {chip.note}

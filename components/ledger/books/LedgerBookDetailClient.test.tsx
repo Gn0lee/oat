@@ -78,10 +78,26 @@ describe("LedgerBookDetailClient", () => {
     expect(
       screen.queryByRole("button", { name: "기본 장부로 설정" }),
     ).not.toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "관리 마치기" })).toHaveAttribute(
-      "href",
-      "/ledger/records?book=shared-id",
-    );
+    expect(
+      screen.queryByRole("link", { name: "관리 마치기" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("enables saving the name only after it changes", () => {
+    render(<LedgerBookDetailClient id="shared-id" />);
+
+    const save = screen.getByRole("button", { name: "저장" });
+    const input = screen.getByLabelText("이름 바꾸기");
+    expect(save).toBeDisabled();
+
+    fireEvent.change(input, { target: { value: "생활비 " } });
+    expect(save).toBeDisabled();
+
+    fireEvent.change(input, { target: { value: "가족 생활비" } });
+    expect(save).toBeEnabled();
+
+    fireEvent.change(input, { target: { value: "생활비" } });
+    expect(save).toBeDisabled();
   });
 
   it("keeps the detail open and reports a 409 archive conflict", async () => {
@@ -165,10 +181,6 @@ describe("LedgerBookDetailClient", () => {
       expect(archive.mutateAsync).toHaveBeenCalledWith({ id: "shared-id" }),
     );
     expect(replace).not.toHaveBeenCalled();
-    expect(screen.getByRole("link", { name: "관리 마치기" })).toHaveAttribute(
-      "href",
-      "/ledger/records?book=shared-id",
-    );
   });
 
   it("returns to the originating safe route after successful deletion", async () => {
