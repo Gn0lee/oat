@@ -288,6 +288,34 @@ describe("LedgerRecordsClient", () => {
     expect(replace).toHaveBeenLastCalledWith("/ledger/records?date=2026-06-16");
   });
 
+  it("keeps the book chips mounted while the selected book loads so focus is not lost", () => {
+    state.search = "date=2026-06-16&book=book-1";
+    vi.mocked(useLedgerBook).mockReturnValue({
+      data: undefined,
+      isPending: true,
+    } as never);
+    const { rerender } = renderRecords();
+
+    const chips = screen.getByRole("group", { name: "조회 장부" });
+    expect(screen.queryByText("여행 기록")).not.toBeInTheDocument();
+    expect(screen.queryByText("기록이 없어요")).not.toBeInTheDocument();
+
+    vi.mocked(useLedgerBook).mockReturnValue({
+      data: book,
+      isPending: false,
+    } as never);
+    rerender(
+      <QueryClientProvider
+        client={
+          new QueryClient({ defaultOptions: { queries: { retry: false } } })
+        }
+      >
+        <LedgerRecordsClient initialDate="2026-06-16" />
+      </QueryClientProvider>,
+    );
+    expect(screen.getByRole("group", { name: "조회 장부" })).toBe(chips);
+  });
+
   it("specific active non-default book exposes creation scoped to that book", () => {
     state.search = "book=book-1&date=2026-06-16";
     vi.mocked(useLedgerBook).mockReturnValue({

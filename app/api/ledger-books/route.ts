@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { APIError, toErrorResponse } from "@/lib/api/error";
 import { getUserHouseholdId } from "@/lib/api/invitation";
-import { createLedgerBook, getLedgerBooks } from "@/lib/api/ledger-books";
+import { createLedgerBook, getLedgerBookList } from "@/lib/api/ledger-books";
 import { createClient } from "@/lib/supabase/server";
 import { createLedgerBookSchema } from "@/schemas/ledger-book";
 
@@ -38,7 +38,7 @@ async function getContext() {
 export async function GET() {
   try {
     const { supabase, householdId } = await getContext();
-    const books = await getLedgerBooks(supabase, householdId);
+    const books = await getLedgerBookList(supabase, householdId);
     return NextResponse.json({ data: books });
   } catch (error) {
     return errorResponse(error);

@@ -4,6 +4,7 @@ import type { Database } from "@/types";
 import {
   createLedgerBook,
   getLedgerBook,
+  getLedgerBookList,
   getLedgerBooks,
   makeDefaultLedgerBook,
   renameLedgerBook,
@@ -65,6 +66,39 @@ describe("ledger book API helpers", () => {
       },
     ]);
     expect(query.eq).toHaveBeenCalledWith("household_id", row.household_id);
+  });
+
+  it("adds each book's latest visible entry input time without changing the order", async () => {
+    const { supabase, query } = makeSupabase();
+    const other = { ...row, id: "66666666-6666-4666-8666-666666666666" };
+    query.order.mockResolvedValue({ data: [row, other], error: null });
+    vi.mocked(supabase.rpc).mockResolvedValue({
+      data: [{ book_id: other.id, last_entry_at: "2026-10-06T01:00:00+00:00" }],
+      error: null,
+    } as never);
+
+    const books = await getLedgerBookList(supabase, row.household_id);
+
+    expect(supabase.rpc).toHaveBeenCalledWith("ledger_book_last_entries", {
+      hh_id: row.household_id,
+    });
+    expect(books.map((book) => [book.id, book.lastEntryAt])).toEqual([
+      [row.id, null],
+      [other.id, "2026-10-06T01:00:00+00:00"],
+    ]);
+  });
+
+  it("fails the list when the latest entry aggregate fails", async () => {
+    const { supabase, query } = makeSupabase();
+    query.order.mockResolvedValue({ data: [row], error: null });
+    vi.mocked(supabase.rpc).mockResolvedValue({
+      data: null,
+      error: { message: "boom" },
+    } as never);
+
+    await expect(
+      getLedgerBookList(supabase, row.household_id),
+    ).rejects.toMatchObject({ code: "BOOK_QUERY_FAILED", statusCode: 500 });
   });
 
   it("returns identical unavailable errors for foreign, private, and missing books", async () => {

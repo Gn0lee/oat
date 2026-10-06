@@ -5,7 +5,11 @@ import { useRouter } from "next/navigation";
 import { useLedgerIdentity } from "@/hooks/use-ledger-identity";
 import { ApiQueryError, fetchApiData } from "@/lib/api/client";
 import { queries } from "@/lib/queries/keys";
-import type { LedgerBook, LedgerBookVisibility } from "@/types/ledger-book";
+import type {
+  LedgerBook,
+  LedgerBookListItem,
+  LedgerBookVisibility,
+} from "@/types/ledger-book";
 
 const bookQueryKey = (userId: string | null, householdId: string | null) =>
   ["ledgerBooks", userId, householdId] as const;
@@ -15,7 +19,7 @@ export function useLedgerBooks() {
 
   return useQuery({
     queryKey: [...bookQueryKey(userId, householdId), "list"],
-    queryFn: () => fetchApiData<LedgerBook[]>("/api/ledger-books"),
+    queryFn: () => fetchApiData<LedgerBookListItem[]>("/api/ledger-books"),
     enabled: Boolean(userId && householdId),
     staleTime: 60_000,
     refetchOnMount: "always",
