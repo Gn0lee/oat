@@ -121,7 +121,7 @@ export function LedgerTagInput({
           onKeyUp={handleKeyUp}
           placeholder={value.length >= maxTags ? "최대 5개" : placeholder}
           disabled={value.length >= maxTags}
-          className="h-7 min-w-32 w-auto flex-1 border-0 bg-transparent p-0 text-base shadow-none md:text-sm focus-visible:ring-0"
+          className="h-7 min-w-32 w-auto flex-1 border-0 bg-transparent p-0 shadow-none focus-visible:ring-0"
         />
       </div>
 

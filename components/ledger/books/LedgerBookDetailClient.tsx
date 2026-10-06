@@ -117,6 +117,12 @@ export function LedgerBookDetailClient({
     !book.isDefault;
   const trimmedName = (name ?? book.name).trim();
   const isNameChanged = Boolean(trimmedName) && trimmedName !== book.name;
+  const hasFooterActions =
+    canArchive ||
+    canReactivate ||
+    canDelete ||
+    (book.isDefault && !archived) ||
+    Boolean(!deleteOpen && actionError);
   const isBusy =
     actions.rename.isPending ||
     actions.archive.isPending ||
@@ -225,11 +231,7 @@ export function LedgerBookDetailClient({
           )}
         </section>
 
-        {(canArchive ||
-          canReactivate ||
-          canDelete ||
-          (book.isDefault && !archived) ||
-          (!deleteOpen && actionError)) && (
+        {hasFooterActions && (
           <div className="space-y-1 border-t border-gray-100 pt-4 text-center">
             {book.isDefault && !archived && (
               <p className="py-2 text-sm text-gray-500">
@@ -241,7 +243,7 @@ export function LedgerBookDetailClient({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="min-h-11 text-gray-500"
+                  className="min-h-11 min-w-11 text-gray-500"
                   disabled={isBusy}
                   onClick={() =>
                     void run(() => actions.archive.mutateAsync({ id: book.id }))
@@ -254,7 +256,7 @@ export function LedgerBookDetailClient({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="min-h-11 text-gray-500"
+                  className="min-h-11 min-w-11 text-gray-500"
                   disabled={isBusy}
                   onClick={() =>
                     void run(() =>
@@ -271,7 +273,7 @@ export function LedgerBookDetailClient({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="min-h-11 text-destructive hover:text-destructive"
+                    className="min-h-11 min-w-11 text-destructive hover:text-destructive"
                     disabled={isBusy}
                   >
                     <Trash2 className="size-4" aria-hidden="true" /> 삭제하기
