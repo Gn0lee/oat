@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { type RefObject, useEffect, useMemo, useRef, useState } from "react";
 import { AmountText, ScreenState } from "@/components/layout/screen";
 import { LedgerBookChips } from "@/components/ledger/scope/LedgerBookChips";
 import { LedgerBookUnavailable } from "@/components/ledger/scope/LedgerBookUnavailable";
@@ -57,6 +57,21 @@ function dayHeading(date: string) {
   return `${day}일 ${WEEKDAYS[weekday]}요일`;
 }
 
+// A header this far below the sticky area's bottom edge still counts as
+// caught, so a header scrolled exactly to the edge is the selected one.
+const SYNC_LINE_SLACK = 8;
+// A programmatic scroll is over once the container stops scrolling this long.
+const SCROLL_IDLE_MS = 150;
+const SCROLL_START_MS = 300;
+
+// Bottom edge of the sticky header, relative to the scroll container.
+function stickyBottom(header: HTMLElement | null) {
+  return header
+    ? (Number.parseFloat(getComputedStyle(header).top) || 0) +
+        header.offsetHeight
+    : 0;
+}
+
 // Scrolls a day section to just below the sticky header.
 function scrollToDay(
   list: HTMLElement | null,
@@ -65,23 +80,53 @@ function scrollToDay(
   behavior: ScrollBehavior,
 ) {
   const section = list?.querySelector<HTMLElement>(`[data-date="${date}"]`);
-  if (!section) return;
-  const offset = header
-    ? (Number.parseFloat(getComputedStyle(header).top) || 0) +
-      header.offsetHeight
-    : 0;
-  section.style.scrollMarginTop = `${offset}px`;
+  if (!section) return false;
+  section.style.scrollMarginTop = `${stickyBottom(header)}px`;
   section.scrollIntoView({ block: "start", behavior });
+  return true;
+}
+
+// Holds scroll sync (`holdRef` is set) until the container stops scrolling.
+function holdScrollSync(
+  container: HTMLElement | null,
+  holdRef: RefObject<(() => void) | null>,
+) {
+  holdRef.current?.();
+  let timer: ReturnType<typeof setTimeout>;
+  const release = () => {
+    clearTimeout(timer);
+    container?.removeEventListener("scroll", handleScroll);
+    container?.removeEventListener("scrollend", release);
+    if (holdRef.current === release) holdRef.current = null;
+  };
+  const handleScroll = () => {
+    clearTimeout(timer);
+    timer = setTimeout(release, SCROLL_IDLE_MS);
+  };
+  timer = setTimeout(release, SCROLL_START_MS);
+  container?.addEventListener("scroll", handleScroll);
+  container?.addEventListener("scrollend", release);
+  holdRef.current = release;
+}
+
+// Scrolls to a day without letting scroll sync overwrite the selection.
+function scrollToDayHoldingSync(
+  list: HTMLElement | null,
+  header: HTMLElement | null,
+  holdRef: RefObject<(() => void) | null>,
+  date: string,
+  behavior: ScrollBehavior,
+) {
+  holdScrollSync(findScrollContainer(header), holdRef);
+  if (!scrollToDay(list, header, date, behavior)) holdRef.current?.();
 }
 
 // The layout scrolls an inner container, not the window.
-function scrollContainerToTop(element: HTMLElement | null) {
+function findScrollContainer(element: HTMLElement | null) {
   for (let node = element?.parentElement; node; node = node.parentElement) {
-    if (/(auto|scroll)/.test(getComputedStyle(node).overflowY)) {
-      node.scrollTo({ top: 0 });
-      return;
-    }
+    if (/(auto|scroll)/.test(getComputedStyle(node).overflowY)) return node;
   }
+  return null;
 }
 
 export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
@@ -102,12 +147,17 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
       : (isLedgerRecordDate(initialDate) ? initialDate : today).slice(0, 7));
   const [year, month] = monthKey.split("-").map(Number);
   const [tappedDate, setTappedDate] = useState<string | null>(null);
+  // The header caught just below the sticky area while the user scrolls.
+  const [syncedDate, setSyncedDate] = useState<string | null>(null);
   const [scrollRequest, setScrollRequest] = useState<{ date: string } | null>(
     null,
   );
   const stickyRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const hasEnteredRef = useRef(false);
+  // Set while a scroll we started (entering, tapping a day) is running, so
+  // scroll sync doesn't overwrite the selection mid-way.
+  const releaseScrollHoldRef = useRef<(() => void) | null>(null);
   const {
     data: books = [],
     isPending: booksPending,
@@ -152,11 +202,13 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
   const activeTappedDate = tappedDate?.startsWith(`${monthKey}-`)
     ? tappedDate
     : null;
+  const activeSyncedDate = syncedDate?.startsWith(`${monthKey}-`)
+    ? syncedDate
+    : null;
+  // The date the URL carries right now (tap and sync rewrite it quietly).
+  const currentDate = activeTappedDate ?? activeSyncedDate ?? urlDate;
   const selectedDate =
-    activeTappedDate ??
-    urlDate ??
-    recordDays[0] ??
-    ledgerMonthAnchorDate(year, month, today);
+    currentDate ?? recordDays[0] ?? ledgerMonthAnchorDate(year, month, today);
   // Every day with records, newest first. A tapped day without records gets a
   // temporary empty section in its place.
   const dayGroups = useMemo(() => {
@@ -192,7 +244,13 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
     return parts.join(" · ");
   }, [entries, searchParams]);
 
-  const returnTo = `${pathname}${searchParams.size ? `?${searchParams}` : ""}`;
+  const returnParams = new URLSearchParams(searchParams.toString());
+  if (currentDate && currentDate !== urlDate) {
+    returnParams.delete("view");
+    returnParams.delete("month");
+    returnParams.set("date", currentDate);
+  }
+  const returnTo = `${pathname}${returnParams.size ? `?${returnParams}` : ""}`;
   const queryError = bookError || entriesError || booksError;
   const isUnavailable =
     bookId !== undefined &&
@@ -206,23 +264,82 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
     !booksPending &&
     !(bookId && bookPending);
 
+  useEffect(() => () => releaseScrollHoldRef.current?.(), []);
+
   // Entering with a date opens the list at that day; otherwise at the top.
   useEffect(() => {
     if (!isListReady || hasEnteredRef.current) return;
     hasEnteredRef.current = true;
     if (urlDate)
-      scrollToDay(listRef.current, stickyRef.current, urlDate, "auto");
+      scrollToDayHoldingSync(
+        listRef.current,
+        stickyRef.current,
+        releaseScrollHoldRef,
+        urlDate,
+        "auto",
+      );
   }, [isListReady, urlDate]);
 
   useEffect(() => {
     if (scrollRequest)
-      scrollToDay(
+      scrollToDayHoldingSync(
         listRef.current,
         stickyRef.current,
+        releaseScrollHoldRef,
         scrollRequest.date,
         "smooth",
       );
   }, [scrollRequest]);
+
+  // Scroll sync: the selection follows the last header that has scrolled up
+  // to the bottom edge of the sticky area. The handler lives in a ref so the
+  // observer sees the latest selection without being recreated every render.
+  const syncToHeaderRef = useRef((_date: string) => {});
+  useEffect(() => {
+    syncToHeaderRef.current = (date: string) => {
+      if (releaseScrollHoldRef.current || date === currentDate) return;
+      if (date !== activeTappedDate) setTappedDate(null);
+      setSyncedDate(date);
+      const next = nextParams();
+      next.delete("month");
+      next.set("date", date);
+      window.history.replaceState(null, "", `${pathname}?${next}`);
+    };
+  });
+  const dayKeys = dayGroups.map((group) => group.date).join(",");
+  useEffect(() => {
+    const list = listRef.current;
+    if (!isListReady || !dayKeys || !list) return;
+    const line = stickyBottom(stickyRef.current) + SYNC_LINE_SLACK;
+    const isAbove = new Map<Element, boolean>();
+    let isInitial = true;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries)
+          isAbove.set(
+            entry.target,
+            entry.boundingClientRect.top < (entry.rootBounds?.top ?? line),
+          );
+        // The first notification only reports where things already are.
+        if (isInitial) {
+          isInitial = false;
+          return;
+        }
+        const top = headers.findLast((header) => isAbove.get(header));
+        const date = top?.closest("section")?.dataset.date;
+        if (date) syncToHeaderRef.current(date);
+      },
+      {
+        root: findScrollContainer(list),
+        rootMargin: `-${line}px 0px 0px 0px`,
+        threshold: [0, 1],
+      },
+    );
+    // Newest first, so the last header above the line is the caught one.
+    const headers = [...list.querySelectorAll("section[data-date] > h3")];
+    for (const header of headers) observer.observe(header);
+    return () => observer.disconnect();
+  }, [dayKeys, isListReady]);
 
   // The calendar's expanded state is local to the strip; drop any legacy
   // `view` param whenever the URL is rewritten.
@@ -250,11 +367,12 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
       .toISOString()
       .slice(0, 7);
     setTappedDate(null);
+    setSyncedDate(null);
     const next = nextParams();
     next.delete("date");
     next.set("month", target);
     router.replace(`${pathname}?${next}`, { scroll: false });
-    scrollContainerToTop(stickyRef.current);
+    findScrollContainer(stickyRef.current)?.scrollTo({ top: 0 });
   };
   const handleBookChange = (nextBookId: string | undefined) => {
     const next = nextParams();
@@ -265,6 +383,7 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
     if (nextBookId) next.set("book", nextBookId);
     else next.delete("book");
     setTappedDate(null);
+    setSyncedDate(null);
     router.push(`${pathname}${next.size ? `?${next}` : ""}`);
   };
   const clearFilters = () =>

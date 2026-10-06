@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useLedgerBook, useLedgerBooks } from "@/hooks/use-ledger-books";
@@ -29,14 +29,26 @@ vi.mock("@/hooks/use-ledger-books", () => ({
 vi.mock("@/hooks/use-ledger-identity", () => ({
   useLedgerIdentity: () => ledgerIdentity,
 }));
-vi.mock("./LedgerDateStrip", () => ({
-  LedgerDateStrip: ({
-    onSelect,
-    ...props
-  }: {
-    onSelect: (date: string) => void;
-    selectedDate: string;
-  }) => (
+const strip = vi.hoisted(() => ({ isReal: false }));
+vi.mock("./LedgerDateStrip", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./LedgerDateStrip")>();
+  return {
+    LedgerDateStrip: (props: Parameters<typeof actual.LedgerDateStrip>[0]) =>
+      strip.isReal ? (
+        <actual.LedgerDateStrip {...props} />
+      ) : (
+        <FakeDateStrip {...props} />
+      ),
+  };
+});
+function FakeDateStrip({
+  onSelect,
+  ...props
+}: {
+  onSelect: (date: string) => void;
+  selectedDate: string;
+}) {
+  return (
     <div
       data-testid="date-strip"
       data-selected={props.selectedDate}
@@ -48,8 +60,8 @@ vi.mock("./LedgerDateStrip", () => ({
         </button>
       ))}
     </div>
-  ),
-}));
+  );
+}
 const book = {
   id: "book-1",
   name: "여행비",
@@ -108,11 +120,61 @@ function dayHeadings() {
     .getAllByRole("heading", { level: 3 })
     .map((heading) => heading.textContent);
 }
+// Headers are observed against the scroll container; the mock reports which
+// headers sit above the line just below the sticky area.
+const observers: {
+  callback: IntersectionObserverCallback;
+  targets: Element[];
+  isDisconnected: boolean;
+}[] = [];
+class MockIntersectionObserver {
+  private record: (typeof observers)[number];
+  constructor(callback: IntersectionObserverCallback) {
+    this.record = { callback, targets: [], isDisconnected: false };
+    observers.push(this.record);
+  }
+  observe(target: Element) {
+    this.record.targets.push(target);
+  }
+  unobserve() {}
+  disconnect() {
+    this.record.isDisconnected = true;
+  }
+  takeRecords() {
+    return [];
+  }
+}
+// Reports `date`'s header as the one caught just below the sticky area: it
+// and every newer header sit above the line, older ones below it.
+function reportTopHeader(date: string) {
+  const observer = observers.findLast((item) => !item.isDisconnected);
+  if (!observer) throw new Error("no active IntersectionObserver");
+  const entries = observer.targets.map((target) => {
+    const targetDate = target.closest("section")?.dataset.date ?? "";
+    return {
+      target,
+      boundingClientRect: { top: targetDate >= date ? 90 : 300 },
+      rootBounds: { top: 100 },
+      isIntersecting: targetDate < date,
+    } as unknown as IntersectionObserverEntry;
+  });
+  act(() => observer.callback(entries, {} as IntersectionObserver));
+}
+// The browser's first notification right after observing.
+function reportInitialHeaders(date = "9999-12-31") {
+  reportTopHeader(date);
+}
+function finishProgrammaticScroll() {
+  fireEvent(screen.getByTestId("scroller"), new Event("scrollend"));
+}
 function section(name: string) {
   return screen.getByRole("heading", { level: 3, name }).closest("section");
 }
 beforeEach(() => {
   vi.clearAllMocks();
+  observers.length = 0;
+  strip.isReal = false;
+  vi.stubGlobal("IntersectionObserver", MockIntersectionObserver);
   Element.prototype.scrollIntoView = scrollIntoView;
   Element.prototype.scrollTo = scrollTo as never;
   vi.spyOn(window.history, "replaceState").mockImplementation(() => {});
@@ -145,6 +207,12 @@ const laterEntry = {
   id: "entry-2",
   title: "나중 기록",
   transactedAt: "2026-06-20T00:00:00Z",
+} satisfies LedgerEntryWithDetails;
+const previousWeekEntry = {
+  ...entry,
+  id: "entry-3",
+  title: "지난주 기록",
+  transactedAt: "2026-06-03T00:00:00Z",
 } satisfies LedgerEntryWithDetails;
 
 describe("LedgerRecordsClient", () => {
@@ -647,5 +715,145 @@ describe("LedgerRecordsClient", () => {
     renderRecords();
 
     expect(screen.queryByRole("button", { name: "조건 해제" })).toBeNull();
+  });
+
+  describe("scroll sync", () => {
+    beforeEach(() => {
+      vi.mocked(useLedgerEntries).mockReturnValue({
+        data: [laterEntry, entry, earlierEntry, previousWeekEntry],
+        isLoading: false,
+      } as never);
+    });
+
+    it("selects the header caught below the sticky area and quietly updates the date", () => {
+      state.search = "book=book-1&type=expense";
+      vi.mocked(useLedgerBook).mockReturnValue({
+        data: book,
+        isPending: false,
+      } as never);
+      renderRecords();
+      reportInitialHeaders();
+
+      reportTopHeader("2026-06-14");
+
+      expect(screen.getByTestId("date-strip")).toHaveAttribute(
+        "data-selected",
+        "2026-06-14",
+      );
+      expect(window.history.replaceState).toHaveBeenLastCalledWith(
+        null,
+        "",
+        "/ledger/records?book=book-1&type=expense&date=2026-06-14",
+      );
+      expect(replace).not.toHaveBeenCalled();
+      expect(push).not.toHaveBeenCalled();
+      expect(screen.getByRole("link", { name: "기록 추가" })).toHaveAttribute(
+        "href",
+        "/ledger/records/new/daily?date=2026-06-14&book=book-1",
+      );
+    });
+
+    it("moves the strip to the week of the caught header", () => {
+      strip.isReal = true;
+      state.search = "";
+      renderRecords();
+      reportInitialHeaders();
+      expect(
+        screen.getByRole("button", { name: /^6월 20일 토요일/ }),
+      ).toBeInTheDocument();
+
+      reportTopHeader("2026-06-03");
+
+      expect(
+        screen.getByRole("button", { name: /^6월 3일 수요일.*선택됨/ }),
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", { name: /^6월 20일 토요일/ }),
+      ).toBeNull();
+    });
+
+    it("does not override the selection on the first notification after entering", () => {
+      // A day without records: nothing to scroll to, so nothing holds sync.
+      state.search = "date=2026-06-10";
+      renderRecords();
+
+      reportInitialHeaders("2026-06-14");
+
+      expect(screen.getByTestId("date-strip")).toHaveAttribute(
+        "data-selected",
+        "2026-06-10",
+      );
+      expect(window.history.replaceState).not.toHaveBeenCalled();
+    });
+
+    it("keeps a tapped date while its programmatic scroll is running", async () => {
+      renderRecords();
+      reportInitialHeaders();
+      finishProgrammaticScroll();
+
+      await userEvent.click(
+        screen.getByRole("button", { name: "2026-06-14 선택" }),
+      );
+      reportTopHeader("2026-06-20");
+      reportTopHeader("2026-06-16");
+
+      expect(screen.getByTestId("date-strip")).toHaveAttribute(
+        "data-selected",
+        "2026-06-14",
+      );
+      expect(window.history.replaceState).toHaveBeenLastCalledWith(
+        null,
+        "",
+        "/ledger/records?date=2026-06-14",
+      );
+
+      finishProgrammaticScroll();
+      reportTopHeader("2026-06-16");
+
+      expect(screen.getByTestId("date-strip")).toHaveAttribute(
+        "data-selected",
+        "2026-06-16",
+      );
+    });
+
+    it("treats a temporary empty section header like any other header", async () => {
+      state.search = "";
+      renderRecords();
+      reportInitialHeaders();
+
+      await userEvent.click(
+        screen.getByRole("button", { name: "2026-06-17 선택" }),
+      );
+      finishProgrammaticScroll();
+      reportInitialHeaders();
+      reportTopHeader("2026-06-17");
+
+      expect(screen.getByTestId("date-strip")).toHaveAttribute(
+        "data-selected",
+        "2026-06-17",
+      );
+      expect(section("17일 수요일")).toHaveTextContent("기록이 없어요");
+
+      reportTopHeader("2026-06-16");
+
+      expect(screen.getByTestId("date-strip")).toHaveAttribute(
+        "data-selected",
+        "2026-06-16",
+      );
+      expect(screen.queryByText("기록이 없어요")).not.toBeInTheDocument();
+    });
+
+    it("puts the current date into the detail link's returnTo", () => {
+      state.search = "categoryId=category-1";
+      renderRecords();
+      reportInitialHeaders();
+
+      reportTopHeader("2026-06-14");
+
+      expect(screen.getByRole("link", { name: /지난 기록/ })).toHaveAttribute(
+        "href",
+        "/ledger/records/entry-0?from=records&date=2026-06-14&returnTo=%2Fledger%2Frecords%3FcategoryId%3Dcategory-1%26date%3D2026-06-14",
+      );
+    });
   });
 });
