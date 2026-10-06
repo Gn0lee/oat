@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
-import { ledgerFieldClassName } from "@/components/ledger/entry-composer/field-styles";
+import { composerFieldClassName } from "@/components/composer/field-styles";
 import {
   LedgerCategoryCombobox,
   LedgerCategoryPickerPanel,
@@ -476,7 +476,7 @@ export function LedgerEntryEditDialog({
           <SelectTrigger
             id="edit-book"
             aria-label="장부"
-            className={ledgerFieldClassName}
+            className={composerFieldClassName}
           >
             <SelectValue placeholder="장부 선택" />
           </SelectTrigger>
@@ -510,7 +510,7 @@ export function LedgerEntryEditDialog({
                 step="any"
                 min="0"
                 className={cn(
-                  ledgerFieldClassName,
+                  composerFieldClassName,
                   "h-12 pr-10 text-xl font-semibold",
                 )}
                 {...register("amount")}
@@ -532,7 +532,7 @@ export function LedgerEntryEditDialog({
             <Input
               id="edit-title"
               autoComplete="off"
-              className={ledgerFieldClassName}
+              className={composerFieldClassName}
               value={watchTitle ?? ""}
               onChange={(event) =>
                 setValue("title", event.target.value, {
@@ -563,7 +563,7 @@ export function LedgerEntryEditDialog({
                     categories={categories}
                     type={categoryType}
                     placeholder="선택"
-                    className={ledgerFieldClassName}
+                    className={composerFieldClassName}
                     aria-label="카테고리"
                     onValueChange={(v) =>
                       setValue("categoryId", v, {
@@ -575,7 +575,7 @@ export function LedgerEntryEditDialog({
                 ) : (
                   <LedgerCategoryTrigger
                     ref={categoryTriggerRef}
-                    className={ledgerFieldClassName}
+                    className={composerFieldClassName}
                     aria-label="카테고리"
                     label={
                       categories.find((cat) => cat.id === watchCategoryId)
@@ -613,7 +613,7 @@ export function LedgerEntryEditDialog({
                       ?.visibility === "shared"
                   }
                   placeholder={moneySourcePlaceholder}
-                  className={ledgerFieldClassName}
+                  className={composerFieldClassName}
                   aria-label={
                     entry.type === "income"
                       ? "입금 계좌"
@@ -626,7 +626,7 @@ export function LedgerEntryEditDialog({
               ) : (
                 <LedgerMoneySourceTrigger
                   ref={sourceTriggerRef}
-                  className={ledgerFieldClassName}
+                  className={composerFieldClassName}
                   aria-label={
                     entry.type === "income"
                       ? "입금 계좌"
@@ -652,7 +652,7 @@ export function LedgerEntryEditDialog({
             <Label htmlFor="edit-transactedAt">날짜</Label>
             <DatePickerInput
               id="edit-transactedAt"
-              className={ledgerFieldClassName}
+              className={composerFieldClassName}
               value={watchTransactedAt ?? ""}
               onChange={(v) =>
                 setValue("transactedAt", v, {
@@ -675,7 +675,7 @@ export function LedgerEntryEditDialog({
               id="edit-memo"
               placeholder="추가로 남기고 싶은 내용을 입력하세요"
               rows={2}
-              className={cn(ledgerFieldClassName, "resize-none")}
+              className={cn(composerFieldClassName, "resize-none")}
               {...register("memo")}
             />
             {errors.memo && (

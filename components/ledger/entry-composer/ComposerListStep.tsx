@@ -1,6 +1,5 @@
 "use client";
 
-import { Plus, Trash2 } from "lucide-react";
 import { useRef, useState } from "react";
 import {
   type UseFieldArrayReturn,
@@ -8,6 +7,10 @@ import {
   useWatch,
 } from "react-hook-form";
 import { toast } from "sonner";
+import {
+  ComposerList,
+  ComposerListRow,
+} from "@/components/composer/ComposerList";
 import { AmountText } from "@/components/layout/screen";
 import { Button } from "@/components/ui/button";
 import {
@@ -113,130 +116,102 @@ export function ComposerListStep({
   };
 
   return (
-    <div className="space-y-5 pb-[calc(1rem+env(safe-area-inset-bottom))]">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-lg font-semibold">가계부 기록</h1>
-          <p className="text-sm text-muted-foreground">
-            날짜와 장부는 기록마다 선택할 수 있어요.
-          </p>
-        </div>
-        <Button
-          type="button"
-          variant="outline"
-          className="min-h-11 rounded-[12px]"
-          onClick={handleAddItem}
+    <ComposerList
+      title="가계부 기록"
+      description="날짜와 장부는 기록마다 선택할 수 있어요."
+      addLabel="기록 추가"
+      onAdd={handleAddItem}
+      submitLabel={isSubmitting ? "저장 중..." : "모두 저장"}
+      submitDisabled={isSubmitting || fields.length === 0}
+      onSubmit={form.handleSubmit(handleValidSubmit, onInvalid)}
+      footer={
+        <Dialog
+          open={Boolean(negativeBalanceWarning)}
+          onOpenChange={(open) => !open && setNegativeBalanceWarning(null)}
         >
-          <Plus className="mr-2 size-4" />
-          기록 추가
-        </Button>
-      </div>
-      <div className="divide-y divide-border overflow-hidden rounded-[12px] border border-border bg-card text-foreground">
-        {fields.map((field, index) => {
-          const item = items[index];
-          if (!item) return null;
-          const book = books.find((candidate) => candidate.id === item.bookId);
-          const typeLabel =
-            item.type === "income"
-              ? "수입"
-              : item.type === "transfer"
-                ? "내부이체"
-                : item.type === "non_expense_withdrawal"
-                  ? "비지출 출금"
-                  : "지출";
-          return (
-            <div key={field.id} className="flex items-start gap-3 p-4">
-              <button
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>잔액이 음수가 됩니다</DialogTitle>
+              <DialogDescription>
+                {negativeBalanceWarning
+                  ? `저장하면 ${negativeBalanceWarning.locationName} 잔액이 ${formatCurrency(negativeBalanceWarning.nextBalance)}이 됩니다. 그래도 저장할까요?`
+                  : null}
+              </DialogDescription>
+            </DialogHeader>
+            <p className="text-sm text-muted-foreground">
+              실제 잔액과 다르면 나중에 실제 잔액 맞추기로 조정할 수 있어요.
+            </p>
+            <DialogFooter>
+              <Button
                 type="button"
-                onClick={() => onEditItem(item.clientId)}
-                className="min-h-16 min-w-0 flex-1 rounded-[12px] text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                variant="outline"
+                onClick={() => setNegativeBalanceWarning(null)}
               >
-                <span className="block text-xs text-muted-foreground">
-                  {typeLabel} · {book?.name ?? "장부 미선택"} ·{" "}
-                  {item.transactedAt}
-                </span>
-                <span className="mt-1 line-clamp-2 break-words font-medium">
-                  {item.title || "내용을 입력해 주세요"}
-                </span>
-                <span className="mt-1 block text-xs text-muted-foreground">
-                  {item.type === "transfer"
-                    ? "출발지·도착지"
-                    : item.type === "non_expense_withdrawal"
-                      ? "출금처"
-                      : "분류 및 금융수단"}{" "}
-                  수정
-                </span>
-              </button>
-              <div className="flex shrink-0 items-center gap-1">
-                <AmountText
-                  amount={Number(item.amount) || 0}
-                  sign={
-                    item.type === "income"
-                      ? "+"
-                      : item.type === "transfer"
-                        ? ""
-                        : "-"
-                  }
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  aria-label={`${index + 1}번째 기록 삭제`}
-                  className="size-11 p-0"
-                  onClick={() => remove(index)}
-                >
-                  <Trash2 className="size-4" />
-                </Button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-      <Button
-        type="button"
-        className="min-h-12 w-full rounded-[12px]"
-        disabled={isSubmitting || fields.length === 0}
-        onClick={form.handleSubmit(handleValidSubmit, onInvalid)}
-      >
-        {isSubmitting ? "저장 중..." : "모두 저장"}
-      </Button>
-      <Dialog
-        open={Boolean(negativeBalanceWarning)}
-        onOpenChange={(open) => !open && setNegativeBalanceWarning(null)}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>잔액이 음수가 됩니다</DialogTitle>
-            <DialogDescription>
-              {negativeBalanceWarning
-                ? `저장하면 ${negativeBalanceWarning.locationName} 잔액이 ${formatCurrency(negativeBalanceWarning.nextBalance)}이 됩니다. 그래도 저장할까요?`
-                : null}
-            </DialogDescription>
-          </DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            실제 잔액과 다르면 나중에 실제 잔액 맞추기로 조정할 수 있어요.
-          </p>
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setNegativeBalanceWarning(null)}
-            >
-              다시 확인
-            </Button>
-            <Button
-              type="button"
-              onClick={() => {
-                setNegativeBalanceWarning(null);
-                skipNegativeBalanceConfirmRef.current = true;
-                form.handleSubmit(handleValidSubmit, onInvalid)();
-              }}
-            >
-              그래도 저장
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+                다시 확인
+              </Button>
+              <Button
+                type="button"
+                onClick={() => {
+                  setNegativeBalanceWarning(null);
+                  skipNegativeBalanceConfirmRef.current = true;
+                  form.handleSubmit(handleValidSubmit, onInvalid)();
+                }}
+              >
+                그래도 저장
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      }
+    >
+      {fields.map((field, index) => {
+        const item = items[index];
+        if (!item) return null;
+        const book = books.find((candidate) => candidate.id === item.bookId);
+        const typeLabel =
+          item.type === "income"
+            ? "수입"
+            : item.type === "transfer"
+              ? "내부이체"
+              : item.type === "non_expense_withdrawal"
+                ? "비지출 출금"
+                : "지출";
+        return (
+          <ComposerListRow
+            key={field.id}
+            onEdit={() => onEditItem(item.clientId)}
+            deleteLabel={`${index + 1}번째 기록 삭제`}
+            onDelete={() => remove(index)}
+            trailing={
+              <AmountText
+                amount={Number(item.amount) || 0}
+                sign={
+                  item.type === "income"
+                    ? "+"
+                    : item.type === "transfer"
+                      ? ""
+                      : "-"
+                }
+              />
+            }
+          >
+            <span className="block text-xs text-muted-foreground">
+              {typeLabel} · {book?.name ?? "장부 미선택"} · {item.transactedAt}
+            </span>
+            <span className="mt-1 line-clamp-2 break-words font-medium">
+              {item.title || "내용을 입력해 주세요"}
+            </span>
+            <span className="mt-1 block text-xs text-muted-foreground">
+              {item.type === "transfer"
+                ? "출발지·도착지"
+                : item.type === "non_expense_withdrawal"
+                  ? "출금처"
+                  : "분류 및 금융수단"}{" "}
+              수정
+            </span>
+          </ComposerListRow>
+        );
+      })}
+    </ComposerList>
   );
 }

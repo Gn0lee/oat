@@ -200,7 +200,7 @@ describe("mobile ledger composer", () => {
     expect(
       screen.queryByRole("button", { name: "이전" }),
     ).not.toBeInTheDocument();
-    fireEvent(window, new CustomEvent("oat:ledger-composer-back"));
+    fireEvent(window, new CustomEvent("oat:composer-back"));
     expect(await screen.findByLabelText("내용 1")).toHaveValue("헤더 뒤로");
     expect(screen.getByLabelText("금액 1")).toHaveValue(4200);
   });
@@ -361,7 +361,7 @@ describe("mobile ledger composer", () => {
     document.body.append(trigger);
     trigger.focus();
     window.dispatchEvent(
-      new CustomEvent("oat:ledger-composer-close", { detail: { trigger } }),
+      new CustomEvent("oat:composer-close", { detail: { trigger } }),
     );
     fireEvent.click(await screen.findByRole("button", { name: "계속 입력" }));
     await waitFor(() => expect(trigger).toHaveFocus());
@@ -486,7 +486,7 @@ describe("mobile ledger composer", () => {
       expect(
         await screen.findByRole("heading", { name: "상세 입력" }),
       ).toBeInTheDocument();
-      fireEvent(window, new CustomEvent("oat:ledger-composer-back"));
+      fireEvent(window, new CustomEvent("oat:composer-back"));
       fireEvent.click(await screen.findByRole("button", { name: "기록 추가" }));
       fireEvent.change(screen.getByLabelText("내용 2"), {
         target: { value: "둘째" },
@@ -660,7 +660,7 @@ describe("mobile ledger composer", () => {
     fireEvent.change(within(editor).getByLabelText("내용"), {
       target: { value: "태블릿에서 수정" },
     });
-    fireEvent(window, new CustomEvent("oat:ledger-composer-back"));
+    fireEvent(window, new CustomEvent("oat:composer-back"));
     expect(
       await screen.findByRole("heading", {
         name: "입력 중인 내용을 버릴까요?",

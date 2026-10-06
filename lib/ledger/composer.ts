@@ -62,7 +62,7 @@ export function normalizeComposerTypeChange<T extends LedgerComposerItem>(
 
 export function getMissingComposerStep(
   item: LedgerComposerItem,
-): ComposerStep | null {
+): Exclude<ComposerStep, "review"> | null {
   return getComposerStepIssues(item, "basics").length
     ? "basics"
     : getComposerStepIssues(item, "classification").length

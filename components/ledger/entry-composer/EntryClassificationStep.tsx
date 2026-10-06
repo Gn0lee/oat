@@ -1,8 +1,8 @@
 "use client";
 
 import { useFormContext, useWatch } from "react-hook-form";
+import { ComposerActionBar } from "@/components/composer/ComposerActionBar";
 import type { LedgerComposerValues } from "@/schemas/ledger-composer";
-import { ComposerActionBar } from "./ComposerActionBar";
 import { EntryFields } from "./EntryFields";
 
 export function EntryClassificationStep({
