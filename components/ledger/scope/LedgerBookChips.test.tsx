@@ -68,7 +68,7 @@ describe("LedgerBookChips", () => {
     const names = within(group)
       .getAllByRole("button")
       .map((button) => button.textContent);
-    expect(names).toEqual(["전체", "생활비", "여행비", "용돈개인", "이사보관"]);
+    expect(names).toEqual(["전체", "생활비", "여행비", "용돈", "이사보관"]);
   });
 
   it("선택 상태를 aria-pressed로 전달하고 장부 없이는 전체가 선택된다", () => {

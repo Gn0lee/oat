@@ -2,6 +2,8 @@
 
 import { useQueryClient } from "@tanstack/react-query";
 import {
+  ChartPie,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Plus,
@@ -11,6 +13,7 @@ import {
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { type RefObject, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { AmountText, ScreenState } from "@/components/layout/screen";
 import { LedgerBookChips } from "@/components/ledger/scope/LedgerBookChips";
 import { LedgerBookUnavailable } from "@/components/ledger/scope/LedgerBookUnavailable";
@@ -63,6 +66,8 @@ const SYNC_LINE_SLACK = 8;
 // A programmatic scroll is over once the container stops scrolling this long.
 const SCROLL_IDLE_MS = 150;
 const SCROLL_START_MS = 300;
+// How far past the end of the list a drag must go to open the previous month.
+const PULL_THRESHOLD = 72;
 
 // Bottom edge of the sticky header, relative to the scroll container.
 function stickyBottom(header: HTMLElement | null) {
@@ -175,6 +180,9 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
   // Set while a scroll we started (entering, tapping a day) is running, so
   // scroll sync doesn't overwrite the selection mid-way.
   const releaseScrollHoldRef = useRef<(() => void) | null>(null);
+  const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
+  // Dragged far enough past the list's end that letting go moves a month back.
+  const [isPullReady, setIsPullReady] = useState(false);
   const {
     data: books = [],
     isPending: booksPending,
@@ -283,6 +291,7 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
     !(bookId && bookPending);
 
   useEffect(() => () => releaseScrollHoldRef.current?.(), []);
+  useEffect(() => setPortalRoot(document.body), []);
 
   // Entering with a date opens the list at that day; otherwise at the top.
   useEffect(() => {
@@ -357,6 +366,55 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
     for (const header of headers) observer.observe(header);
     return () => observer.disconnect();
   }, [dayKeys, isListReady]);
+
+  // Dragging up past the end of the list and letting go opens the previous
+  // month. Only a finger drag counts, so momentum scrolling into the end
+  // never moves the month on its own.
+  const moveToPreviousMonthRef = useRef(() => {});
+  useEffect(() => {
+    moveToPreviousMonthRef.current = () => handleMonthMove(-1);
+  });
+  useEffect(() => {
+    const container = findScrollContainer(listRef.current);
+    if (!isListReady || !container) return;
+    const isAtEnd = () =>
+      container.scrollTop + container.clientHeight >=
+      container.scrollHeight - 1;
+    let startY: number | null = null;
+    let isReady = false;
+    const setReady = (next: boolean) => {
+      if (next === isReady) return;
+      isReady = next;
+      setIsPullReady(next);
+    };
+    const handleStart = (event: TouchEvent) => {
+      startY = isAtEnd() ? event.touches[0].clientY : null;
+    };
+    const handleMove = (event: TouchEvent) => {
+      const y = event.touches[0].clientY;
+      // A drag that scrolls into the end starts counting from there.
+      if (startY === null) {
+        if (isAtEnd()) startY = y;
+        return;
+      }
+      setReady(startY - y >= PULL_THRESHOLD);
+    };
+    const handleEnd = () => {
+      if (isReady) moveToPreviousMonthRef.current();
+      startY = null;
+      setReady(false);
+    };
+    container.addEventListener("touchstart", handleStart, { passive: true });
+    container.addEventListener("touchmove", handleMove, { passive: true });
+    container.addEventListener("touchend", handleEnd);
+    container.addEventListener("touchcancel", handleEnd);
+    return () => {
+      container.removeEventListener("touchstart", handleStart);
+      container.removeEventListener("touchmove", handleMove);
+      container.removeEventListener("touchend", handleEnd);
+      container.removeEventListener("touchcancel", handleEnd);
+    };
+  }, [isListReady]);
 
   // The calendar's expanded state is local to the strip; drop any legacy
   // `view` param whenever the URL is rewritten.
@@ -452,8 +510,13 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
   const addParams = new URLSearchParams({ date: selectedDate });
   if (bookId && book && !archived) addParams.set("book", book.id);
   const currentYear = Number(today.slice(0, 4));
-  const monthLabel =
-    year === currentYear ? `${month}월` : `${year}년 ${month}월`;
+  const labelMonth = (labelYear: number, labelMonthNumber: number) =>
+    labelYear === currentYear
+      ? `${labelMonthNumber}월`
+      : `${labelYear}년 ${labelMonthNumber}월`;
+  const monthLabel = labelMonth(year, month);
+  const previousMonthLabel =
+    month === 1 ? labelMonth(year - 1, 12) : labelMonth(year, month - 1);
 
   return (
     <div className="pb-24">
@@ -490,6 +553,14 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
           <div className="flex items-center">
             <Button asChild variant="ghost" className="size-11 p-0">
               <Link
+                href={ledgerScopeHref("/ledger/analysis", bookId)}
+                aria-label="분석 보기"
+              >
+                <ChartPie className="size-5" />
+              </Link>
+            </Button>
+            <Button asChild variant="ghost" className="size-11 p-0">
+              <Link
                 href={ledgerScopeHref("/ledger/search", bookId)}
                 aria-label="내역 검색"
               >
@@ -506,6 +577,31 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
             </Button>
           </div>
         </div>
+
+        {/* Month totals sit under the month they belong to. Fixed height so
+            loading doesn't shift the sticky area. */}
+        <dl className="-mt-2 flex h-5 items-center gap-4 text-sm">
+          {(
+            [
+              ["지출", summary.totalExpense, "-"],
+              ["수입", summary.totalIncome, "+"],
+            ] as const
+          ).map(([label, amount, sign]) => (
+            <div key={label} className="flex items-center gap-1.5">
+              <dt className="text-gray-500">{label}</dt>
+              <dd>
+                {isLoading || isBookLoading ? (
+                  <Skeleton className="h-4 w-16 rounded" />
+                ) : (
+                  <AmountText
+                    value={`${amount > 0 ? sign : ""}${formatCurrency(amount)}`}
+                    align="left"
+                  />
+                )}
+              </dd>
+            </div>
+          ))}
+        </dl>
 
         <LedgerBookChips
           books={books}
@@ -545,55 +641,20 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
         <Skeleton className="mt-4 h-72 rounded-2xl" />
       ) : (
         <>
-          <div className="space-y-3 pt-4">
-            {isLoading ? (
-              <Skeleton className="h-16 rounded-2xl" />
-            ) : (
-              <div>
-                <dl className="grid grid-cols-2 gap-4">
-                  {(
-                    [
-                      ["지출", summary.totalExpense, "-"],
-                      ["수입", summary.totalIncome, "+"],
-                    ] as const
-                  ).map(([label, amount, sign]) => (
-                    <div key={label}>
-                      <dt className="text-sm text-gray-500">{label}</dt>
-                      <dd>
-                        <AmountText
-                          value={`${amount > 0 ? sign : ""}${formatCurrency(amount)}`}
-                          align="left"
-                          className="text-2xl font-bold"
-                        />
-                      </dd>
-                    </div>
-                  ))}
-                </dl>
-                <Link
-                  href={ledgerScopeHref("/ledger/analysis", bookId)}
-                  className="mt-3 inline-flex min-h-11 items-center text-sm text-gray-500"
-                >
-                  분석 보기
-                  <ChevronRight className="size-4" aria-hidden="true" />
-                </Link>
-              </div>
-            )}
-
-            {book && (
-              <output className="block text-sm text-gray-500">
-                {book.visibility === "shared" ? "공용 장부" : "개인 장부"}
-                {book.isDefault ? " · 기본" : ""}
-                {archived && (
-                  <>
-                    {" · 보관됨 · 읽기 전용"}
-                    <span className="block">
-                      기록을 바꾸려면 장부 관리에서 다시 활성화해주세요.
-                    </span>
-                  </>
-                )}
-              </output>
-            )}
-          </div>
+          {book && (
+            <output className="mt-4 block text-sm text-gray-500">
+              {book.visibility === "shared" ? "공용 장부" : "개인 장부"}
+              {book.isDefault ? " · 기본" : ""}
+              {archived && (
+                <>
+                  {" · 보관됨 · 읽기 전용"}
+                  <span className="block">
+                    기록을 바꾸려면 장부 관리에서 다시 활성화해주세요.
+                  </span>
+                </>
+              )}
+            </output>
+          )}
 
           <div ref={listRef} className="mt-4 border-t border-gray-100 pt-2">
             {isLoading ? (
@@ -638,21 +699,39 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
             )}
           </div>
 
-          {canAdd && (
-            // 16px above the mobile tab bar (h-16 + safe area); bottom-right of
-            // the content area on desktop.
-            <Button
-              asChild
-              className="fixed right-4 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-10 size-14 rounded-full p-0 shadow-lg lg:right-8 lg:bottom-8"
+          {!isLoading && (
+            <button
+              type="button"
+              onClick={() => handleMonthMove(-1)}
+              className="mt-8 flex min-h-11 w-full items-center justify-center gap-1 text-sm text-gray-500"
             >
-              <Link
-                href={`/ledger/records/new/daily?${addParams}`}
-                aria-label="기록 추가"
-              >
-                <Plus className="size-6" aria-hidden="true" />
-              </Link>
-            </Button>
+              {isPullReady
+                ? `놓으면 ${previousMonthLabel}로 이동`
+                : `${previousMonthLabel} 내역 보기`}
+              <ChevronDown className="size-4" aria-hidden="true" />
+            </button>
           )}
+
+          {canAdd &&
+            portalRoot &&
+            // Portaled to body: the page transition wrapper can leave a
+            // transform behind, which would pin a fixed button to the end of
+            // the page instead of the viewport. 16px above the mobile tab bar
+            // (h-16 + safe area); bottom-right of the content area on desktop.
+            createPortal(
+              <Button
+                asChild
+                className="fixed right-4 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-10 size-14 rounded-full p-0 shadow-lg lg:right-8 lg:bottom-8"
+              >
+                <Link
+                  href={`/ledger/records/new/daily?${addParams}`}
+                  aria-label="기록 추가"
+                >
+                  <Plus className="size-6" aria-hidden="true" />
+                </Link>
+              </Button>,
+              portalRoot,
+            )}
         </>
       )}
     </div>
