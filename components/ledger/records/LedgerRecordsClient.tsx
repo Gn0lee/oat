@@ -121,6 +121,21 @@ function scrollToDayHoldingSync(
   if (!scrollToDay(list, header, date, behavior)) holdRef.current?.();
 }
 
+// A URL carries either the selected day or, at the list's top, its month.
+function setDateParams(
+  params: URLSearchParams,
+  date: string | null,
+  monthKey: string,
+) {
+  if (date) {
+    params.delete("month");
+    params.set("date", date);
+  } else {
+    params.delete("date");
+    params.set("month", monthKey);
+  }
+}
+
 // The layout scrolls an inner container, not the window.
 function findScrollContainer(element: HTMLElement | null) {
   for (let node = element?.parentElement; node; node = node.parentElement) {
@@ -149,6 +164,8 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
   const [tappedDate, setTappedDate] = useState<string | null>(null);
   // The header caught just below the sticky area while the user scrolls.
   const [syncedDate, setSyncedDate] = useState<string | null>(null);
+  // Scrolled back above every header: the URL drops its date.
+  const [isScrolledToTop, setIsScrolledToTop] = useState(false);
   const [scrollRequest, setScrollRequest] = useState<{ date: string } | null>(
     null,
   );
@@ -206,7 +223,9 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
     ? syncedDate
     : null;
   // The date the URL carries right now (tap and sync rewrite it quietly).
-  const currentDate = activeTappedDate ?? activeSyncedDate ?? urlDate;
+  const currentDate =
+    activeTappedDate ??
+    (isScrolledToTop ? null : (activeSyncedDate ?? urlDate));
   const selectedDate =
     currentDate ?? recordDays[0] ?? ledgerMonthAnchorDate(year, month, today);
   // Every day with records, newest first. A tapped day without records gets a
@@ -245,10 +264,9 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
   }, [entries, searchParams]);
 
   const returnParams = new URLSearchParams(searchParams.toString());
-  if (currentDate && currentDate !== urlDate) {
+  if (currentDate !== urlDate) {
     returnParams.delete("view");
-    returnParams.delete("month");
-    returnParams.set("date", currentDate);
+    setDateParams(returnParams, currentDate, monthKey);
   }
   const returnTo = `${pathname}${returnParams.size ? `?${returnParams}` : ""}`;
   const queryError = bookError || entriesError || booksError;
@@ -294,15 +312,15 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
   // Scroll sync: the selection follows the last header that has scrolled up
   // to the bottom edge of the sticky area. The handler lives in a ref so the
   // observer sees the latest selection without being recreated every render.
-  const syncToHeaderRef = useRef((_date: string) => {});
+  const syncToHeaderRef = useRef((_date: string | null) => {});
   useEffect(() => {
-    syncToHeaderRef.current = (date: string) => {
+    syncToHeaderRef.current = (date: string | null) => {
       if (releaseScrollHoldRef.current || date === currentDate) return;
       if (date !== activeTappedDate) setTappedDate(null);
       setSyncedDate(date);
+      setIsScrolledToTop(date === null);
       const next = nextParams();
-      next.delete("month");
-      next.set("date", date);
+      setDateParams(next, date, monthKey);
       window.history.replaceState(null, "", `${pathname}?${next}`);
     };
   });
@@ -326,8 +344,7 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
           return;
         }
         const top = headers.findLast((header) => isAbove.get(header));
-        const date = top?.closest("section")?.dataset.date;
-        if (date) syncToHeaderRef.current(date);
+        syncToHeaderRef.current(top?.closest("section")?.dataset.date ?? null);
       },
       {
         root: findScrollContainer(list),
@@ -356,6 +373,7 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
   // Tapping a day only rewrites the URL; the month's data is already loaded.
   const handleDateSelect = (date: string) => {
     setTappedDate(date);
+    setIsScrolledToTop(false);
     setScrollRequest({ date });
     const next = nextParams();
     next.delete("month");
@@ -368,6 +386,7 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
       .slice(0, 7);
     setTappedDate(null);
     setSyncedDate(null);
+    setIsScrolledToTop(false);
     const next = nextParams();
     next.delete("date");
     next.set("month", target);
@@ -384,6 +403,7 @@ export function LedgerRecordsClient({ initialDate }: LedgerRecordsClientProps) {
     else next.delete("book");
     setTappedDate(null);
     setSyncedDate(null);
+    setIsScrolledToTop(false);
     router.push(`${pathname}${next.size ? `?${next}` : ""}`);
   };
   const clearFilters = () =>

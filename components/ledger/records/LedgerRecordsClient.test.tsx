@@ -160,9 +160,14 @@ function reportTopHeader(date: string) {
   });
   act(() => observer.callback(entries, {} as IntersectionObserver));
 }
+// No header has scrolled up to the line: the list is back at its top.
+function reportNoHeaderCaught() {
+  reportTopHeader("9999-12-31");
+}
 // The browser's first notification right after observing.
-function reportInitialHeaders(date = "9999-12-31") {
-  reportTopHeader(date);
+function reportInitialHeaders(date?: string) {
+  if (date) reportTopHeader(date);
+  else reportNoHeaderCaught();
 }
 function finishProgrammaticScroll() {
   fireEvent(screen.getByTestId("scroller"), new Event("scrollend"));
@@ -841,6 +846,91 @@ describe("LedgerRecordsClient", () => {
         "2026-06-16",
       );
       expect(screen.queryByText("기록이 없어요")).not.toBeInTheDocument();
+    });
+
+    it("returning to the top quietly swaps the date for the month and selects the top header", () => {
+      state.search = "book=book-1&date=2026-06-14&type=expense";
+      vi.mocked(useLedgerBook).mockReturnValue({
+        data: book,
+        isPending: false,
+      } as never);
+      renderRecords();
+      reportInitialHeaders("2026-06-14");
+      finishProgrammaticScroll();
+
+      reportNoHeaderCaught();
+
+      expect(window.history.replaceState).toHaveBeenLastCalledWith(
+        null,
+        "",
+        "/ledger/records?book=book-1&type=expense&month=2026-06",
+      );
+      expect(replace).not.toHaveBeenCalled();
+      expect(push).not.toHaveBeenCalled();
+      expect(screen.getByTestId("date-strip")).toHaveAttribute(
+        "data-selected",
+        "2026-06-20",
+      );
+      expect(screen.getByRole("link", { name: /나중 기록/ })).toHaveAttribute(
+        "href",
+        "/ledger/records/entry-2?from=records&date=2026-06-20&returnTo=%2Fledger%2Frecords%3Fbook%3Dbook-1%26type%3Dexpense%26month%3D2026-06",
+      );
+    });
+
+    it("returning to the top drops a tapped empty day", async () => {
+      state.search = "";
+      renderRecords();
+      reportInitialHeaders();
+      await userEvent.click(
+        screen.getByRole("button", { name: "2026-06-17 선택" }),
+      );
+      finishProgrammaticScroll();
+      reportInitialHeaders();
+      reportTopHeader("2026-06-17");
+
+      reportNoHeaderCaught();
+
+      expect(window.history.replaceState).toHaveBeenLastCalledWith(
+        null,
+        "",
+        "/ledger/records?month=2026-06",
+      );
+      expect(screen.getByTestId("date-strip")).toHaveAttribute(
+        "data-selected",
+        "2026-06-20",
+      );
+      expect(screen.queryByText("기록이 없어요")).not.toBeInTheDocument();
+    });
+
+    it("keeps a tapped date when the list passes the top during its programmatic scroll", async () => {
+      renderRecords();
+      reportInitialHeaders();
+      finishProgrammaticScroll();
+
+      await userEvent.click(
+        screen.getByRole("button", { name: "2026-06-14 선택" }),
+      );
+      reportNoHeaderCaught();
+
+      expect(screen.getByTestId("date-strip")).toHaveAttribute(
+        "data-selected",
+        "2026-06-14",
+      );
+      expect(window.history.replaceState).toHaveBeenLastCalledWith(
+        null,
+        "",
+        "/ledger/records?date=2026-06-14",
+      );
+    });
+
+    it("does not touch the URL at the top when nothing was scrolled", () => {
+      state.search = "";
+      renderRecords();
+      reportInitialHeaders();
+
+      reportNoHeaderCaught();
+
+      expect(window.history.replaceState).not.toHaveBeenCalled();
     });
 
     it("puts the current date into the detail link's returnTo", () => {
