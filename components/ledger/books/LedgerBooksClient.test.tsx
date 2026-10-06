@@ -57,6 +57,51 @@ describe("LedgerBooksClient", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("lists active books in recently used order before archived books", () => {
+    const base = {
+      visibility: "shared" as const,
+      createdBy: "me",
+      isDefault: false,
+      archivedAt: null,
+      createdAt: "2026-01-01T00:00:00Z",
+      updatedAt: "2026-01-01T00:00:00Z",
+      lastEntryAt: null,
+    };
+    vi.mocked(useLedgerBooks).mockReturnValue({
+      data: [
+        {
+          ...base,
+          id: "archived",
+          name: "지난 여행",
+          archivedAt: "2026-09-01T00:00:00Z",
+          lastEntryAt: "2026-10-06T00:00:00Z",
+        },
+        { ...base, id: "empty", name: "빈 장부" },
+        {
+          ...base,
+          id: "trip",
+          name: "여행",
+          lastEntryAt: "2026-10-05T00:00:00Z",
+        },
+        { ...base, id: "default", name: "생활비", isDefault: true },
+      ],
+      isLoading: false,
+      error: null,
+    } as never);
+
+    render(<LedgerBooksClient />);
+
+    expect(
+      screen
+        .getAllByRole("link")
+        .filter((link) =>
+          link.getAttribute("href")?.startsWith("/ledger/books/"),
+        )
+        .filter((link) => !link.getAttribute("href")?.includes("/new"))
+        .map((link) => link.querySelector("p")?.textContent),
+    ).toEqual(["생활비", "여행", "빈 장부", "지난 여행"]);
+  });
+
   it("offers household setup instead of an empty list when membership is missing", () => {
     identity.userId = "me";
     identity.householdId = null;

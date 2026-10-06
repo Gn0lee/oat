@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, ChevronRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 import {
   EntryRow,
@@ -10,10 +10,11 @@ import {
 } from "@/components/layout/screen";
 import { ScreenState } from "@/components/layout/screen/ScreenState";
 import { useLedgerBooks } from "@/hooks/use-ledger-books";
+import { selectHubBooks } from "@/lib/ledger-books/recent-books";
 
 export function LedgerBooksSection() {
   const { data: books, isLoading, error } = useLedgerBooks();
-  const activeBooks = (books ?? []).filter((book) => !book.archivedAt);
+  const hub = selectHubBooks(books ?? []);
 
   return (
     <ScreenSection>
@@ -36,15 +37,14 @@ export function LedgerBooksSection() {
         </GroupedList>
       ) : error ? (
         <ScreenState type="error" title="장부를 불러오지 못했어요" />
-      ) : activeBooks.length === 0 ? (
+      ) : hub.activeCount === 0 ? (
         <ScreenState type="empty" title="사용할 수 있는 장부가 없어요" />
       ) : (
         <GroupedList>
-          {activeBooks.map((book) => (
+          {hub.books.map((book) => (
             <EntryRow
               key={book.id}
               href={`/ledger/records?book=${encodeURIComponent(book.id)}`}
-              icon={BookOpen}
               title={
                 <span className="line-clamp-2 whitespace-normal break-words">
                   {book.name}
@@ -60,6 +60,12 @@ export function LedgerBooksSection() {
               }
             />
           ))}
+          {hub.hasMore && (
+            <EntryRow
+              href="/ledger/books"
+              title={`장부 전체 ${hub.activeCount}개`}
+            />
+          )}
         </GroupedList>
       )}
     </ScreenSection>

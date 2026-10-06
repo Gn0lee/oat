@@ -1,13 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getUserHouseholdId } from "@/lib/api/invitation";
-import { createLedgerBook, getLedgerBooks } from "@/lib/api/ledger-books";
+import { createLedgerBook, getLedgerBookList } from "@/lib/api/ledger-books";
 import { createClient } from "@/lib/supabase/server";
 import { GET, POST } from "./route";
 
 vi.mock("@/lib/api/invitation", () => ({ getUserHouseholdId: vi.fn() }));
 vi.mock("@/lib/api/ledger-books", () => ({
   createLedgerBook: vi.fn(),
-  getLedgerBooks: vi.fn(),
+  getLedgerBookList: vi.fn(),
 }));
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 
@@ -23,7 +23,7 @@ describe("/api/ledger-books", () => {
       },
     } as never);
     vi.mocked(getUserHouseholdId).mockResolvedValue("household-id");
-    vi.mocked(getLedgerBooks).mockResolvedValue([]);
+    vi.mocked(getLedgerBookList).mockResolvedValue([]);
   });
 
   it("requires an authenticated user", async () => {
@@ -40,6 +40,43 @@ describe("/api/ledger-books", () => {
     await expect(response.json()).resolves.toMatchObject({
       error: { code: "AUTH_UNAUTHORIZED" },
     });
+  });
+
+  it("lists books in creation order with a nullable lastEntryAt", async () => {
+    const books = [
+      {
+        id: "default",
+        name: "생활비",
+        visibility: "shared" as const,
+        createdBy: null,
+        isDefault: true,
+        archivedAt: null,
+        createdAt: "2026-01-01T00:00:00Z",
+        updatedAt: "2026-01-01T00:00:00Z",
+        lastEntryAt: null,
+      },
+      {
+        id: "trip",
+        name: "여행",
+        visibility: "shared" as const,
+        createdBy: "user-id",
+        isDefault: false,
+        archivedAt: null,
+        createdAt: "2026-02-01T00:00:00Z",
+        updatedAt: "2026-02-01T00:00:00Z",
+        lastEntryAt: "2026-10-06T01:00:00+00:00",
+      },
+    ];
+    vi.mocked(getLedgerBookList).mockResolvedValue(books);
+
+    const response = await GET();
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({ data: books });
+    expect(getLedgerBookList).toHaveBeenCalledWith(
+      expect.anything(),
+      "household-id",
+    );
   });
 
   it("rejects extra create fields before writing", async () => {
