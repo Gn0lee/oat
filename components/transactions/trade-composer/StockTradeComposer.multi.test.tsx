@@ -101,9 +101,6 @@ vi.mock("@/hooks/use-transaction", () => ({
     isPending: false,
   }),
 }));
-vi.mock("@/components/transactions/MultiTransactionFormWrapper", () => ({
-  MultiTransactionFormWrapper: () => <div>예전 데스크톱 입력</div>,
-}));
 vi.mock("@/components/ui/drawer", () => ({
   Drawer: ({ open, children }: { open: boolean; children: ReactNode }) =>
     open ? <div role="dialog">{children}</div> : null,

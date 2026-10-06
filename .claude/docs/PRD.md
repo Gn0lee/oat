@@ -584,8 +584,8 @@ Inline Reference Creation에서는 가계부 계좌를 `bank/checking`, 주식 �
 | 주식 종합 분석 | `/assets/stock/analysis/overview` | 주식 비중, 수익률, 계좌별 분석 |
 | 소유자별 주식 분석 | `/assets/stock/analysis/by-owner` | 구성원별 주식 평가액과 보유 종목 분석 |
 | 위험도별 주식 분석 | `/assets/stock/analysis/by-risk` | 위험도별 주식 평가액과 보유 종목 분석 |
-| 주식 전체 거래 등록 | `/assets/stock/transactions/new/full` | 맥락 없이 진입하는 주식 거래 등록. 거래 기본값과 여러 종목 행을 조립 |
-| 주식 계좌별 거래 등록 | `/assets/stock/transactions/new/account?accountId=...` | 특정 투자 계좌 맥락에서 거래를 등록 |
+| 주식 전체 거래 등록 | `/assets/stock/transactions/new/full` | 맥락 없이 진입하는 주식 거래 등록. 거래마다 매수/매도·종목·수량·단가를 입력하고 여러 건을 조립 |
+| 주식 하루 거래 등록 | `/assets/stock/transactions/new/daily?date=YYYY-MM-DD` | 기록 달력의 날짜를 거래일 기본값으로 진입하는 주식 거래 등록 |
 
 **설정 (기존)**
 | 화면 | 경로 | 설명 |
