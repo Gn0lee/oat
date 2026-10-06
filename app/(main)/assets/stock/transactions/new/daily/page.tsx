@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { PageContainer } from "@/components/layout";
-import { MultiTransactionFormWrapper } from "@/components/transactions/MultiTransactionFormWrapper";
+import { StockTradeComposer } from "@/components/transactions/trade-composer/StockTradeComposer";
 import { getKstToday } from "@/lib/date";
 import { normalizeRecordDate } from "@/lib/stock-records/records";
 
@@ -28,7 +28,7 @@ export default async function NewDailyStockTransactionPage({
           </div>
         }
       >
-        <MultiTransactionFormWrapper
+        <StockTradeComposer
           mode="daily"
           defaultDate={normalizeRecordDate(date, today)}
         />

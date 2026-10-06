@@ -113,6 +113,8 @@ export const createBatchTransactionSchema = z.object({
     .array(batchTransactionItemSchema)
     .min(1, "최소 1개 이상의 거래가 필요합니다.")
     .max(20, "한 번에 최대 20개까지 등록 가능합니다."),
+  /** 저장 요청 멱등 키. 서버 중복 방지는 #488에서 붙인다. */
+  requestId: z.string().uuid().optional(),
 });
 
 export type CreateBatchTransactionInput = z.infer<

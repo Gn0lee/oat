@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { PageContainer } from "@/components/layout";
-import { MultiTransactionFormWrapper } from "@/components/transactions/MultiTransactionFormWrapper";
+import { StockTradeComposer } from "@/components/transactions/trade-composer/StockTradeComposer";
 
 export default function NewStockTransactionFullPage() {
   return (
@@ -15,7 +15,7 @@ export default function NewStockTransactionFullPage() {
           </div>
         }
       >
-        <MultiTransactionFormWrapper />
+        <StockTradeComposer mode="full" />
       </Suspense>
     </PageContainer>
   );

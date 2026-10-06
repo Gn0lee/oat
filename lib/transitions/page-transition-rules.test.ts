@@ -3,6 +3,7 @@ import {
   getPageTransitionMode,
   getPageTransitionRules,
   LEDGER_COMPOSER_STEP_PATHS,
+  STOCK_TRADE_COMPOSER_STEP_PATHS,
 } from "./page-transition-rules";
 
 describe("page transition rules", () => {
@@ -46,6 +47,33 @@ describe("page transition rules", () => {
     expect(getPageTransitionRules("reduced")).toContainEqual({
       kind: "fade",
       paths: LEDGER_COMPOSER_STEP_PATHS,
+    });
+  });
+
+  it("stock trade composer steps use the same x-axis transition as the ledger composer", () => {
+    expect(getPageTransitionRules("mobile")).toContainEqual({
+      kind: "axis",
+      paths: STOCK_TRADE_COMPOSER_STEP_PATHS,
+      type: "x",
+      variant: "snappy",
+    });
+    expect(STOCK_TRADE_COMPOSER_STEP_PATHS[0]).toContain("composer-basics");
+    expect(STOCK_TRADE_COMPOSER_STEP_PATHS).toContain(
+      "/assets/stock/transactions/new/daily/composer-single-details",
+    );
+    const mobile = getPageTransitionRules("mobile");
+    const axisIndex = mobile.findIndex(
+      (rule) =>
+        rule.kind === "axis" && rule.paths === STOCK_TRADE_COMPOSER_STEP_PATHS,
+    );
+    const drillIndex = mobile.findIndex(
+      (rule) =>
+        rule.kind === "drill" && rule.enter === "/assets/stock/transactions/*",
+    );
+    expect(axisIndex).toBeLessThan(drillIndex);
+    expect(getPageTransitionRules("reduced")).toContainEqual({
+      kind: "fade",
+      paths: STOCK_TRADE_COMPOSER_STEP_PATHS,
     });
   });
 

@@ -87,4 +87,21 @@ describe("createBatchTransactionSchema", () => {
       }).success,
     ).toBe(false);
   });
+
+  it("저장 요청 멱등 키(requestId)를 선택값으로 받는다", () => {
+    const requestId = "00000000-0000-4000-8000-000000000099";
+    const result = createBatchTransactionSchema.safeParse({
+      items: [buyItem],
+      requestId,
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.data?.requestId).toBe(requestId);
+    expect(
+      createBatchTransactionSchema.safeParse({
+        items: [buyItem],
+        requestId: "not-a-uuid",
+      }).success,
+    ).toBe(false);
+  });
 });
