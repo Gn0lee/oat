@@ -32,6 +32,13 @@ export function isLedgerRecordDate(
   );
 }
 
+// YYYY-MM month the records screen opens when the URL has no date.
+export function isLedgerRecordMonth(
+  value: string | null | undefined,
+): value is string {
+  return Boolean(value && /^\d{4}-(0[1-9]|1[0-2])$/.test(value));
+}
+
 // Date to open when moving to another month: today for the current month,
 // otherwise the month's last day so the whole month's records are listed.
 export function ledgerMonthAnchorDate(

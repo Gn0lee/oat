@@ -1,45 +1,35 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { APIError } from "@/lib/api/error";
 import { getLedgerBook } from "@/lib/api/ledger-books";
-import { formatKst, getKstMonthRange } from "@/lib/date";
+import { formatKst } from "@/lib/date";
 import type { Database } from "@/types";
 
-// Date a calendar opens on when the URL has no date (#434/#436): the most recent
-// record of the current month in the scope, or the last record of an archived book.
+// Date whose month the records screen opens when the URL has neither a date nor
+// a month: the current month, or the month of an archived book's last record.
 export async function resolveLedgerRecordsInitialDate(
   supabase: SupabaseClient<Database>,
   householdId: string,
   options: { bookId?: string; today: string },
 ): Promise<string> {
-  let archived = false;
-  if (options.bookId) {
-    try {
-      const book = await getLedgerBook(supabase, householdId, options.bookId);
-      archived = Boolean(book.archivedAt);
-    } catch (error) {
-      // The client renders the same unavailable state for hidden/deleted IDs.
-      if (
-        error instanceof APIError &&
-        (error.statusCode === 404 || error.statusCode === 400)
-      )
-        return options.today;
-      throw error;
-    }
+  if (!options.bookId) return options.today;
+  try {
+    const book = await getLedgerBook(supabase, householdId, options.bookId);
+    if (!book.archivedAt) return options.today;
+  } catch (error) {
+    // The client renders the same unavailable state for hidden/deleted IDs.
+    if (
+      error instanceof APIError &&
+      (error.statusCode === 404 || error.statusCode === 400)
+    )
+      return options.today;
+    throw error;
   }
 
-  let query = supabase
+  const { data, error } = await supabase
     .from("ledger_entries")
     .select("transacted_at")
-    .eq("household_id", householdId);
-  if (options.bookId) query = query.eq("book_id", options.bookId);
-  if (!archived) {
-    const [year, month] = options.today.split("-").map(Number);
-    const range = getKstMonthRange(year, month);
-    query = query
-      .gte("transacted_at", range.from)
-      .lt("transacted_at", range.to);
-  }
-  const { data, error } = await query
+    .eq("household_id", householdId)
+    .eq("book_id", options.bookId)
     .order("transacted_at", { ascending: false })
     .limit(1)
     .maybeSingle();

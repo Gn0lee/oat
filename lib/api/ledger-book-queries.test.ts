@@ -22,6 +22,7 @@ function database(rows: unknown[]) {
     lt: vi.fn().mockReturnThis(),
     lte: vi.fn().mockReturnThis(),
     order: vi.fn().mockReturnThis(),
+    range: vi.fn().mockReturnThis(),
     // biome-ignore lint/suspicious/noThenProperty: Supabase query builders implement the PromiseLike protocol.
     then: (resolve: (value: unknown) => unknown) =>
       Promise.resolve({ data: rows, error: null }).then(resolve),
@@ -150,5 +151,174 @@ describe("entry visibility", () => {
     expect(
       Object.fromEntries(entries.map((entry) => [entry.id, entry.isShared])),
     ).toEqual({ shared: true, mine: false });
+  });
+});
+
+describe("month records beyond the PostgREST response cap", () => {
+  const PAGE = 1000;
+  // Minutes from the month start, so every row stays inside October 2026 (KST).
+  const at = (minutes: number) =>
+    new Date(Date.UTC(2026, 9, 1, 0, 0) + minutes * 60_000).toISOString();
+  const row = (
+    i: number,
+    overrides: Record<string, unknown> = {},
+  ): Record<string, unknown> => ({
+    id: `e${String(i).padStart(5, "0")}`,
+    household_id: "household",
+    book_id: "book",
+    owner_id: "owner",
+    type: "expense",
+    amount: 100,
+    category_id: null,
+    from_payment_method_id: null,
+    transacted_at: at(i),
+    created_at: at(i),
+    updated_at: at(i),
+    ...overrides,
+  });
+  const entryRanges = (
+    calls: { table: string; method: string; args: unknown[] }[],
+  ) =>
+    calls
+      .filter((c) => c.table === "ledger_entries" && c.method === "range")
+      .map((c) => c.args);
+
+  it("keeps requesting the next range until every row of the month is returned", async () => {
+    const { createFakeSupabase } = await import("@/lib/testing/fake-supabase");
+    const rows = Array.from({ length: 2500 }, (_, i) => row(i));
+    const { supabase, calls } = createFakeSupabase(
+      { ledger_entries: rows },
+      { maxRows: PAGE },
+    );
+
+    const entries = await getLedgerEntries(supabase, "household", {
+      year: 2026,
+      month: 10,
+    });
+
+    expect(entries).toHaveLength(2500);
+    expect(new Set(entries.map((entry) => entry.id)).size).toBe(2500);
+    expect(entryRanges(calls)).toEqual([
+      [0, 999],
+      [1000, 1999],
+      [2000, 2999],
+    ]);
+  });
+
+  it("keeps transacted_at → created_at newest-first order across ranges", async () => {
+    const { createFakeSupabase } = await import("@/lib/testing/fake-supabase");
+    // Pairs share transacted_at and differ only by created_at, shuffled on input.
+    // 7 is coprime with 1,500, so (i * 7) % 1500 visits every index once.
+    const rows = Array.from({ length: 1500 }, (_, i) => (i * 7) % 1500).map(
+      (i) =>
+        row(i, { transacted_at: at(Math.floor(i / 2)), created_at: at(i) }),
+    );
+    const { supabase } = createFakeSupabase(
+      { ledger_entries: rows },
+      { maxRows: PAGE },
+    );
+
+    const entries = await getLedgerEntries(supabase, "household", {
+      year: 2026,
+      month: 10,
+    });
+
+    const expected = [...rows]
+      .sort((a, b) =>
+        a.transacted_at === b.transacted_at
+          ? (b.created_at as string).localeCompare(a.created_at as string)
+          : (b.transacted_at as string).localeCompare(
+              a.transacted_at as string,
+            ),
+      )
+      .map((r) => r.id);
+    expect(entries).toHaveLength(1500);
+    expect(entries.map((entry) => entry.id)).toEqual(expected);
+  });
+
+  it("requests only once when the month has fewer than 1,000 rows", async () => {
+    const { createFakeSupabase } = await import("@/lib/testing/fake-supabase");
+    const rows = Array.from({ length: 999 }, (_, i) => row(i));
+    const { supabase, calls } = createFakeSupabase(
+      { ledger_entries: rows },
+      { maxRows: PAGE },
+    );
+
+    const entries = await getLedgerEntries(supabase, "household", {
+      year: 2026,
+      month: 10,
+    });
+
+    expect(entries).toHaveLength(999);
+    expect(entryRanges(calls)).toEqual([[0, 999]]);
+  });
+
+  it("applies the analysis conditions and book scope to every range request", async () => {
+    const { createFakeSupabase } = await import("@/lib/testing/fake-supabase");
+    // 1,200 matching rows interleaved with rows each condition must drop.
+    const rows = Array.from({ length: 1200 }, (_, i) => [
+      row(i * 4, { category_id: "food", from_payment_method_id: "card" }),
+      row(i * 4 + 1, {
+        type: "income",
+        category_id: "food",
+        from_payment_method_id: "card",
+      }),
+      row(i * 4 + 2, { category_id: "rent", from_payment_method_id: "card" }),
+      row(i * 4 + 3, {
+        book_id: "other",
+        category_id: "food",
+        from_payment_method_id: "card",
+      }),
+    ]).flat();
+    const { supabase, calls } = createFakeSupabase(
+      { ledger_entries: rows, categories: [] },
+      { maxRows: PAGE },
+    );
+
+    const entries = await getLedgerEntries(supabase, "household", {
+      year: 2026,
+      month: 10,
+      bookId: "book",
+      type: "expense",
+      categoryId: "food",
+      categoryBreakdown: "direct",
+      paymentMethodId: "card",
+    });
+
+    expect(entries).toHaveLength(1200);
+    expect(
+      entries.every(
+        (entry) =>
+          entry.type === "expense" &&
+          entry.categoryId === "food" &&
+          entry.fromPaymentMethodId === "card",
+      ),
+    ).toBe(true);
+    const entryCalls = calls.filter((c) => c.table === "ledger_entries");
+    const filterArgs = (method: string) =>
+      entryCalls.filter((c) => c.method === method).map((c) => c.args);
+    expect(entryRanges(calls)).toHaveLength(2);
+    expect(filterArgs("eq").filter(([column]) => column === "book_id")).toEqual(
+      [
+        ["book_id", "book"],
+        ["book_id", "book"],
+      ],
+    );
+    expect(filterArgs("eq").filter(([column]) => column === "type")).toEqual([
+      ["type", "expense"],
+      ["type", "expense"],
+    ]);
+    expect(filterArgs("in")).toEqual([
+      ["category_id", ["food"]],
+      ["category_id", ["food"]],
+    ]);
+    expect(
+      filterArgs("eq").filter(
+        ([column]) => column === "from_payment_method_id",
+      ),
+    ).toEqual([
+      ["from_payment_method_id", "card"],
+      ["from_payment_method_id", "card"],
+    ]);
   });
 });

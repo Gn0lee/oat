@@ -23,7 +23,10 @@ class FakeQuery
   private mode: "many" | "maybeSingle" | "single" = "many";
   private wantsCount = false;
 
-  constructor(private readonly rows: Row[]) {}
+  constructor(
+    private readonly rows: Row[],
+    private readonly maxRows?: number,
+  ) {}
 
   select(_columns?: string, options?: { count?: string }) {
     this.wantsCount = Boolean(options?.count);
@@ -79,6 +82,7 @@ class FakeQuery
     }
     const count = this.wantsCount ? rows.length : null;
     if (this.window) rows = rows.slice(this.window[0], this.window[1] + 1);
+    if (this.maxRows !== undefined) rows = rows.slice(0, this.maxRows);
     if (this.mode !== "many") {
       return { data: rows[0] ?? null, error: null, count };
     }
@@ -119,11 +123,15 @@ function compare(a: unknown, b: unknown): number {
   return left < right ? -1 : 1;
 }
 
-export function createFakeSupabase(tables: FakeTables) {
+// maxRows mirrors PostgREST's db-max-rows cap on a single response.
+export function createFakeSupabase(
+  tables: FakeTables,
+  options?: { maxRows?: number },
+) {
   const calls: { table: string; method: string; args: unknown[] }[] = [];
   const client = {
     from(table: string) {
-      const query = new FakeQuery(tables[table] ?? []);
+      const query = new FakeQuery(tables[table] ?? [], options?.maxRows);
       return new Proxy(query, {
         get(target, prop, receiver) {
           const value = Reflect.get(target, prop, receiver);
