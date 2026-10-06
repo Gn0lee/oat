@@ -32,22 +32,13 @@ vi.mock("@/hooks/use-ledger-identity", () => ({
 vi.mock("./LedgerDateStrip", () => ({
   LedgerDateStrip: ({
     onSelect,
-    onViewChange,
-    view,
+    ...props
   }: {
     onSelect: (date: string) => void;
-    onViewChange: (view: "week" | "month") => void;
-    view: "week" | "month";
   }) => (
-    <div data-testid="date-strip" data-view={view}>
+    <div data-testid="date-strip" data-props={Object.keys(props).join(",")}>
       <button type="button" onClick={() => onSelect("2026-06-17")}>
         다음 날짜 선택
-      </button>
-      <button
-        type="button"
-        onClick={() => onViewChange(view === "week" ? "month" : "week")}
-      >
-        보기 전환
       </button>
     </div>
   ),
@@ -228,11 +219,11 @@ describe("LedgerRecordsClient", () => {
     );
   });
 
-  it("selecting a book chip keeps the screen, drops the date and keeps the view", async () => {
+  it("selecting a book chip keeps the screen and drops the date", async () => {
     state.search = "date=2026-06-16&view=month";
     renderRecords();
     await userEvent.click(screen.getByRole("button", { name: "여행비" }));
-    expect(push).toHaveBeenCalledWith("/ledger/records?view=month&book=book-1");
+    expect(push).toHaveBeenCalledWith("/ledger/records?book=book-1");
   });
 
   it("selecting 전체 from a book removes the book and date", async () => {
@@ -243,7 +234,7 @@ describe("LedgerRecordsClient", () => {
     } as never);
     renderRecords();
     await userEvent.click(screen.getByRole("button", { name: "전체" }));
-    expect(push).toHaveBeenCalledWith("/ledger/records?view=month");
+    expect(push).toHaveBeenCalledWith("/ledger/records");
   });
 
   it("re-selecting the current book chip does not push a duplicate history entry", async () => {
@@ -265,27 +256,19 @@ describe("LedgerRecordsClient", () => {
     expect(replace).toHaveBeenLastCalledWith("/ledger/records?date=2026-05-31");
   });
 
-  it("week is the default view and expanding stores view=month in the URL", async () => {
-    renderRecords();
-    expect(screen.getByTestId("date-strip")).toHaveAttribute(
-      "data-view",
-      "week",
-    );
-    await userEvent.click(screen.getByRole("button", { name: "보기 전환" }));
-    expect(replace).toHaveBeenLastCalledWith(
-      "/ledger/records?date=2026-06-16&view=month",
-    );
-  });
-
-  it("restores month view from the URL and collapsing removes it", async () => {
+  it("ignores a legacy view param and never writes view to the URL", async () => {
     state.search = "date=2026-06-16&view=month";
     renderRecords();
     expect(screen.getByTestId("date-strip")).toHaveAttribute(
-      "data-view",
-      "month",
+      "data-props",
+      "selectedDate,today,entriesByDate",
     );
-    await userEvent.click(screen.getByRole("button", { name: "보기 전환" }));
-    expect(replace).toHaveBeenLastCalledWith("/ledger/records?date=2026-06-16");
+    await userEvent.click(
+      screen.getByRole("button", { name: "다음 날짜 선택" }),
+    );
+    expect(replace).toHaveBeenLastCalledWith("/ledger/records?date=2026-06-17");
+    await userEvent.click(screen.getByRole("button", { name: "이전 달" }));
+    expect(replace).toHaveBeenLastCalledWith("/ledger/records?date=2026-05-31");
   });
 
   it("specific active non-default book exposes creation scoped to that book", () => {
@@ -345,7 +328,7 @@ describe("LedgerRecordsClient", () => {
     );
   });
 
-  it("date change preserves book, view and filters in URL", async () => {
+  it("date change preserves book and filters in URL", async () => {
     state.search = "book=book-1&date=2026-06-16&categoryId=category-1";
     vi.mocked(useLedgerBook).mockReturnValue({
       data: book,
