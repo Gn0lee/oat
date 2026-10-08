@@ -27,7 +27,9 @@ const transaction = {
   created_at: "2026-06-03T03:10:00.000Z",
 };
 
-function createStockNotificationSupabaseMock() {
+function createStockNotificationSupabaseMock(
+  stockNames: Record<string, string> = { AAPL: "Apple" },
+) {
   const householdMembersBuilder = {
     select: vi.fn().mockReturnThis(),
     eq: vi.fn().mockReturnThis(),
@@ -44,15 +46,34 @@ function createStockNotificationSupabaseMock() {
       error: null,
     }),
   };
+  const stockSettingsState: { ticker?: string } = {};
+  const stockSettingsBuilder = {
+    select: vi.fn().mockReturnThis(),
+    eq: vi.fn((col: string, value: string) => {
+      if (col === "ticker") stockSettingsState.ticker = value;
+      return stockSettingsBuilder;
+    }),
+    maybeSingle: vi.fn(() => {
+      const name = stockSettingsState.ticker
+        ? stockNames[stockSettingsState.ticker]
+        : undefined;
+      return Promise.resolve({
+        data: name ? { name } : null,
+        error: null,
+      });
+    }),
+  };
 
   return {
     from: vi.fn((table: string) => {
       if (table === "household_members") return householdMembersBuilder;
       if (table === "profiles") return profilesBuilder;
+      if (table === "household_stock_settings") return stockSettingsBuilder;
       throw new Error(`Unexpected table: ${table}`);
     }),
     householdMembersBuilder,
     profilesBuilder,
+    stockSettingsBuilder,
   };
 }
 
@@ -83,7 +104,7 @@ describe("stock transaction notification helpers", () => {
         householdId: "household-1",
         type: "stock_transaction_created",
         title: "새 주식 거래가 추가되었습니다",
-        body: "홍길동님이 AAPL 매수 3주를 추가했습니다.",
+        body: "홍길동님이 Apple(AAPL) 매수 3주를 추가했습니다.",
         link: {
           kind: "stock_transaction_detail",
           params: { transactionId: "00000000-0000-4000-8000-000000000201" },
@@ -98,7 +119,106 @@ describe("stock transaction notification helpers", () => {
     );
   });
 
-  it("batch 생성은 가장 최신 거래일로 이동하는 수신자별 요약 알림 1개를 만든다", async () => {
+  it("단건 생성은 전달된 종목명을 그대로 사용한다", async () => {
+    const supabase = createStockNotificationSupabaseMock({});
+
+    await notifyStockTransactionCreated(supabase as never, {
+      actorId: "owner-1",
+      householdId: "household-1",
+      transaction,
+      stockName: "애플",
+    });
+
+    expect(createUserNotificationMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        body: "홍길동님이 애플(AAPL) 매수 3주를 추가했습니다.",
+      }),
+    );
+  });
+
+  it("종목명 조회 실패 시 티커로 fallback한다", async () => {
+    const supabase = createStockNotificationSupabaseMock({});
+
+    await notifyStockTransactionCreated(supabase as never, {
+      actorId: "owner-1",
+      householdId: "household-1",
+      transaction,
+    });
+
+    expect(createUserNotificationMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        body: "홍길동님이 AAPL 매수 3주를 추가했습니다.",
+      }),
+    );
+  });
+
+  it("batch 1건은 단건 상세 포맷으로 발송한다", async () => {
+    const supabase = createStockNotificationSupabaseMock();
+
+    await notifyBatchStockTransactionsCreated(supabase as never, {
+      actorId: "owner-1",
+      householdId: "household-1",
+      transactions: [transaction],
+    });
+
+    expect(createUserNotificationMock).toHaveBeenCalledTimes(2);
+    expect(createUserNotificationMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        recipientId: "member-1",
+        type: "stock_transaction_created",
+        title: "새 주식 거래가 추가되었습니다",
+        body: "홍길동님이 Apple(AAPL) 매수 3주를 추가했습니다.",
+        link: {
+          kind: "stock_transaction_detail",
+          params: { transactionId: "00000000-0000-4000-8000-000000000201" },
+        },
+        source: {
+          type: "stock_transaction",
+          id: "00000000-0000-4000-8000-000000000201",
+        },
+        dedupeKey:
+          "stock_transaction_created:00000000-0000-4000-8000-000000000201",
+      }),
+    );
+  });
+
+  it("batch 1건은 전달된 종목명을 사용하고 조회 실패 시 티커로 fallback한다", async () => {
+    const supabase = createStockNotificationSupabaseMock({});
+
+    await notifyBatchStockTransactionsCreated(supabase as never, {
+      actorId: "owner-1",
+      householdId: "household-1",
+      transactions: [transaction],
+      stockNames: { AAPL: "애플" },
+    });
+
+    expect(createUserNotificationMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        body: "홍길동님이 애플(AAPL) 매수 3주를 추가했습니다.",
+      }),
+    );
+
+    createUserNotificationMock.mockClear();
+
+    const fallbackSupabase = createStockNotificationSupabaseMock({});
+    await notifyBatchStockTransactionsCreated(fallbackSupabase as never, {
+      actorId: "owner-1",
+      householdId: "household-1",
+      transactions: [transaction],
+    });
+
+    expect(createUserNotificationMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        body: "홍길동님이 AAPL 매수 3주를 추가했습니다.",
+        link: {
+          kind: "stock_transaction_detail",
+          params: { transactionId: "00000000-0000-4000-8000-000000000201" },
+        },
+      }),
+    );
+  });
+
+  it("batch 2건 이상은 가장 최신 거래일로 이동하는 수신자별 요약 알림 1개를 만든다", async () => {
     const supabase = createStockNotificationSupabaseMock();
 
     await notifyBatchStockTransactionsCreated(supabase as never, {
@@ -150,7 +270,7 @@ describe("stock transaction notification helpers", () => {
       expect.objectContaining({
         type: "stock_transaction_changed",
         title: "주식 거래가 수정되었습니다",
-        body: "홍길동님이 AAPL 매수 기록을 수정했습니다.",
+        body: "홍길동님이 Apple(AAPL) 매수 기록을 수정했습니다.",
         link: {
           kind: "stock_transaction_detail",
           params: { transactionId: "00000000-0000-4000-8000-000000000201" },
@@ -173,7 +293,7 @@ describe("stock transaction notification helpers", () => {
       expect.objectContaining({
         type: "stock_transaction_changed",
         title: "주식 거래가 삭제되었습니다",
-        body: "홍길동님이 AAPL 매수 기록을 삭제했습니다.",
+        body: "홍길동님이 Apple(AAPL) 매수 기록을 삭제했습니다.",
         link: {
           kind: "stock_transaction_detail",
           params: { transactionId: "00000000-0000-4000-8000-000000000201" },

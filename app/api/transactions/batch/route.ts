@@ -71,10 +71,16 @@ export async function POST(request: Request) {
       })),
     });
 
+    const stockNames: Record<string, string> = {};
+    for (const item of input.items) {
+      stockNames[item.ticker] ??= item.stock.name;
+    }
+
     await notifyBatchStockTransactionsCreated(supabase, {
       actorId: user.id,
       householdId,
       transactions,
+      stockNames,
     });
 
     return NextResponse.json(

@@ -129,6 +129,7 @@ describe("transaction routes stock notifications", () => {
         actorId: user.id,
         householdId,
         transaction,
+        stockName: "Apple",
       },
     );
   });
@@ -163,6 +164,7 @@ describe("transaction routes stock notifications", () => {
         actorId: user.id,
         householdId,
         transactions: [transaction],
+        stockNames: { AAPL: "Apple" },
       },
     );
   });
