@@ -164,6 +164,7 @@ export async function POST(request: Request) {
       actorId: user.id,
       householdId,
       transaction,
+      stockName: input.stock.name,
     });
 
     return NextResponse.json({ data: transaction }, { status: 201 });

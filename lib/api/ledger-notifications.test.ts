@@ -162,6 +162,66 @@ describe("ledger notification helpers", () => {
     );
   });
 
+  it("batch 공용 1건은 단건 상세 포맷으로 발송한다", async () => {
+    const supabase = createLedgerNotificationSupabaseMock();
+
+    await notifyBatchLedgerEntriesCreated(supabase as never, {
+      actorId: "owner-1",
+      householdId: "household-1",
+      entries: [sharedEntry],
+    });
+
+    expect(createUserNotificationMock).toHaveBeenCalledTimes(2);
+    expect(createUserNotificationMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        recipientId: "member-1",
+        type: "ledger_record_created",
+        title: "공용 가계부 기록이 추가되었습니다",
+        body: '홍길동님이 "이마트 장보기" 52,000원을 추가했습니다.',
+        link: {
+          kind: "ledger_record_detail",
+          params: { entryId: "00000000-0000-4000-8000-000000000101" },
+        },
+        source: {
+          type: "ledger_entry",
+          id: "00000000-0000-4000-8000-000000000101",
+        },
+        dedupeKey: "ledger_entry_created:00000000-0000-4000-8000-000000000101",
+      }),
+    );
+  });
+
+  it("batch에서 개인 항목을 제외하고 공용 1건만 남으면 단건 상세 포맷으로 발송한다", async () => {
+    const supabase = createLedgerNotificationSupabaseMock();
+
+    await notifyBatchLedgerEntriesCreated(supabase as never, {
+      actorId: "owner-1",
+      householdId: "household-1",
+      entries: [
+        sharedEntry,
+        {
+          ...sharedEntry,
+          id: "00000000-0000-4000-8000-000000000103",
+          book_id: PERSONAL_BOOK,
+        },
+      ],
+    });
+
+    expect(createUserNotificationMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "공용 가계부 기록이 추가되었습니다",
+        link: {
+          kind: "ledger_record_detail",
+          params: { entryId: "00000000-0000-4000-8000-000000000101" },
+        },
+        source: {
+          type: "ledger_entry",
+          id: "00000000-0000-4000-8000-000000000101",
+        },
+      }),
+    );
+  });
+
   it("수정 알림은 작업 전 기록이 공용이었던 경우에만 만든다", async () => {
     const supabase = createLedgerNotificationSupabaseMock();
 

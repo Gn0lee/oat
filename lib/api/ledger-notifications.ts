@@ -168,17 +168,31 @@ export async function notifyLedgerEntryCreated(
   await runBestEffort(async () => {
     const shared = await getSharedBookIds(supabase, [input.entry]);
     if (!shared.has(input.entry.book_id)) return;
-    await createLedgerNotifications(supabase, {
-      actorId: input.actorId,
-      householdId: input.householdId,
-      type: "ledger_record_created",
-      title: "공용 가계부 기록이 추가되었습니다",
-      body: `{actorName}님이 "${input.entry.title ?? "제목 없음"}" ${formatKrw(input.entry.amount)}을 추가했습니다.`,
-      date: getLedgerEntryDate(input.entry),
-      source: { type: "ledger_entry", id: input.entry.id },
-      dedupeKey: `ledger_entry_created:${input.entry.id}`,
-    });
+    await sendLedgerEntryCreatedDetail(
+      supabase,
+      input.actorId,
+      input.householdId,
+      input.entry,
+    );
   }, "created");
+}
+
+async function sendLedgerEntryCreatedDetail(
+  supabase: SupabaseClient<Database>,
+  actorId: string,
+  householdId: string,
+  entry: LedgerNotificationEntry,
+): Promise<void> {
+  await createLedgerNotifications(supabase, {
+    actorId,
+    householdId,
+    type: "ledger_record_created",
+    title: "공용 가계부 기록이 추가되었습니다",
+    body: `{actorName}님이 "${entry.title ?? "제목 없음"}" ${formatKrw(entry.amount)}을 추가했습니다.`,
+    date: getLedgerEntryDate(entry),
+    source: { type: "ledger_entry", id: entry.id },
+    dedupeKey: `ledger_entry_created:${entry.id}`,
+  });
 }
 
 export async function notifyBatchLedgerEntriesCreated(
@@ -190,6 +204,20 @@ export async function notifyBatchLedgerEntriesCreated(
     const sharedEntries = input.entries.filter((entry) =>
       shared.has(entry.book_id),
     );
+    if (sharedEntries.length === 0) return;
+
+    // 배치에 공용 1건만 있으면 단건 상세 포맷으로 발송한다.
+    if (sharedEntries.length === 1) {
+      const onlyEntry = sharedEntries[0];
+      await sendLedgerEntryCreatedDetail(
+        supabase,
+        input.actorId,
+        input.householdId,
+        onlyEntry,
+      );
+      return;
+    }
+
     const latestEntry = [...sharedEntries].sort((a, b) =>
       b.transacted_at.localeCompare(a.transacted_at),
     )[0];

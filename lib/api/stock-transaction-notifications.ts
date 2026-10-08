@@ -21,16 +21,19 @@ interface StockNotificationBaseInput {
 interface StockTransactionCreatedInput extends StockNotificationBaseInput {
   householdId: string;
   transaction: StockNotificationTransaction;
+  stockName?: string;
 }
 
 interface BatchStockTransactionsCreatedInput
   extends StockNotificationBaseInput {
   householdId: string;
   transactions: StockNotificationTransaction[];
+  stockNames?: Record<string, string>;
 }
 
 interface StockTransactionChangedInput extends StockNotificationBaseInput {
   transaction: StockNotificationTransaction;
+  stockName?: string;
 }
 
 async function getHouseholdNotificationRecipients(
@@ -80,6 +83,41 @@ function getTransactionTypeLabel(type: Transaction["type"]): string {
 
 function formatQuantity(quantity: number): string {
   return quantity.toLocaleString("ko-KR");
+}
+
+function formatStockDisplay(ticker: string, stockName?: string): string {
+  if (!stockName || stockName === ticker) return ticker;
+  return `${stockName}(${ticker})`;
+}
+
+async function getStockName(
+  supabase: SupabaseClient<Database>,
+  householdId: string,
+  ticker: string,
+): Promise<string | undefined> {
+  try {
+    const { data, error } = await supabase
+      .from("household_stock_settings")
+      .select("name")
+      .eq("household_id", householdId)
+      .eq("ticker", ticker)
+      .maybeSingle();
+    if (error || !data?.name) return undefined;
+    return data.name;
+  } catch {
+    return undefined;
+  }
+}
+
+async function resolveStockDisplay(
+  supabase: SupabaseClient<Database>,
+  householdId: string,
+  ticker: string,
+  stockName?: string,
+): Promise<string> {
+  if (stockName) return formatStockDisplay(ticker, stockName);
+  const resolved = await getStockName(supabase, householdId, ticker);
+  return formatStockDisplay(ticker, resolved);
 }
 
 async function createStockTransactionNotifications(
@@ -145,24 +183,44 @@ async function runBestEffort(
   }
 }
 
+async function sendStockTransactionCreatedDetail(
+  supabase: SupabaseClient<Database>,
+  actorId: string,
+  householdId: string,
+  transaction: StockNotificationTransaction,
+  stockName?: string,
+): Promise<void> {
+  const stockDisplay = await resolveStockDisplay(
+    supabase,
+    householdId,
+    transaction.ticker,
+    stockName,
+  );
+  await createStockTransactionNotifications(supabase, {
+    actorId,
+    householdId,
+    type: "stock_transaction_created",
+    title: "새 주식 거래가 추가되었습니다",
+    body: `{actorName}님이 ${stockDisplay} ${getTransactionTypeLabel(transaction.type)} ${formatQuantity(transaction.quantity)}주를 추가했습니다.`,
+    date: getStockTransactionDate(transaction),
+    source: { type: "stock_transaction", id: transaction.id },
+    dedupeKey: `stock_transaction_created:${transaction.id}`,
+  });
+}
+
 export async function notifyStockTransactionCreated(
   supabase: SupabaseClient<Database>,
   input: StockTransactionCreatedInput,
 ): Promise<void> {
-  await runBestEffort(
-    () =>
-      createStockTransactionNotifications(supabase, {
-        actorId: input.actorId,
-        householdId: input.householdId,
-        type: "stock_transaction_created",
-        title: "새 주식 거래가 추가되었습니다",
-        body: `{actorName}님이 ${input.transaction.ticker} ${getTransactionTypeLabel(input.transaction.type)} ${formatQuantity(input.transaction.quantity)}주를 추가했습니다.`,
-        date: getStockTransactionDate(input.transaction),
-        source: { type: "stock_transaction", id: input.transaction.id },
-        dedupeKey: `stock_transaction_created:${input.transaction.id}`,
-      }),
-    "created",
-  );
+  await runBestEffort(async () => {
+    await sendStockTransactionCreatedDetail(
+      supabase,
+      input.actorId,
+      input.householdId,
+      input.transaction,
+      input.stockName,
+    );
+  }, "created");
 }
 
 export async function notifyBatchStockTransactionsCreated(
@@ -170,6 +228,21 @@ export async function notifyBatchStockTransactionsCreated(
   input: BatchStockTransactionsCreatedInput,
 ): Promise<void> {
   if (input.transactions.length === 0) return;
+
+  // 배치 1건이면 단건 상세 포맷으로 발송한다.
+  if (input.transactions.length === 1) {
+    const onlyTransaction = input.transactions[0];
+    await runBestEffort(async () => {
+      await sendStockTransactionCreatedDetail(
+        supabase,
+        input.actorId,
+        input.householdId,
+        onlyTransaction,
+        input.stockNames?.[onlyTransaction.ticker],
+      );
+    }, "batch-created");
+    return;
+  }
 
   const latestTransaction = [...input.transactions].sort((a, b) =>
     b.transacted_at.localeCompare(a.transacted_at),
@@ -201,38 +274,46 @@ export async function notifyStockTransactionUpdated(
   supabase: SupabaseClient<Database>,
   input: StockTransactionChangedInput,
 ): Promise<void> {
-  await runBestEffort(
-    () =>
-      createStockTransactionNotifications(supabase, {
-        actorId: input.actorId,
-        householdId: input.transaction.household_id,
-        type: "stock_transaction_changed",
-        title: "주식 거래가 수정되었습니다",
-        body: `{actorName}님이 ${input.transaction.ticker} ${getTransactionTypeLabel(input.transaction.type)} 기록을 수정했습니다.`,
-        date: getStockTransactionDate(input.transaction),
-        source: { type: "stock_transaction", id: input.transaction.id },
-        dedupeKey: `stock_transaction_updated:${input.transaction.id}:${Date.now()}`,
-      }),
-    "updated",
-  );
+  await runBestEffort(async () => {
+    const stockDisplay = await resolveStockDisplay(
+      supabase,
+      input.transaction.household_id,
+      input.transaction.ticker,
+      input.stockName,
+    );
+    await createStockTransactionNotifications(supabase, {
+      actorId: input.actorId,
+      householdId: input.transaction.household_id,
+      type: "stock_transaction_changed",
+      title: "주식 거래가 수정되었습니다",
+      body: `{actorName}님이 ${stockDisplay} ${getTransactionTypeLabel(input.transaction.type)} 기록을 수정했습니다.`,
+      date: getStockTransactionDate(input.transaction),
+      source: { type: "stock_transaction", id: input.transaction.id },
+      dedupeKey: `stock_transaction_updated:${input.transaction.id}:${Date.now()}`,
+    });
+  }, "updated");
 }
 
 export async function notifyStockTransactionDeleted(
   supabase: SupabaseClient<Database>,
   input: StockTransactionChangedInput,
 ): Promise<void> {
-  await runBestEffort(
-    () =>
-      createStockTransactionNotifications(supabase, {
-        actorId: input.actorId,
-        householdId: input.transaction.household_id,
-        type: "stock_transaction_changed",
-        title: "주식 거래가 삭제되었습니다",
-        body: `{actorName}님이 ${input.transaction.ticker} ${getTransactionTypeLabel(input.transaction.type)} 기록을 삭제했습니다.`,
-        date: getStockTransactionDate(input.transaction),
-        source: { type: "stock_transaction", id: input.transaction.id },
-        dedupeKey: `stock_transaction_deleted:${input.transaction.id}`,
-      }),
-    "deleted",
-  );
+  await runBestEffort(async () => {
+    const stockDisplay = await resolveStockDisplay(
+      supabase,
+      input.transaction.household_id,
+      input.transaction.ticker,
+      input.stockName,
+    );
+    await createStockTransactionNotifications(supabase, {
+      actorId: input.actorId,
+      householdId: input.transaction.household_id,
+      type: "stock_transaction_changed",
+      title: "주식 거래가 삭제되었습니다",
+      body: `{actorName}님이 ${stockDisplay} ${getTransactionTypeLabel(input.transaction.type)} 기록을 삭제했습니다.`,
+      date: getStockTransactionDate(input.transaction),
+      source: { type: "stock_transaction", id: input.transaction.id },
+      dedupeKey: `stock_transaction_deleted:${input.transaction.id}`,
+    });
+  }, "deleted");
 }
