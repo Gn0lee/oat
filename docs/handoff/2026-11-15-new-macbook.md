@@ -37,7 +37,7 @@ Claude Code 자동 메모리(`~/.claude/projects/<프로젝트 경로>/memory/`)
 ### 사용자 선호
 
 - **UI는 토스·현대카드처럼 미니멀하게**: 큰 숫자, 단순한 행, 칩·아이콘 위주의 가벼운 조작을 써요. 설명 박스, 중첩 카드, 중복 안내는 넣지 않아요. 세부 UI는 이 기준으로 직접 정하고 객관식으로 잘게 묻지 않아요. 기능 범위가 바뀌는 결정만 확인받아요
-- **단순 작업은 낮은 모델에게 맡겨요**: 조율할 때 리뷰 반영, 스크린샷, 문서 수정, 링크 코멘트 같은 일은 sonnet/haiku 워커에게 시키고 결과를 점검해서 피드백을 줘요. 구현 워커는 `/implement` 스킬로 시작해요(커밋까지만 하므로 PR 단계는 브리프에 따로 적어요). Orca로 띄울 때는 `orca worktree create`(agent 없이) → `orca terminal create --command 'claude --model sonnet'` → `terminal wait --for tui-idle` → `terminal send` 순서예요. 설계 판단이 필요한 일은 상위 모델이 맡아요
+- **단순 작업은 낮은 모델에게 맡겨요**: 조율할 때 리뷰 반영, 스크린샷, 문서 수정, 링크 코멘트 같은 일은 sonnet/haiku 워커에게 시키고 결과를 점검해서 피드백을 줘요. 구현 워커는 `/implement` 스킬로 시작해요(커밋까지만 하므로 PR 단계는 브리프에 따로 적어요). 설계 판단이 필요한 일은 상위 모델이 맡아요. 진행 중인 워커는 컨텍스트를 잃기 때문에 중간에 교체하지 않아요. 이전 맥북에서는 Orca로 워커를 띄웠고, 새 맥북에서는 Paseo를 써요(3절)
 - **설계 질문은 grilling 형식으로**: 번호 붙인 질문과 추천안을 제시해요. 사용자는 추천안을 받아들이더라도 "좀 더 고민해보자"며 개념을 깊게 묻는 편이에요. 그럴 때는 다음 질문으로 넘어가지 말고 구조부터 설명해요(예: 지갑 축과 장부 축)
 
 ### 기존 앱(운영 중인 oat) 관련
@@ -57,7 +57,7 @@ Claude Code 자동 메모리(`~/.claude/projects/<프로젝트 경로>/memory/`)
 | 출처 | 쓰는 스킬 |
 |---|---|
 | `mattpocock/skills` (38개) | wayfinder, grilling, domain-modeling, research, prototype, handoff, implement, to-tickets, triage, code-review, tdd 등 |
-| `stablyai/orca` | orca-cli |
+| `stablyai/orca` | orca-cli (Paseo로 바꾸면 필요 없어요) |
 | `Leonxlnx/taste-skill` (13개) | design-taste-frontend 등 UI 취향 스킬 |
 | `vercel-labs/skills` | find-skills |
 
@@ -70,14 +70,17 @@ Claude Code 자동 메모리(`~/.claude/projects/<프로젝트 경로>/memory/`)
 ### 도구와 인증
 
 - `gh` CLI 로그인. 이슈 트래커는 `Gn0lee/oat`이에요
-- Orca(워크트리를 `~/orca/workspaces/oat/<브랜치 이름>`에 만들어요)
+- **Paseo**(Orca 대신): 에이전트 오케스트레이션 도구예요. 로컬 데몬이 Claude Code·Codex 등의 에이전트를 관리하고, 데스크톱·모바일·웹·CLI가 붙어요. `--worktree` 옵션으로 에이전트마다 git 워크트리를 만들어 실행해요. 예: `paseo run --provider <provider/model> --worktree <이름> "<프롬프트>"`. 아래 두 가지는 처음 쓸 때 확인해요
+  - 워크트리의 **기준 브랜치**를 `origin/overhaul/design`으로 지정할 수 있는지 확인해요. 안 되면 워크트리를 만든 뒤 `git switch -c Gn0lee/wayfinder-<번호>-<이름> origin/overhaul/design`으로 맞춰요. 브랜치 이름 규칙은 그대로 유지해요
+  - sonnet 워커를 띄우는 방법(provider/model 지정)과, 진행 중인 에이전트에게 메시지를 보내거나 끝나기를 기다리는 방법을 확인해요. 이전의 Orca 순서(`worktree create` → `terminal create --command 'claude --model sonnet'` → `wait` → `send`)에 대응하는 명령을 찾으면 메모리에 저장해요
+  - `orca-cli` 스킬은 더 이상 필요 없어요. Paseo용 스킬이나 플러그인이 있으면 그걸 써요
 - 기존 앱 레포의 `.env.local`(값은 이 문서에 적지 않아요. 이전 맥북에서 직접 옮겨요). 개편 설계 작업에는 필요 없고, 기존 앱을 실행할 때만 필요해요
 
 ## 4. 다음 세션 시작 프롬프트 예시
 
 ```
 /wayfinder https://github.com/Gn0lee/oat/issues/507 지도에서 '<티켓 제목>'(<티켓 URL>) 티켓을 진행해줘.
-이 워크트리는 overhaul/design에서 땄어. 끝나면 최신 origin/overhaul/design을 merge하고
+워크트리는 origin/overhaul/design 기준으로 Gn0lee/wayfinder-<번호>-<이름> 브랜치로 맞춰줘. 끝나면 최신 origin/overhaul/design을 merge하고
 git push origin HEAD:overhaul/design으로 올려줘. 시작 전에 docs/handoff/2026-11-15-new-macbook.md,
 GLOSSARY.md, docs/adr/0004~0009, 관련 리서치와 앞선 결정 티켓의 결정 코멘트를 읽어줘.
 ```
@@ -88,4 +91,4 @@ GLOSSARY.md, docs/adr/0004~0009, 관련 리서치와 앞선 결정 티켓의 결
 - `wayfinder`: 지도와 티켓 진행
 - `research`: 사실 조사가 필요한 티켓
 - `prototype`: 앱 스택 PoC 티켓
-- `orca-cli`: 워크트리와 워커 조율
+- 워크트리와 워커 조율은 Paseo로 해요(3절 확인 사항 참고)
