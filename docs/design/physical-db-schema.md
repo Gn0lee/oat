@@ -3,7 +3,7 @@
 - 결정일: 2026-11-17
 - 티켓: [물리 DB 스키마: 테이블·제약·반올림·날짜 규칙](https://github.com/Gn0lee/oat/issues/526)
 - 관련 ADR: 0004~0009(도메인), 0011~0013(서버 아키텍처), 0014(해외 날짜는 현지 날짜), 0015(합 불변식 트리거와 예상 상태 기록), 0016·0017(통계 질문 목록에서 더한 칸)
-- 후속 변경: [통계 질문 목록](stats-questions.md)(2026-11-17)에서 `wallets.stats_group`, `categories.is_fixed_default`, `records.is_fixed`, `records.spender_member_id`, 예상 기록 부분 인덱스를 더하고, 환불·혜택 줄도 원 기록과 같은 장부로 묶었다.
+- 후속 변경: [기존 데이터 전환](legacy-migration.md)(2026-11-17)에서 `ledgers.archived_at`을 더했다. [통계 질문 목록](stats-questions.md)(2026-11-17)에서 `wallets.stats_group`, `categories.is_fixed_default`, `records.is_fixed`, `records.spender_member_id`, 예상 기록 부분 인덱스를 더하고, 환불·혜택 줄도 원 기록과 같은 장부로 묶었다.
 - 전제: [서버 아키텍처](server-architecture.md) 3절. PostgreSQL 18, Drizzle, DB 롤 셋(`owner`·`app`·`system`), 앱 레이어 권한 + 가구 RLS 안전망, 얇은 클라이언트.
 - 이 문서는 테이블 모양과 규칙을 정한다. 칸 이름·타입의 최종 철자는 구현 때 Drizzle 스키마가 정본이 된다.
 
@@ -133,7 +133,7 @@ DB 트리거는 2겹 하나만 둔다. 업무 규칙은 앱에 둔다(ADR 0012�
   - **해외 주식 체결**: 체결한 시장의 **현지 체결일**(미국은 미 동부). 배당락일 보유 판정과 SEC fee 세율 기간이 현지 날짜 기준이기 때문이다.
 - `records.time`은 선택값이고, 기록 날짜와 같은 기준(현지면 현지 시각)의 `HH:MM`이다.
 - **정렬 키**는 `(date, sort_time, id)`다. `sort_time`은 `coalesce(time, '24:00')`로 만든 NOT NULL 생성 칸이라, 시각이 없는 기록은 그날 맨 뒤에 온다. NULL이 없어야 행 값 비교(`(a, b, c) > (…)`)로 커서를 만들 수 있다. id가 UUIDv7이라 마지막 기준은 입력 순서다. 목록 커서 페이지네이션과 평단·보유 수량 계산이 같은 정렬 키를 쓴다.
-- 기존 데이터 이관 스크립트는 UUIDv7의 시각 부분을 원래 기록의 생성 시각으로 만들어 넣는다. 그래야 이관된 기록의 같은 날 순서가 원래 순서와 같다.
+- 기존 데이터 전환 스크립트는 UUIDv7의 시각 부분을 원래 기록의 생성 시각으로 만들어 넣는다. 그래야 옮긴 기록의 같은 날 순서가 원래 순서와 같다. 예외는 같은 날 매도를 먼저 입력해 보유 수량이 음수가 되는 매수뿐이고, 그날 매도 앞으로 당긴다([기존 데이터 전환](legacy-migration.md) 6절).
 - 매입일(`purchase_date`)은 선택값이고 같은 날짜 기준을 따른다.
 
 ### 4.2 반올림
@@ -160,7 +160,7 @@ DB 트리거는 2겹 하나만 둔다. 업무 규칙은 앱에 둔다(ADR 0012�
 
 ### 5.1 장부·지갑·결제수단
 
-- **`ledgers`**: `kind`(공용·개인), `owner_member_id`(개인만, CHECK), 이름, version.
+- **`ledgers`**: `kind`(공용·개인), `owner_member_id`(개인만, CHECK), 이름, `archived_at`(보관한 장부: 새 기록을 받지 않고 목록에서 접힘, 기존 데이터 전환에서 더함), version.
 - **`wallets`**: `kind`(통장·현금·신용카드·대출·페이머니·포인트·상품권·증권 계좌), 이름, `owner_member_id`, `hidden_from_household`, `allow_member_use`, `archived_at`, `point_tracking_mode`(포인트만), `stats_group`(묶음: `spendable`·`saving`·`investment`·`points`·`liability`, NOT NULL, 기본값은 kind에서 나오고 부채 kind는 `liability`만 CHECK), version. 자산/부채는 kind에서 정한다. 잔액 칸은 없다. `allow_member_use`는 쓴 사람 계산에서 "함께 쓰는 지갑" 표시를 겸한다(ADR 0017).
 - **`wallet_card_settings`** (이력, PK `(wallet_id, effective_from)`): 카드사, 결제일, 이용기간 규칙(`card_issuer_presets` 참조 또는 시작일 직접 입력), `effective_from`. 결제일을 바꾸면 새 행을 더한다. 기록은 매입일(모르면 이용일)에 유효한 행으로 청구서에 배정하고, 이미 확정한 청구서는 다시 배정하지 않는다.
 - **`wallet_brokerage_settings`** (1:1, PK `wallet_id`): `ledger_id`, `cash_tracking_enabled`(기본 false), 과세 유형(일반·ISA·연금), 국내·해외 수수료율(NULL이면 추정 안 함).
@@ -318,7 +318,7 @@ DB 트리거는 2겹 하나만 둔다. 업무 규칙은 앱에 둔다(ADR 0012�
 
 ## 10. 다른 티켓에 넘기는 것
 
-- **기존 데이터 → 새 스키마 매핑과 검증**: 이 스키마를 기준으로 매핑을 쓴다. 보유 수량 음수 검사와 줄 합 검사가 검증 항목이다. 이관한 증권 계좌는 예수금 관리 꺼짐으로 시작한다.
+- **기존 데이터 → 새 스키마 매핑과 검증**: [기존 데이터 전환](legacy-migration.md)에서 정했다. `ledgers.archived_at`을 더했다.
 - **시세 데이터 공급원 선택**: `fx_rates`의 출처(그날 기준환율), 종가·배당 일정의 출처.
 - **MCP 툴 설계**: MCP 쓰기의 중복 방지 키 정책, 감사 기록 기반 되돌리기.
 - **통계 화면 구성**: 원화 환산 규칙(4.3). 질문 목록과 요약 테이블 판단은 [통계 질문 목록](stats-questions.md)에서 정했다.

@@ -18,5 +18,5 @@
 
 - `records.is_fixed`(NOT NULL), `records.spender_member_id`(NULL 허용), `categories.is_fixed_default`가 생긴다.
 - 정기 규칙의 FK는 지금처럼 `ON DELETE SET NULL`로 둔다. 고정비가 규칙 연결에 기대지 않기 때문이다.
-- 이관할 때 `is_fixed`는 기존 데이터의 정기 표시나 카테고리 기본값으로 채우고, `spender_member_id`는 기존 작성자가 계산값과 다를 때만 채운다.
+- 기존 데이터를 전환할 때 `is_fixed`는 모두 false다(기존에 정기 표시가 없고, 카테고리 기본값도 켜지 않기로 함). `spender_member_id`는 계산값이 특정 가구원이고 기존 작성자와 다를 때만 채운다. 계산값이 "함께"이면 채우지 않는다. 기존 작성자는 입력한 사람이라서다([기존 데이터 전환](../design/legacy-migration.md) 3절).
 - "가구원 사용 허용"이 함께 쓰는 지갑의 표시를 겸한다. 두 뜻이 갈라지면 그때 칸을 나눈다.
