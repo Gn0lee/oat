@@ -2,7 +2,8 @@
 
 - 결정일: 2026-11-17
 - 티켓: [물리 DB 스키마: 테이블·제약·반올림·날짜 규칙](https://github.com/Gn0lee/oat/issues/526)
-- 관련 ADR: 0004~0009(도메인), 0011~0013(서버 아키텍처), 0014(해외 날짜는 현지 날짜), 0015(합 불변식 트리거와 예상 상태 기록)
+- 관련 ADR: 0004~0009(도메인), 0011~0013(서버 아키텍처), 0014(해외 날짜는 현지 날짜), 0015(합 불변식 트리거와 예상 상태 기록), 0016·0017(통계 질문 목록에서 더한 칸)
+- 후속 변경: [통계 질문 목록](stats-questions.md)(2026-11-17)에서 `wallets.stats_group`, `categories.is_fixed_default`, `records.is_fixed`, `records.spender_member_id`, 예상 기록 부분 인덱스를 더하고, 환불·혜택 줄도 원 기록과 같은 장부로 묶었다.
 - 전제: [서버 아키텍처](server-architecture.md) 3절. PostgreSQL 18, Drizzle, DB 롤 셋(`owner`·`app`·`system`), 앱 레이어 권한 + 가구 RLS 안전망, 얇은 클라이언트.
 - 이 문서는 테이블 모양과 규칙을 정한다. 칸 이름·타입의 최종 철자는 구현 때 Drizzle 스키마가 정본이 된다.
 
@@ -103,7 +104,7 @@ DB 트리거는 2겹 하나만 둔다. 업무 규칙은 앱에 둔다(ADR 0012�
 
 - **돌려받은 돈 한도**(ADR 0006·0007): 원 기록 + 카테고리별로 "줄 합 − 확정된 환불·혜택·정산"까지만 줄인다. 원 기록 수정으로 한도가 깨지면 저장을 막는다. 같은 원 기록에 환불 두 건이 동시에 들어와 각자 한도를 통과하지 않도록, 검사 전에 원 기록 행을 `SELECT … FOR NO KEY UPDATE`로 잠근다. 여러 원 기록을 가리키면 id 순서로 잠근다.
 - **잠금 규칙**: 지갑·기록 잠금은 `FOR UPDATE`가 아니라 `FOR NO KEY UPDATE`로 한다(다른 트랜잭션이 그 행을 가리키는 FK 행을 넣는 것까지 막지 않기 위해). 여러 행을 잠글 때는 늘 id 순서로 잠가 교착을 피한다.
-- **정산 줄은 원 기록과 같은 장부**, **증권 계좌의 기록은 계좌에 정한 장부**.
+- **환불·혜택·정산 줄은 원 기록과 같은 장부**(공용 통계를 두 가구원이 같게 보기 위해서, 통계 질문 목록 3절), **증권 계좌의 기록은 계좌에 정한 장부**.
 - **장부가 다른 두 증권 계좌 사이의 이관**: 장부가 같으면 기록 하나(종목 다리 −/+)이고, 다르면 출고(`security_transfer_out`)·입고(`security_transfer_in`) 기록 두 개로 나눈다. 입고 기록은 `target_record_id`로 출고 기록을 가리킨다. 입고 평단은 저장하지 않고 출고 시점의 출발 계좌 평단을 따라가 계산한다. 그래야 나중에 출발 계좌에 과거 매수를 끼워 넣어도 같은 장부 이관과 똑같이 평단이 따라온다. 두 기록은 같은 트랜잭션으로 저장하고 함께 지운다.
 - **보유 수량 음수 금지**: 매매·이관·분할 기록을 쓰거나 지울 때, 그 계좌·종목의 이력 전체를 정렬 키(4.1) 순서로 다시 계산해서 어느 시점에서든 수량이 음수가 되면 거절한다("먼저 매수·이관 기록을 넣어 주세요"). 같은 날 매도를 먼저 넣고 매수를 나중에 넣으면 입력 순서(id) 때문에 거절될 수 있으니, 안내 문구에서 시각 입력을 권한다. 검사 동안 관련 지갑 행을 잠근다(이관이면 두 지갑을 id 순서로). 예수금 음수는 막지 않고 안내만 한다(주식 모델 결정).
 - **권리 변동**: `corporate_action` 기록은 `records.corporate_action_type`(분할·병합·무상증자·주식배당·상장폐지)을 반드시 가진다. 병합(다리 −9, 총원가 유지)과 상장폐지(다리 −전량, 원가 전액 손실)는 다리 모양이 같아서 계산 모듈이 이 칸으로 구분한다.
@@ -160,13 +161,13 @@ DB 트리거는 2겹 하나만 둔다. 업무 규칙은 앱에 둔다(ADR 0012�
 ### 5.1 장부·지갑·결제수단
 
 - **`ledgers`**: `kind`(공용·개인), `owner_member_id`(개인만, CHECK), 이름, version.
-- **`wallets`**: `kind`(통장·현금·신용카드·대출·페이머니·포인트·상품권·증권 계좌), 이름, `owner_member_id`, `hidden_from_household`, `allow_member_use`, `archived_at`, `point_tracking_mode`(포인트만), version. 자산/부채는 kind에서 정한다. 잔액 칸은 없다.
+- **`wallets`**: `kind`(통장·현금·신용카드·대출·페이머니·포인트·상품권·증권 계좌), 이름, `owner_member_id`, `hidden_from_household`, `allow_member_use`, `archived_at`, `point_tracking_mode`(포인트만), `stats_group`(묶음: `spendable`·`saving`·`investment`·`points`·`liability`, NOT NULL, 기본값은 kind에서 나오고 부채 kind는 `liability`만 CHECK), version. 자산/부채는 kind에서 정한다. 잔액 칸은 없다. `allow_member_use`는 쓴 사람 계산에서 "함께 쓰는 지갑" 표시를 겸한다(ADR 0017).
 - **`wallet_card_settings`** (이력, PK `(wallet_id, effective_from)`): 카드사, 결제일, 이용기간 규칙(`card_issuer_presets` 참조 또는 시작일 직접 입력), `effective_from`. 결제일을 바꾸면 새 행을 더한다. 기록은 매입일(모르면 이용일)에 유효한 행으로 청구서에 배정하고, 이미 확정한 청구서는 다시 배정하지 않는다.
 - **`wallet_brokerage_settings`** (1:1, PK `wallet_id`): `ledger_id`, `cash_tracking_enabled`(기본 false), 과세 유형(일반·ISA·연금), 국내·해외 수수료율(NULL이면 추정 안 함).
 - **`payment_methods`**: kind(신용카드·체크카드·페이 등), 이름, 가리키는 `wallet_id`(페이는 NULL), `owner_member_id`, `archived_at`, version. 카드 한 장(가족카드 포함)이 하나다.
 - **`payment_method_targets`**: 페이의 연결 대상. 대상은 결제수단(페이에 등록한 카드) 또는 지갑(페이머니) 중 하나다(CHECK). `last_used_at`.
 - **`card_performance_months`**: `(payment_method_id, month 'YYYY-MM')` 유니크, 실적 인정 금액, 추정 여부. 모델만 두고 기능은 범위 밖이다.
-- **`categories`**: 이름, 수입/지출, 부모(선택), `system_key`, `ledger_id`(NULL이면 가구 공통, 값이 있으면 그 장부 전용), 정렬, version. 장부 전용 카테고리는 그 장부를 볼 수 있는 사람에게만 보이고(권한 모듈), 그 장부의 기록에만 쓸 수 있다. 기본 카테고리는 모두 가구 공통이다.
+- **`categories`**: 이름, 수입/지출, 부모(선택), `system_key`, `is_fixed_default`(기록의 고정비 표시 기본값), `ledger_id`(NULL이면 가구 공통, 값이 있으면 그 장부 전용), 정렬, version. 장부 전용 카테고리는 그 장부를 볼 수 있는 사람에게만 보이고(권한 모듈), 그 장부의 기록에만 쓸 수 있다. 기본 카테고리는 모두 가구 공통이다.
 - **`counterparties`**: `ledger_id`, 이름, version.
 
 ### 5.2 기록
@@ -176,6 +177,7 @@ DB 트리거는 2겹 하나만 둔다. 업무 규칙은 앱에 둔다(ADR 0012�
 | 묶음 | 칸 |
 |---|---|
 | 공통 | `ledger_id`, `kind`, `status`, `date`, `time`, `sort_time`(생성 칸), `title`(가맹점·기록 이름), `memo`, `excluded_from_stats`, version |
+| 통계 귀속 | `is_fixed`(고정비, NOT NULL, 저장할 때 규칙·카테고리 기본값에서 정하고 사용자가 고친다), `spender_member_id`(쓴 사람 덮어쓰기, NULL이면 계산) (ADR 0017) |
 | 예상 | `expected_wallet_id`(예상 혜택·정산을 받을 지갑. 예상 청구액에 예상 혜택을 넣을 때 쓴다) |
 | 카드 | `payment_method_id`(앞단 결제수단: 사용자가 고른 것. 카드로 바로 결제하면 그 카드, 네이버페이를 거치면 네이버페이), `purchase_date`, `defer_to_next_bill`, `installment_months`, `installment_interest_free`, `foreign_amount`, `foreign_currency` |
 | 정기 | `recurring_rule_id`, `occurrence_date`, `is_auto` |
@@ -276,7 +278,7 @@ DB 트리거는 2겹 하나만 둔다. 업무 규칙은 앱에 둔다(ADR 0012�
 | `recurring_rule_legs`·`recurring_rule_lines`의 지갑·카테고리 | `SET NULL (칸)` | 끊긴 규칙의 예정은 "확인 필요" |
 | 규칙의 다리·줄·정산 틀·예외 → `recurring_rules` | CASCADE | 규칙 묶음 |
 | 지갑 하위 설정 → `wallets` | CASCADE | 지갑 묶음 |
-| `owner_member_id`·`actor_member_id` → `household_members` | RESTRICT | 멤버 행은 지우지 않는다 |
+| `owner_member_id`·`actor_member_id`·`records.spender_member_id` → `household_members` | RESTRICT | 멤버 행은 지우지 않는다 |
 | 전역 기준 데이터(`securities`, `dividend_events` 등)를 가리키는 칸 | RESTRICT | 전역 행은 지우지 않고 상장 여부 등으로 표시한다 |
 | `audit_log`의 모든 칸 | FK 없음 | 대상이 지워져도 기록이 남아야 한다 |
 | 그 밖의 모든 FK(`expected_wallet_id`, `payment_methods.wallet_id`, `categories.ledger_id`, `bills.wallet_id` 등) | RESTRICT | 표에 없으면 RESTRICT가 기본이다 |
@@ -295,6 +297,7 @@ DB 트리거는 2겹 하나만 둔다. 업무 규칙은 앱에 둔다(ADR 0012�
    - `legs (household_id, wallet_id)` + 기록 날짜 정렬을 위한 조인: 잔액·평단. 느리면 `legs`에 기록 날짜를 복제한다.
    - `lines (household_id, origin_record_id)`: 돌려받은 돈 합계
    - `records (household_id, recurring_rule_id, occurrence_date)`: 예정 확정 여부
+   - `records (household_id, ledger_id) WHERE status = 'expected'`: 받을 돈(통계 질문 목록 O4)
 3. **나머지는 느린 쿼리를 측정한 뒤에 더한다.** 요약 테이블도 같다(서버 아키텍처 29번).
 
 ## 8. 잔액·평단·집계
@@ -302,6 +305,7 @@ DB 트리거는 2겹 하나만 둔다. 업무 규칙은 앱에 둔다(ADR 0012�
 - 잔액, 예상 청구액, 평단, 실현손익, 예정, 통계는 모두 조회할 때 계산한다. 요약 테이블은 처음에 두지 않는다.
 - 평단은 계좌·종목별로 정렬 키 순서에 따라 이동평균을 다시 계산한다(순수 계산 모듈).
 - 요약 테이블을 넣게 되면 기록 쓰기와 같은 트랜잭션에서 갱신한다. 돌려받은 돈이 원 기록의 달을 바꾸므로(ADR 0006), 월 요약은 원 기록의 달을 무효화해야 한다.
+- 통계 질문 목록의 PoC(기록 100만 건, 큰 가구 10만 건)에서 월 통계는 수 ms였다. 가장 느린 것은 월별 자산 추이(10년치 438ms)이고, 요약 테이블을 넣는다면 첫 후보는 원 기록의 달 문제가 없는 **지갑 × 단위 × 월 변화량**이다(통계 질문 목록 2.1).
 
 ## 9. 가구원이 나갈 때
 
@@ -317,6 +321,6 @@ DB 트리거는 2겹 하나만 둔다. 업무 규칙은 앱에 둔다(ADR 0012�
 - **기존 데이터 → 새 스키마 매핑과 검증**: 이 스키마를 기준으로 매핑을 쓴다. 보유 수량 음수 검사와 줄 합 검사가 검증 항목이다. 이관한 증권 계좌는 예수금 관리 꺼짐으로 시작한다.
 - **시세 데이터 공급원 선택**: `fx_rates`의 출처(그날 기준환율), 종가·배당 일정의 출처.
 - **MCP 툴 설계**: MCP 쓰기의 중복 방지 키 정책, 감사 기록 기반 되돌리기.
-- **통계 화면 구성**: 원화 환산 규칙(4.3)과 요약 테이블 도입 여부.
+- **통계 화면 구성**: 원화 환산 규칙(4.3). 질문 목록과 요약 테이블 판단은 [통계 질문 목록](stats-questions.md)에서 정했다.
 - **가구원 나가기·계정 삭제**(새 fog): 9절의 남은 질문.
 - **구현 전 확인**: 세율과 `rounding_mode` 실제 값(농특세, SEC fee, 코넥스, ETF·ETN, NXT), KIS 배당 API 필드, 특일 정보 API의 대체·임시공휴일 필드, 미국 T+1 결제 규정.
