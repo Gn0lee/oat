@@ -12,7 +12,7 @@
 
 ## Consequences
 
-- DB 롤을 셋으로 나눈다. `owner`(테이블 소유자, migrate 전용), `app`(api·MCP·가구가 정해진 worker 작업, RLS 적용), `system`(worker의 가구 횡단 조회 전용). Postgres는 테이블 소유자에게 RLS를 적용하지 않으므로, api가 `owner`로 붙으면 안전망이 통째로 꺼진다.
-- 정책은 `current_setting('app.household_id', true)`와 비교해서, 설정이 빠지면 0행이 보인다.
+- DB 롤을 셋으로 나눈다. `owner`(테이블 소유자, migrate 전용), `app`(api·MCP·가구가 정해진 worker 작업, RLS 적용), `system`(worker의 가구 횡단 작업 전용. 물리 DB 스키마에서 가구 목록 조회와 전역 기준 데이터 쓰기로 좁혔고, 가구 소유 테이블에는 접근하지 않는다). Postgres는 테이블 소유자에게 RLS를 적용하지 않으므로, api가 `owner`로 붙으면 안전망이 통째로 꺼진다.
+- 정책은 `NULLIF(current_setting('app.household_id', true), '')`와 비교해서, 설정이 빠지면 0행이 보인다.
 - 가구 소유 테이블은 모두 `household_id`를 가지고, 모든 요청은 트랜잭션으로 감싼다.
 - 테스트는 운영과 같은 롤로 돌린다. 권한 모듈을 우회한 쿼리로 RLS만 단독 확인하는 테스트와, 집계 엔드포인트마다 가구원 A·B 시점으로 개인 장부를 확인하는 테스트가 필수다.
