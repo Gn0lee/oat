@@ -23,7 +23,7 @@
   감사       audit_log
 
 전역 기준 데이터 (RLS 없음)
-  securities · security_daily_closes · security_live_quotes(UNLOGGED)
+  securities · security_code_history · security_tracking · security_daily_closes · security_live_quotes(UNLOGGED)
   dividend_events · fx_rates · tax_rate_periods · holidays · card_issuer_presets
 
 계정·가구 경계 (RLS 없음, 접근 문맥 모듈만 읽음)
@@ -147,7 +147,7 @@ DB 트리거는 2겹 하나만 둔다. 업무 규칙은 앱에 둔다(ADR 0012�
 
 ### 4.3 그날 기준환율
 
-- **정의**: 기록 날짜의 **마지막 고시 환율**. 그날 고시가 없으면(주말·휴일) 그 이전의 가장 최근 값이다. 출처는 "시세 데이터 공급원 선택"에서 정한다(은행 매매기준율 계열이 1순위 후보).
+- **정의**: 기록 날짜의 **서울외국환중개 매매기준율**. 그날 값이 없으면(주말·휴일) 그 이전의 가장 최근 값이다. 출처는 한국은행 ECOS `731Y001`이다([시세 데이터 공급원](market-data.md) 4절, ADR 0020. 처음 정의 "마지막 고시 환율"에서 바꿨다).
 - **기록에 함께 저장한다**: `records.fx_rate`, `records.fx_rate_date`. 외화 다리나 외화 줄이 있는 기록(매매, 환전, USD 배당 등)에 채운다. 나중에 환율 이력이 고쳐져도 과거 원화 값이 바뀌지 않는다. 사용자가 증권사 적용 환율로 덮어쓸 수 있다.
 - **원화 환산**: 환산은 보여주는 단위마다 외화 금액 × 환율을 원 단위에서 반올림하고, 합계는 반올림한 값들의 합이다. 목록에 보이는 숫자를 더한 값과 합계가 정확히 같다.
   - 기록 목록·잔액은 다리 단위로, 카테고리 통계는 줄 단위로 환산한다. 그래서 한 기록 안에서 원화 기준 줄 합과 다리 합이 ±1원 다를 수 있다. 외화 기준으로는 늘 같다.
@@ -230,16 +230,19 @@ DB 트리거는 2겹 하나만 둔다. 업무 규칙은 앱에 둔다(ADR 0012�
 
 | 테이블 | 키 | 주요 칸 |
 |---|---|---|
-| `securities` | uuid | 시장, 유형, 코드, 이름, 통화, 상장 여부 |
+| `securities` | uuid | 시장(`KR`·`US`), 거래소, 유형, 코드, 이름, 영문 이름, ISIN(선택), 통화, 전일 종가(`base_price`), 상장 여부(`listed`), 폐지 감지 시각 |
+| `security_code_history` | (시장, 코드) | 종목, 이 코드를 쓴 마지막 날(`valid_until`). 티커 변경 때 운영자가 남긴다 |
+| `security_tracking` | 종목 | `needed_from`, `held_now`, `last_held_date`. 어느 가구인지는 남기지 않는다 |
 | `security_daily_closes` | (종목, 현지 거래일) | 종가 `numeric`, 출처 |
 | `security_live_quotes` (`UNLOGGED`) | 종목 | 현재가, 기준 시각 |
-| `dividend_events` | uuid | 종목, 배당락일·기준일·지급일(현지), 주당액, 통화, 예정/확정, 출처 |
+| `dividend_events` | uuid | 종목, 종류(`regular`·`special`), 배당락일·기준일·지급일(현지), 주당액, 통화, 예정/확정, 출처 |
 | `fx_rates` | (통화쌍, 고시일) | 값 `numeric(18,6)`, 출처 |
 | `tax_rate_periods` | uuid | 시장, 종목 유형, 세금 종류, 적용 시작일·종료일, 세율, `rounding_mode` |
 | `holidays` | (국가, 날짜) | 이름, 종류(지금은 한국만) |
 | `card_issuer_presets` | uuid | 카드사, 결제일, 이용기간 시작·끝 규칙 |
 
-- `securities`가 종목 마스터의 정본이다. API 메모리에는 사본만 둔다. 재동기화에도 id가 유지되도록 자연키 유니크를 둔다: `securities (market, code)`, `dividend_events (security_id, ex_date, 출처의 이벤트 구분)`.
+- `securities`가 종목 마스터의 정본이다. API 메모리에는 사본만 둔다. 재동기화에도 id가 유지되도록 자연키 유니크를 둔다: `securities (market, code)`, `dividend_events (security_id, ex_date, kind)`. 배당 키에 출처의 이벤트 번호를 넣지 않는다. 공급원을 바꾸면 같은 배당이 두 번 생기기 때문이다([시세 데이터 공급원](market-data.md) 3.1, 이 문서에서 고쳤다).
+- `security_daily_closes`의 종가는 원주가(수정 전 가격)다. 이미 있는 날짜의 값은 같은 출처일 때만 고친다.
 - `security_live_quotes`는 WAL·백업에 들어가지 않는다. 비정상 종료 뒤나 백업 복구 뒤에는 비어 있고, 정상 재시작 뒤에는 옛 값이 남아 있다. 그래서 값이 있는지가 아니라 **기준 시각**으로 신선도를 판단한다. 오래됐거나 비었으면 마지막 종가를 기준 시각과 함께 보여준다.
 - 쓰기는 worker의 `system` 롤만 한다. `app` 롤은 SELECT만 한다.
 
@@ -319,8 +322,8 @@ DB 트리거는 2겹 하나만 둔다. 업무 규칙은 앱에 둔다(ADR 0012�
 ## 10. 다른 티켓에 넘기는 것
 
 - **기존 데이터 → 새 스키마 매핑과 검증**: [기존 데이터 전환](legacy-migration.md)에서 정했다. `ledgers.archived_at`을 더했다.
-- **시세 데이터 공급원 선택**: `fx_rates`의 출처(그날 기준환율), 종가·배당 일정의 출처.
+- **시세 데이터 공급원 선택**: [시세 데이터 공급원](market-data.md)에서 정했다. 그날 기준환율의 정의를 서울외국환중개 매매기준율로 바꾸고(4.3), `securities` 칸과 `security_code_history`·`security_tracking`을 더하고, 배당 자연키를 고쳤다(5.5).
 - **MCP 툴 설계**: MCP 쓰기의 중복 방지 키 정책, 감사 기록 기반 되돌리기.
 - **통계 화면 구성**: 원화 환산 규칙(4.3). 질문 목록과 요약 테이블 판단은 [통계 질문 목록](stats-questions.md)에서 정했다.
 - **가구원 나가기·계정 삭제**(새 fog): 9절의 남은 질문.
-- **구현 전 확인**: 세율과 `rounding_mode` 실제 값(농특세, SEC fee, 코넥스, ETF·ETN, NXT), KIS 배당 API 필드, 특일 정보 API의 대체·임시공휴일 필드, 미국 T+1 결제 규정.
+- **구현 전 확인**: 세율과 `rounding_mode` 실제 값(농특세, SEC fee, 코넥스, ETF·ETN, NXT), KIS 배당 API 필드(확인한 필드는 [시세 데이터 공급원](market-data.md) 3.6, 남은 것은 6절), 특일 정보 API의 대체·임시공휴일 필드, 미국 T+1 결제 규정.
