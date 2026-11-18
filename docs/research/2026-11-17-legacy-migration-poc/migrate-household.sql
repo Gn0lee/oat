@@ -58,7 +58,10 @@ insert into categories (id, household_id, name, flow, parent_id, icon, sort, is_
 -- 4. 지갑: 계좌 ----------------------------------------------------------------------
 create temp table acc on commit drop as
   select a.*, (a.category = 'investment' or a.account_type in ('stock','isa','pension')
-               or exists (select 1 from legacy.transactions t where t.account_id = a.id)) as is_brokerage
+               or exists (select 1 from legacy.transactions t where t.account_id = a.id)) as is_brokerage,
+         -- 예수금을 관리하던(저장 잔액이 있는) 원화 전용 증권 계좌는 예수금 관리를 켠다(Q10). USD가 섞이면 저장값이 환산 없이 더해져 뜻이 없다.
+         a.balance is not null and not exists (select 1 from legacy.transactions t join legacy.household_stock_settings s
+           on s.household_id = t.household_id and s.ticker = t.ticker where t.account_id = a.id and s.currency <> 'KRW') as cash_tracked
   from legacy.accounts a, p where a.household_id = p.hh;
 insert into mig.map select 'account', id, mig.v7(created_at) from acc;
 insert into wallets (id, household_id, kind, name, owner_member_id, allow_member_use, stats_group, created_at)
@@ -67,7 +70,7 @@ insert into wallets (id, household_id, kind, name, owner_member_id, allow_member
          case when is_brokerage then 'investment' when account_type in ('savings','deposit') then 'saving' else 'spendable' end, created_at
   from acc;
 insert into wallet_brokerage_settings (household_id, wallet_id, ledger_id, cash_tracking_enabled, tax_type)
-  select (select id from hhid), mig.id('account', id), (select id from default_ledger), false,
+  select (select id from hhid), mig.id('account', id), (select id from default_ledger), cash_tracked,
          case account_type when 'isa' then 'isa' when 'pension' then 'pension' else 'general' end
   from acc where is_brokerage;
 
@@ -132,7 +135,8 @@ create temp table src on commit drop as
 
 -- 9. 가계부 기록 ---------------------------------------------------------------------------
 create temp table e on commit drop as select le.* from legacy.ledger_entries le, p where le.household_id = p.hh;
-insert into mig.map select 'entry', id, mig.v7(created_at) from e;
+-- 생성 시각이 같은 기록(묶음 저장)은 기존 화면처럼 기존 id 순서가 되도록 1µs씩 벌린다.
+insert into mig.map select 'entry', id, mig.v7(created_at + (row_number() over (partition by created_at order by id) - 1) * interval '1 microsecond') from e;
 
 insert into records (id, household_id, ledger_id, kind, date, title, memo, excluded_from_stats, is_fixed, payment_method_id, created_at)
   select mig.id('entry', e.id), (select id from hhid), mig.id('ledger', e.book_id), 'general', mig.kst_date(e.transacted_at),
@@ -197,7 +201,8 @@ create temp table tr on commit drop as
 -- 정렬 순서(날짜 → 입력 순서)로 보유 수량이 음수가 되는 (계좌, 종목, 날짜) 묶음은 그날 매수를 매도보다 앞에 둔다(Q9).
 -- UUIDv7 시각만 그 묶음의 가장 이른 입력 시각 직전으로 당기고, 화면에 보이는 값은 바꾸지 않는다.
 alter table tr add column ord_ts timestamptz;
-update tr set ord_ts = created_at;
+update tr set ord_ts = tr.created_at + x.k * interval '1 microsecond'
+  from (select id, row_number() over (partition by created_at order by id) - 1 k from tr) x where x.id = tr.id;
 create temp table neg_day on commit drop as
   select distinct account_id, ticker, d from (
     select account_id, ticker, d, sum(case when type = 'buy' then quantity else -quantity end)
@@ -208,7 +213,7 @@ from (select account_id, ticker, d, min(created_at) first_ts, count(*) filter (w
 where tr.type = 'buy' and x.id = tr.id and (g.account_id, g.ticker, g.d) = (tr.account_id, tr.ticker, tr.d)
   and (tr.account_id, tr.ticker, tr.d) in (select account_id, ticker, d from neg_day);
 insert into mig.report select (select id from hhid), 'reordered_same_day_buy', jsonb_build_object('trade', id, 'date', d)
-  from tr where ord_ts <> created_at;
+  from tr where date_trunc('milliseconds', ord_ts) <> date_trunc('milliseconds', created_at);
 -- 그래도 음수면(다른 날짜에 걸친 입력 오류) 이 가구는 이관하지 않는다. 기존 앱에서 날짜를 고친 뒤 다시 돌린다.
 do $$
 declare bad text;
@@ -241,14 +246,14 @@ insert into mig.report select (select id from hhid), 'zero_price_trade', jsonb_b
 insert into mig.report select (select id from hhid), 'usd_trade_without_fx', jsonb_build_object('trade', tr.id) from tr
   join records r on r.id = mig.id('trade', tr.id) where tr.cur <> 'KRW' and r.fx_rate is null;
 
--- 12. 시작 잔액 맞춤: 잔액을 관리하던 지갑만, 저장 잔액 − 옮긴 다리 합 ----------------------------------
+-- 12. 시작 잔액 맞춤: 잔액을 관리하던 지갑(예수금 관리를 켠 증권 계좌 포함)만, 저장 잔액 − 옮긴 KRW 다리 합 ----------------------------------
 create temp table tracked on commit drop as
-  select mig.id('account', a.id) wallet_id, a.balance stored, a.created_at from acc a where not a.is_brokerage and a.balance is not null
+  select mig.id('account', a.id) wallet_id, a.balance stored, a.created_at from acc a where a.balance is not null and (not a.is_brokerage or a.cash_tracked)
   union all select mig.id('pm_wallet', pm.id), pm.balance, pm.created_at from pm where pm.type in ('prepaid','gift_card','cash') and pm.balance is not null;
 create temp table opening on commit drop as
   select t.wallet_id, mig.round_away(t.stored) - coalesce(sum(lg.amount), 0) diff,
          least(mig.kst_date(t.created_at), min(r.date)) d, least(t.created_at, min(r.created_at)) - interval '1 second' ts
-  from tracked t left join legs lg on lg.wallet_id = t.wallet_id left join records r on r.id = lg.record_id
+  from tracked t left join legs lg on lg.wallet_id = t.wallet_id and lg.currency = 'KRW' left join records r on r.id = lg.record_id
   group by t.wallet_id, t.stored, t.created_at;
 insert into mig.map select 'opening', wallet_id, mig.v7(ts) from opening where diff <> 0;
 insert into records (id, household_id, ledger_id, kind, date, title, is_fixed, created_at)
@@ -259,7 +264,7 @@ insert into legs (household_id, record_id, wallet_id, currency, amount)
 insert into mig.report select (select id from hhid), 'untracked_wallet', jsonb_build_object('wallet', mig.id('account', a.id), 'name', a.name)
   from acc a where not a.is_brokerage and a.balance is null;
 
--- 13. 신용카드 결제일 맞춤(Q1): 결제일마다 직전 결제일 이후의 카드 다리 합을 0으로 되돌린다 -----------------
+-- 13. 신용카드 결제일 맞춤(Q1): 결제일마다 직전 결제일까지의 카드 이용분을 되돌린다(한 주기 늦게 갚음) -----------------
 create temp table card_legs on commit drop as
   select cw.wallet_id, cw.payment_day, r.date, lg.amount from card_wallet cw join legs lg on lg.wallet_id = cw.wallet_id join records r on r.id = lg.record_id;
 create temp table bill_dates on commit drop as
@@ -271,10 +276,10 @@ create temp table bill_dates on commit drop as
                          (select cutover from p), interval '1 month') m) b
   where b.d <= (select cutover from p);
 create temp table card_adj on commit drop as
-  select b.wallet_id, b.d, -coalesce((select sum(c.amount) from card_legs c where c.wallet_id = b.wallet_id and c.date <= b.d
-      and c.date > coalesce((select max(b2.d) from bill_dates b2 where b2.wallet_id = b.wallet_id and b2.d < b.d), '-infinity')), 0) amount,
-    uuidv7() id
-  from bill_dates b;
+  -- 결제일 b에는 직전 결제일 p1까지의 이용분(p2 < 날짜 ≤ p1)을 갚은 것으로 본다. 실제 카드도 지난 이용기간을 다음 결제일에 갚는다.
+  select b.wallet_id, b.d, -coalesce((select sum(c.amount) from card_legs c where c.wallet_id = b.wallet_id
+      and c.date <= b.p1 and c.date > coalesce(b.p2, '-infinity')), 0) amount, uuidv7() id
+  from (select b.*, lag(d) over w p1, lag(d, 2) over w p2 from bill_dates b window w as (partition by wallet_id order by d)) b;
 insert into records (id, household_id, ledger_id, kind, date, title, is_fixed)
   select ca.id, (select id from hhid), pl.ledger_id, 'balance_adjustment', ca.d, '카드대금 맞춤(전환)', false
   from card_adj ca join wallets w on w.id = ca.wallet_id join personal_ledger pl on pl.member_id = w.owner_member_id where ca.amount <> 0;

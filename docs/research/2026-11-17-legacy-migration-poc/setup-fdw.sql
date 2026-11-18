@@ -18,8 +18,13 @@ create table mig.map (src text not null, legacy_id uuid not null, new_id uuid no
 -- 이관이 새로 만든 행(출처 미지정 지갑, 개인 장부, 맞춤 기록)과 보고 항목
 create table mig.report (household_id uuid, item text, detail jsonb);
 
--- UUIDv7의 시각 부분을 주어진 시각으로 만든다(PG18 uuidv7(shift interval)).
-create function mig.v7(ts timestamptz) returns uuid language sql volatile as $$ select uuidv7(ts - clock_timestamp()) $$;
+-- UUIDv7을 주어진 시각으로 직접 조립한다: 48비트 unix ms + 버전 7 + ms 아래 12비트(약 0.24µs 단위, RFC 9562 방식 3) + 변형 비트 + 난수.
+-- uuidv7(시각 − clock_timestamp())는 함수 안에서 시계를 다시 읽어 호출마다 몇 µs씩 어긋나서 쓰지 않는다.
+create function mig.v7(ts timestamptz) returns uuid language sql volatile as $$
+  select (lpad(to_hex(ms), 12, '0') || '7' || lpad(to_hex(frac), 3, '0')
+          || to_hex(8 + floor(random() * 4)::int) || substr(md5(random()::text || clock_timestamp()::text), 1, 15))::uuid
+  from (select floor(extract(epoch from ts) * 1000)::bigint ms,
+               floor((extract(epoch from ts) * 1000 - floor(extract(epoch from ts) * 1000)) * 4096)::int frac) t $$;
 create function mig.id(s text, lid uuid) returns uuid language sql stable as $$ select new_id from mig.map where src = s and legacy_id = lid $$;
 create function mig.kst_date(ts timestamptz) returns date language sql immutable as $$ select (ts at time zone 'Asia/Seoul')::date $$;
 -- 절댓값 기준 사사오입(물리 스키마 4.3)

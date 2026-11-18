@@ -34,13 +34,14 @@ select 'ledger_entries' src, count(*) legacy, (select count(*) from records r jo
 union all select 'transactions', count(*), (select count(*) from records r join mig.map m on m.new_id = r.id and m.src = 'trade') from legacy.transactions
 union all select 'balance_adjustments(≠0)', count(*) filter (where delta <> 0), (select count(*) from records r join mig.map m on m.new_id = r.id and m.src = 'adjustment') from legacy.balance_adjustments;
 
-\echo '== V2 잔액을 관리하던 지갑: 기존 저장 잔액 = 새 다리 합'
-select w.name, x.stored, coalesce(sum(lg.amount), 0) computed, x.stored = coalesce(sum(lg.amount), 0) ok
-from (select mig.id('account', id) wid, balance stored from legacy.accounts
-        where balance is not null and not (category = 'investment' or account_type in ('stock','isa','pension') or exists (select 1 from legacy.transactions t where t.account_id = accounts.id))
+\echo '== V2 잔액을 관리하던 지갑(예수금 관리를 켠 증권 계좌 포함): 기존 저장 잔액 = 새 KRW 다리 합'
+select w.name, w.kind, x.stored, coalesce(sum(lg.amount), 0) computed, x.stored = coalesce(sum(lg.amount), 0) ok
+from (select mig.id('account', a.id) wid, a.balance stored from legacy.accounts a
+        left join wallet_brokerage_settings bs on bs.wallet_id = mig.id('account', a.id)
+        where a.balance is not null and coalesce(bs.cash_tracking_enabled, true)
       union all select mig.id('pm_wallet', id), balance from legacy.payment_methods where balance is not null) x
-join wallets w on w.id = x.wid left join legs lg on lg.wallet_id = w.id
-group by w.name, x.stored order by w.name;
+join wallets w on w.id = x.wid left join legs lg on lg.wallet_id = w.id and lg.currency = 'KRW'
+group by w.name, w.kind, x.stored order by w.kind, w.name;
 
 \echo '== V3 보유 수량: 기존 holdings 뷰 = 새 종목 다리 합'
 select a.name account, h.ticker, h.quantity legacy_qty, p.qty new_qty, h.quantity = p.qty ok
@@ -85,8 +86,8 @@ select count(*) categories, count(*) filter (where o.s = n.s) matched from
  full join (select category_id, sum(abs(amount)) s from lines l join records r on r.id = l.record_id where not r.excluded_from_stats group by 1) n
  on n.category_id = mig.id('category', o.category_id);
 
-\echo '== V8 같은 날 순서: 기존(입력 순서 created_at) = 새 정렬 키(date, sort_time, id)'
-with o as (select mig.id('entry', id) rid, row_number() over (partition by book_id, mig.kst_date(transacted_at) order by created_at) rn from legacy.ledger_entries),
+\echo '== V8 같은 날 순서: 기존 화면(created_at, id) = 새 정렬 키(date, sort_time, id)'
+with o as (select mig.id('entry', id) rid, row_number() over (partition by book_id, mig.kst_date(transacted_at) order by created_at, id) rn from legacy.ledger_entries),
      n as (select r.id rid, row_number() over (partition by r.ledger_id, r.date order by r.date, r.sort_time, r.id) rn from records r
            where r.id in (select new_id from mig.map where src = 'entry'))
 select count(*) records, count(*) filter (where o.rn = n.rn) same_position from o join n using (rid);
@@ -94,7 +95,10 @@ select count(*) records, count(*) filter (where o.rn = n.rn) same_position from 
 select count(*) total, count(*) filter (where date_trunc('milliseconds', uuid_extract_timestamp(r.id)) = date_trunc('milliseconds', e.created_at)) exact
 from legacy.ledger_entries e join records r on r.id = mig.id('entry', e.id);
 
-\echo '== V9 신용카드 지갑: 이관 시점 갚을 돈(마지막 결제일 이후 이용분)'
+\echo '== V2b 증권 계좌 예수금 관리'
+select bs.cash_tracking_enabled, count(*) from wallet_brokerage_settings bs group by 1;
+
+\echo '== V9 신용카드 지갑: 전환 시점 갚을 돈(직전 결제일 이전 결제일 이후 이용분)'
 select w.name, sum(lg.amount) balance, count(*) filter (where r.kind = 'balance_adjustment') adjustments
 from wallets w join legs lg on lg.wallet_id = w.id join records r on r.id = lg.record_id where w.kind = 'credit_card' group by w.name;
 
