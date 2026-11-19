@@ -34,7 +34,9 @@
 |---|---|
 | oat.com·oat.app·oat.ai·oat.xyz·oat.io·oat.co·oat.me·oat.so·oat.to·oat.fm·oat.cc·oat.one·oat.life·oat.dev·oat.club·oat.zone·oat.land·oat.gg·oat.house·oat.money·oat.family | 이미 등록됨 |
 | oat.kr·oat.co.kr | 이미 등록됨(개인) |
-| **oat.day**·oat.page·oat.homes·oat.fun | 비어 있는 것으로 보임(가격 미확인) |
+| **oat.day**·oat.page·oat.homes·oat.fun | 비어 있는 것으로 보임. oat.day는 연 $64.93(세 글자 프리미엄, 사용자 확인) |
+| oatday.app·oatday.kr·ouroat.app·oatjar.app·oatnote.app·oatnest.app·dailyoat.app·oatdaily.app | 비어 있는 것으로 보임 |
+| oatday.com·dailyoat.com·oatdaily.com·myoat.com·oatmeal.day·oatmoney.app | 이미 등록됨 |
 | oatbook.app·useoat.app·myoat.app·oatlog.app·oatfam.app·oathome.app | 비어 있는 것으로 보임 |
 | oatbook.kr·getoat.kr·oatapp.kr·oatmoney.kr | 비어 있는 것으로 보임 |
 | getoat.app·oatbook.com·useoat.com·getoat.com·oatapp.com | 이미 등록됨 |
