@@ -1,0 +1,18 @@
+{
+  "expo": {
+    "name": "oat auth poc",
+    "slug": "oat-auth-poc",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "dev.oatpoc.authpoc"
+    },
+    "plugins": [
+      "expo-secure-store",
+      "expo-web-browser"
+    ],
+    "scheme": "oat"
+  }
+}

@@ -70,7 +70,7 @@ PostgreSQL: 유일한 정본 저장소
 14. **MCP는 별도 resource의 OAuth 액세스 토큰.** Better Auth가 OAuth 인가 서버를 겸한다. JWT 플러그인의 세션 JWT 발급(`/token`, `set-auth-jwt`)은 끈다. MCP 토큰은 앱 API와 다른 resource 값으로 검증하고, 앱 API는 세션 확인만 쓴다. 두 토큰을 서로의 엔드포인트에서 거부하는지 테스트한다. 랜딩 웹에는 로그인이 없다.
 15. **가구는 요청마다 DB 멤버십에서 정한다.** 클라이언트가 보낸 헤더로 정하지 않는다. 가구원을 빼면 그 사람의 세션과 MCP 토큰을 무효화한다.
 16. **Better Auth는 버전을 고정한다.** `better-auth`와 모든 `@better-auth/*` 패키지를 같은 정확한 버전으로 둔다. 인증 엔드포인트는 우리 OpenAPI 밖에 있으므로, 앱이 쓰는 엔드포인트의 Better Auth `openAPI()` 출력을 따로 스냅샷으로 남기고 CI에서 비교한다. 우리만의 인증 래퍼 엔드포인트는 만들지 않는다. Better Auth 테이블 스키마는 Better Auth CLI로 생성해 Drizzle 스키마에 넣는다.
-17. **실기기 확인은 인증 PoC로.** 수동 Cookie 헤더 전달, 소셜 리다이렉트 복귀, 장기 방치 후 세션, 재설치 후 Keychain, MCP 토큰 교차 거부 등 리서치 9.2절의 항목을 인증 PoC 티켓에서 확인한다.
+17. **실기기 확인은 인증 PoC로.** 수동 Cookie 헤더 전달, 소셜 리다이렉트 복귀, 장기 방치 후 세션, 재설치 후 Keychain, MCP 토큰 교차 거부 등 리서치 9.2절의 항목을 인증 PoC 티켓에서 확인한다. (인증 PoC에서 확인했다. 방식은 유지하고, 세션 60일 비활동 만료·새 설치 시 Keychain 정리·AI 연결은 세션과 별개이고 MCP 요청마다 DB 확인을 더했다. [인증](auth.md), ADR 0022)
 
 ### 서버 내부
 

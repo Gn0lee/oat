@@ -1,0 +1,22 @@
+// #7 보강: 앱 로그아웃과 별개로 MCP 연결을 끊는 경로가 있는지 확인해요.
+import { createHash, randomBytes } from "node:crypto";
+const B = "http://localhost:3000", A = `${B}/api/auth`, RES = `${B}/mcp`;
+const form = (o: Record<string, string>) => ({ method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" }, body: new URLSearchParams(o) });
+const r0 = await fetch(`${A}/sign-up/email`, { method: "POST", headers: { "content-type": "application/json", origin: B }, body: JSON.stringify({ email: `r${Date.now()}@poc.test`, password: "password-1234", name: "r" }) });
+const cookie = r0.headers.getSetCookie().map((c) => c.split(";")[0]).join("; ");
+const redirect = "http://localhost:9999/cb";
+const client = await (await fetch(`${A}/oauth2/register`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ client_name: "c", application_type: "native", redirect_uris: [redirect], token_endpoint_auth_method: "none", grant_types: ["authorization_code", "refresh_token"], response_types: ["code"] }) })).json();
+const v = randomBytes(32).toString("base64url");
+const q = new URLSearchParams({ response_type: "code", client_id: client.client_id, redirect_uri: redirect, scope: "openid offline_access", state: "s", code_challenge: createHash("sha256").update(v).digest("base64url"), code_challenge_method: "S256", resource: RES });
+const consentUrl = (await (await fetch(`${A}/oauth2/authorize?${q}`, { headers: { cookie } })).json()).url;
+const cj = await (await fetch(`${A}/oauth2/consent`, { method: "POST", headers: { "content-type": "application/json", cookie, origin: B }, body: JSON.stringify({ accept: true, oauth_query: new URL(consentUrl, B).search.slice(1) }) })).json();
+const code = new URL(cj.url).searchParams.get("code")!;
+const t = await (await fetch(`${A}/oauth2/token`, form({ grant_type: "authorization_code", code, redirect_uri: redirect, client_id: client.client_id, code_verifier: v, resource: RES }))).json();
+const rv = await fetch(`${A}/oauth2/revoke`, form({ token: t.refresh_token, token_type_hint: "refresh_token", client_id: client.client_id }));
+console.log("revoke refresh", rv.status, await rv.text());
+const rr = await fetch(`${A}/oauth2/token`, form({ grant_type: "refresh_token", refresh_token: t.refresh_token, client_id: client.client_id, resource: RES }));
+console.log("refresh after revoke", rr.status, (await rr.text()).slice(0, 120));
+const mc = await fetch(RES, { method: "POST", headers: { authorization: `Bearer ${t.access_token}` }, body: "{}" });
+console.log("access token after refresh revoke → /mcp", mc.status);
+const consents = await (await fetch(`${A}/oauth2/get-consents`, { headers: { cookie } })).json();
+console.log("consents", JSON.stringify(consents).slice(0, 200));
