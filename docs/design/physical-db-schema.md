@@ -3,7 +3,7 @@
 - 결정일: 2026-11-17
 - 티켓: [물리 DB 스키마: 테이블·제약·반올림·날짜 규칙](https://github.com/Gn0lee/oat/issues/526)
 - 관련 ADR: 0004~0009(도메인), 0011~0013(서버 아키텍처), 0014(해외 날짜는 현지 날짜), 0015(합 불변식 트리거와 예상 상태 기록), 0016·0017(통계 질문 목록에서 더한 칸)
-- 후속 변경: [기존 데이터 전환](legacy-migration.md)(2026-11-17)에서 `ledgers.archived_at`을 더했다. [통계 질문 목록](stats-questions.md)(2026-11-17)에서 `wallets.stats_group`, `categories.is_fixed_default`, `records.is_fixed`, `records.spender_member_id`, 예상 기록 부분 인덱스를 더하고, 환불·혜택 줄도 원 기록과 같은 장부로 묶었다.
+- 후속 변경: [기존 데이터 전환](legacy-migration.md)(2026-11-17)에서 `ledgers.archived_at`을 더했다. [통계 질문 목록](stats-questions.md)(2026-11-17)에서 `wallets.stats_group`, `categories.is_fixed_default`, `records.is_fixed`, `records.spender_member_id`, 예상 기록 부분 인덱스를 더하고, 환불·혜택 줄도 원 기록과 같은 장부로 묶었다. [MCP](mcp.md)(2026-11-20)에서 `ai_connections`와 `audit_log.ai_connection_id`를 더했다.
 - 전제: [서버 아키텍처](server-architecture.md) 3절. PostgreSQL 18, Drizzle, DB 롤 셋(`owner`·`app`·`system`), 앱 레이어 권한 + 가구 RLS 안전망, 얇은 클라이언트.
 - 이 문서는 테이블 모양과 규칙을 정한다. 칸 이름·타입의 최종 철자는 구현 때 Drizzle 스키마가 정본이 된다.
 
@@ -28,7 +28,7 @@
 
 계정·가구 경계 (RLS 없음, 접근 문맥 모듈만 읽음)
   Better Auth 테이블(user·session·account·verification·oauth_*)
-  households · household_members · invitations
+  households · household_members · invitations · ai_connections
 
 운영 (RLS 없음)
   idempotency_keys · pgboss.* (큐 라이브러리 소유 스키마)
@@ -224,7 +224,7 @@ DB 트리거는 2겹 하나만 둔다. 업무 규칙은 앱에 둔다(ADR 0012�
 
 ### 5.4 감사
 
-**`audit_log`**: `household_id`, `ledger_id`(대상이 장부에 속하면), `actor_member_id`(worker면 NULL), `entry_point`(앱·MCP·worker), `request_id`, `entity_type`, `entity_id`, `action`(생성·수정·삭제), `before`·`after`(jsonb), `created_at`. 쓰기와 같은 트랜잭션에 남긴다. 보존 기한은 없다. 감사 기록을 읽을 때도 권한 모듈의 "볼 수 있는 장부"를 거친다(개인 장부 내용이 들어 있기 때문이다). `app` 롤은 INSERT와 SELECT만 받는다(고치거나 지울 수 없다). `ledger_id`는 FK를 걸지 않는다(장부가 지워져도 기록이 남아야 해서).
+**`audit_log`**: `household_id`, `ledger_id`(대상이 장부에 속하면), `actor_member_id`(worker면 NULL), `entry_point`(앱·MCP·worker), `request_id`, `ai_connection_id`(입구가 MCP면 필수, FK 없음, [MCP](mcp.md) 4.3), `entity_type`, `entity_id`, `action`(생성·수정·삭제), `before`·`after`(jsonb), `created_at`. 쓰기와 같은 트랜잭션에 남긴다. 보존 기한은 없다. 감사 기록을 읽을 때도 권한 모듈의 "볼 수 있는 장부"를 거친다(개인 장부 내용이 들어 있기 때문이다). `app` 롤은 INSERT와 SELECT만 받는다(고치거나 지울 수 없다). `ledger_id`는 FK를 걸지 않는다(장부가 지워져도 기록이 남아야 해서).
 
 ### 5.5 전역 기준 데이터
 
@@ -255,6 +255,7 @@ DB 트리거는 2겹 하나만 둔다. 업무 규칙은 앱에 둔다(ADR 0012�
   - **사용자는 활동 중인 가구 하나에만 속한다**: `user_id` 부분 유니크(`status = 활동`). 여러 가구가 필요해지면 유니크를 풀고 "현재 가구"를 세션에 둔다.
   - **멤버 행은 지우지 않는다.** 가구 데이터의 소유자·작성자 칸(`ledgers`·`wallets`·`payment_methods`의 `owner_member_id`, 감사 기록의 `actor_member_id`)은 사용자가 아니라 이 멤버 행을 가리킨다. 그래서 가구원이 나가거나 계정을 지워도 기록이 깨지지 않고, 화면은 "나간 가구원"처럼 가려서 보여줄 수 있다. 계정을 지우면 `user_id`만 `SET NULL`이 된다.
 - **`invitations`**: 가구, 초대 코드(추측 불가 랜덤, UUIDv7 아님), 만료 시각, 사용 여부.
+- **`ai_connections`**: `household_id`, `member_id`(→ 멤버 행), `oauth_client_id`, `client_name`, `access`(`read`·`read_write`), `created_at`, `last_used_at`. `(member_id, oauth_client_id)` 유니크. AI 연결의 권한과 동의의 정본이고, `/mcp`가 요청마다 멤버 행과 묶어 읽는다. 멤버 행처럼 가구를 정하기 전에 읽으므로 RLS를 걸지 않는다([MCP](mcp.md) 5.5, ADR 0023).
 
 ### 5.7 운영
 
@@ -323,7 +324,7 @@ DB 트리거는 2겹 하나만 둔다. 업무 규칙은 앱에 둔다(ADR 0012�
 
 - **기존 데이터 → 새 스키마 매핑과 검증**: [기존 데이터 전환](legacy-migration.md)에서 정했다. `ledgers.archived_at`을 더했다.
 - **시세 데이터 공급원 선택**: [시세 데이터 공급원](market-data.md)에서 정했다. 그날 기준환율의 정의를 서울외국환중개 매매기준율로 바꾸고(4.3), `securities` 칸과 `security_code_history`·`security_tracking`을 더하고, 배당 자연키를 고쳤다(5.5).
-- **MCP 툴 설계**: MCP 쓰기의 중복 방지 키 정책, 감사 기록 기반 되돌리기.
+- **MCP 툴 설계**: MCP 쓰기의 중복 방지 키 정책, 감사 기록 기반 되돌리기. ([MCP](mcp.md)에서 정했다)
 - **통계 화면 구성**: 원화 환산 규칙(4.3). 질문 목록과 요약 테이블 판단은 [통계 질문 목록](stats-questions.md)에서 정했다.
 - **가구원 나가기·계정 삭제**(새 fog): 9절의 남은 질문.
 - **구현 전 확인**: 세율과 `rounding_mode` 실제 값(농특세, SEC fee, 코넥스, ETF·ETN, NXT), KIS 배당 API 필드(확인한 필드는 [시세 데이터 공급원](market-data.md) 3.6, 남은 것은 6절), 특일 정보 API의 대체·임시공휴일 필드, 미국 T+1 결제 규정.
