@@ -3,7 +3,7 @@
 - 결정일: 2026-11-17
 - 티켓: [물리 DB 스키마: 테이블·제약·반올림·날짜 규칙](https://github.com/Gn0lee/oat/issues/526)
 - 관련 ADR: 0004~0009(도메인), 0011~0013(서버 아키텍처), 0014(해외 날짜는 현지 날짜), 0015(합 불변식 트리거와 예상 상태 기록), 0016·0017(통계 질문 목록에서 더한 칸)
-- 후속 변경: [기존 데이터 전환](legacy-migration.md)(2026-11-17)에서 `ledgers.archived_at`을 더했다. [통계 질문 목록](stats-questions.md)(2026-11-17)에서 `wallets.stats_group`, `categories.is_fixed_default`, `records.is_fixed`, `records.spender_member_id`, 예상 기록 부분 인덱스를 더하고, 환불·혜택 줄도 원 기록과 같은 장부로 묶었다. [MCP](mcp.md)(2026-11-20)에서 `ai_connections`와 `audit_log.ai_connection_id`를 더했다. [가구원 나가기·계정 삭제](member-leave.md)(2026-11-20)에서 `household_members.role` 값과 관리자 유니크, `erasure_log`, 감사 기록 지우기 함수, `user` 삭제 FK를 정했다(9절).
+- 후속 변경: [기존 데이터 전환](legacy-migration.md)(2026-11-17)에서 `ledgers.archived_at`을 더했다. [통계 질문 목록](stats-questions.md)(2026-11-17)에서 `wallets.stats_group`, `categories.is_fixed_default`, `records.is_fixed`, `records.spender_member_id`, 예상 기록 부분 인덱스를 더하고, 환불·혜택 줄도 원 기록과 같은 장부로 묶었다. [MCP](mcp.md)(2026-11-20)에서 `ai_connections`와 `audit_log.ai_connection_id`를 더했다. [가구원 나가기·계정 삭제](member-leave.md)(2026-11-20)에서 `household_members.role` 값과 관리자 유니크, `user.deletion_requested_at`, `erasure_log`, 감사 기록 지우기 함수, `user` 삭제 FK를 정했다(9절).
 - 전제: [서버 아키텍처](server-architecture.md) 3절. PostgreSQL 18, Drizzle, DB 롤 셋(`owner`·`app`·`system`), 앱 레이어 권한 + 가구 RLS 안전망, 얇은 클라이언트.
 - 이 문서는 테이블 모양과 규칙을 정한다. 칸 이름·타입의 최종 철자는 구현 때 Drizzle 스키마가 정본이 된다.
 
@@ -254,7 +254,7 @@ DB 트리거는 2겹 하나만 둔다. 업무 규칙은 앱에 둔다(ADR 0012�
   - 가구마다 활동 관리자 한 명: 부분 유니크 `(household_id) WHERE role = 'admin' AND status = 'active'`([가구원 나가기·계정 삭제](member-leave.md) 7절).
   - `(household_id, user_id)` 유니크: 나갔다가 같은 가구에 다시 들어오면 새 행을 만들지 않고 옛 행을 다시 활동으로 바꾼다. 그래야 옛 소유 데이터와 이어진다.
   - **사용자는 활동 중인 가구 하나에만 속한다**: `user_id` 부분 유니크(`status = 활동`). 여러 가구가 필요해지면 유니크를 풀고 "현재 가구"를 세션에 둔다.
-  - **멤버 행은 지우지 않는다.** 가구 데이터의 소유자·작성자 칸(`ledgers`·`wallets`·`payment_methods`의 `owner_member_id`, 감사 기록의 `actor_member_id`)은 사용자가 아니라 이 멤버 행을 가리킨다. 그래서 가구원이 나가거나 계정을 지워도 기록이 깨지지 않고, 화면은 "나간 가구원"처럼 가려서 보여줄 수 있다. 계정을 지우면 `user_id`만 `SET NULL`이 되고 `display_name`은 "탈퇴한 가구원"으로 바뀐다. 예외는 가구 삭제뿐이다(가구 자체가 사라진다).
+  - **멤버 행은 지우지 않는다.** 가구 데이터의 소유자·작성자 칸(`ledgers`·`wallets`·`payment_methods`의 `owner_member_id`, 감사 기록의 `actor_member_id`)은 사용자가 아니라 이 멤버 행을 가리킨다. 그래서 가구원이 나가거나 계정을 지워도 기록이 깨지지 않고, 화면은 "이름(나감)"이나 "탈퇴한 가구원"처럼 가려서 보여줄 수 있다. 계정을 지우면 `user_id`만 `SET NULL`이 되고 `display_name`은 "탈퇴한 가구원"으로 바뀐다. 예외는 가구 삭제뿐이다(가구 자체가 사라진다).
 - **`invitations`**: 가구, 초대 코드(추측 불가 랜덤, UUIDv7 아님), 만료 시각, 사용 여부.
 - **`ai_connections`**: `household_id`, `member_id`(→ 멤버 행), `oauth_client_id`, `client_name`, `access`(`read`·`read_write`), `created_at`, `last_used_at`. `(member_id, oauth_client_id)` 유니크. AI 연결의 권한과 동의의 정본이고, `/mcp`가 요청마다 멤버 행과 묶어 읽는다. 멤버 행처럼 가구를 정하기 전에 읽으므로 RLS를 걸지 않는다([MCP](mcp.md) 5.5, ADR 0023).
 
@@ -265,7 +265,7 @@ DB 트리거는 2겹 하나만 둔다. 업무 규칙은 앱에 둔다(ADR 0012�
   - 같은 키가 동시에 오면 두 번째 INSERT는 첫 트랜잭션을 기다린다. 이 INSERT에만 `SET LOCAL lock_timeout`(예: 2초)을 걸고 바로 되돌린다. 트랜잭션 전체에 걸면 지갑 잠금 대기까지 409로 잘못 나간다. 기다림이 넘치면 409다.
   - 넣은 행이 없으면(이미 있음) 저장된 행을 읽는다. 본문 해시가 다르면 422, 같으면 `operation`에 따라 응답한다. 생성·수정은 리소스의 현재 상태를 다시 읽어 응답하고, 삭제는 저장된 `status_code`를 그대로 돌려준다(다시 읽으면 404라서).
   - 7일 뒤 worker가 지운다. 가구 소유가 아니고 비밀값도 아니다. `user_id`는 user 삭제 때 CASCADE다.
-- **`erasure_log`**: 계정 삭제·가구 삭제 때 지운 멤버·장부·지갑 ID와 시각. 개인정보는 넣지 않는다. DB 밖(HDD·S3 추가 전용 파일)에도 같은 줄을 남겨 백업 복원 뒤 다시 적용한다([가구원 나가기·계정 삭제](member-leave.md) 9절).
+- **`erasure_log`**: 나가기·계정 삭제·가구 삭제를 백업 복원 뒤 다시 적용할 만큼의 ID(넘긴 지갑, 다음 관리자, 뼈대로 만든·지운 ID)와 시각. 개인정보는 넣지 않는다. DB 밖(HDD·S3 추가 전용 파일)에도 같은 줄을 남겨 백업 복원 뒤 다시 적용한다([가구원 나가기·계정 삭제](member-leave.md) 9절).
 - **`pgboss.*`**: pg-boss가 만들고 관리하는 스키마다. 작업 예약은 기록 저장과 같은 트랜잭션으로 넣는다. `owner`가 스키마를 소유하고, `app`·`system`은 pg-boss가 요구하는 권한만 받는다.
 
 ### 5.8 FK의 ON DELETE
@@ -286,9 +286,9 @@ DB 트리거는 2겹 하나만 둔다. 업무 규칙은 앱에 둔다(ADR 0012�
 | 지갑 하위 설정 → `wallets` | CASCADE | 지갑 묶음 |
 | `owner_member_id`·`actor_member_id`·`records.spender_member_id` → `household_members` | RESTRICT | 멤버 행은 지우지 않는다 |
 | 전역 기준 데이터(`securities`, `dividend_events` 등)를 가리키는 칸 | RESTRICT | 전역 행은 지우지 않고 상장 여부 등으로 표시한다 |
-| `audit_log`의 모든 칸 | FK 없음 | 대상이 지워져도 기록이 남아야 한다. 계정 삭제 때 지운 것의 행만 `erase_member_audit` 함수(SECURITY DEFINER)가 지운다 |
+| `audit_log`의 모든 칸 | FK 없음 | 대상이 지워져도 기록이 남아야 한다. 계정 삭제·가구 삭제 때 지우거나 뼈대로 만든 것의 행만 `erase_audit` 함수(SECURITY DEFINER)가 지운다 |
 | `household_members.user_id` → `user` | `SET NULL (user_id)` | 계정을 지워도 멤버 행은 남는다 |
-| `session`·`account`·OAuth 토큰·`idempotency_keys`의 `user_id` → `user` | CASCADE | 계정 삭제 때 함께 지운다 |
+| `session`·`account`·OAuth 토큰·`idempotency_keys`의 `user_id` → `user` | CASCADE | 계정 삭제 때 함께 지운다. `verification`은 FK가 없어 이메일로 직접 지운다 |
 | 그 밖의 모든 FK(`expected_wallet_id`, `payment_methods.wallet_id`, `categories.ledger_id`, `bills.wallet_id` 등) | RESTRICT | 표에 없으면 RESTRICT가 기본이다 |
 
 ## 6. 롤과 접근
@@ -322,7 +322,7 @@ DB 트리거는 2겹 하나만 둔다. 업무 규칙은 앱에 둔다(ADR 0012�
 - 소유자·작성자 칸은 사용자가 아니라 `household_members` 행을 가리키고, 멤버 행은 지우지 않는다(5.6). 방향은 "기록은 남기고 사람은 가린다"이다.
 - 다리가 있는 지갑은 지울 수 없고 보관(`archived_at`)만 된다(5.8). 그래서 나간 사람의 지갑을 가리키는 공용 기록이 깨지지 않는다.
 - **나가기**는 얼리기다: 멤버 행 `left`, AI 연결 행 삭제, 갱신 토큰 `revoked`, 세션 전부 삭제를 한 트랜잭션에서 하고, 그 사람의 지갑은 보관한다(함께 쓰는 지갑은 넘길 수 있다).
-- **계정 삭제**는 개인 장부 기록을 지우고 남는 지갑에 닿은 다리를 지갑 × 통화 × 월 잔액 맞춤으로 바꿔 이름을 바꾼 그 개인 장부에 둔다. 그 사람만 쓰던 지갑은 지갑째 지우고, 지운 것의 감사 행도 지운다.
+- **계정 삭제**는 개인 장부 기록 중 남은 가구원이 보는 지갑에 닿은 것을 내용을 지운 뼈대로 남기고(이름을 바꿔 보관한 그 개인 장부에), 나머지는 지운다. 아무것도 가리키지 않는 그 사람의 지갑은 지갑째 지우고(FK 위반이면 보관), 지우거나 뼈대로 만든 것의 감사 행도 지운다.
 
 ## 10. 다른 티켓에 넘기는 것
 
