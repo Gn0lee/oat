@@ -96,7 +96,7 @@ PoC로 확인했다: Postgres 18, 축약 스키마, 7절 인덱스. 큰 가구 �
 | `wallets.stats_group` | 묶음: `spendable`(쓸 수 있는 돈)·`saving`(모으는 돈)·`investment`(투자)·`points`(포인트·상품권)·`liability`(갚아야 할 돈). NOT NULL | A1·A2. 기본값은 종류에서 나온다: 통장·현금·페이머니 → 쓸 수 있는 돈, 포인트·상품권 → 포인트·상품권, 증권 계좌 → 투자, 신용카드·대출 → 갚아야 할 돈. 자산 지갑은 앞의 넷 중에서 바꿀 수 있고, 부채 지갑은 늘 갚아야 할 돈이다(CHECK) |
 | `categories.is_fixed_default` | boolean, 기본 false | O3. 기록의 고정비 표시 기본값을 준다. 기본 카테고리 중 주거·통신·보험·구독류는 켠 상태로 넣는다 |
 | `records.is_fixed` | boolean NOT NULL | O3. 저장할 때 정한다: 정기 규칙이 만든 기록이면 켜짐, 아니면 지출 줄 중 하나라도 고정비 기본값 카테고리면 켜짐. 사용자가 기록마다 바꿀 수 있다. 규칙을 지우거나 카테고리 기본값을 바꿔도 과거 기록은 바뀌지 않는다(ADR 0017) |
-| `records.spender_member_id` | `household_members` FK, NULL 허용, RESTRICT | O1. 쓴 사람 덮어쓰기. NULL이면 계산한다(ADR 0017) |
+| `records.spender_member_id` | `household_members` FK, NULL 허용, RESTRICT | O1. 쓴 사람 덮어쓰기. NULL이면 계산한다(ADR 0017). "함께"로 덮어쓰는 `spender_shared`는 [모바일 입력 UX 원칙](mobile-input.md) 8절에서 더했다 |
 | 도메인 규칙 | **환불·혜택 줄도 원 기록과 같은 장부**에만 들어간다(정산과 같다). 물리 DB 스키마 3.4 | 공용 장부 지출의 캐시백을 개인 장부에 적으면 두 가구원의 공용 통계가 달라진다 |
 | 인덱스 | `records (household_id, ledger_id) WHERE status = 'expected'` | O4. 예상 상태 기록만 빠르게 찾는다 |
 

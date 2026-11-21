@@ -50,7 +50,7 @@ const idx = rows.map((r) => ({ r, code: r.code.toLowerCase(), name: norm(r.name)
 const indexMs = performance.now() - t0;
 const heapMb = (process.memoryUsage().heapUsed - heapBefore) / 1024 / 1024;
 
-// 보유 종목(가짜): 이 가구가 가진 종목은 맨 위로.
+// 보유 종목(가짜): 내가 볼 수 있는 장부의 계좌가 가진 종목. 코드 정확 일치 다음으로 올린다.
 const held = new Set(["005930", "AAPL", "360750"]);
 
 function search(qRaw, limit = 20) {
@@ -66,7 +66,7 @@ function search(qRaw, limit = 20) {
     else if (cho ? e.cho.includes(q) : e.name.includes(q)) score = 50;
     else if (q.length >= 2 && e.en.includes(q)) score = 40;
     if (score < 0) continue;
-    if (held.has(e.r.code)) score += 1000;
+    if (held.has(e.r.code) && score < 100) score = 90 + score / 10; // 보유 종목은 코드 정확 일치(100) 바로 아래(95~98)
     hits.push({ score, e });
   }
   hits.sort((a, b) => b.score - a.score || a.e.name.length - b.e.name.length);

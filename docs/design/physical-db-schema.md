@@ -42,7 +42,7 @@
 3. **가구 소유가 아닌 테이블은 1절의 목록뿐이다.** 새 테이블은 기본이 가구 소유이고, 목록에 넣으려면 이 문서를 고친다.
    - `households`·`household_members`·`invitations`는 요청의 가구를 정하는 데 쓰여서 RLS를 걸 수 없다(가구를 알기 전에 읽어야 함). 권한 모듈의 접근 문맥 생성만 읽고 쓴다.
    - **카테고리는 가구마다 복사한다.** 가구를 만들 때 기본 카테고리 세트를 그 가구 행으로 넣는다. 전역 행과 가구 행을 섞지 않아서 정책 예외가 없다. 시스템 카테고리(투자 비용, 미분류 등)는 `system_key` 칸으로 식별한다.
-4. **ID는 UUIDv7**이다. 기본값은 Postgres 18 내장 `uuidv7()`이고, 서버 코드가 미리 만들어 넣어도 된다. 초대 코드·공개 토큰에는 쓰지 않는다. Better Auth 테이블의 ID 형식은 Better Auth 설정을 따르고, 그 테이블을 가리키는 FK는 그 타입에 맞춘다.
+4. **ID는 UUIDv7**이다. 기본값은 Postgres 18 내장 `uuidv7()`이고, 서버 코드가 미리 만들어 넣어도 된다. 새 기록(`records`)은 앱이 정한 UUIDv7을 받을 수 있고, 같은 가구에 같은 id가 있으면 새로 만들지 않고 그 기록을 돌려준다(ADR 0028, 다리·줄 id는 서버가 만든다). 초대 코드·공개 토큰에는 쓰지 않는다. Better Auth 테이블의 ID 형식은 Better Auth 설정을 따르고, 그 테이블을 가리키는 FK는 그 타입에 맞춘다.
 5. **`version`은 묶음의 대표 행에만 둔다.** 대상: `records`, `wallets`, `payment_methods`, `ledgers`, `categories`, `counterparties`, `recurring_rules`, `bills`. 다리·줄·규칙의 다리/줄·하위 설정 테이블은 대표 행의 version으로 지킨다. 대표 행을 고칠 때는 자식을 통째로 갈아 끼우고 `version = version + 1 … WHERE version = ?`로 갱신한다. 바뀐 행이 0개면 409다.
 6. **삭제는 진짜 삭제이고, 감사 기록에 직전 모습을 남긴다.** 소프트 삭제(`deleted_at`)는 두지 않는다. 필요해지면 칸을 더하고 RLS 정책에 `deleted_at IS NULL`을 같이 넣는 방식으로 추가한다. 휴지통·되돌리기는 감사 기록의 직전 모습으로 다시 만드는 기능으로 만든다.
 7. **값 타입.**
@@ -130,7 +130,7 @@ DB 트리거는 2겹 하나만 둔다. 업무 규칙은 앱에 둔다(ADR 0012�
 
 - 기록 날짜(`records.date`)는 기본적으로 한국 날짜다. 예외는 둘이다. (ADR 0014)
   - **해외 카드 이용**: 카드사 명세서에 찍히는 **현지 이용일**. 청구서 배정과 통계 월이 명세서와 맞는다. 입력 화면은 오늘(한국)을 기본값으로 채우고 사용자가 바꾼다.
-  - **해외 주식 체결**: 체결한 시장의 **현지 체결일**(미국은 미 동부). 배당락일 보유 판정과 SEC fee 세율 기간이 현지 날짜 기준이기 때문이다.
+  - **해외 주식 체결**: 체결한 시장의 **현지 체결일**(미국은 미 동부). 배당락일 보유 판정과 SEC fee 세율 기간이 현지 날짜 기준이기 때문이다. 입력 화면 기본값은 지금의 미 동부 날짜(토·일이면 직전 금요일)다([모바일 입력 UX 원칙](mobile-input.md) 7절).
 - `records.time`은 선택값이고, 기록 날짜와 같은 기준(현지면 현지 시각)의 `HH:MM`이다.
 - **정렬 키**는 `(date, sort_time, id)`다. `sort_time`은 `coalesce(time, '24:00')`로 만든 NOT NULL 생성 칸이라, 시각이 없는 기록은 그날 맨 뒤에 온다. NULL이 없어야 행 값 비교(`(a, b, c) > (…)`)로 커서를 만들 수 있다. id가 UUIDv7이라 마지막 기준은 입력 순서다. 목록 커서 페이지네이션과 평단·보유 수량 계산이 같은 정렬 키를 쓴다.
 - 기존 데이터 전환 스크립트는 UUIDv7의 시각 부분을 원래 기록의 생성 시각으로 만들어 넣는다. 그래야 옮긴 기록의 같은 날 순서가 원래 순서와 같다. 예외는 같은 날 매도를 먼저 입력해 보유 수량이 음수가 되는 매수뿐이고, 그날 매도 앞으로 당긴다([기존 데이터 전환](legacy-migration.md) 6절).
@@ -177,7 +177,7 @@ DB 트리거는 2겹 하나만 둔다. 업무 규칙은 앱에 둔다(ADR 0012�
 | 묶음 | 칸 |
 |---|---|
 | 공통 | `ledger_id`, `kind`, `status`, `date`, `time`, `sort_time`(생성 칸), `title`(가맹점·기록 이름), `memo`, `excluded_from_stats`, version |
-| 통계 귀속 | `is_fixed`(고정비, NOT NULL, 저장할 때 규칙·카테고리 기본값에서 정하고 사용자가 고친다), `spender_member_id`(쓴 사람 덮어쓰기, NULL이면 계산) (ADR 0017) |
+| 통계 귀속 | `is_fixed`(고정비, NOT NULL, 저장할 때 규칙·카테고리 기본값에서 정하고 사용자가 고친다), `spender_member_id`(쓴 사람 덮어쓰기, NULL이면 계산), `spender_shared`(쓴 사람을 "함께"로 덮어쓰기, boolean NOT NULL 기본 false, `spender_member_id`와 함께 차지 않음 CHECK) (ADR 0017) |
 | 예상 | `expected_wallet_id`(예상 혜택·정산을 받을 지갑. 예상 청구액에 예상 혜택을 넣을 때 쓴다) |
 | 카드 | `payment_method_id`(앞단 결제수단: 사용자가 고른 것. 카드로 바로 결제하면 그 카드, 네이버페이를 거치면 네이버페이), `purchase_date`, `defer_to_next_bill`, `installment_months`, `installment_interest_free`, `foreign_amount`, `foreign_currency` |
 | 정기 | `recurring_rule_id`, `occurrence_date`, `is_auto` |
