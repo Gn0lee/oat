@@ -3,7 +3,7 @@
 <title>달 초 비교 시뮬레이션</title>
 <!--
   통계 화면 구성 PoC: 달 초 "평소 대비" 비교 방식 시뮬레이션.
-  가짜 가구 데이터(고정 시드)를 만들어 세 기준선을 비교한다.
+  가짜 가구 데이터(고정 시드)를 만들어 네 기준선을 비교한다.
     M1 지난달 같은 날까지 누적
     M2 직전 3개의 끝난 달의 같은 날까지 누적 평균
     M3 평소 월 총액(3개월 평균) × 경과일 / 그달 일수 (선형, Copilot 방식)
@@ -87,7 +87,7 @@ function catTable(d){
 }
 
 document.getElementById('out').innerHTML=`
-<h2>이번 달 누적 지출과 세 기준선</h2>
+<h2>이번 달 누적 지출과 네 기준선</h2>
 <div class="legend"><span><i class="sw" style="border-color:${COL.cur}"></i>이번 달</span>${Object.keys(NAMES).map(k=>`<span><i class="sw" style="border-color:${COL[k]};border-top-style:dashed"></i>${NAMES[k]}</span>`).join('')}</div>
 ${svg}
 <p class="muted">가짜 가구: 월세 70만(1일)·관리비 25만(10일)·통신 12만(15일)·보험 18만(21일) + 매일 식비·교통·가끔 쇼핑. 10월 7일에 가전 120만 원 한 번.</p>

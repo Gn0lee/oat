@@ -250,7 +250,7 @@ DB 트리거는 2겹 하나만 둔다. 업무 규칙은 앱에 둔다(ADR 0012�
 
 - Better Auth 테이블은 Better Auth CLI로 생성해 Drizzle 스키마에 넣는다(서버 아키텍처 16번).
 - **`households`**: 이름, version.
-- **`household_members`**: `id`, `household_id`, `user_id`, `role`(`admin`·`member`), `status`(활동·나감), `display_name`, `left_at`.
+- **`household_members`**: `id`, `household_id`, `user_id`, `role`(`admin`·`member`), `status`(활동·나감), `display_name`, `left_at`, `home_layout`(jsonb, 홈의 맨 위 숫자와 카드 순서·켜짐, NULL이면 기본값, [통계 화면 구성](stats-screens.md) 4절).
   - 가구마다 활동 관리자 한 명: 부분 유니크 `(household_id) WHERE role = 'admin' AND status = 'active'`([가구원 나가기·계정 삭제](member-leave.md) 7절).
   - `(household_id, user_id)` 유니크: 나갔다가 같은 가구에 다시 들어오면 새 행을 만들지 않고 옛 행을 다시 활동으로 바꾼다. 그래야 옛 소유 데이터와 이어진다.
   - **사용자는 활동 중인 가구 하나에만 속한다**: `user_id` 부분 유니크(`status = 활동`). 여러 가구가 필요해지면 유니크를 풀고 "현재 가구"를 세션에 둔다.
@@ -330,6 +330,6 @@ DB 트리거는 2겹 하나만 둔다. 업무 규칙은 앱에 둔다(ADR 0012�
 - **기존 데이터 → 새 스키마 매핑과 검증**: [기존 데이터 전환](legacy-migration.md)에서 정했다. `ledgers.archived_at`을 더했다.
 - **시세 데이터 공급원 선택**: [시세 데이터 공급원](market-data.md)에서 정했다. 그날 기준환율의 정의를 서울외국환중개 매매기준율로 바꾸고(4.3), `securities` 칸과 `security_code_history`·`security_tracking`을 더하고, 배당 자연키를 고쳤다(5.5).
 - **MCP 툴 설계**: MCP 쓰기의 중복 방지 키 정책, 감사 기록 기반 되돌리기. ([MCP](mcp.md)에서 정했다)
-- **통계 화면 구성**: 원화 환산 규칙(4.3). → [통계 화면 구성](stats-screens.md)은 이 규칙을 그대로 쓰고, 투자 화면 맨 아래에 그날 매매기준율을 적는다(7절). 질문 목록과 요약 테이블 판단은 [통계 질문 목록](stats-questions.md)에서 정했다.
+- **통계 화면 구성**: 가구 멤버 행에 홈 설정 칸(`home_layout` jsonb)을 더한다([통계 화면 구성](stats-screens.md) 4절, `household_members`에 반영). 원화 환산 규칙(4.3). → [통계 화면 구성](stats-screens.md)은 이 규칙을 그대로 쓰고, 투자 화면 맨 아래에 그날 매매기준율을 적는다(7절). 질문 목록과 요약 테이블 판단은 [통계 질문 목록](stats-questions.md)에서 정했다.
 - **가구원 나가기·계정 삭제**: 9절. [가구원 나가기·계정 삭제](member-leave.md)에서 정했다.
 - **구현 전 확인**: 세율과 `rounding_mode` 실제 값(농특세, SEC fee, 코넥스, ETF·ETN, NXT), KIS 배당 API 필드(확인한 필드는 [시세 데이터 공급원](market-data.md) 3.6, 남은 것은 6절), 특일 정보 API의 대체·임시공휴일 필드, 미국 T+1 결제 규정.
