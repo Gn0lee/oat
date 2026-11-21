@@ -1,0 +1,63 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+body{margin:0;padding:16px;font-family:var(--font-sans,system-ui);background:var(--background,#fff);color:var(--foreground,#171717)}
+.wrap{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:16px}
+.cap{font-size:14px;font-weight:700;margin:0 0 8px}
+.ph{--bg:#F4F5F3;--sf:#fff;--tx:#191F28;--tx2:#6B7684;--up:#F04452;--dn:#3182F6;--pine:#14573F;--line:#E5E8EB;
+ background:var(--bg);color:var(--tx);border-radius:28px;border:6px solid #222;padding:14px 12px 10px;font-family:-apple-system,system-ui}
+.top{display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:17px;margin:4px 4px 10px}
+.av{width:26px;height:26px;border-radius:50%;background:#d9dcd6;display:inline-block}
+.card{background:var(--sf);border-radius:16px;padding:12px 14px;margin-bottom:10px;position:relative}
+.fix:after{content:"고정";position:absolute;right:10px;top:10px;font-size:10px;color:var(--tx2);border:1px solid var(--line);border-radius:5px;padding:1px 4px}
+.lbl{font-size:13px;color:var(--tx2)}
+.big{font-size:26px;font-weight:700;letter-spacing:-.5px;margin:2px 0}
+.s{font-size:12px;color:var(--tx2)}
+.r{display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:14px}
+.r+.r{border-top:1px solid var(--line)}
+.dn{color:var(--dn);font-weight:600}.up{color:var(--up);font-weight:600}
+.num{font-size:17px;font-weight:700}
+.edit{text-align:center;font-size:13px;color:var(--pine);padding:6px 0 2px}
+.tog{width:34px;height:20px;border-radius:10px;background:var(--pine);position:relative;display:inline-block}
+.tog:after{content:"";position:absolute;right:2px;top:2px;width:16px;height:16px;border-radius:50%;background:#fff}
+.tog.off{background:#C9CDD2}.tog.off:after{right:auto;left:2px}
+.h{font-size:11px;color:var(--tx2);margin-left:4px}
+.grip{color:#B0B8C1;margin-right:8px}
+</style></head><body>
+<div class="wrap">
+<div><p class="cap">홈 (기본 카드 순서)</p>
+<div class="ph">
+<div class="top">11월 <span class="av"></span></div>
+<div class="card fix"><div class="lbl">이번 달 쓴 돈</div><div class="big">1,284,300원</div>
+<div class="s">평소 이맘때보다 <span class="dn">12만 원 덜</span> · 공용 98만 · 내 30만</div></div>
+<div class="card"><div class="lbl">확인할 것</div>
+<div class="r"><span>확인 기다리는 예정 2건</span><span class="s">›</span></div>
+<div class="r"><span>국민카드 청구서 확정</span><span class="s">›</span></div></div>
+<div class="card"><div class="lbl">눈에 띄는 것</div>
+<div class="r"><span>외식이 평소 이맘때보다 <span class="up">8만 원 더</span></span><span class="s">›</span></div></div>
+<div class="card"><div class="lbl">곧 나갈 돈 · 이번 달 남은 예정</div>
+<div class="r"><span class="num">4건 · 약 182만 원</span></div>
+<div class="r"><span>11/25 국민카드 대금 <span class="s">예상</span></span><span>1,420,000</span></div>
+<div class="r"><span>11/27 넷플릭스</span><span>17,000</span></div>
+<div class="r"><span class="s">2건 더</span><span class="s">›</span></div></div>
+<div class="card"><div class="lbl">받을 돈</div>
+<div class="r"><span>회사 실비 <span class="s">12일째</span></span><span>86,000</span></div></div>
+<div class="edit">홈 편집</div>
+</div></div>
+
+<div><p class="cap">홈 편집 (보이기 · 순서)</p>
+<div class="ph">
+<div class="top">홈 편집 <span class="s">완료</span></div>
+<div class="card fix"><div class="r"><span>이번 달 쓴 돈</span></div></div>
+<div class="card">
+<div class="r"><span><span class="grip">≡</span>확인할 것<span class="h">있을 때만</span></span><span class="tog"></span></div>
+<div class="r"><span><span class="grip">≡</span>눈에 띄는 것</span><span class="tog"></span></div>
+<div class="r"><span><span class="grip">≡</span>곧 나갈 돈</span><span class="tog"></span></div>
+<div class="r"><span><span class="grip">≡</span>받을 돈<span class="h">있을 때만</span></span><span class="tog"></span></div>
+<div class="r"><span><span class="grip">≡</span>아낀 돈</span><span class="tog off"></span></div>
+<div class="r"><span><span class="grip">≡</span>쓸 수 있는 돈</span><span class="tog off"></span></div>
+<div class="r"><span><span class="grip">≡</span>카테고리 평소 대비</span><span class="tog off"></span></div>
+</div>
+</div></div>
+</div>
+</body></html>

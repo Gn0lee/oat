@@ -1,0 +1,37 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+body{margin:0;padding:16px;font-family:var(--font-sans,system-ui);background:var(--background,#fff);color:var(--foreground,#171717);font-size:14px}
+h2{font-size:15px;margin:0 0 8px}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.opt{border:1px solid var(--border,#e5e5e5);border-radius:12px;padding:12px;background:var(--card,#fff)}
+.opt.rec{border:2px solid var(--primary,#14573F)}
+.tag{font-size:11px;padding:2px 6px;border-radius:6px;background:var(--primary,#14573F);color:var(--primary-foreground,#fff);margin-left:6px}
+.tabs{display:flex;gap:6px;margin:8px 0}
+.tab{flex:1;border:1px solid var(--border,#e5e5e5);border-radius:8px;padding:6px;text-align:center;font-weight:600;background:var(--muted,#f5f5f5)}
+.row{display:flex;gap:8px;margin:4px 0;align-items:flex-start}
+.row b{min-width:44px}
+.q{display:inline-block;font-size:11px;font-family:var(--font-mono,monospace);padding:1px 5px;border-radius:5px;background:var(--secondary,#f0f0f0);color:var(--secondary-foreground,#333);margin:1px}
+.note{color:var(--muted-foreground,#666);font-size:12px;margin-top:8px}
+</style></head><body>
+<div class="opts">
+<div class="opt rec"><h2>A. 4탭: 기록과 분석을 나눔<span class="tag">추천</span></h2>
+<div class="tabs"><div class="tab">홈</div><div class="tab">기록</div><div class="tab">분석</div><div class="tab">자산</div></div>
+<div class="row"><b>홈</b><span>이번 달 한눈에 <span class="q">F1</span><span class="q">F3 작게</span> + 확인할 것(남은 예정 등, 5번 질문)</span></div>
+<div class="row"><b>기록</b><span>목록·달력·검색. 통계 없음</span></div>
+<div class="row"><b>분석</b><span>달 단위 리포트 <span class="q">F1</span><span class="q">F2</span><span class="q">F3</span><span class="q">F4</span><span class="q">O1</span><span class="q">O2</span><span class="q">O3</span><span class="q">O4</span></span></div>
+<div class="row"><b>자산</b><span>묶음별 잔액 <span class="q">A1</span> → 추이 <span class="q">A2</span>, 투자 묶음을 누르면 투자 화면 <span class="q">A3</span><span class="q">A4</span></span></div>
+<div class="note">흐름(이번 달)과 쌓인 것(자산)이 탭으로 갈림. 설정은 홈 우상단.</div>
+</div>
+<div class="opt"><h2>B. 5탭: 투자를 따로</h2>
+<div class="tabs"><div class="tab">홈</div><div class="tab">기록</div><div class="tab">분석</div><div class="tab">자산</div><div class="tab">투자</div></div>
+<div class="row"><b>투자</b><span><span class="q">A3</span><span class="q">A4</span> 종목·배당이 탭 하나</span></div>
+<div class="note">주식을 매일 보는 사람에겐 빠름. 하지만 투자는 묶음 하나일 뿐인데 탭 하나를 차지하고, 탭 5개는 엄지 거리가 빠듯해요.</div>
+</div>
+<div class="opt"><h2>C. 3탭: 기록 안에 분석</h2>
+<div class="tabs"><div class="tab">홈</div><div class="tab">가계부</div><div class="tab">자산</div></div>
+<div class="row"><b>가계부</b><span>상단 세그먼트 [목록 | 분석]</span></div>
+<div class="note">탭이 가장 적음. 하지만 분석이 한 번 더 숨어서 "매달 보는 질문"이 찾기 어려워져요.</div>
+</div>
+</div>
+</body></html>

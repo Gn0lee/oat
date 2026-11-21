@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<title>달 초 비교 시뮬레이션</title>
+<!--
+  통계 화면 구성 PoC: 달 초 "평소 대비" 비교 방식 시뮬레이션.
+  가짜 가구 데이터(고정 시드)를 만들어 세 기준선을 비교한다.
+    M1 지난달 같은 날까지 누적
+    M2 직전 3개의 끝난 달의 같은 날까지 누적 평균
+    M3 평소 월 총액(3개월 평균) × 경과일 / 그달 일수 (선형, Copilot 방식)
+    M4 직전 3개의 끝난 달의 같은 날까지 누적 중간값
+  같은 날 규칙: 오늘이 d일이면 각 과거 달의 min(d, 그 달 일수)일까지. 오늘이 이번 달 마지막 날이면 과거 달 전체.
+  브라우저에서 바로 연다. 외부 의존 없음.
+-->
+<style>
+body{margin:0;padding:16px;font-family:var(--font-sans,system-ui);background:var(--background,#fff);color:var(--foreground,#171717);font-size:14px}
+h2{font-size:15px;margin:18px 0 6px}
+p{margin:4px 0}
+.muted{color:var(--muted-foreground,#666);font-size:12px}
+table{border-collapse:collapse;width:100%;font-size:13px;margin-top:6px}
+th,td{border-bottom:1px solid var(--border,#e5e5e5);padding:5px 6px;text-align:right}
+th:first-child,td:first-child{text-align:left}
+.up{color:#F04452;font-weight:600}.dn{color:#3182F6;font-weight:600}
+.legend span{display:inline-block;margin-right:12px;font-size:12px}
+.sw{display:inline-block;width:18px;height:0;border-top:2.5px solid;vertical-align:middle;margin-right:4px}
+svg text{font-size:10px;fill:var(--muted-foreground,#666)}
+</style></head><body>
+<div id="out"></div>
+<script>
+// ---------- 가짜 데이터 ----------
+function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const months=[{name:'8월',days:31},{name:'9월',days:30},{name:'10월',days:31},{name:'11월(이번 달)',days:30}];
+const FIXED=[{cat:'주거',day:1,amt:700000},{cat:'관리비',day:10,amt:250000},{cat:'통신',day:15,amt:120000},{cat:'보험',day:21,amt:180000}];
+function gen(mi){
+  const r=rng(1000+mi); const m=months[mi]; const tx=[];
+  FIXED.forEach(f=>tx.push({day:f.day,cat:f.cat,amt:f.amt}));
+  for(let d=1;d<=m.days;d++){
+    const weekend=(d+mi*3)%7>=5;
+    tx.push({day:d,cat:'식비',amt:Math.round((r()*35000+(weekend?40000:10000))/100)*100});
+    if(r()<0.5) tx.push({day:d,cat:'교통',amt:Math.round((r()*12000+3000)/100)*100});
+    if(r()<0.15) tx.push({day:d,cat:'쇼핑',amt:Math.round((r()*120000+20000)/100)*100});
+  }
+  if(mi===2) tx.push({day:7,cat:'쇼핑',amt:1200000}); // 10월 7일 가전 한 번
+  return tx;
+}
+const data=months.map((_,i)=>gen(i));
+const cum=(mi,d,cat)=>data[mi].filter(t=>t.day<=Math.min(d,months[mi].days)&&(!cat||t.cat===cat)).reduce((s,t)=>s+t.amt,0);
+const total=(mi,cat)=>cum(mi,99,cat);
+const CUR=3,PAST=[0,1,2];
+const sameDay=(mi,d)=>d>=months[CUR].days?99:d; // 이번 달 마지막 날이면 과거 달 전체
+const base={
+  M1:(d,cat)=>cum(2,sameDay(2,d),cat),
+  M2:(d,cat)=>PAST.reduce((s,mi)=>s+cum(mi,sameDay(mi,d),cat),0)/3,
+  M3:(d,cat)=>PAST.reduce((s,mi)=>s+total(mi,cat),0)/3*d/months[CUR].days,
+  M4:(d,cat)=>PAST.map(mi=>cum(mi,sameDay(mi,d),cat)).sort((a,b)=>a-b)[1],
+};
+const NAMES={M1:'지난달 같은 날',M2:'3개월 같은 날 평균',M3:'평소 월 총액 × 경과일(선형)',M4:'3개월 같은 날 중간값'};
+const COL={cur:'var(--foreground,#191F28)',M1:'#E8A33D',M2:'#3182F6',M3:'#9AA4AE',M4:'#8B5CF6'};
+const won=n=>Math.round(n).toLocaleString('ko-KR');
+const man=n=>{const v=Math.round(Math.abs(n)/10000);return v+'만 원'};
+const say=diff=>Math.abs(diff)<30000?'<span>비슷하게</span>':diff>0?`<span class="up">${man(diff)} 더</span>`:`<span class="dn">${man(diff)} 덜</span>`;
+
+// ---------- 차트 ----------
+const W=340,H=180,P=28,N=months[CUR].days;
+const maxY=Math.max(total(CUR),...PAST.map(total))*1.02;
+const x=d=>P+(W-P-6)*(d/N), y=v=>H-18-(H-30)*(v/maxY);
+function line(fn,color,dash){let pts=[];for(let d=0;d<=N;d++)pts.push(`${x(d).toFixed(1)},${y(d===0?0:fn(d)).toFixed(1)}`);return `<polyline points="${pts.join(' ')}" fill="none" stroke="${color}" stroke-width="${dash?2:2.8}" ${dash?'stroke-dasharray="5 4"':''}/>`}
+let svg=`<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:520px">`;
+[0,10,20,30].forEach(d=>svg+=`<text x="${x(d)-4}" y="${H-4}">${d}일</text>`);
+[0.5,1].forEach(f=>svg+=`<text x="0" y="${y(maxY*f)+3}">${Math.round(maxY*f/10000)}만</text>`);
+['M3','M1','M2','M4'].forEach(k=>svg+=line(d=>base[k](d),COL[k],true));
+svg+=line(d=>cum(CUR,d),COL.cur,false);
+[3,10,25].forEach(d=>svg+=`<line x1="${x(d)}" x2="${x(d)}" y1="10" y2="${H-18}" stroke="var(--border,#ddd)"/><text x="${x(d)+2}" y="12">${d}일</text>`);
+svg+='</svg>';
+
+// ---------- 표 ----------
+const days=[2,3,5,10,15,25,30];
+let t1='<table><tr><th>오늘</th><th>이번 달 누적</th>'+Object.keys(NAMES).map(k=>`<th>${NAMES[k]}</th>`).join('')+'</tr>';
+days.forEach(d=>{const c=cum(CUR,d);t1+=`<tr><td>${d}일</td><td>${won(c)}</td>`+Object.keys(NAMES).map(k=>`<td>${won(base[k](d))}<br>${say(c-base[k](d))}</td>`).join('')+'</tr>'});
+t1+='</table>';
+
+const cats=['식비','쇼핑','교통','관리비','보험'];
+function catTable(d){
+  let s=`<table><tr><th>${d}일, 카테고리</th><th>이번 달</th><th>평소 한 달 전체(3개월 평균)</th><th>평소 같은 날까지(3개월 평균)</th><th>평소 같은 날까지(3개월 중간값)</th></tr>`;
+  cats.forEach(c=>{const v=cum(CUR,d,c),full=PAST.reduce((a,mi)=>a+total(mi,c),0)/3,sd=base.M2(d,c);
+    s+=`<tr><td>${c}</td><td>${won(v)}</td><td>${won(full)}<br><span class="muted">${full?Math.round(v/full*100):0}% 썼음</span></td><td>${won(sd)}<br>${say(v-sd)}</td><td>${won(base.M4(d,c))}<br>${say(v-base.M4(d,c))}</td></tr>`});
+  return s+'</table>';
+}
+
+document.getElementById('out').innerHTML=`
+<h2>이번 달 누적 지출과 세 기준선</h2>
+<div class="legend"><span><i class="sw" style="border-color:${COL.cur}"></i>이번 달</span>${Object.keys(NAMES).map(k=>`<span><i class="sw" style="border-color:${COL[k]};border-top-style:dashed"></i>${NAMES[k]}</span>`).join('')}</div>
+${svg}
+<p class="muted">가짜 가구: 월세 70만(1일)·관리비 25만(10일)·통신 12만(15일)·보험 18만(21일) + 매일 식비·교통·가끔 쇼핑. 10월 7일에 가전 120만 원 한 번.</p>
+<h2>홈 한 줄 "평소보다 ○ 더/덜"을 날마다 보면</h2>${t1}
+<p class="muted">3만 원 안쪽 차이는 "비슷하게"로 표시.</p>
+<h2>카테고리 "평소 대비": 5일과 20일</h2>${catTable(5)}<div style="height:8px"></div>${catTable(20)}
+`;
+</script>
+</body></html>

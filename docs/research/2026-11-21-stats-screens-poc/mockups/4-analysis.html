@@ -1,0 +1,86 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+body{margin:0;padding:16px;font-family:var(--font-sans,system-ui);background:var(--background,#fff);color:var(--foreground,#171717)}
+.wrap{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+.cap{font-size:14px;font-weight:700;margin:0 0 8px}
+.ph{--bg:#F4F5F3;--sf:#fff;--tx:#191F28;--tx2:#6B7684;--up:#F04452;--dn:#3182F6;--line:#E5E8EB;--bar:#4E5968;--bar2:#C9CDD2;
+ background:var(--bg);color:var(--tx);border-radius:28px;border:6px solid #222;padding:14px 12px 10px;font-family:-apple-system,system-ui}
+.top{display:flex;justify-content:center;gap:18px;align-items:center;font-weight:700;font-size:17px;margin:4px 0 8px}
+.chips{display:flex;gap:6px;margin-bottom:10px}.chip{font-size:12px;padding:4px 10px;border-radius:14px;background:#fff;border:1px solid var(--line)}
+.chip.on{background:#191F28;color:#fff;border-color:#191F28}
+.card{background:var(--sf);border-radius:16px;padding:12px 14px;margin-bottom:10px}
+.h{font-size:15px;font-weight:700;margin-bottom:8px}
+.r{display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:14px}
+.s{font-size:12px;color:var(--tx2)}
+.up{color:var(--up);font-weight:600}.dn{color:var(--dn);font-weight:600}
+.b{font-weight:700}
+.bar{position:relative;height:10px;background:#F2F4F6;border-radius:5px;margin:2px 0 8px}
+.bar i{position:absolute;left:0;top:0;bottom:0;border-radius:5px;background:var(--bar)}
+.bar u{position:absolute;top:-3px;bottom:-3px;width:2px;background:#191F28}
+.stack{display:flex;height:14px;border-radius:7px;overflow:hidden;margin:6px 0}
+.stack i{display:block}
+.thin{border-top:1px solid var(--line);margin-top:6px;padding-top:6px}
+svg{display:block}
+</style></head><body>
+<div class="wrap">
+
+<div><p class="cap">분석 탭 ① 위쪽</p>
+<div class="ph">
+<div class="top"><span class="s">‹</span>11월<span class="s">›</span></div>
+<div class="chips"><span class="chip on">전체</span><span class="chip">공용</span><span class="chip">내 개인</span></div>
+<div class="card"><div class="h">흐름</div>
+<div class="r"><span class="s">수입</span><span class="b">3,450,000</span></div>
+<div class="r"><span class="s">지출</span><span class="b">1,284,300</span></div>
+<div class="r"><span class="s">남은 돈 · 남긴 비율</span><span class="b">2,165,700 · 63%</span></div>
+<div class="r"><span class="s">갚은 대출 원금</span><span>500,000</span></div>
+<div class="thin r"><span class="s">아낀 돈</span><span>42,300</span></div>
+<div class="r"><span class="s">통계 제외 2건 · 120,000</span><span class="s">›</span></div>
+</div>
+<div class="card"><div class="h">페이스</div>
+<svg width="100%" height="110" viewBox="0 0 240 110" preserveAspectRatio="none">
+<polyline points="0,104 24,70 48,62 72,50 96,46 120,36 144,30 168,22 192,14 216,10 240,6" fill="none" stroke="#9AA4AE" stroke-width="2" stroke-dasharray="5 4"/>
+<polyline points="0,104 24,70 48,64 72,54 96,50 120,42 144,38 168,32" fill="none" stroke="#191F28" stroke-width="2.6"/>
+<circle cx="168" cy="32" r="3.5" fill="#191F28"/>
+</svg>
+<div class="s">실선 이번 달 · 점선 평소 이맘때(3개월 중간값)</div>
+<div class="r"><span>평소 이맘때보다</span><span class="dn">12만 원 덜</span></div>
+</div>
+</div></div>
+
+<div><p class="cap">분석 탭 ② 카테고리 · 고정비</p>
+<div class="ph">
+<div class="card"><div class="h">카테고리 <span class="s">세로선 = 평소 이맘때</span></div>
+<div class="r"><span>식비</span><span>740,800 <span class="up">+3만</span></span></div><div class="bar"><i style="width:82%"></i><u style="left:79%"></u></div>
+<div class="r"><span>쇼핑</span><span>214,400 <span class="dn">−37만</span></span></div><div class="bar"><i style="width:24%"></i><u style="left:64%"></u></div>
+<div class="r"><span>관리비</span><span>250,000 <span class="s">비슷</span></span></div><div class="bar"><i style="width:28%"></i><u style="left:28%"></u></div>
+<div class="r"><span>교통</span><span>102,400 <span class="s">비슷</span></span></div><div class="bar"><i style="width:11%"></i><u style="left:11%"></u></div>
+<div class="r"><span class="s">전체 카테고리 9개</span><span class="s">›</span></div>
+</div>
+<div class="card"><div class="h">고정비</div>
+<div class="stack"><i style="width:38%;background:#4E5968"></i><i style="width:62%;background:#C9CDD2"></i></div>
+<div class="r"><span>고정비 <span class="b">38%</span></span><span>488,000</span></div>
+<div class="r"><span class="s">변동비</span><span class="s">796,300</span></div>
+</div>
+</div></div>
+
+<div><p class="cap">분석 탭 ③ 사람 · 결제수단 · 받을 돈</p>
+<div class="ph">
+<div class="card"><div class="h">쓴 사람 <span class="s">공용 장부만</span></div>
+<div class="r"><span>지수</span><span>512,000</span></div><div class="bar"><i style="width:52%"></i></div>
+<div class="r"><span>민호</span><span>288,000</span></div><div class="bar"><i style="width:29%"></i></div>
+<div class="r"><span>함께</span><span>180,000</span></div><div class="bar"><i style="width:18%;background:#9AA4AE"></i></div>
+</div>
+<div class="card"><div class="h">결제수단</div>
+<div class="r"><span>국민 노리카드</span><span>624,000</span></div>
+<div class="r"><span>네이버페이</span><span>211,000</span></div>
+<div class="r"><span>생활비 통장 <span class="s">계좌이체</span></span><span>320,000</span></div>
+<div class="r"><span>현금</span><span>18,000</span></div>
+</div>
+<div class="card"><div class="h">받을 돈 · 남은 예정</div>
+<div class="r"><span>회사 실비 <span class="s">12일째</span></span><span>86,000</span></div>
+<div class="r"><span>남은 예정</span><span>4건 · 약 182만</span></div>
+</div>
+</div></div>
+</div>
+</body></html>

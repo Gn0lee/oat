@@ -1,0 +1,45 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+body{margin:0;padding:16px;font-family:var(--font-sans,system-ui);background:var(--background,#fff);color:var(--foreground,#171717);font-size:14px}
+.wrap{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:16px}
+.cap{font-size:14px;font-weight:700;margin:0 0 8px}
+.box{border:1px solid var(--border,#e5e5e5);border-radius:12px;padding:12px;background:var(--card,#fff)}
+.flow{display:flex;flex-direction:column;gap:6px;font-size:13px}
+.n{border:1px solid var(--border,#ddd);border-radius:8px;padding:6px 8px;background:var(--muted,#f5f5f5)}
+.arrow{text-align:center;color:var(--muted-foreground,#888)}
+.ph{--bg:#F4F5F3;--sf:#fff;--tx:#191F28;--tx2:#6B7684;--line:#E5E8EB;
+ background:var(--bg);color:var(--tx);border-radius:28px;border:6px solid #222;padding:14px 12px 10px;font-family:-apple-system,system-ui}
+.top{font-weight:700;font-size:17px;margin:4px 4px 10px}
+.card{background:var(--sf);border-radius:16px;padding:10px 14px;margin-bottom:10px}
+.big{font-size:24px;font-weight:700}
+.r{display:flex;justify-content:space-between;align-items:center;padding:8px 0}
+.r+.r{border-top:1px solid var(--line)}
+.s{font-size:12px;color:var(--tx2)}
+.hid{background:repeating-linear-gradient(135deg,#F2F4F6 0 6px,#fff 6px 12px);border-radius:8px;padding:8px;margin:2px -6px}
+</style></head><body>
+<div class="wrap">
+<div><p class="cap">무슨 일이 생기나</p>
+<div class="box flow">
+<div class="n">지수의 <b>신한카드 지갑</b> (가구원 사용 허용)</div>
+<div class="arrow">↑ 결제수단: 민호의 가족카드</div>
+<div class="n">민호가 <b>개인 장부</b>에 기록: 선물 50,000원</div>
+<div class="arrow">↓</div>
+<div class="n">지갑 잔액·예상 청구액은 <b>모든 다리</b>를 더함 → −50,000 포함</div>
+<div class="n">지수는 민호의 개인 장부를 <b>못 봄</b> → 목록 합과 청구액이 5만 원 안 맞음</div>
+</div></div>
+
+<div><p class="cap">추천: 숫자는 진짜, 못 보는 건 한 줄로 묶음 (지수 화면)</p>
+<div class="ph">
+<div class="top">신한카드 · 12/15 청구서</div>
+<div class="card"><div class="s">예상 청구액</div><div class="big">1,420,000원</div></div>
+<div class="card">
+<div class="r"><span>11/18 이마트 <span class="s">공용</span></span><span>86,000</span></div>
+<div class="r"><span>11/16 쿠팡 <span class="s">내 개인</span></span><span>32,000</span></div>
+<div class="r hid"><span>민호의 개인 기록 <span class="s">이 청구서 합계</span></span><span>50,000</span></div>
+<div class="r"><span>11/12 주유 <span class="s">공용</span></span><span>70,000</span></div>
+</div>
+<div class="s" style="padding:0 6px">날짜·건수·가맹점·카테고리는 보이지 않아요. 합계 한 줄만.</div>
+</div></div>
+</div>
+</body></html>
