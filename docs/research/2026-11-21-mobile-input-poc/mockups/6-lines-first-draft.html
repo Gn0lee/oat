@@ -1,0 +1,27 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+body{margin:0;padding:12px;font-family:var(--font-sans,system-ui);background:var(--background,#fff);color:var(--foreground,#171717)}
+.row{display:flex;gap:16px;flex-wrap:wrap;justify-content:center}
+.col{display:flex;flex-direction:column;align-items:center;gap:6px;width:220px}
+.ph{position:relative;width:210px;height:330px;border-radius:20px;background:#fff;border:1px solid #ccc;overflow:hidden;color:#191F28;font-size:11px}
+.q{padding:12px 12px 2px;font-weight:700;font-size:14px}.s{padding:0 12px 8px;color:#888;font-size:10px}
+.ln{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid #f0f0f0}
+.ln b{font-size:12px}.ln i{font-style:normal;color:#888;font-size:10px}
+.rest{background:#F4F5F3}.tag{font-size:9px;background:#E6F0EB;color:#14573F;border-radius:4px;padding:1px 4px;margin-left:4px}
+.add{padding:8px 12px;color:#14573F;font-weight:700}
+.sv{position:absolute;bottom:6px;left:8px;right:8px;background:#14573F;color:#fff;text-align:center;border-radius:8px;padding:6px;font-weight:700}
+.err{position:absolute;bottom:40px;left:12px;right:12px;color:#C81E2D;font-size:10px}
+.lbl{font-weight:700;font-size:12px}.sub{font-size:11px;color:var(--muted-foreground,#666);text-align:center}
+</style></head><body><div class="row">
+<div class="col"><div class="ph"><div class="q">나누기</div><div class="s">이마트 · 합계 87,000원</div>
+<div class="ln rest"><span>장보기<span class="tag">나머지</span></span><b>52,000</b></div>
+<div class="ln"><span>생활용품 <i>· 휴지</i></span><b>23,000</b></div>
+<div class="ln"><span>간식</span><b>12,000</b></div>
+<div class="add">+ 줄 추가</div><div class="sv">완료</div></div>
+<div class="lbl">추천: 나머지 줄이 흡수</div><div class="sub">첫 줄이 '나머지'. 다른 줄 금액을 치면 나머지가 자동으로 줄어듦. 합이 늘 맞음</div></div>
+<div class="col"><div class="ph"><div class="q">나누기</div><div class="s">이마트 · 합계 87,000원</div>
+<div class="ln rest"><span>장보기<span class="tag">나머지</span></span><b style="color:#C81E2D">−3,000</b></div>
+<div class="ln"><span>생활용품</span><b>78,000</b></div>
+<div class="ln"><span>간식</span><b>12,000</b></div>
+<div class="err">다른 줄 합이 합계보다 3,000원 많아요</div><div class="sv" style="opacity:.4">완료</div></div>
+<div class="lbl">넘칠 때만 막음</div><div class="sub">나머지가 0 아래로 가면 완료를 막고 이유를 문장으로</div></div>
+</div></body></html>

@@ -1,0 +1,28 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+body{margin:0;padding:12px;font-family:var(--font-sans,system-ui);background:var(--background,#fff);color:var(--foreground,#171717)}
+.row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;align-items:center}
+.col{display:flex;flex-direction:column;align-items:center;gap:6px;width:170px}
+.ph{position:relative;width:160px;height:320px;border-radius:20px;background:#fff;border:1px solid #ccc;overflow:hidden;color:#191F28;font-size:10px}
+.q{padding:16px 12px 0;font-weight:700;font-size:13px}
+.amt{padding:4px 12px;font-size:22px;font-weight:700}.hint{padding:0 12px;color:#888}
+.kp{position:absolute;bottom:34px;left:0;right:0;display:grid;grid-template-columns:repeat(3,1fr);background:#F4F5F3}
+.kp span{text-align:center;padding:7px 0;font-size:13px}
+.sv{position:absolute;bottom:4px;left:8px;right:8px;background:#14573F;color:#fff;text-align:center;border-radius:8px;padding:6px;font-weight:700}
+.f{display:flex;justify-content:space-between;padding:6px 12px;border-bottom:1px solid #eee}.f i{font-style:normal;color:#888}
+.chip{display:inline-block;border:1px solid #ddd;border-radius:12px;padding:4px 8px;margin:3px}
+.ar{font-size:20px;color:var(--muted-foreground,#888)}
+.lbl{font-weight:700;font-size:12px}.sub{font-size:11px;color:var(--muted-foreground,#666);text-align:center}
+.dash{border:1px dashed #aaa}
+</style></head><body><div class="row">
+<div class="col"><div class="ph"><div class="q">얼마 썼어요?</div><div class="amt">12,000원</div><div class="hint">1만 2천원</div>
+<div class="kp"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>00</span><span>0</span><span>⌫</span></div><div class="sv">다음</div></div>
+<div class="lbl">① 금액만</div><div class="sub">키패드 크게, 판단 하나</div></div>
+<div class="ar">→</div>
+<div class="col"><div class="ph dash"><div class="q">어디에 썼어요?</div><div style="padding:8px"><span class="chip">식비</span><span class="chip">카페</span><span class="chip">교통</span><span class="chip">쇼핑</span><span class="chip">생활</span></div></div>
+<div class="lbl">② 모르는 칸만 묻기</div><div class="sub">처음이거나 기본값이 없을 때만 나옴. 고르면 자동으로 다음</div></div>
+<div class="ar">→</div>
+<div class="col"><div class="ph"><div class="q">12,000원</div><div class="hint">카페 · 스타벅스</div><div style="height:8px"></div>
+<div class="f">가맹점 <i>스타벅스</i></div><div class="f">카테고리 <i>카페</i></div><div class="f">결제 <i>현대카드</i></div><div class="f">장부 <i>공용</i></div><div class="f">날짜 <i>오늘 14:20</i></div><div class="f">메모 <i>+</i></div>
+<div class="sv">저장</div></div>
+<div class="lbl">③ 확인 화면</div><div class="sub">채워진 값 확인·고치기 → 저장</div></div>
+</div></body></html>

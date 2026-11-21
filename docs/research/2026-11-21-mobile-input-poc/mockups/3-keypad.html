@@ -1,0 +1,26 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+body{margin:0;padding:12px;font-family:var(--font-sans,system-ui);background:var(--background,#fff);color:var(--foreground,#171717)}
+.row{display:flex;gap:16px;flex-wrap:wrap;justify-content:center}
+.col{display:flex;flex-direction:column;align-items:center;gap:6px;width:200px}
+.ph{position:relative;width:190px;height:330px;border-radius:20px;background:#fff;border:1px solid #ccc;overflow:hidden;color:#191F28;font-size:11px}
+.q{padding:14px 12px 0;font-weight:700;font-size:13px}
+.amt{padding:4px 12px;font-size:24px;font-weight:700}.hint{padding:0 12px;color:#6b7280}
+.qb{position:absolute;bottom:182px;left:6px;right:6px;display:flex;gap:4px}.qb span{flex:1;text-align:center;border:1px solid #ddd;border-radius:10px;padding:3px 0;font-size:10px}
+.kp{position:absolute;bottom:34px;left:0;right:0;display:grid;grid-template-columns:repeat(3,1fr);background:#F4F5F3}
+.kp span{text-align:center;padding:8px 0;font-size:14px}.kp .hl{color:#14573F;font-weight:700}
+.sv{position:absolute;bottom:4px;left:8px;right:8px;background:#14573F;color:#fff;text-align:center;border-radius:8px;padding:6px;font-weight:700}
+.pop{position:absolute;top:50px;left:60px;background:#333;color:#fff;border-radius:6px;padding:3px 8px;font-size:10px}
+.lbl{font-weight:700;font-size:12px}.sub{font-size:11px;color:var(--muted-foreground,#666);text-align:center}
+.x{opacity:.45}
+</style></head><body><div class="row">
+<div class="col"><div class="ph"><div class="q">얼마 썼어요?</div><div class="amt">1,250,000원</div><div class="hint">125만원</div><div class="pop">붙여넣기</div>
+<div class="kp"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span class="hl">00</span><span>0</span><span>⌫</span></div><div class="sv">다음</div></div>
+<div class="lbl">추천 (KRW)</div><div class="sub">만 단위 힌트 · 00 키 · 길게 눌러 붙여넣기 · ⌫ 길게 = 전체 지우기</div></div>
+<div class="col"><div class="ph"><div class="q">얼마 썼어요? (USD)</div><div class="amt">$12.50</div><div class="hint">약 17,300원 (11/21 매매기준율)</div>
+<div class="kp"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span class="hl">.</span><span>0</span><span>⌫</span></div><div class="sv">다음</div></div>
+<div class="lbl">외화일 때</div><div class="sub">00 자리가 소수점으로 바뀜</div></div>
+<div class="col x"><div class="ph"><div class="q">얼마 썼어요?</div><div class="amt">50,000원</div><div class="hint">5만원</div>
+<div class="qb"><span>+1만</span><span>+5만</span><span>+10만</span></div>
+<div class="kp"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>00</span><span>0</span><span>⌫</span></div><div class="sv">다음</div></div>
+<div class="lbl">빼는 것: 빠른 금액 버튼</div><div class="sub">송금엔 좋지만 가계부 금액은 12,800원처럼 딱 떨어지지 않음</div></div>
+</div></body></html>

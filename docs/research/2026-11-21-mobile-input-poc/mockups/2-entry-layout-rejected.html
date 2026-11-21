@@ -1,0 +1,28 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+body{margin:0;padding:12px;font-family:var(--font-sans,system-ui);background:var(--background,#fff);color:var(--foreground,#171717)}
+.row{display:flex;gap:16px;flex-wrap:wrap;justify-content:center}
+.col{display:flex;flex-direction:column;align-items:center;gap:6px;width:210px}
+.ph{position:relative;width:200px;height:400px;border-radius:22px;background:#fff;border:1px solid #ccc;overflow:hidden;color:#191F28;font-size:11px}
+.seg{margin:10px auto 0;display:flex;width:150px;background:#EFECEA;border-radius:8px;padding:2px}
+.seg span{flex:1;text-align:center;padding:3px 0;border-radius:6px}.seg .on{background:#fff;font-weight:700}
+.amt{text-align:center;font-size:24px;font-weight:700;margin:10px 0 0}.hint{text-align:center;color:#888;font-size:10px}
+.f{display:flex;justify-content:space-between;padding:5px 12px;border-bottom:1px solid #eee}.f i{font-style:normal;color:#888}
+.kp{position:absolute;bottom:34px;left:0;right:0;display:grid;grid-template-columns:repeat(3,1fr);background:#F4F5F3}
+.kp span{text-align:center;padding:6px 0;font-size:14px}
+.sv{position:absolute;bottom:4px;left:10px;right:10px;background:#14573F;color:#fff;text-align:center;border-radius:8px;padding:6px;font-weight:700}
+.step{padding:10px 12px}.ttl{font-weight:700;font-size:13px;margin:8px 0}
+.chip{display:inline-block;border:1px solid #ddd;border-radius:12px;padding:3px 8px;margin:2px}
+.lbl{font-weight:700;font-size:13px}.sub{font-size:12px;color:var(--muted-foreground,#666);text-align:center}
+</style></head><body><div class="row">
+<div class="col"><div class="ph">
+<div class="seg"><span class="on">지출</span><span>수입</span><span>이체</span></div>
+<div class="amt">12,000원</div><div class="hint">1만 2천원</div>
+<div class="f">가맹점 <i>스타벅스</i></div><div class="f">카테고리 <i>카페</i></div><div class="f">결제 <i>현대카드</i></div><div class="f">장부 <i>공용</i></div><div class="f">날짜 <i>오늘 14:20</i></div>
+<div class="kp"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>00</span><span>0</span><span>⌫</span></div>
+<div class="sv">저장</div></div><div class="lbl">A. 한 화면 ★</div><div class="sub">금액 치고 기본값 그대로면 바로 저장. 칸을 누르면 시트</div></div>
+<div class="col"><div class="ph"><div class="step">
+<div class="ttl">① 얼마예요?</div><div class="amt" style="text-align:left">12,000원</div>
+<div class="ttl">② 카테고리 (자동으로 넘어감)</div><span class="chip">식비</span><span class="chip">카페</span><span class="chip">교통</span><span class="chip">쇼핑</span>
+<div class="ttl">③ 결제수단</div><span class="chip">현대카드</span><span class="chip">신한체크</span>
+<div class="ttl">④ 확인 → 저장</div></div></div><div class="lbl">B. 단계식</div><div class="sub">처음 쓰는 사람에게 친절. 매일 쓰면 단계마다 탭이 늘어남</div></div>
+</div></body></html>
