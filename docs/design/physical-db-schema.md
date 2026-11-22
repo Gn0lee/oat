@@ -3,7 +3,7 @@
 - 결정일: 2026-11-17
 - 티켓: [물리 DB 스키마: 테이블·제약·반올림·날짜 규칙](https://github.com/Gn0lee/oat/issues/526)
 - 관련 ADR: 0004~0009(도메인), 0011~0013(서버 아키텍처), 0014(해외 날짜는 현지 날짜), 0015(합 불변식 트리거와 예상 상태 기록), 0016·0017(통계 질문 목록에서 더한 칸), 0028(앱이 정한 기록 id)
-- 후속 변경: [기존 데이터 전환](legacy-migration.md)(2026-11-17)에서 `ledgers.archived_at`을 더했다. [통계 질문 목록](stats-questions.md)(2026-11-17)에서 `wallets.stats_group`, `categories.is_fixed_default`, `records.is_fixed`, `records.spender_member_id`, 예상 기록 부분 인덱스를 더하고, 환불·혜택 줄도 원 기록과 같은 장부로 묶었다. [MCP](mcp.md)(2026-11-20)에서 `ai_connections`와 `audit_log.ai_connection_id`를 더했다. [가구원 나가기·계정 삭제](member-leave.md)(2026-11-20)에서 `household_members.role` 값과 관리자 유니크, `user.deletion_requested_at`, `erasure_log`, 감사 기록 지우기 함수, `user` 삭제 FK를 정했다(9절). [모바일 입력 UX 원칙](mobile-input.md)(2026-11-21)에서 `records.spender_shared`, `general` 새 기록의 앱이 정한 id, 기준환율 통화 확대를 더했다.
+- 후속 변경: [기존 데이터 전환](legacy-migration.md)(2026-11-17)에서 `ledgers.archived_at`을 더했다. [통계 질문 목록](stats-questions.md)(2026-11-17)에서 `wallets.stats_group`, `categories.is_fixed_default`, `records.is_fixed`, `records.spender_member_id`, 예상 기록 부분 인덱스를 더하고, 환불·혜택 줄도 원 기록과 같은 장부로 묶었다. [MCP](mcp.md)(2026-11-20)에서 `ai_connections`와 `audit_log.ai_connection_id`를 더했다. [가구원 나가기·계정 삭제](member-leave.md)(2026-11-20)에서 `household_members.role` 값과 관리자 유니크, `user.deletion_requested_at`, `erasure_log`, 감사 기록 지우기 함수, `user` 삭제 FK를 정했다(9절). [모바일 입력 UX 원칙](mobile-input.md)(2026-11-21)에서 `records.spender_shared`, `general` 새 기록의 앱이 정한 id와 `records.create_request_hash`, `wallets.currency`, `audit_log` 삭제 조회 인덱스, 기준환율 통화 확대(1단위당 정규화)를 더했다.
 - 전제: [서버 아키텍처](server-architecture.md) 3절. PostgreSQL 18, Drizzle, DB 롤 셋(`owner`·`app`·`system`), 앱 레이어 권한 + 가구 RLS 안전망, 얇은 클라이언트.
 - 이 문서는 테이블 모양과 규칙을 정한다. 칸 이름·타입의 최종 철자는 구현 때 Drizzle 스키마가 정본이 된다.
 
@@ -58,7 +58,7 @@
    | 같은 날 안의 시각 | `time(0)` NULL 허용 | `mode: 'string'` (`HH:MM:SS`로 나오고, API는 `HH:MM`으로 내보낸다) |
    | 순간값 | `timestamptz` | ISO 8601 UTC |
 
-   통화는 `KRW`·`USD`로 시작하고, 통화별 소수 자릿수 표(KRW 0, USD 2)는 서버 상수로 둔다. 금액 칸 이름은 `amount`로 통일한다.
+   통화는 `KRW`·`USD`로 시작해 해외 결제용 외화로 넓히고, 통화별 소수 자릿수 표는 ISO 4217을 정본으로 서버 상수로 둔다(KRW 0, USD 2, JPY 0). 금액 칸 이름은 `amount`로 통일한다.
    - **집계 결과의 타입 함정**: `SUM(bigint)`의 결과는 `numeric`이라 드라이버가 문자열로 준다. 칸의 `mode: 'number'`는 집계 결과에 적용되지 않는다. 집계 쿼리는 `::bigint`로 되돌리거나, 결과를 받는 곳에서 한 함수로 파싱한다. 둘 중 하나로 통일하고 테스트로 지킨다.
 8. **FK의 ON DELETE는 칸마다 정한다(5.8의 표).** 두 칸 FK에 그냥 `ON DELETE SET NULL`을 쓰면 `household_id`까지 NULL로 만들려다 NOT NULL 위반으로 삭제가 실패한다. Postgres 15부터 되는 칸 지정 문법 `ON DELETE SET NULL (origin_record_id)`을 쓴다. Drizzle이 이 문법을 만들지 못하면 그 FK만 마이그레이션 SQL을 손으로 쓴다.
 
@@ -148,7 +148,7 @@ DB 트리거는 2겹 하나만 둔다. 업무 규칙은 앱에 둔다(ADR 0012�
 ### 4.3 그날 기준환율
 
 - **정의**: 기록 날짜의 **서울외국환중개 매매기준율**. 통화는 USD와, ECOS `731Y001`이 주는 주요 통화(엔·유로·위안 등, 목록은 구현 때)다. 받지 않는 통화의 해외 결제는 원화 추정액을 사람이 친다. 그날 값이 없으면(주말·휴일) 그 이전의 가장 최근 값이다. 출처는 한국은행 ECOS `731Y001`이다([시세 데이터 공급원](market-data.md) 4절, ADR 0020. 처음 정의 "마지막 고시 환율"에서 바꿨다).
-- **기록에 함께 저장한다**: `records.fx_rate`, `records.fx_rate_date`. 외화 다리나 외화 줄이 있는 기록(매매, 환전, USD 배당 등)에 채운다. 나중에 환율 이력이 고쳐져도 과거 원화 값이 바뀌지 않는다. 사용자가 증권사 적용 환율로 덮어쓸 수 있다.
+- **기록에 함께 저장한다**: `records.fx_rate`, `records.fx_rate_date`(1단위당). 외화 다리나 외화 줄이 있는 기록(매매, 환전, USD 배당 등)과, 원화 지갑에서 외화로 낸 결제(추정에 쓴 환율)에 채운다. 나중에 환율 이력이 고쳐져도 과거 원화 값이 바뀌지 않는다. 사용자가 증권사 적용 환율로 덮어쓸 수 있다.
 - **원화 환산**: 환산은 보여주는 단위마다 외화 금액 × 환율을 원 단위에서 반올림하고, 합계는 반올림한 값들의 합이다. 목록에 보이는 숫자를 더한 값과 합계가 정확히 같다.
   - 기록 목록·잔액은 다리 단위로, 카테고리 통계는 줄 단위로 환산한다. 그래서 한 기록 안에서 원화 기준 줄 합과 다리 합이 ±1원 다를 수 있다. 외화 기준으로는 늘 같다.
   - 반올림은 **절댓값 기준 사사오입**(half away from zero)이다. 환불이 원 지출의 정확한 반대 숫자가 되게 하기 위해서다. 4.2의 사사오입도 모두 이 방식이다.
@@ -161,7 +161,7 @@ DB 트리거는 2겹 하나만 둔다. 업무 규칙은 앱에 둔다(ADR 0012�
 ### 5.1 장부·지갑·결제수단
 
 - **`ledgers`**: `kind`(공용·개인), `owner_member_id`(개인만, CHECK), 이름, `archived_at`(보관한 장부: 새 기록을 받지 않고 목록에서 접힘, 기존 데이터 전환에서 더함), version.
-- **`wallets`**: `kind`(통장·현금·신용카드·대출·페이머니·포인트·상품권·증권 계좌), 이름, `owner_member_id`, `hidden_from_household`, `allow_member_use`, `archived_at`, `point_tracking_mode`(포인트만), `stats_group`(묶음: `spendable`·`saving`·`investment`·`points`·`liability`, NOT NULL, 기본값은 kind에서 나오고 부채 kind는 `liability`만 CHECK), version. 자산/부채는 kind에서 정한다. 잔액 칸은 없다. `allow_member_use`는 쓴 사람 계산에서 "함께 쓰는 지갑" 표시를 겸한다(ADR 0017).
+- **`wallets`**: `kind`(통장·현금·신용카드·대출·페이머니·포인트·상품권·증권 계좌), 이름, `currency`(지갑의 통화, NULL이면 여러 통화를 담는 지갑(증권 계좌), 그 밖은 만들 때 정하고 기본 `KRW`. 이 지갑의 현금 다리는 이 통화만 쓴다, [모바일 입력 UX 원칙](mobile-input.md) 2.2.1), `owner_member_id`, `hidden_from_household`, `allow_member_use`, `archived_at`, `point_tracking_mode`(포인트만), `stats_group`(묶음: `spendable`·`saving`·`investment`·`points`·`liability`, NOT NULL, 기본값은 kind에서 나오고 부채 kind는 `liability`만 CHECK), version. 자산/부채는 kind에서 정한다. 잔액 칸은 없다. `allow_member_use`는 쓴 사람 계산에서 "함께 쓰는 지갑" 표시를 겸한다(ADR 0017).
 - **`wallet_card_settings`** (이력, PK `(wallet_id, effective_from)`): 카드사, 결제일, 이용기간 규칙(`card_issuer_presets` 참조 또는 시작일 직접 입력), `effective_from`. 결제일을 바꾸면 새 행을 더한다. 기록은 매입일(모르면 이용일)에 유효한 행으로 청구서에 배정하고, 이미 확정한 청구서는 다시 배정하지 않는다.
 - **`wallet_brokerage_settings`** (1:1, PK `wallet_id`): `ledger_id`, `cash_tracking_enabled`(기본 false), 과세 유형(일반·ISA·연금), 국내·해외 수수료율(NULL이면 추정 안 함).
 - **`payment_methods`**: kind(신용카드·체크카드·페이 등), 이름, 가리키는 `wallet_id`(페이는 NULL), `owner_member_id`, `archived_at`, version. 카드 한 장(가족카드 포함)이 하나다.
@@ -176,7 +176,7 @@ DB 트리거는 2겹 하나만 둔다. 업무 규칙은 앱에 둔다(ADR 0012�
 
 | 묶음 | 칸 |
 |---|---|
-| 공통 | `ledger_id`, `kind`, `status`, `date`, `time`, `sort_time`(생성 칸), `title`(가맹점·기록 이름), `memo`, `excluded_from_stats`, version |
+| 공통 | `ledger_id`, `kind`, `status`, `date`, `time`, `sort_time`(생성 칸), `title`(가맹점·기록 이름), `memo`, `excluded_from_stats`, `create_request_hash`(앱이 id를 정한 `general` 기록의 요청 지문, ADR 0028), version |
 | 통계 귀속 | `is_fixed`(고정비, NOT NULL, 저장할 때 규칙·카테고리 기본값에서 정하고 사용자가 고친다), `spender_member_id`(쓴 사람 덮어쓰기, NULL이면 계산), `spender_shared`(쓴 사람을 "함께"로 덮어쓰기, boolean NOT NULL 기본 false, `spender_member_id`와 함께 차지 않음 CHECK) (ADR 0017) |
 | 예상 | `expected_wallet_id`(예상 혜택·정산을 받을 지갑. 예상 청구액에 예상 혜택을 넣을 때 쓴다) |
 | 카드 | `payment_method_id`(앞단 결제수단: 사용자가 고른 것. 카드로 바로 결제하면 그 카드, 네이버페이를 거치면 네이버페이), `purchase_date`, `defer_to_next_bill`, `installment_months`, `installment_interest_free`, `foreign_amount`, `foreign_currency` |
@@ -236,7 +236,7 @@ DB 트리거는 2겹 하나만 둔다. 업무 규칙은 앱에 둔다(ADR 0012�
 | `security_daily_closes` | (종목, 현지 거래일) | 종가 `numeric`, 출처 |
 | `security_live_quotes` (`UNLOGGED`) | 종목 | 현재가, 기준 시각 |
 | `dividend_events` | uuid | 종목, 종류(`regular`·`special`), 배당락일·기준일·지급일(현지), 주당액, 통화, 예정/확정, 출처 |
-| `fx_rates` | (통화쌍, 고시일) | 값 `numeric(18,6)`, 출처 |
+| `fx_rates` | (통화쌍, 고시일) | 값 `numeric(18,6)`(외화 **1단위당** 원화로 정규화해 저장. 엔처럼 100단위로 고시되는 통화도 받을 때 나눈다), 출처 |
 | `tax_rate_periods` | uuid | 시장, 종목 유형, 세금 종류, 적용 시작일·종료일, 세율, `rounding_mode` |
 | `holidays` | (국가, 날짜) | 이름, 종류(지금은 한국만) |
 | `card_issuer_presets` | uuid | 카드사, 결제일, 이용기간 시작·끝 규칙 |
@@ -307,6 +307,7 @@ DB 트리거는 2겹 하나만 둔다. 업무 규칙은 앱에 둔다(ADR 0012�
    - `lines (household_id, origin_record_id)`: 돌려받은 돈 합계
    - `records (household_id, recurring_rule_id, occurrence_date)`: 예정 확정 여부
    - `records (household_id, ledger_id) WHERE status = 'expected'`: 받을 돈(통계 질문 목록 O4)
+   - `audit_log (household_id, entity_id) WHERE entity_type = 'record' AND action = 'delete'`: 앱이 정한 id의 삭제 흔적 확인(410, [모바일 입력 UX 원칙](mobile-input.md) 10.1). `audit_log`는 FK가 없어 1번 규칙에 걸리지 않으므로 따로 둔다
 3. **나머지는 느린 쿼리를 측정한 뒤에 더한다.** 요약 테이블도 같다(서버 아키텍처 29번).
 
 ## 8. 잔액·평단·집계
