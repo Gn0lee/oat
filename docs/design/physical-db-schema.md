@@ -3,7 +3,7 @@
 - 결정일: 2026-11-17
 - 티켓: [물리 DB 스키마: 테이블·제약·반올림·날짜 규칙](https://github.com/Gn0lee/oat/issues/526)
 - 관련 ADR: 0004~0009(도메인), 0011~0013(서버 아키텍처), 0014(해외 날짜는 현지 날짜), 0015(합 불변식 트리거와 예상 상태 기록), 0016·0017(통계 질문 목록에서 더한 칸), 0028(앱이 정한 기록 id)
-- 후속 변경: [기존 데이터 전환](legacy-migration.md)(2026-11-17)에서 `ledgers.archived_at`을 더했다. [통계 질문 목록](stats-questions.md)(2026-11-17)에서 `wallets.stats_group`, `categories.is_fixed_default`, `records.is_fixed`, `records.spender_member_id`, 예상 기록 부분 인덱스를 더하고, 환불·혜택 줄도 원 기록과 같은 장부로 묶었다. [MCP](mcp.md)(2026-11-20)에서 `ai_connections`와 `audit_log.ai_connection_id`를 더했다. [가구원 나가기·계정 삭제](member-leave.md)(2026-11-20)에서 `household_members.role` 값과 관리자 유니크, `user.deletion_requested_at`, `erasure_log`, 감사 기록 지우기 함수, `user` 삭제 FK를 정했다(9절). [모바일 입력 UX 원칙](mobile-input.md)(2026-11-21)에서 `records.spender_shared`, `general` 새 기록의 앱이 정한 id와 `records.create_request_hash`, `wallets.currency`, `audit_log` 삭제 조회 인덱스, 기준환율 통화 확대(1단위당 정규화)를 더했다. [알림](notifications.md)(2026-11-23)에서 `household_members.notify_prefs`·`last_digest_on`·`last_digest_at`, `wallets.handover_ack_at`, `push_devices`를 더했다.
+- 후속 변경: [기존 데이터 전환](legacy-migration.md)(2026-11-17)에서 `ledgers.archived_at`을 더했다. [통계 질문 목록](stats-questions.md)(2026-11-17)에서 `wallets.stats_group`, `categories.is_fixed_default`, `records.is_fixed`, `records.spender_member_id`, 예상 기록 부분 인덱스를 더하고, 환불·혜택 줄도 원 기록과 같은 장부로 묶었다. [MCP](mcp.md)(2026-11-20)에서 `ai_connections`와 `audit_log.ai_connection_id`를 더했다. [가구원 나가기·계정 삭제](member-leave.md)(2026-11-20)에서 `household_members.role` 값과 관리자 유니크, `user.deletion_requested_at`, `erasure_log`, 감사 기록 지우기 함수, `user` 삭제 FK를 정했다(9절). [모바일 입력 UX 원칙](mobile-input.md)(2026-11-21)에서 `records.spender_shared`, `general` 새 기록의 앱이 정한 id와 `records.create_request_hash`, `wallets.currency`, `audit_log` 삭제 조회 인덱스, 기준환율 통화 확대(1단위당 정규화)를 더했다. [알림](notifications.md)(2026-11-23)에서 `household_members.notify_prefs`·`last_digest_on`, `notified_todos`, `wallets.handed_over_at`·`handover_ack_at`, `push_devices`를 더했다.
 - 전제: [서버 아키텍처](server-architecture.md) 3절. PostgreSQL 18, Drizzle, DB 롤 셋(`owner`·`app`·`system`), 앱 레이어 권한 + 가구 RLS 안전망, 얇은 클라이언트.
 - 이 문서는 테이블 모양과 규칙을 정한다. 칸 이름·타입의 최종 철자는 구현 때 Drizzle 스키마가 정본이 된다.
 
@@ -161,7 +161,7 @@ DB 트리거는 2겹 하나만 둔다. 업무 규칙은 앱에 둔다(ADR 0012�
 ### 5.1 장부·지갑·결제수단
 
 - **`ledgers`**: `kind`(공용·개인), `owner_member_id`(개인만, CHECK), 이름, `archived_at`(보관한 장부: 새 기록을 받지 않고 목록에서 접힘, 기존 데이터 전환에서 더함), version.
-- **`wallets`**: `kind`(통장·현금·신용카드·대출·페이머니·포인트·상품권·증권 계좌), 이름, `currency`(지갑의 통화, NULL이면 여러 통화를 담는 지갑(증권 계좌), 그 밖은 만들 때 정하고 기본 `KRW`. 이 지갑의 현금 다리는 이 통화만 쓴다, [모바일 입력 UX 원칙](mobile-input.md) 2.2.1), `owner_member_id`, `hidden_from_household`, `allow_member_use`, `archived_at`, `handover_ack_at`(나간 가구원에게서 넘겨받은 지갑을 받은 사람이 확인한 시각, NULL이면 홈 "확인할 것"에 보임, [알림](notifications.md) 9절), `point_tracking_mode`(포인트만), `stats_group`(묶음: `spendable`·`saving`·`investment`·`points`·`liability`, NOT NULL, 기본값은 kind에서 나오고 부채 kind는 `liability`만 CHECK), version. 자산/부채는 kind에서 정한다. 잔액 칸은 없다. `allow_member_use`는 쓴 사람 계산에서 "함께 쓰는 지갑" 표시를 겸한다(ADR 0017).
+- **`wallets`**: `kind`(통장·현금·신용카드·대출·페이머니·포인트·상품권·증권 계좌), 이름, `currency`(지갑의 통화, NULL이면 여러 통화를 담는 지갑(증권 계좌), 그 밖은 만들 때 정하고 기본 `KRW`. 이 지갑의 현금 다리는 이 통화만 쓴다, [모바일 입력 UX 원칙](mobile-input.md) 2.2.1), `owner_member_id`, `hidden_from_household`, `allow_member_use`, `archived_at`, `handed_over_at`(나간 가구원에게서 넘겨받은 시각, 나가기 트랜잭션이 채움)·`handover_ack_at`(받은 사람이 확인한 시각. `handed_over_at`이 있고 이 칸이 NULL이면 받은 사람의 홈 "확인할 것"에 보임, [알림](notifications.md) 9절), `point_tracking_mode`(포인트만), `stats_group`(묶음: `spendable`·`saving`·`investment`·`points`·`liability`, NOT NULL, 기본값은 kind에서 나오고 부채 kind는 `liability`만 CHECK), version. 자산/부채는 kind에서 정한다. 잔액 칸은 없다. `allow_member_use`는 쓴 사람 계산에서 "함께 쓰는 지갑" 표시를 겸한다(ADR 0017).
 - **`wallet_card_settings`** (이력, PK `(wallet_id, effective_from)`): 카드사, 결제일, 이용기간 규칙(`card_issuer_presets` 참조 또는 시작일 직접 입력), `effective_from`. 결제일을 바꾸면 새 행을 더한다. 기록은 매입일(모르면 이용일)에 유효한 행으로 청구서에 배정하고, 이미 확정한 청구서는 다시 배정하지 않는다.
 - **`wallet_brokerage_settings`** (1:1, PK `wallet_id`): `ledger_id`, `cash_tracking_enabled`(기본 false), 과세 유형(일반·ISA·연금), 국내·해외 수수료율(NULL이면 추정 안 함).
 - **`payment_methods`**: kind(신용카드·체크카드·페이 등), 이름, 가리키는 `wallet_id`(페이는 NULL), `owner_member_id`, `archived_at`, version. 카드 한 장(가족카드 포함)이 하나다.
@@ -250,13 +250,14 @@ DB 트리거는 2겹 하나만 둔다. 업무 규칙은 앱에 둔다(ADR 0012�
 
 - Better Auth 테이블은 Better Auth CLI로 생성해 Drizzle 스키마에 넣는다(서버 아키텍처 16번).
 - **`households`**: 이름, version.
-- **`household_members`**: `id`, `household_id`, `user_id`, `role`(`admin`·`member`), `status`(활동·나감), `display_name`, `left_at`, `home_layout`(jsonb, 홈의 맨 위 숫자와 카드 순서·켜짐, NULL이면 기본값, [통계 화면 구성](stats-screens.md) 4절), `notify_prefs`(jsonb, 알림 수신 설정, NULL이면 `{ version: 1, todo: true }`), `last_digest_on`(date)·`last_digest_at`(timestamptz, 아침 묶음을 센 날과 끝 시각, [알림](notifications.md) 3.2).
+- **`household_members`**: `id`, `household_id`, `user_id`, `role`(`admin`·`member`), `status`(활동·나감), `display_name`, `left_at`, `home_layout`(jsonb, 홈의 맨 위 숫자와 카드 순서·켜짐, NULL이면 기본값, [통계 화면 구성](stats-screens.md) 4절), `notify_prefs`(jsonb, 알림 수신 설정, NULL이면 `{ version: 1, todo: true }`), `last_digest_on`(date, 아침 묶음의 오늘 몫을 가져간 서울 날짜. 조건부 UPDATE로 하루 한 번을 지킨다, [알림](notifications.md) 3.2).
   - 가구마다 활동 관리자 한 명: 부분 유니크 `(household_id) WHERE role = 'admin' AND status = 'active'`([가구원 나가기·계정 삭제](member-leave.md) 7절).
   - `(household_id, user_id)` 유니크: 나갔다가 같은 가구에 다시 들어오면 새 행을 만들지 않고 옛 행을 다시 활동으로 바꾼다. 그래야 옛 소유 데이터와 이어진다.
   - **사용자는 활동 중인 가구 하나에만 속한다**: `user_id` 부분 유니크(`status = 활동`). 여러 가구가 필요해지면 유니크를 풀고 "현재 가구"를 세션에 둔다.
   - **멤버 행은 지우지 않는다.** 가구 데이터의 소유자·작성자 칸(`ledgers`·`wallets`·`payment_methods`의 `owner_member_id`, 감사 기록의 `actor_member_id`)은 사용자가 아니라 이 멤버 행을 가리킨다. 그래서 가구원이 나가거나 계정을 지워도 기록이 깨지지 않고, 화면은 "이름(나감)"이나 "탈퇴한 가구원"처럼 가려서 보여줄 수 있다. 계정을 지우면 `user_id`만 `SET NULL`이 되고 `display_name`은 "탈퇴한 가구원"으로 바뀐다. 예외는 가구 삭제뿐이다(가구 자체가 사라진다).
 - **`invitations`**: 가구, 초대 코드(추측 불가 랜덤, UUIDv7 아님), 만료 시각, 사용 여부.
 - **`ai_connections`**: `household_id`, `member_id`(→ 멤버 행), `oauth_client_id`, `client_name`, `access`(`read`·`read_write`), `created_at`, `last_used_at`. `(member_id, oauth_client_id)` 유니크. AI 연결의 권한과 동의의 정본이고, `/mcp`가 요청마다 멤버 행과 묶어 읽는다. 멤버 행처럼 가구를 정하기 전에 읽으므로 RLS를 걸지 않는다([MCP](mcp.md) 5.5, ADR 0023).
+- **`notified_todos`**: `household_id`, `member_id`(→ 멤버 행), `key`(할 일 키, 예: `occ:{규칙}:{원래 회차 날짜}`), `notified_at`. PK `(member_id, key)`. 아침 묶음이 이미 알린 할 일이다. 키에 개인 장부 기록 id가 들어가서 가구 소유 테이블로 두고 RLS를 건다. 나가기 때 그 멤버 행을 지우고(돌아오면 그때 할 일로 다시 채움), 가구 삭제 때 함께 지운다. 지금 할 일 목록에 없고 90일이 지난 행은 worker가 지운다([알림](notifications.md) 3.1).
 
 ### 5.7 운영
 
@@ -266,7 +267,7 @@ DB 트리거는 2겹 하나만 둔다. 업무 규칙은 앱에 둔다(ADR 0012�
   - 넣은 행이 없으면(이미 있음) 저장된 행을 읽는다. 본문 해시가 다르면 422, 같으면 `operation`에 따라 응답한다. 생성·수정은 리소스의 현재 상태를 다시 읽어 응답하고, 삭제는 저장된 `status_code`를 그대로 돌려준다(다시 읽으면 404라서).
   - 7일 뒤 worker가 지운다. 가구 소유가 아니고 비밀값도 아니다. `user_id`는 user 삭제 때 CASCADE다.
 - **`erasure_log`**: 나가기·계정 삭제·가구 삭제를 백업 복원 뒤 다시 적용할 만큼의 ID(넘긴 지갑, 다음 관리자, 뼈대로 만든·지운 ID)와 시각. 개인정보는 넣지 않는다. DB 밖(HDD·S3 추가 전용 파일)에도 같은 줄을 남겨 백업 복원 뒤 다시 적용한다([가구원 나가기·계정 삭제](member-leave.md) 9절).
-- **`push_devices`**: `id`, `user_id`(→ `user` CASCADE), `session_id`(→ `session` CASCADE), `token`(유니크), `platform`(`ios`·`android`), `env`(`sandbox`·`production`), `app_version`, `created_at`, `last_seen_at`. 가구 소유가 아니라 RLS를 걸지 않는다. 세션에 매달아서 로그아웃·나가기·계정 삭제 때 따로 지우지 않는다. 같은 토큰이 다른 세션으로 등록되면 앞 행을 지운다([알림](notifications.md) 7.2).
+- **`push_devices`**: `id`, `user_id`(→ `user` CASCADE), `session_id`(→ `session` CASCADE), `token`(유니크), `platform`(`ios`·`android`), `env`(`sandbox`·`production`), `timezone`(기기 시간대, 받을 시각을 현지로 맞출 때를 위해 저장), `app_version`, `created_at`, `last_seen_at`. 가구 소유가 아니라 RLS를 걸지 않는다. 세션에 매달아서 로그아웃·나가기·계정 삭제 때 따로 지우지 않는다. 같은 토큰이 다른 세션으로 등록되면 앞 행을 지운다([알림](notifications.md) 7.2).
 - **`pgboss.*`**: pg-boss가 만들고 관리하는 스키마다. 작업 예약은 기록 저장과 같은 트랜잭션으로 넣는다. `owner`가 스키마를 소유하고, `app`·`system`은 pg-boss가 요구하는 권한만 받는다.
 
 ### 5.8 FK의 ON DELETE
@@ -334,5 +335,5 @@ DB 트리거는 2겹 하나만 둔다. 업무 규칙은 앱에 둔다(ADR 0012�
 - **MCP 툴 설계**: MCP 쓰기의 중복 방지 키 정책, 감사 기록 기반 되돌리기. ([MCP](mcp.md)에서 정했다)
 - **통계 화면 구성**: 가구 멤버 행에 홈 설정 칸(`home_layout` jsonb)을 더한다([통계 화면 구성](stats-screens.md) 4절, `household_members`에 반영). 원화 환산 규칙(4.3). → [통계 화면 구성](stats-screens.md)은 이 규칙을 그대로 쓰고, 투자 화면 맨 아래에 그날 매매기준율을 적는다(7절). 질문 목록과 요약 테이블 판단은 [통계 질문 목록](stats-questions.md)에서 정했다.
 - **가구원 나가기·계정 삭제**: 9절. [가구원 나가기·계정 삭제](member-leave.md)에서 정했다.
-- **알림**: 멤버 행의 알림 설정·아침 묶음 칸, `wallets.handover_ack_at`, `push_devices`(5.6·5.7). [알림](notifications.md)에서 정했다.
+- **알림**: 멤버 행의 알림 설정·아침 묶음 칸, `notified_todos`, `wallets.handed_over_at`·`handover_ack_at`, `push_devices`(5.6·5.7). [알림](notifications.md)에서 정했다.
 - **구현 전 확인**: 세율과 `rounding_mode` 실제 값(농특세, SEC fee, 코넥스, ETF·ETN, NXT), KIS 배당 API 필드(확인한 필드는 [시세 데이터 공급원](market-data.md) 3.6, 남은 것은 6절), 특일 정보 API의 대체·임시공휴일 필드, 미국 T+1 결제 규정.
