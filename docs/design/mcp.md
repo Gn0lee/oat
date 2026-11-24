@@ -45,7 +45,7 @@
 
 | 툴 | 하는 일 |
 |---|---|
-| `add_spending` / `add_income` | 지출·수입. 줄 여러 개, 결제수단 또는 지갑, 결제 할인은 정가로 |
+| `add_spending` / `add_income` | 지출·수입. 줄 여러 개, 결제수단 또는 지갑, 결제 할인은 정가로. `add_spending`의 선택 인자 `others_share`(빌려준 돈 지갑, 금액)는 남의 몫([빌려준 돈·빌린 돈](personal-loans.md) 9절) |
 | `add_transfer` | 지갑 사이 이동. 카드대금도 여기로 |
 | `add_trade` | 매수·매도 |
 | `add_returned_money` | 환불·혜택·정산. 원 기록을 가리켜요 |
