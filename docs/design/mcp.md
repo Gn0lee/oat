@@ -34,7 +34,7 @@
 |---|---|
 | `get_context` | 가구원, 볼 수 있는 장부, 지갑, 결제수단, 카테고리, 오늘 날짜, 이 연결의 **지금 시점** 권한. 다른 툴에 넘길 ID 사전 |
 | `search_records` | 기간·장부·카테고리·지갑·검색어로 기록 찾기. 커서 페이지, 한 번에 최대 100건 |
-| `get_record` | 기록 한 건(다리·줄·version 포함) |
+| `get_record` | 기록 한 건(다리·줄·version 포함). 다른 가구원의 숨긴 지갑 다리는 `wallet_id: null`, `wallet_label: "민호가 냄"`(ADR 0031, `search_records`도 같음) |
 | `get_month_summary` | [통계 질문 목록](stats-questions.md)의 월 숫자(앱의 화면용 조회 엔드포인트와 같은 계산) |
 | `get_balances` | 묶음별 지갑 잔액 |
 | `get_bill` | 청구서(예상·확정 청구액, 들어간 기록). 볼 수 없는 개인 장부 기록은 "○○의 개인 기록" 합계 한 줄(ADR 0025) |

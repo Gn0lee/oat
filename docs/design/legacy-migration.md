@@ -42,7 +42,7 @@
 | `profiles` + `household_members` | Better Auth `user` + `household_members` | 표시 이름 = `profiles.name`(비면 이메일). 역할 그대로. 사용자 계정을 만드는 방식은 전환 당일 절차에서 정한다. |
 | `ledger_books` | `ledgers` | shared → 공용, personal → 개인(주인 = `created_by`). 보관한 장부는 `archived_at`을 그대로 옮긴다(물리 스키마에 칸을 더함). 기본 장부(`is_default`)는 증권 계좌의 장부가 된다. |
 | `categories` | `categories` | 가구 행 그대로. 부모를 먼저 넣는다. 아이콘·정렬은 그대로 둔다. `is_system`은 옮기지 않는다(새 모델에서 기본 카테고리는 가구 행이라 고칠 수 있음). `is_fixed_default`는 모두 false다(Q5). 새 모델의 시스템 카테고리(미분류·투자 비용 등)는 새 가구 시드가 따로 넣는다. |
-| `accounts`(은행) | `wallets` kind 통장 | 묶음: 적금·예금은 모으는 돈, 나머지는 쓸 수 있는 돈. `allow_member_use` = `is_household_usable`. `hidden_from_household` = false(기존에는 숨김이 없었다). |
+| `accounts`(은행) | `wallets` kind 통장 | 묶음: 적금·예금은 모으는 돈, 나머지는 쓸 수 있는 돈. `allow_member_use` = `is_household_usable`. `hidden_from_household` = false(기존에는 숨김이 없었다. 기록이 있는 지갑은 나중에 나만 보기로 바꿀 수 없다, ADR 0031). |
 | `accounts`(증권) | `wallets` kind 증권 계좌 + `wallet_brokerage_settings` | 증권 계좌 조건: `category = investment`, 또는 `account_type`이 stock·isa·pension, 또는 매매가 있는 계좌. 묶음은 투자. 장부는 기본 공용 장부다. **예수금 관리**는 예수금을 관리하던(저장 잔액이 있는) 원화 전용 계좌만 켜고, 나머지는 끈다(Q10, 5절). 과세 유형은 isa → ISA, pension → 연금, 나머지는 일반이다. |
 | `payment_methods` 선불·상품권·현금 | `wallets` kind 페이머니·상품권·현금 | 묶음: 상품권은 포인트·상품권, 나머지는 쓸 수 있는 돈. 결제수단은 만들지 않는다(기록이 지갑을 직접 가리킴). |
 | `payment_methods` 신용카드 | `wallets` kind 신용카드 + `payment_methods` + `wallet_card_settings` | 지갑은 **주인 × 카드사 × 결제일**로 묶는다(ADR 0005). 결제일이 없으면 카드마다 지갑 하나다. 지갑 이름은 카드가 하나면 카드 이름, 여럿이면 "카드사 N일 결제"다. 이용기간 규칙은 비워 두고 사용자가 확인한다. |

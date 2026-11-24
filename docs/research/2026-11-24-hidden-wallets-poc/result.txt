@@ -1,0 +1,7 @@
+{"option":"A","publicRecordsKept":1,"hiddenExistenceVisible":false,"distinguishableHiddenWallets":0,"kindsRevealed":[],"namesRevealed":[],"cardFieldsRevealed":false,"privateRecordsLeaked":[],"hiddenFlowSum":0}
+{"option":"B","publicRecordsKept":4,"hiddenExistenceVisible":true,"distinguishableHiddenWallets":"1 이상(몇 개인지 모름)","kindsRevealed":[],"namesRevealed":[],"cardFieldsRevealed":false,"privateRecordsLeaked":[],"hiddenFlowSum":-370000}
+{"option":"C","publicRecordsKept":4,"hiddenExistenceVisible":true,"distinguishableHiddenWallets":2,"kindsRevealed":[],"namesRevealed":[],"cardFieldsRevealed":false,"privateRecordsLeaked":[],"hiddenFlowSum":-370000}
+{"option":"D","publicRecordsKept":4,"hiddenExistenceVisible":true,"distinguishableHiddenWallets":2,"kindsRevealed":["credit_card","bank"],"namesRevealed":["비상금 카드","비상금 통장"],"cardFieldsRevealed":true,"privateRecordsLeaked":[],"hiddenFlowSum":-370000}
+
+확인 10개 통과
+실제 숨긴 잔액 합 438.3만 / 지수에게 드러난 흐름 합 -37만
