@@ -1,4 +1,5 @@
 // 질문 7 세 번째: 톤을 올린 카테고리 색. 숫자 색 문법 A(가계부 수입 파랑, 투자 상승 빨강·하락 파랑) 뒤.
+// 리뷰 뒤 다크 모으는 돈·투자 밝기를 벌림(녹색약 0.083 → 0.103).
 // 예약 색상각(빨강 0~45°, Pine 초록 125~185°, 파랑 230~285°)을 피한다. 실행: node groups-v3.mjs
 import { oklchToHex } from './groups-v2.mjs';
 import { ratio } from './lib.mjs';
@@ -11,7 +12,7 @@ const minD = (hex, m) => { const p = hex.map((h) => oklab(sim(toLin(h), m))); le
   for (let i = 0; i < p.length; i++) for (let j = i + 1; j < p.length; j++) d = Math.min(d, Math.hypot(...p[i].map((v, k) => v - p[j][k]))); return d; };
 const spec = {
   light: [[0.80, 0.14, 80], [0.55, 0.16, 295], [0.58, 0.10, 205], [0.84, 0.08, 335], [0.60, 0.12, 55]],
-  dark: [[0.84, 0.13, 80], [0.68, 0.15, 295], [0.66, 0.11, 205], [0.90, 0.06, 335], [0.70, 0.12, 55]],
+  dark: [[0.84, 0.13, 80], [0.60, 0.15, 295], [0.74, 0.11, 205], [0.90, 0.06, 335], [0.70, 0.12, 55]],
 };
 const debt = { light: '#8E9592', dark: '#6E7572' }, card = { light: '#FFFFFF', dark: '#1C1F1E' };
 for (const mode of ['light', 'dark']) {

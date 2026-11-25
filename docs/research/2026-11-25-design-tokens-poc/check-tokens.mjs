@@ -22,6 +22,9 @@ const need = [
   ['primary', ['surface'], 3],
   ['chart-line', ['surface'], 3],
   ['chart-axis', ['surface'], 3],
+  ['chart-neutral', ['surface'], 3],
+  ['chart-reference', ['surface'], 3],
+  // chart-group-*는 3:1 예외(DESIGN.md 차트 절). 누르면 나오는 금액과 A1 목록으로 보완.
 ];
 let fail = 0;
 for (const mode of ['light', 'dark']) {
