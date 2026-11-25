@@ -1,0 +1,11 @@
+PASS  a@example.test: Supabase 꼴 해시($2a$10$)  ($2a$10$)
+PASS  b@example.test: Supabase 꼴 해시($2a$10$)  ($2a$10$)
+PASS  c@example.test: Supabase 꼴 해시($2a$10$)  ($2a$10$)
+PASS  인증된 사용자: 기존 비밀번호로 로그인
+PASS  틀린 비밀번호 거절  (INVALID_EMAIL_OR_PASSWORD)
+PASS  미인증 사용자는 비밀번호가 맞아도 거절(인증 메일 필요)  (EMAIL_NOT_VERIFIED)
+PASS  6자 기존 비밀번호도 로그인(최소 길이는 새로 정할 때만)
+PASS  비밀번호 변경 성공, 저장 해시가 scrypt로 바뀜  (ecb3e74aa20d…)
+PASS  변경 뒤 옛 비밀번호 거절, 새 비밀번호 로그인
+PASS  bcrypt 계정 재설정 메일 → 새 비밀번호(scrypt)로 로그인
+PASS  bcrypt(10) 비교 시간  (187ms)

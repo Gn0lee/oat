@@ -1,0 +1,14 @@
+{
+  "name": "cutover-auth-hash-poc",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "tsx run.ts" },
+  "dependencies": {
+    "better-auth": "1.7.25",
+    "@better-auth/core": "1.7.25",
+    "bcryptjs": "3.0.2",
+    "pg": "8.23.1"
+  },
+  "devDependencies": { "tsx": "4.20.6", "@types/pg": "8.15.5" },
+  "overrides": { "better-auth": "1.7.25", "@better-auth/core": "1.7.25" }
+}

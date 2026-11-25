@@ -1,0 +1,71 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>전환 직후 안내 목업</title>
+<style>
+body{margin:0;padding:16px;font-family:var(--font-sans,-apple-system,system-ui,sans-serif);background:var(--background,#fff);color:var(--foreground,#171717)}
+.wrap{display:flex;flex-wrap:wrap;gap:16px;justify-content:center}
+.cap{font-size:12px;color:var(--muted-foreground,#666);text-align:center;margin-top:6px;max-width:260px}
+/* 목업 고정 팔레트(브랜드: Pine, 귀리색 바탕) */
+.ph{--oat:#F4EFE4;--pine:#14573F;--ink:#1C1C1A;--sub:#6B675E;--line:#E2DBCB;width:260px;min-height:520px;border-radius:28px;background:var(--oat);color:var(--ink);border:8px solid #1c1c1a;padding:18px 16px;box-sizing:border-box;display:flex;flex-direction:column;font-size:13px}
+.t{font-size:19px;font-weight:700;line-height:1.35;margin:18px 0 8px}
+.sub{color:var(--sub);line-height:1.5}
+.in{background:#fff;border:1px solid var(--line);border-radius:12px;padding:11px;margin-top:8px;color:var(--sub)}
+.btn{margin-top:auto;background:var(--pine);color:#F4EFE4;border-radius:14px;padding:13px;text-align:center;font-weight:600}
+.link{text-align:center;color:var(--pine);margin-top:10px;font-size:12px}
+.li{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);line-height:1.45}
+.li b{display:block}
+.n{width:22px;height:22px;border-radius:11px;background:var(--pine);color:var(--oat);display:flex;align-items:center;justify-content:center;font-size:11px;flex:none}
+.hd{display:flex;justify-content:space-between;color:var(--sub);font-size:12px}
+.big{font-size:26px;font-weight:700;margin:6px 0 2px}
+.card{background:#fff;border-radius:14px;padding:12px;margin-top:12px}
+.card h4{margin:0 0 6px;font-size:13px}
+.todo{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+.todo small{display:block;color:var(--sub);font-size:11px}
+.chip{border:1px solid var(--pine);color:var(--pine);border-radius:10px;padding:3px 8px;font-size:11px;white-space:nowrap}
+.sheet{background:#fff;border-radius:18px 18px 0 0;margin:auto -16px -18px;padding:16px}
+.row2{display:flex;gap:8px;margin-top:12px}.row2 div{flex:1;text-align:center;border-radius:12px;padding:11px;font-weight:600}
+.ghost{border:1px solid var(--line)}
+</style></head><body>
+<div class="wrap">
+
+<div><div class="ph">
+<div class="t">oat가 앱으로<br>옮겨 왔어요</div>
+<div class="sub">쓰던 이메일과 비밀번호로 로그인하세요.</div>
+<div class="in">이메일</div><div class="in">비밀번호</div>
+<div class="btn">로그인</div>
+<div class="link">비밀번호가 기억나지 않아요</div>
+</div><div class="cap">① 첫 로그인. 기존 세션은 옮겨지지 않아요. 기존 비밀번호 그대로(해시 이전)</div></div>
+
+<div><div class="ph">
+<div class="t">기록을 모두<br>옮겨 왔어요</div>
+<div class="sub">잔액·보유 주식·월별 통계는 기존 oat와 같아요.</div>
+<div class="li"><div class="n">1</div><div><b>잔액을 몰랐던 통장</b>실제 잔액을 넣으면 그날부터 정확해요</div></div>
+<div class="li"><div class="n">2</div><div><b>카드 이용기간</b>카드마다 한 번 확인해 주세요. 첫 청구서에서 금액이 맞춰져요</div></div>
+<div class="li"><div class="n">3</div><div><b>결제수단 모름</b>결제 방법 없이 적은 기록은 여기 모였어요. 통계에는 그대로 들어가요</div></div>
+<div class="li"><div class="n">4</div><div><b>나만 보기</b>나만 보는 지갑은 새로 만든 지갑만 될 수 있어요</div></div>
+<div class="sub" style="font-size:11px;margin-top:8px">태그·계좌 끝 네 자리·메모는 옮기지 않았어요(90일 뒤 기존 사본도 지워요)</div>
+<div class="btn" style="margin-top:12px">확인할 것 보기</div>
+</div><div class="cap">② 처음 한 번만 보는 화면. 1·2는 홈 "확인할 것"으로 이어져요</div></div>
+
+<div><div class="ph">
+<div class="hd"><span>이번 달 쓴 돈</span><span>⚙︎</span></div>
+<div class="big">1,284,500원</div>
+<div class="sub" style="font-size:12px">평소 이맘때보다 12만 원 적게</div>
+<div class="card"><h4>확인할 것 3</h4>
+<div class="todo"><div>생활비 통장<small>실제 잔액 넣기</small></div><span class="chip">잔액 넣기</span></div>
+<div class="todo"><div>신한 15일 결제<small>이용기간 확인</small></div><span class="chip">확인</span></div>
+<div class="todo"><div>국민 1일 결제<small>이용기간 확인</small></div><span class="chip">확인</span></div>
+</div>
+<div class="card"><h4>곧 나갈 돈</h4><div class="sub">정기 규칙을 만들면 여기 보여요</div></div>
+</div><div class="cap">③ 홈 "확인할 것". 지갑 주인에게만 보이고, 전환 때 알림 키를 채워 두어 푸시는 오지 않아요</div></div>
+
+<div><div class="ph" style="background:#d9d3c6">
+<div class="sub" style="margin-top:auto"></div>
+<div class="sheet">
+<b style="font-size:15px">생활비 통장</b>
+<div class="sub" style="margin-top:6px">기존 oat에서는 잔액을 기록하지 않았어요. 지금 통장 앱에 보이는 잔액을 넣어 주세요.</div>
+<div class="in" style="font-size:18px;color:#1C1C1A">0원</div>
+<div class="row2"><div class="ghost">이제 안 써요</div><div style="background:#14573F;color:#F4EFE4">저장</div></div>
+</div>
+</div><div class="cap">④ 잔액 넣기 = 잔액 맞춤 1건. "이제 안 써요"는 지갑 보관</div></div>
+
+</div></body></html>
