@@ -1,0 +1,31 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+body{margin:0;padding:16px;font-family:var(--font-sans,system-ui);background:var(--background,#fff);color:var(--foreground,#171717);font-size:14px;line-height:1.5}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.cap{font-size:13px;font-weight:700;margin:0 0 6px}
+.ph{border-radius:16px;padding:12px;font-family:'Pretendard',sans-serif;background:#121413;color:#E8EAE9}
+.c{border-radius:12px;padding:12px;margin-bottom:8px;background:#1C1F1E}
+.seg{display:flex;background:#121413;border-radius:10px;padding:3px;margin-bottom:10px;font-size:14px}
+.seg div{flex:1;text-align:center;padding:6px;border-radius:8px;opacity:.6}
+.seg .on{opacity:1;background:#2A2E2C;font-weight:600}
+.row{display:flex;justify-content:space-between;padding:4px 0;font-size:15px}
+.btn{border-radius:12px;padding:13px;text-align:center;font-weight:600;font-size:17px}
+.bar{height:6px;border-radius:3px;background:#2A2E2C;margin:8px 0}.bar i{display:block;height:6px;border-radius:3px;width:62%}
+.k{font-size:11px;font-family:ui-monospace,monospace;opacity:.6;margin-top:6px}
+.lt{background:#F4F5F3;color:#191F28}.lt .c{background:#fff}.lt .seg{background:#EFECEA}.lt .seg .on{background:#fff}.lt .bar{background:#EFECEA}
+</style></head><body>
+<div class="grid" id="g"></div>
+<script>
+const S=[['라이트 (기준)','#14573F','#FFFFFF','#14573F',true],
+['A 밝은 Pine 하나','#4CB98A','#0B1F17','#4CB98A'],
+['B 중간 Pine 하나','#3FA37A','#0B1F17','#3FA37A'],
+['C 버튼 면은 진하게, 글자는 밝게 (추천)','#1F7A55','#FFFFFF','#5CC59A']];
+document.getElementById('g').innerHTML=S.map(([n,fill,label,text,lt])=>`<div><p class="cap">${n}</p><div class="ph ${lt?'lt':''}">
+<div class="c"><div class="seg"><div class="on" style="color:${text}">이번 달</div><div>지난 달</div></div>
+<div class="row"><span>저축 목표</span><span style="color:${text};font-weight:600">자세히 ›</span></div>
+<div class="bar"><i style="background:${text}"></i></div></div>
+<div class="btn" style="background:${fill};color:${label}">기록하기</div>
+<div class="k">면 ${fill} · 라벨 ${label} · 글자 ${text}</div></div></div>`).join('');
+</script>
+</body></html>

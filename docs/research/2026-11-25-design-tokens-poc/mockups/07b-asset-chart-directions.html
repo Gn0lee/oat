@@ -1,0 +1,39 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+body{margin:0;padding:16px;font-family:var(--font-sans,system-ui);background:var(--background,#fff);color:var(--foreground,#171717);font-size:14px;line-height:1.5}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+.cap{font-size:13px;font-weight:700;margin:0 0 2px}.sub{font-size:12px;color:var(--muted-foreground,#666);margin:0 0 6px}
+.card{background:#fff;color:#191F28;border-radius:14px;padding:12px;font-family:'Pretendard',sans-serif;border:1px solid #E5E8E6}
+.lg{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:12px;color:#5B6470;margin-top:6px}
+.lg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
+.chips button{font:inherit;font-size:12px;border:1px solid #D5D9D7;background:#fff;color:#191F28;border-radius:999px;padding:3px 10px;cursor:pointer}
+.chips button.on{background:#191F28;color:#fff;border-color:#191F28}
+</style></head><body>
+<div class="grid">
+<div><p class="cap">① 자산 한 색 + 부채 한 색 (YNAB 방식)</p><p class="sub">묶음 구분은 달을 누르면 아래 목록으로</p><div class="card"><svg id="s1" viewBox="0 0 280 200" width="100%"></svg><div class="lg" id="l1"></div></div></div>
+<div><p class="cap">② 고른 묶음만 진하게 (강조 + 회색)</p><p class="sub">칩을 눌러 보세요. 무채색 원칙 유지</p><div class="card"><div class="chips" id="chips"></div><svg id="s2" viewBox="0 0 280 200" width="100%"></svg></div></div>
+<div><p class="cap">③ 저채도 색 다섯 개 + 부채 회색</p><p class="sub">일반 차트 방식. 빨강·파랑·초록 색상각 제외</p><div class="card"><svg id="s3" viewBox="0 0 280 200" width="100%"></svg><div class="lg" id="l3"></div></div></div>
+</div>
+<script>
+const names=['쓸 수 있는 돈','모으는 돈','투자','포인트·상품권','빌려준 돈'];
+const data=[[900,1200,1500,80,0,-1400],[850,1300,1450,90,300,-1350],[1000,1400,1600,70,300,-1300],[780,1500,1750,100,200,-1250],[950,1600,1700,60,200,-1200],[1100,1700,1900,90,100,-1150]];
+function draw(id,colors,debt){const W=280,H=200,z=140,sc=0.024,bw=28,gap=(W-40)/6;let s='',pts=[];
+ data.forEach((d,m)=>{const x=30+m*gap;let y=z;
+  d.slice(0,5).forEach((v,k)=>{if(!v)return;const h=v*sc;y-=h;s+=`<rect x="${x}" y="${y}" width="${bw}" height="${h}" fill="${colors[k]}" stroke="#fff" stroke-width="1"/>`});
+  s+=`<rect x="${x}" y="${z+1}" width="${bw}" height="${-d[5]*sc}" fill="${debt}" rx="1.5"/>`;
+  pts.push([x+bw/2,z-d.reduce((a,b)=>a+b,0)*sc]);
+  s+=`<text x="${x+bw/2}" y="${H-4}" font-size="10" text-anchor="middle" fill="#5B6470">${6+m}월</text>`});
+ const line=pts.map(q=>q.join(',')).join(' ');
+ s+=`<line x1="20" x2="274" y1="${z}" y2="${z}" stroke="#868E8A"/><polyline points="${line}" fill="none" stroke="#fff" stroke-width="5"/><polyline points="${line}" fill="none" stroke="#191F28" stroke-width="2"/>`+pts.map(q=>`<circle cx="${q[0]}" cy="${q[1]}" r="3.5" fill="#191F28" stroke="#fff" stroke-width="2"/>`).join('');
+ document.getElementById(id).innerHTML=s}
+const lg=(id,items)=>document.getElementById(id).innerHTML=items.map(([c,n])=>`<span><i style="background:${c}"></i>${n}</span>`).join('');
+draw('s1',Array(5).fill('#6B7370'),'#C7CCC9');lg('l1',[['#6B7370','자산'],['#C7CCC9','갚아야 할 돈'],['#191F28','순자산']]);
+const cat=['#5E4784','#BB9951','#42878B','#D5B0D0','#846047'];
+draw('s3',cat,'#C7CCC9');lg('l3',[...cat.map((c,k)=>[c,names[k]]),['#C7CCC9','갚아야 할 돈']]);
+let sel=2;function d2(){draw('s2',names.map((_,k)=>k===sel?'#303432':'#D5D9D7'),'#E5E8E6');
+ document.getElementById('chips').innerHTML=names.map((n,k)=>`<button class="${k===sel?'on':''}" onclick="sel=${k};d2()">${n}</button>`).join('')}
+d2();
+</script>
+</body></html>

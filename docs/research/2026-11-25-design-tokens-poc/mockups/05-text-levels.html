@@ -1,0 +1,26 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+body{margin:0;padding:16px;font-family:var(--font-sans,system-ui);background:var(--background,#fff);color:var(--foreground,#171717);font-size:14px;line-height:1.5}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+.cap{font-size:13px;font-weight:700;margin:0 0 6px}
+.ph{border-radius:16px;padding:10px;font-family:'Pretendard',sans-serif}
+.c{border-radius:12px;padding:4px 12px}
+.r{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--div)}
+.r:last-child{border:0}
+.n{font-size:16px}.s{font-size:13px}.a{font-size:16px;font-weight:600;font-variant-numeric:tabular-nums}
+.k{font-size:11px;font-family:ui-monospace,monospace;color:var(--muted-foreground,#666);margin-top:4px}
+</style></head><body>
+<div class="grid" id="g"></div>
+<script>
+const M=[
+['A 정보 글자 2단계 (추천) · 라이트','#F4F5F3','#FFFFFF','#E5E8E6','#191F28','#5B6470','#5B6470','sub 5.48~6.00'],
+['A · 다크','#121413','#1C1F1E','#2C302E','#E8EAE9','#8E9592','#8E9592','sub 4.88~6.05'],
+['B 3단계 (흔한 방식) · 라이트','#F4F5F3','#FFFFFF','#E5E8E6','#191F28','#4E5968','#8B95A1','날짜 2.78~3.04 ✗'],
+['B · 다크','#121413','#1C1F1E','#2C302E','#E8EAE9','#A3A9A6','#6E7572','날짜 3.16~3.92 ✗']];
+document.getElementById('g').innerHTML=M.map(([n,bg,card,div,t,s,d,note])=>`<div><p class="cap">${n}</p>
+<div class="ph" style="background:${bg};--div:${div}"><div class="c" style="background:${card}">
+${[['장보기','이마트 · 11월 25일','−111,110원'],['커피','스타벅스 · 11월 24일','−4,500원'],['점심','김밥천국 · 11월 24일','−8,000원']].map(([a,b,c])=>`<div class="r"><div><div class="n" style="color:${t}">${a}</div><div class="s" style="color:${s}">${b.split(' · ')[0]} <span style="color:${d}">· ${b.split(' · ')[1]}</span></div></div><div class="a" style="color:${t}">${c}</div></div>`).join('')}
+</div></div><div class="k">${note}</div></div>`).join('');
+</script>
+</body></html>

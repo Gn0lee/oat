@@ -1,0 +1,36 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+body{margin:0;padding:16px;font-family:var(--font-sans,system-ui);background:var(--background,#fff);color:var(--foreground,#171717);font-size:14px;line-height:1.5}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:12px}
+.cap{font-size:13px;font-weight:700;margin:0 0 6px}
+.card{border-radius:14px;padding:12px;font-family:'Pretendard',sans-serif}
+.lg{display:grid;grid-template-columns:1fr 1fr;gap:2px 10px;font-size:12px;margin-top:6px}
+.lg span i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+</style></head><body>
+<div class="grid" id="g"></div>
+<script>
+const names=['쓸 수 있는 돈','모으는 돈','투자','포인트·상품권','빌려준 돈','갚아야 할'];
+const R={
+ 'A 중립 회색 · 라이트':{card:'#FFFFFF',text:'#191F28',sub:'#5B6470',c:['#303432','#535654','#777B79','#9EA3A0','#C7CCC9'],debt:'#777B79'},
+ 'A 중립 회색 · 다크':{card:'#1C1F1E',text:'#E8EAE9',sub:'#8E9592',c:['#DBDFDC','#B1B5B3','#898D8B','#636765','#454946'],debt:'#898D8B'},
+ 'B 귀리빛 회색 · 라이트':{card:'#FFFFFF',text:'#191F28',sub:'#5B6470',c:['#3A3125','#5E5446','#83796A','#ABA091','#D4C9B9'],debt:'#83796A'},
+ 'B 귀리빛 회색 · 다크':{card:'#1C1F1E',text:'#E8EAE9',sub:'#8E9592',c:['#E8DCCC','#BEB2A3','#958A7C','#6F6456','#504639'],debt:'#958A7C'}};
+const data=[[900,1200,1500,80,0,-1400],[850,1300,1450,90,300,-1350],[1000,1400,1600,70,300,-1300],[780,1500,1750,100,200,-1250],[950,1600,1700,60,200,-1200],[1100,1700,1900,90,100,-1150]];
+let i=0;
+document.getElementById('g').innerHTML=Object.entries(R).map(([n,p])=>{
+ const W=280,H=200,z=140,sc=0.024,bw=28,gap=(W-40)/6;let s='';let pts=[];
+ const id='h'+(i++);
+ data.forEach((d,m)=>{const x=30+m*gap;let y=z;
+  d.slice(0,5).forEach((v,k)=>{if(!v)return;const h=v*sc;y-=h;s+=`<rect x="${x}" y="${y+0.75}" width="${bw}" height="${Math.max(h-1.5,0.5)}" fill="${p.c[k]}" rx="1.5"/>`});
+  const dh=-d[5]*sc;s+=`<rect x="${x}" y="${z+1}" width="${bw}" height="${dh}" fill="url(#${id})" stroke="${p.debt}" stroke-width="1" rx="1.5"/>`;
+  const net=d.reduce((a,b)=>a+b,0);pts.push([x+bw/2,z-net*sc]);
+  s+=`<text x="${x+bw/2}" y="${H-4}" font-size="10" text-anchor="middle" fill="${p.sub}">${6+m}월</text>`;});
+ const line=pts.map(q=>q.join(',')).join(' ');
+ s+=`<line x1="20" x2="${W-6}" y1="${z}" y2="${z}" stroke="${p.sub}" stroke-width="1"/>`;
+ s+=`<polyline points="${line}" fill="none" stroke="${p.card}" stroke-width="5"/><polyline points="${line}" fill="none" stroke="${p.text}" stroke-width="2"/>`;
+ s+=pts.map(q=>`<circle cx="${q[0]}" cy="${q[1]}" r="3.5" fill="${p.text}" stroke="${p.card}" stroke-width="2"/>`).join('');
+ const lg=names.map((nm,k)=>`<span style="color:${p.sub}"><i style="${k<5?`background:${p.c[k]}`:`background:repeating-linear-gradient(45deg,${p.debt} 0 2px,transparent 2px 4px);outline:1px solid ${p.debt}`}"></i>${nm}</span>`).join('')+`<span style="color:${p.sub}"><i style="background:${p.text};height:2px;vertical-align:3px"></i>순자산</span>`;
+ return `<div><p class="cap">${n}</p><div class="card" style="background:${p.card}"><svg viewBox="0 0 ${W} ${H}" width="100%"><defs><pattern id="${id}" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="2" height="5" fill="${p.debt}"/></pattern></defs>${s}</svg><div class="lg">${lg}</div></div></div>`}).join('');
+</script>
+</body></html>

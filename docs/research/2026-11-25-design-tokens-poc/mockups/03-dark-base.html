@@ -1,0 +1,28 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+body{margin:0;padding:16px;font-family:var(--font-sans,system-ui);background:var(--background,#fff);color:var(--foreground,#171717);font-size:14px;line-height:1.5}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.cap{font-size:13px;font-weight:700;margin:0 0 6px}
+.ph{border-radius:16px;padding:12px;font-family:'Pretendard',sans-serif}
+.c{border-radius:12px;padding:12px;margin-bottom:8px}
+.lab{font-size:13px;opacity:.65}
+.big{font-size:30px;font-weight:700;font-variant-numeric:tabular-nums}
+.row{display:flex;justify-content:space-between;padding:4px 0;font-size:15px;font-variant-numeric:tabular-nums}
+.btn{border-radius:12px;padding:12px;text-align:center;font-weight:600;background:#4CB98A;color:#0B1F17}
+.k{font-size:11px;font-family:ui-monospace,monospace;opacity:.6;margin-top:6px}
+.lt{background:#F4F5F3;color:#191F28}.lt .c{background:#fff}.lt .btn{background:#14573F;color:#fff}
+</style></head><body>
+<p class="cap">기준: 라이트 (이미 정한 값)</p>
+<div class="ph lt" style="max-width:260px;margin-bottom:14px"><div class="c"><div class="lab">이번 달 쓴 돈</div><div class="big">1,284,500원</div>
+<div class="row"><span>월급</span><span style="color:#C81E2D;font-weight:600">+3,800,000원</span></div></div><div class="btn">기록하기</div><div class="k">bg #F4F5F3 · card #FFFFFF</div></div>
+<div class="grid" id="g"></div>
+<script>
+const S=[['A 중립 회색','#121212','#1E1E1E','#ECECEC'],['B Pine 기운 (추천)','#121413','#1C1F1E','#E8EAE9'],['C 귀리 기운','#141311','#1F1D1A','#ECE9E4'],['D 순수 검정','#000000','#1C1C1E','#F2F2F2']];
+document.getElementById('g').innerHTML=S.map(([n,bg,card,t])=>`<div><p class="cap">${n}</p><div class="ph" style="background:${bg};color:${t}">
+<div class="c" style="background:${card}"><div class="lab">이번 달 쓴 돈</div><div class="big">1,284,500원</div>
+<div class="row"><span>월급</span><span style="color:#FF6B6B;font-weight:600">+3,800,000원</span></div>
+<div class="row"><span>환불</span><span style="color:#4795FF;font-weight:600">−32,000원</span></div></div>
+<div class="btn">기록하기</div><div class="k">bg ${bg} · card ${card}</div></div></div>`).join('');
+</script>
+</body></html>

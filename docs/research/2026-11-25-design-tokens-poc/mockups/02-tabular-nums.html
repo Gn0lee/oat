@@ -1,0 +1,35 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+body{margin:0;padding:16px;font-family:var(--font-sans,system-ui);background:var(--background,#fff);color:var(--foreground,#171717);font-size:14px;line-height:1.5}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.c{background:#fff;color:#191F28;border-radius:12px;padding:12px;font-family:'Pretendard',sans-serif;border:1px solid #E5E7E5}
+.cap{font-size:13px;font-weight:700;margin:0 0 6px}
+.row{display:flex;justify-content:space-between;padding:5px 0;font-size:17px;font-weight:600}
+.t{font-variant-numeric:tabular-nums}
+.big{font-size:36px;font-weight:700;text-align:right;padding:6px 0}
+.digits span{display:inline-block;outline:1px dashed #C81E2D66}
+.note{font-size:12px;color:var(--muted-foreground,#666)}
+</style></head><body>
+<div class="grid">
+<div><p class="cap">① 글자 상자: 끔(위) / 켬(아래)</p>
+<div class="c"><div class="row digits" style="justify-content:flex-start"><span>1</span><span>1</span><span>1</span><span>8</span><span>8</span><span>8</span></div>
+<div class="row digits t" style="justify-content:flex-start"><span>1</span><span>1</span><span>1</span><span>8</span><span>8</span><span>8</span></div></div>
+<p class="note">켜면 '1'도 '8'과 같은 폭을 차지해요.</p></div>
+
+<div><p class="cap">② 목록 오른쪽 정렬</p>
+<div class="c"><div class="row"><span>끔</span><span>111,111원</span></div><div class="row"><span>끔</span><span>888,888원</span></div>
+<div class="row"><span>켬</span><span class="t">111,111원</span></div><div class="row"><span>켬</span><span class="t">888,888원</span></div></div>
+<p class="note">켜면 같은 자리 숫자가 세로로 줄을 서요.</p></div>
+
+<div><p class="cap">③ 값이 바뀔 때 (입력 중·카운트)</p>
+<div class="c"><div style="font-size:12px;color:#5B6470">끔</div><div class="big" id="a"></div>
+<div style="font-size:12px;color:#5B6470">켬</div><div class="big t" id="b"></div></div>
+<p class="note">끄면 숫자가 바뀔 때마다 옆 글자가 흔들려요.</p></div>
+</div>
+<script>
+const v=['11,111원','18,111원','81,181원','88,888원','11,811원'];let i=0;
+function tick(){document.getElementById('a').textContent=v[i];document.getElementById('b').textContent=v[i];i=(i+1)%v.length}
+tick();setInterval(tick,700);
+</script>
+</body></html>

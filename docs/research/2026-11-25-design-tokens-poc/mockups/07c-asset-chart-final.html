@@ -1,0 +1,35 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+body{margin:0;padding:16px;font-family:var(--font-sans,system-ui);background:var(--background,#fff);color:var(--foreground,#171717);font-size:14px;line-height:1.5}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:14px}
+.cap{font-size:13px;font-weight:700;margin:0 0 6px}
+.card{border-radius:14px;padding:12px;font-family:'Pretendard',sans-serif}
+.lg{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.lg button{font:inherit;font-size:12px;border-radius:999px;padding:3px 10px 3px 8px;cursor:pointer;border:1px solid var(--bd);background:transparent;color:var(--tx)}
+.lg button.on{border-color:var(--tx)}
+.lg i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px}
+.hint{font-size:12px;color:var(--muted-foreground,#666);margin:0 0 8px}
+</style></head><body>
+<p class="hint">범례 칩을 누르면 그 묶음만 남고 나머지는 회색이 돼요. 다시 누르면 전체 보기.</p>
+<div class="grid"><div><p class="cap">라이트</p><div class="card" id="L"></div></div><div><p class="cap">다크</p><div class="card" id="D"></div></div></div>
+<script>
+const names=['쓸 수 있는 돈','모으는 돈','투자','포인트·상품권','빌려준 돈','갚아야 할 돈'];
+const P={L:{card:'#FFFFFF',text:'#191F28',sub:'#5B6470',bd:'#D5D9D7',dim:'#E5E8E6',axis:'#868E8A',c:['#EDB345','#7A59C3','#008B96','#ECB7DF','#B66B31','#8E9592']},
+ D:{card:'#1C1F1E',text:'#E8EAE9',sub:'#8E9592',bd:'#3A3F3C',dim:'#2C302E',axis:'#767D7A',c:['#F7C15F','#A083EA','#13A5B2','#F8D0EE','#D78951','#6E7572']}};
+const data=[[900,1200,1500,80,0,-1400],[850,1300,1450,90,300,-1350],[1000,1400,1600,70,300,-1300],[780,1500,1750,100,200,-1250],[950,1600,1700,60,200,-1200],[1100,1700,1900,90,100,-1150]];
+const sel={L:-1,D:-1};
+function draw(k){const p=P[k],W=290,H=210,z=145,sc=0.024,bw=28,gap=(W-40)/6;let s='',pts=[];
+ const col=i=>sel[k]<0||sel[k]===i?p.c[i]:p.dim;
+ data.forEach((d,m)=>{const x=30+m*gap;let y=z;
+  d.slice(0,5).forEach((v,i)=>{if(!v)return;const h=v*sc;y-=h;s+=`<rect x="${x}" y="${y}" width="${bw}" height="${h}" fill="${col(i)}" stroke="${p.card}" stroke-width="1.2"/>`});
+  s+=`<rect x="${x}" y="${z+1.5}" width="${bw}" height="${-d[5]*sc}" fill="${col(5)}" rx="2"/>`;
+  pts.push([x+bw/2,z-d.reduce((a,b)=>a+b,0)*sc]);
+  s+=`<text x="${x+bw/2}" y="${H-4}" font-size="10" text-anchor="middle" fill="${p.sub}">${6+m}월</text>`});
+ const line=pts.map(q=>q.join(',')).join(' ');
+ s+=`<line x1="20" x2="${W-6}" y1="${z}" y2="${z}" stroke="${p.axis}"/><polyline points="${line}" fill="none" stroke="${p.card}" stroke-width="5"/><polyline points="${line}" fill="none" stroke="${p.text}" stroke-width="2"/>`+pts.map(q=>`<circle cx="${q[0]}" cy="${q[1]}" r="3.5" fill="${p.text}" stroke="${p.card}" stroke-width="2"/>`).join('');
+ const el=document.getElementById(k);el.style.background=p.card;el.style.setProperty('--bd',p.bd);el.style.setProperty('--tx',p.text);
+ el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" width="100%">${s}</svg><div class="lg">${names.map((n,i)=>`<button class="${sel[k]===i?'on':''}" onclick="sel.${k}=sel.${k}===${i}?-1:${i};draw('${k}')"><i style="background:${p.c[i]}"></i>${n}</button>`).join('')}<button disabled style="opacity:.8"><i style="background:${p.text};height:2px;vertical-align:3px"></i>순자산</button></div>`}
+draw('L');draw('D');
+</script>
+</body></html>

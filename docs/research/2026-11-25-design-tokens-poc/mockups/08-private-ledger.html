@@ -1,0 +1,29 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+body{margin:0;padding:16px;font-family:var(--font-sans,system-ui);background:var(--background,#fff);color:var(--foreground,#171717);font-size:14px;line-height:1.5}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+.cap{font-size:13px;font-weight:700;margin:0 0 6px}
+.ph{border-radius:16px;padding:10px;font-family:'Pretendard',sans-serif;margin-bottom:8px}
+.c{border-radius:12px;padding:8px 12px;margin-bottom:8px}
+.top{display:flex;align-items:center;gap:8px;padding:6px 0}
+.amt{font-size:28px;font-weight:700;font-variant-numeric:tabular-nums}
+.chip{display:inline-flex;align-items:center;gap:4px;font-size:13px;font-weight:600;border-radius:999px;padding:2px 9px}
+.r{display:flex;justify-content:space-between;align-items:center;padding:7px 0;font-size:15px}
+.r b{font-weight:600;font-variant-numeric:tabular-nums}
+.s{font-size:13px}
+</style></head><body>
+<div class="grid" id="g"></div>
+<script>
+const lock='<svg width="11" height="12" viewBox="0 0 11 12"><rect x="1" y="5" width="9" height="7" rx="1.5" fill="currentColor"/><path d="M3 5V3.5a2.5 2.5 0 0 1 5 0V5" stroke="currentColor" stroke-width="1.4" fill="none"/></svg>';
+const O=[['A 보라',['#6246B5','#EFEAFB'],['#B9A6F2','#2C2540']],['B 자두 (추천)',['#8E3B7E','#F7E8F3'],['#E7A3D8','#3A2335']],['C 무채색',['#191F28','#E5E8E6'],['#E8EAE9','#2F3331']]];
+const M={l:{bg:'#F4F5F3',card:'#FFFFFF',t:'#191F28',s:'#5B6470',inc:'#1B64DA'},d:{bg:'#121413',card:'#1C1F1E',t:'#E8EAE9',s:'#8E9592',inc:'#4795FF'}};
+document.getElementById('g').innerHTML=O.map(([n,l,d])=>`<div><p class="cap">${n}</p>${[['l',l],['d',d]].map(([k,[fg,bg]])=>{const m=M[k];return `<div class="ph" style="background:${m.bg};color:${m.t}">
+<div class="c" style="background:${m.card}"><div class="s" style="color:${m.s}">확인</div><div class="top"><span class="amt">−24,000원</span><span class="chip" style="color:${fg};background:${bg}">${lock}내 장부</span></div></div>
+<div class="c" style="background:${m.card}">
+<div class="r"><div>장보기<div class="s" style="color:${m.s}">공용 · 이마트</div></div><b>−111,110원</b></div>
+<div class="r"><div>책<div class="s" style="color:${fg}">${lock} 내 장부 · 교보문고</div></div><b>−24,000원</b></div>
+<div class="r"><div>용돈<div class="s" style="color:${fg}">${lock} 내 장부</div></div><b style="color:${m.inc}">+300,000원</b></div>
+</div></div>`}).join('')}</div>`).join('');
+</script>
+</body></html>
