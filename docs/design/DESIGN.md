@@ -2,13 +2,6 @@
 version: alpha
 name: oat
 description: 가족 가계부·자산 앱 oat의 디자인 토큰. 라이트·다크 쌍, 숫자가 주인공, Pine은 행동에만.
-omitted:
-  - section: spacing
-    reason: "간격·여백은 다음 티켓 '주요 화면 시안'에서 정한다"
-  - section: rounded
-    reason: "모서리 반경은 다음 티켓 '주요 화면 시안'에서 정한다"
-  - section: components
-    reason: "컴포넌트 토큰은 다음 티켓 '주요 화면 시안'에서 정한다. 그때 함께 정할 색·글자: 주의색([지연] 배지·기한 지남), 시트·토스트 뒤 가림막, 줄 누름, 비활성 버튼 면, 버튼 라벨·탭 바 라벨·키패드 글자"
 colors:
   primary: "#14573F"
   light:
@@ -26,6 +19,10 @@ colors:
     divider: "#E5E8E6"
     border-strong: "#868E8A"
     danger: "#C81E2D"
+    warning: "#A85400"
+    warning-soft: "#FFF3E0"
+    scrim: "#00000033"
+    pressed: "#191F280D"
     amount-income: "#1B64DA"
     amount-up: "#C81E2D"
     amount-up-display: "#F04452"
@@ -59,6 +56,10 @@ colors:
     divider: "#2C302E"
     border-strong: "#767D7A"
     danger: "#FF6B6B"
+    warning: "#FFA861"
+    warning-soft: "#3D2500"
+    scrim: "#0000008F"
+    pressed: "#E8EAE91C"
     amount-income: "#4795FF"
     amount-up: "#FF6B6B"
     amount-up-display: "#FF6B6B"
@@ -132,6 +133,168 @@ typography:
     fontSize: 11px
     fontWeight: 400
     lineHeight: 16.5px
+  label-lg:
+    fontFamily: Pretendard
+    fontSize: 17px
+    fontWeight: 600
+    lineHeight: 25.5px
+  label-md:
+    fontFamily: Pretendard
+    fontSize: 15px
+    fontWeight: 600
+    lineHeight: 22.5px
+  label-sm:
+    fontFamily: Pretendard
+    fontSize: 13px
+    fontWeight: 600
+    lineHeight: 18px
+  label-tab:
+    fontFamily: Pretendard
+    fontSize: 11px
+    fontWeight: 600
+    lineHeight: 16.5px
+  keypad:
+    fontFamily: Pretendard
+    fontSize: 28px
+    fontWeight: 600
+    lineHeight: 34px
+    fontFeature: '"tnum"'
+rounded:
+  badge: 6px
+  input: 12px
+  button: 16px
+  card: 20px
+  sheet: 20px
+  full: 9999px
+spacing:
+  xs: 4px
+  sm: 8px
+  md: 12px
+  lg: 16px
+  xl: 20px
+  2xl: 24px
+  3xl: 32px
+  4xl: 40px
+  gutter: 24px
+  card-margin: 12px
+  card-padding: 20px
+  card-gap: 12px
+  band: 16px
+  section-top: 24px
+  section-bottom: 8px
+  row-min: 56px
+  touch-min: 44px
+components:
+  button-primary:
+    backgroundColor: "{colors.light.primary}"
+    textColor: "{colors.light.on-primary}"
+    typography: "{typography.label-lg}"
+    rounded: "{rounded.button}"
+    height: 56px
+  button-primary-pressed:
+    backgroundColor: "{colors.light.primary-pressed}"
+    textColor: "{colors.light.on-primary}"
+  button-primary-disabled:
+    backgroundColor: "{colors.light.surface-alt}"
+    textColor: "{colors.light.text-disabled}"
+  button-secondary:
+    backgroundColor: "{colors.light.surface-alt}"
+    textColor: "{colors.light.text}"
+    typography: "{typography.label-lg}"
+    rounded: "{rounded.button}"
+    height: 56px
+  pill:
+    backgroundColor: "{colors.light.surface-alt}"
+    textColor: "{colors.light.text}"
+    typography: "{typography.label-md}"
+    rounded: "{rounded.full}"
+    height: 36px
+    padding: 14px
+  pill-accent:
+    backgroundColor: "{colors.light.primary-soft}"
+    textColor: "{colors.light.primary-text}"
+    typography: "{typography.label-md}"
+    rounded: "{rounded.full}"
+    height: 36px
+    padding: 14px
+  text-button:
+    textColor: "{colors.light.primary-text}"
+    typography: "{typography.label-md}"
+  danger-text-button:
+    textColor: "{colors.light.danger}"
+    typography: "{typography.label-lg}"
+  chip:
+    backgroundColor: "{colors.light.surface}"
+    textColor: "{colors.light.text}"
+    typography: "{typography.label-md}"
+    rounded: "{rounded.full}"
+    height: 36px
+    padding: 12px
+  chip-selected:
+    backgroundColor: "{colors.light.primary-soft}"
+    textColor: "{colors.light.primary-text}"
+  chip-ledger-private:
+    backgroundColor: "{colors.light.ledger-private-soft}"
+    textColor: "{colors.light.ledger-private}"
+  badge:
+    backgroundColor: "{colors.light.surface-alt}"
+    textColor: "{colors.light.text-sub}"
+    typography: "{typography.label-sm}"
+    rounded: "{rounded.badge}"
+    padding: 6px
+  badge-warning:
+    backgroundColor: "{colors.light.warning-soft}"
+    textColor: "{colors.light.warning}"
+    typography: "{typography.label-sm}"
+    rounded: "{rounded.badge}"
+    padding: 6px
+  input:
+    backgroundColor: "{colors.light.surface}"
+    textColor: "{colors.light.text}"
+    typography: "{typography.body}"
+    rounded: "{rounded.input}"
+    height: 48px
+  list-row:
+    backgroundColor: "{colors.light.surface}"
+    textColor: "{colors.light.text}"
+    typography: "{typography.body}"
+    height: 56px
+    padding: 24px
+  list-row-pressed:
+    backgroundColor: "{colors.light.pressed}"
+  card:
+    backgroundColor: "{colors.light.surface}"
+    rounded: "{rounded.card}"
+    padding: 20px
+  band:
+    backgroundColor: "{colors.light.background}"
+    height: 16px
+  sheet:
+    backgroundColor: "{colors.light.surface}"
+    rounded: "{rounded.sheet}"
+  scrim:
+    backgroundColor: "{colors.light.scrim}"
+  toast:
+    backgroundColor: "{colors.light.text}"
+    textColor: "{colors.light.surface}"
+    typography: "{typography.body-sm}"
+    rounded: "{rounded.input}"
+  fab:
+    backgroundColor: "{colors.light.primary}"
+    textColor: "{colors.light.on-primary}"
+    rounded: "{rounded.full}"
+    size: 56px
+  tab-bar:
+    backgroundColor: "{colors.light.surface}"
+    textColor: "{colors.light.text-sub}"
+    typography: "{typography.label-tab}"
+    height: 49px
+  tab-bar-selected:
+    textColor: "{colors.light.primary-text}"
+  keypad-key:
+    textColor: "{colors.light.text}"
+    typography: "{typography.keypad}"
+    height: 56px
 ---
 
 # oat 디자인 토큰
@@ -141,6 +304,7 @@ typography:
 - 관련 ADR: 0033(숫자 색은 가계부와 투자가 다른 문법), 0034(디자인 정본은 DESIGN.md, 스킬은 읽기만), 0021(Pine), 0016(묶음)
 - 전제: [브랜드](brand.md), [통계 화면 구성](stats-screens.md), [모바일 입력 UX 원칙](mobile-input.md), [빌려준 돈](personal-loans.md)
 - PoC: [디자인 토큰 PoC](../research/2026-11-25-design-tokens-poc.md) (대비·색각·폭 계산 스크립트)
+- 2026-11-26 더함: 주의색·가림막·줄 누름, 버튼·탭·키패드 글자, 간격·모서리·컴포넌트 토큰([주요 화면 시안: 홈·분석·자산·투자·입력 퍼널·나만 보기](https://github.com/Gn0lee/oat/issues/538), ADR 0035·0036). 화면에 쓰는 규칙은 [화면 문법](screen-grammar.md)에 있다. 간격·모서리·크기 값은 **초안**이고 구현 때 실기기로 조정한다.
 - 리뷰: 다른 모델(Fable)의 독립 리뷰를 반영했다(숫자 색을 기록 종류로 가름, 가구원 줄 무색, 투자 화면의 배당, 다크 묶음 색 밝기, 카테고리 막대 대비, 큰 숫자 규칙 초안 표시와 구현 주의, 부호 범위, 위험 색, 개인 장부 칩 문구와 본인 화면 한정, DTCG 내보내기 손실, 다음 티켓 토큰 목록).
 - 형식: [Google Labs DESIGN.md](https://github.com/google-labs-code/design.md) (alpha). 맨 위 YAML이 정본 값이고, 아래 글은 쓰는 규칙이다. `npx @google/design.md lint`로 검사하고 `export --format dtcg`로 `tokens.json`을 만든다.
 - 새 레포가 생기면 이 파일을 레포 루트 `DESIGN.md`로 옮긴다(디자인 스킬이 루트에서 찾는다).
@@ -208,7 +372,7 @@ oat는 가족이 함께 쓰는 가계부·자산 앱이다. iOS 앱이 먼저이
   | 시세로 생긴 증감: 평가 손익, 종목 등락, 실현손익 | 상승 `amount-up` 빨강, 하락 `amount-down` 파랑 |
   | 지출 | 기본 글자색 + − |
   | 환불·정산·원 기록을 가리키는 혜택(지출을 줄임, 수입이 아님) | 기본 글자색 + + |
-  | 이체, 빌려준 돈 돌려받음, 카드대금, 잔액 맞춤 | 기본 글자색 + 부호 |
+  | 이체, 빌려준 돈 돌려받음, 카드대금, 잔액 맞춤 | 기본 글자색 + 부호. 단 기록 탭처럼 가구 전체 목록의 이체는 부호 없이 쓰고 보조 줄에 `보내는 곳 → 받는 곳`을 둔다. 지갑 내역에서는 그 지갑 기준 부호 |
   | "평소 이맘때보다 12만 원 덜" 같은 차이 | 기본 글자색 + 부호·문장 |
   | 순자산·묶음 증감(월별 자산 추이) | 기본 글자색 + 부호. 시세보다 월급·지출로 바뀌는 숫자라 평가 문법을 쓰지 않는다 |
   | 다른 가구원의 "○○의 개인 기록" 합계 줄, 숨긴 지갑의 주인 이름 줄 | 기본 글자색. 가구원 줄에는 색을 넣지 않는다 |
@@ -221,7 +385,26 @@ oat는 가족이 함께 쓰는 가계부·자산 앱이다. iOS 앱이 먼저이
 
 | 토큰 | 라이트 | 다크 | 규칙 |
 |---|---|---|---|
-| `danger` | `#C81E2D` | `#FF6B6B` | 삭제 같은 되돌리기 어려운 행동과 입력 오류. 늘 아이콘 또는 문장과 함께 쓴다. 값은 `amount-up`과 같지만 이름을 나눈다 |
+| `danger` | `#C81E2D` | `#FF6B6B` | 삭제 같은 되돌리기 어려운 행동과 입력 오류, 보내지 못한 기록. 늘 아이콘 또는 문장과 함께 쓴다. 값은 `amount-up`과 같지만 이름을 나눈다 |
+
+### 주의
+
+| 토큰 | 라이트 | 다크 | 규칙 |
+|---|---|---|---|
+| `warning` | `#A85400` | `#FFA861` | 사람이 한 번 봐야 하는 상태의 배지 글자: 시세 [지연], 갚기로 한 날 지남. 모든 면 위 4.54 이상 / 7.54 이상 |
+| `warning-soft` | `#FFF3E0` | `#3D2500` | 주의 배지 바탕(TDS orange50 계열) |
+
+- 기한이 지난 일에 빨강을 쓰지 않는다. 빨강은 상승 숫자와 삭제·오류의 색이고, 빌려준 돈의 기한은 사람 사이의 일이라 빨강이면 "연체·잘못"으로 읽힌다.
+- 주황은 배지 글자에만 쓴다. 자산 추이의 "쓸 수 있는 돈" 노랑(`chart-group-cash`)과 같은 자리에 나오지 않는다.
+
+### 덮개
+
+| 토큰 | 라이트 | 다크 | 규칙 |
+|---|---|---|---|
+| `scrim` | `#00000033`(검정 20%) | `#0000008F`(검정 56%) | 시트·확인 시트 뒤 가림막. TDS `lightThemeBackgroundDimmed`·`darkThemeBackgroundDimmed` 값 |
+| `pressed` | `#191F280D`(`text` 5%) | `#E8EAE91C`(`text` 11%) | 목록 줄·칸 줄을 누르는 동안 덮는 색. 버튼은 `primary-pressed` |
+
+- 덮개는 투명도가 있는 색이라 대비 검사 대상이 아니다.
 
 ### 개인 장부
 
@@ -277,6 +460,11 @@ oat는 가족이 함께 쓰는 가계부·자산 앱이다. iOS 앱이 먼저이
 | `footnote` | 13/19.5 | Regular | `footnote` | 설명 |
 | `amount-sm` | 13/19.5 | SemiBold, 숫자 폭 고정 | `footnote` | 작은 금액. 색이 든 금액의 하한 |
 | `caption` | 11/16.5 | Regular | `caption2` | 날짜·차트 축만. 금액에 쓰지 않는다 |
+| `label-lg` | 17/25.5 | SemiBold | `body` | 주 버튼·보조 버튼, 위험 글자 버튼 |
+| `label-md` | 15/22.5 | SemiBold | `subheadline` | 알약·칩·글자 버튼 |
+| `label-sm` | 13/18 | SemiBold | `footnote` | 배지 |
+| `label-tab` | 11/16.5 | SemiBold | `caption2` | 탭 바 라벨 |
+| `keypad` | 28/34 | SemiBold, 숫자 폭 고정 | `title1`(상한 있음) | 금액 키패드 숫자. 키 높이가 고정이라 `maxFontSizeMultiplier`로 상한을 둔다 |
 
 - 크기와 1.5배 줄 간격은 토스 TDS(본문 17/25.5, 15, 13, 11)에 맞췄다. 한글은 받침 때문에 줄 간격이 넉넉해야 한다.
 - **숫자 폭 고정**(`tnum`, RN `fontVariant: ['tabular-nums']`)은 `amount` 계열에만 켠다. 목록에서 자릿수가 세로로 맞고, 입력 중 글자가 흔들리지 않는다. 문장 속 숫자(날짜·개수)는 끈다. Pretendard 기본 숫자는 폭이 들쭉날쭉하다(Bold `1` 960, `0` 1352 / 2048).
@@ -295,6 +483,48 @@ oat는 가족이 함께 쓰는 가계부·자산 앱이다. iOS 앱이 먼저이
 - SE 2세대 카드 안 폭 311pt에서 잰 결과: 기본 크기에서는 −123억(`−12,345,678,900원`, 298pt)까지 그대로 들어간다. 44pt 상한에서도 0.75배면 들어가서 두 줄은 거의 생기지 않는다.
 - 접근성 큰 크기에서는 목록 금액(최대 53)이 큰 숫자(44)보다 커질 수 있다. 위계가 좁혀지는 것을 받아들인다(TDS와 같음).
 
+## Layout
+
+값은 초안이다(구현 때 실기기로 조정). 어디에 쓰는지는 [화면 문법](screen-grammar.md).
+
+- 간격은 4 단위: `xs` 4 · `sm` 8 · `md` 12 · `lg` 16 · `xl` 20 · `2xl` 24 · `3xl` 32 · `4xl` 40.
+- `gutter` 24: 평면 화면의 좌우 여백, 상단 바·섹션 제목·목록 줄의 글자 시작선(TDS ListRow·ListHeader·Top과 같음).
+- `card-margin` 12 · `card-padding` 20 · `card-gap` 12: 요약 화면(홈·자산 탭) 카드(토스 홈 실측과 같음). 카드 화면의 글자 시작선은 32라서 평면 화면(24)과 맞추지 않는다.
+- `band` 16: 평면 화면에서 주제가 크게 바뀔 때 넣는 회색 띠(TDS `Border height16`). 색은 `background`.
+- `section-top` 24 · `section-bottom` 8: 띠 아래 섹션 제목의 위·아래.
+- `row-min` 56: 목록 줄·칸 줄 최소 높이. `touch-min` 44: 누를 수 있는 모든 것의 최소 누름 영역(Apple).
+- 기준 폭은 iPhone SE 2세대(375pt).
+
+## Shapes
+
+- 모서리: `badge` 6 · `input` 12 · `button` 16 · `card` 20 · `sheet` 20(위 두 모서리) · `full`(칩·알약·떠 있는 `+`).
+- 그림자는 쓰지 않는다. 면은 `background`·`surface` 색 차이로 나눈다. 다크에서도 올라온 면이 더 밝다(`surface` > `background`).
+- iOS 순정 시트(true-sheet)를 쓰면 시트 모서리는 시스템 값을 따른다.
+
+## Components
+
+YAML `components`는 라이트 묶음을 가리킨다. 다크는 같은 이름의 `dark` 토큰으로 바꿔 읽는다(DESIGN.md 형식에 모드별 컴포넌트가 없다). 그래서 린터에 "참조 안 됨" 경고(54개)가 나오고, 비활성 버튼 대비 경고 1개는 WCAG의 비활성 예외라 의도한 것이다. 오류는 0이다.
+
+| 컴포넌트 | 모양 | 쓰는 곳 |
+|---|---|---|
+| `button-primary` | Pine 면, 흰 `label-lg`, 높이 56, 모서리 16 | 화면당 하나, 아래 고정(`저장`·`다음`). 누름 `primary-pressed` |
+| `button-primary-disabled` | `surface-alt` 면 + `text-disabled` | 누를 수 없는 주 버튼. Pine을 흐리게 하지 않는다 |
+| `button-secondary` | `surface-alt` 면, `text` | 주 버튼 위·옆(`저장하고 하나 더`, 확인 시트 `취소`) |
+| `pill` / `pill-accent` | 높이 36, 완전 둥글게, `label-md` | 줄·카드 안 작은 행동(`보기`·`확정`). 대표 행동 하나만 accent |
+| `text-button` | `primary-text` 글자 | `더 보기`·`건너뛰기` |
+| `danger-text-button` | `danger` 글자 | `기록 삭제`. 빨강 면 버튼은 쓰지 않고 확인 시트를 한 번 거친다 |
+| `chip` / `chip-selected` / `chip-ledger-private` | 높이 36, 완전 둥글게, `border-strong` 테두리 | 누를 수 있는 거르개·통화·범례·장부 칩 |
+| `badge` / `badge-warning` | 모서리 6, 테두리 없음, `label-sm` | 표시만 하는 상태(추정·보내는 중·지난번과 같음 / 지연·갚기로 한 날 지남) |
+| `input` | 높이 48, 모서리 12, `border-strong` 테두리 | 검색·메모. `surface-alt` 위에는 두지 않는다 |
+| `list-row` | 최소 56, 좌우 24, 누름 `pressed` | 목록 줄·칸 줄 |
+| `card` | `surface`, 모서리 20, 안 20 | 요약 화면(홈·자산 탭)에만 |
+| `band` | `background`, 높이 16 | 평면 화면의 주제 경계 |
+| `sheet` + `scrim` | 위 모서리 20, 가림막 | 한 칸 고르기·고치기, 확인 시트 |
+| `toast` | `text` 면에 `surface` 글자(반전) | "저장했어요 · 되돌리기" |
+| `fab` | Pine 원 56 | 홈·기록 탭의 떠 있는 `+` |
+| `tab-bar` | 높이 49(+홈 표시줄), `label-tab`, 선택 `primary-text` | 하단 탭 4개 |
+| `keypad-key` | 높이 56, `keypad` 글자 | 금액 키패드 |
+
 ## Do's and Don'ts
 
 - Do: 색이 든 금액과 증감·흐름 줄에는 늘 +/− 부호를 붙인다. 합계·잔액에는 붙이지 않는다(음수만 −).
@@ -303,5 +533,7 @@ oat는 가족이 함께 쓰는 가계부·자산 앱이다. iOS 앱이 먼저이
 - Don't: Pine을 금액·차트·큰 면적 배경에 쓰지 않는다.
 - Don't: 정보가 담긴 글자에 `text-disabled`를 쓰거나 숫자를 흐리게 하지 않는다.
 - Don't: `-display` 숫자 색을 24pt 미만(굵게 19pt 미만)에 쓰지 않는다.
-- Don't: 묶음 색을 자산 추이 밖(목록 점, 배지 등)에 쓸지는 다음 티켓 시안에서 정하기 전까지 쓰지 않는다.
+- Don't: 묶음 색을 자산 추이 밖(목록 점, 배지 등)에 쓰지 않는다(주요 화면 시안에서 확인).
+- Don't: 기한 지남·지연에 빨강을 쓰지 않는다. `warning` 배지를 쓴다.
+- Don't: 화면에서 새 부품을 바로 만들지 않는다. 이 파일의 `components`에 먼저 더한다(ADR 0036).
 - Don't: 빗금으로 계열을 나누지 않는다.

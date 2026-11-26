@@ -1,0 +1,46 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>/*BASE*/ /*TOKENS*/
+.ph{padding-bottom:16px}
+.ph .card{background:var(--o-surface);border-radius:20px;padding:20px;margin:0 16px 12px}
+.ph .flat{background:var(--o-surface)}
+.ph .band{height:12px;background:var(--o-background)}
+.ph .hd{height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 20px}
+.ph .card .hd,.ph .cardpage .hd{padding:0 16px}
+.ph .rw{display:flex;justify-content:space-between;align-items:center;padding:12px 0}
+.ph .pad{padding:0 20px}
+.ph .dh{padding:16px 20px 4px}
+.ph .card .dh{padding:4px 0 0}
+.ph .dv{height:1px;background:var(--o-divider)}
+</style></head><body>
+<p class="note">같은 두 화면(홈, 기록 목록)을 세 가지 면 방향으로 그렸어요. 토큰은 DESIGN.md 그대로예요.</p>
+<div id="r"></div>
+<script>
+const heroInner=`<div class="fn sub">이번 달 쓴 돈</div><div class="hero">1,284,500원</div>
+<div class="bs">평소 이맘때보다 12만 원 덜</div><div class="fn sub">공용 98만 원 · 내 30만 원</div>
+<div class="rw" style="padding-bottom:0"><span class="bs sub">수입</span><span class="amt inc">+3,800,000원</span></div>
+<div class="rw" style="padding-bottom:0"><span class="bs sub">남은 돈</span><span class="amt">2,515,500원</span></div>`;
+const soonInner=`<div class="t3">곧 나갈 돈</div><div class="fn sub">3건 · 약 1,120,000원</div>
+<div class="rw"><div><div class="bd">관리비</div><div class="fn sub">11월 28일</div></div><span class="amt">−240,000원</span></div>
+<div class="rw" style="padding-bottom:0"><div><div class="bd">가족카드 대금</div><div class="fn sub">12월 1일</div></div><span class="amt">−820,000원</span></div>`;
+const checkInner=`<div class="t3">확인할 것</div>
+<div class="rw" style="padding-bottom:0"><div><div class="bd">월세 예정</div><div class="fn sub">오늘 · 생활비 통장</div></div><span class="bs pine sb6">확정</span></div>`;
+const rows=[['11월 26일 수요일',[['점심','식비 · 지수 · 가족카드','−12,000원',''],['월급','급여 · 민호 · 급여 통장','+3,800,000원','inc']]],
+ ['11월 25일 화요일',[['생활비 보탬','민호 급여 통장 → 생활비 통장','300,000원',''],['이마트','장보기 · 민호','−84,300원',''],['쿠팡 환불','장보기 · 지수 · 가족카드','+12,900원','']]]];
+const rowHtml=(r)=>`<div class="rw"><div><div class="bd">${r[0]}</div><div class="fn sub">${r[1]}</div></div><span class="amt ${r[3]}">${r[2]}</span></div>`;
+const top=(t)=>`<div class="sb"></div><div class="hd"><span class="t2">${t}</span><span class="sub">◯</span></div>`;
+const homeCard=()=>top('11월')+`<div class="card">${heroInner}</div><div class="card">${checkInner}</div><div class="card">${soonInner}</div>`;
+const homeFlat=()=>`<div class="flat">${top('11월')}<div class="pad" style="padding-bottom:20px">${heroInner}</div></div><div class="band"></div>
+<div class="flat pad" style="padding-top:20px;padding-bottom:20px">${checkInner}</div><div class="band"></div><div class="flat pad" style="padding-top:20px;padding-bottom:20px">${soonInner}</div>`;
+const listCard=()=>top('기록')+rows.map(([d,rs])=>`<div class="card" style="padding-top:12px;padding-bottom:8px"><div class="dh fn sub">${d}</div>${rs.map(rowHtml).join('')}</div>`).join('');
+const listFlat=()=>`<div class="flat" style="min-height:100%">${top('기록')}${rows.map(([d,rs],i)=>`${i?'<div class="band"></div>':''}<div class="dh fn sub">${d}</div><div class="pad">${rs.map(rowHtml).join('')}</div>`).join('')}</div>`;
+const O=[
+ ['A · 어디나 회색 바탕 + 흰 카드',homeCard,listCard,''],
+ ['B · 어디나 흰 바탕 + 굵은 띠',homeFlat,listFlat,''],
+ ['C · 요약 화면은 카드, 한 주제 화면은 평면 + 띠 (추천)',homeCard,listFlat,''],
+ ['C 다크',homeCard,listFlat,' dark'],
+];
+document.getElementById('r').innerHTML=O.map(([n,h,l,d])=>`<p class="cap-h">${n}</p><div class="row">
+<div class="ph${d}"${h===homeFlat?' style="background:var(--o-surface)"':''}>${h()}</div>
+<div class="ph${d}"${l===listFlat?' style="background:var(--o-surface)"':''}>${l()}</div></div>`).join('');
+</script></body></html>

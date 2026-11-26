@@ -1,0 +1,48 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>/*BASE*/ /*TOKENS*/
+.ph{--o-warning:#A85400;--o-warning-soft:#FFF3E0;height:600px}
+.ph.dark{--o-warning:#FFA861;--o-warning-soft:#3D2500}
+.ph .hd{height:52px;display:flex;align-items:center;padding:0 24px}
+.ph .w{background:var(--o-surface)}
+.ph .pad{padding:0 24px}
+.ph .rw{display:flex;justify-content:space-between;align-items:center;padding:12px 0;gap:8px}
+.ph .sh{padding:24px 24px 4px}
+.ph .badge{display:inline-block;font-size:13px;line-height:18px;font-weight:600;padding:0 6px;border-radius:6px;margin-right:4px}
+.ph .bN{background:var(--o-surface-alt);color:var(--o-text-sub)}
+.ph .bW{background:var(--o-warning-soft);color:var(--o-warning)}
+.ph .bD{background:transparent;color:var(--o-danger);padding:0;margin-right:6px}
+.ph .sk{background:var(--o-surface-alt);border-radius:8px}
+.ph .tb{color:var(--o-primary-text);font-size:17px;font-weight:600}
+.ph .pill{font-size:15px;font-weight:600;line-height:20px;padding:8px 14px;border-radius:999px;background:var(--o-surface-alt);color:var(--o-text)}
+.ph .card{background:var(--o-surface);border-radius:20px;padding:20px;margin:0 12px 12px}
+.ph .empty{padding:48px 24px;text-align:center}
+.ph .strip{padding:10px 24px;display:flex;justify-content:space-between}
+</style></head><body>
+<p class="note">상태 표시 규칙의 예시예요. 배지는 세 갈래(중립 회색·주의 주황·실패 빨강)예요.</p>
+<div id="r"></div>
+<script>
+const A=`<div class="sb"></div><div class="hd"><span class="t2">기록</span></div>
+<div class="w strip"><span class="bs">보내는 중 2건</span><span class="sub">›</span></div>
+<div class="w strip" style="margin-top:1px"><span class="bs"><span class="bD">⚠ 보내지 못한 기록 1건</span></span><span class="sub">›</span></div>
+<div class="w" style="margin-top:16px"><div class="sh fn sub" style="padding-top:16px">11월 26일</div><div class="pad">
+<div class="rw"><div><div class="bd">이마트</div><div class="fn sub"><span class="badge bN">보내는 중</span>장보기 · 민호</div></div><span class="amt">−84,300원</span></div>
+<div class="rw"><div><div class="bd">Uniqlo</div><div class="fn sub"><span class="badge bN">추정</span>의류 · 민호</div></div><span class="amt">−52,340원</span></div></div></div>
+<div style="height:16px"></div>
+<div class="w"><div class="sh fn sub">종목</div><div class="pad">
+<div class="rw"><div><div class="bd">삼성전자</div><div class="fn sub"><span class="badge bW">지연</span>11/25 종가 · 10주</div></div><div style="text-align:right"><div class="amt">712,000원</div><div class="amts up">+3.2%</div></div></div>
+<div class="rw"><div><div class="bd">어떤 ETF</div><div class="fn sub">시세 없음 · 평가에서 빠짐</div></div><span class="amt sub">−</span></div></div></div>`;
+const B=`<div class="sb"></div><div class="hd"><span class="t2">11월</span></div>
+<div class="card"><div class="t3" style="font-size:17px">확인할 것</div>
+<div class="rw"><div><div class="bd">지수에게 빌려준 돈</div><div class="fn sub"><span class="badge bW">갚기로 한 날 지남</span>11월 10일</div></div><span class="pill">보기</span></div>
+<div class="rw" style="padding-bottom:0"><div><div class="bd">가족카드 청구서</div><div class="fn sub">확정됐어요</div></div><span class="pill">보기</span></div></div>
+<div class="card"><div class="fn sub">이번 달 받은 돈</div><div class="t3" style="font-size:17px">아직 기록이 없어요</div><div class="pad" style="padding:8px 0 0"><span class="tb">기록 추가</span></div></div>
+<p class="cap" style="padding:0 24px;font-size:11px;color:#E5484D">↑ 빈 상태: 그림 없이 한 줄 + 행동 하나</p>
+<div class="card"><div class="sk" style="height:14px;width:40%"></div><div class="sk" style="height:30px;width:70%;margin-top:10px"></div><div class="sk" style="height:14px;width:55%;margin-top:10px"></div></div>
+<p class="cap" style="padding:0 24px;font-size:11px;color:#E5484D">↑ 처음 열 때(폰에 저장된 값이 없을 때)만 자리표시</p>`;
+const C=`<div class="sb"></div><div class="hd"><span class="bd">‹ 투자</span></div>
+<div class="empty"><div class="t3">불러오지 못했어요</div><div class="bs sub" style="margin-top:8px">연결을 확인하고 다시 시도해 주세요</div><div style="margin-top:20px"><span class="pill">다시 시도</span></div></div>
+<p style="padding:0 24px;font-size:11px;color:#E5484D">↑ 저장된 값도 없는 화면 전체 오류만 이 모양. 저장된 값이 있으면 그대로 보여주고 위에 한 줄:</p>
+<div class="w strip" style="margin-top:12px"><span class="fn sub">11/26 09:12에 받은 내용이에요 · 다시 시도</span></div>`;
+document.getElementById('r').innerHTML=['','dark'].map(m=>`<div class="row">${[['목록의 상태 배지',A],['홈: 주의·빈 상태·자리표시',B],['오류',C]].map(([n,h])=>`<div><p class="cap-h">${n}${m?' (다크)':''}</p><div class="ph ${m}">${h}</div></div>`).join('')}</div>`).join('');
+</script></body></html>

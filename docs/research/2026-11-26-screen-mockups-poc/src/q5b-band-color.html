@@ -1,0 +1,34 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>/*BASE*/ /*TOKENS*/
+.ph{background:var(--o-surface);height:667px}
+.ph .hd{height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 24px}
+.ph .pad{padding:0 24px}
+.ph .band{height:16px;background:var(--o-background)}
+.ph .kv{display:flex;justify-content:space-between;padding:12px 0}
+.ph .sh{padding:20px 24px 4px}
+.ph .tb{color:var(--o-primary-text);font-size:17px;font-weight:600}
+.ph .dg{color:var(--o-danger);font-size:17px;font-weight:600}
+.ph .act{display:flex;justify-content:space-between;padding:14px 0}
+.ph .rwS{display:flex;align-items:stretch;margin:0 -24px}
+.ph .rwS .in{flex:1;display:flex;justify-content:space-between;padding:12px 24px;background:var(--o-surface);transform:translateX(-80px)}
+.ph .rwS .del{width:80px;background:var(--o-danger);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;margin-left:-80px}
+.ph .x{position:relative}.ph .x:after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(135deg,transparent 0 10px,rgba(229,72,77,.08) 10px 12px)}
+</style></head><body>
+<p class="note">같은 기록 상세를 띠 색만 바꿔 그렸어요. 마지막은 띠 없이 흰 면 + 제목·여백이에요.</p>
+<div class="row" id="r"></div>
+<script>
+const D=`<div class="sb"></div><div class="hd"><span class="bd">‹</span><span class="bd sb6">기록</span><span style="width:12px"></span></div>
+<div class="pad" style="padding-bottom:24px"><div class="fn sub">이마트 · 공용 장부</div><div class="hero">−84,300원</div><div class="fn sub">11월 25일 화요일 18:42</div></div>
+<div class="band"></div><div class="pad" style="padding-top:8px">
+<div class="kv"><span class="bs sub">카테고리</span><span class="bd">장보기 <span class="sub">›</span></span></div>
+<div class="kv"><span class="bs sub">낸 곳</span><span class="bd">민호 · 가족카드 <span class="sub">›</span></span></div>
+<div class="kv"><span class="bs sub">쓴 사람</span><span class="bd">함께 <span class="sub">›</span></span></div></div>
+<div class="band"></div><div class="pad" style="padding-top:4px">
+<div class="act"><span class="bd">돌려받은 돈 기록</span><span class="sub">›</span></div>
+<div class="act"><span class="bd">다시 기록</span><span class="sub">›</span></div>
+<div class="act"><span class="dg">기록 삭제</span></div></div>`;
+const N=D.replace(/<div class="band"><\/div>/g,'<div style="height:24px"></div>');
+const V=[['A · 지금 #F4F5F3 (색상각 128°, 노란 초록 쪽)','#F4F5F3',D],['B · TDS #F2F4F6 (248°, 푸른 회색)','#F2F4F6',D],['C · 띠 없음, 흰 면 + 여백','#F4F5F3',N]];
+document.getElementById('r').innerHTML=V.map(([n,bg,h])=>`<div><p class="cap-h">${n}</p><div class="ph" style="--o-background:${bg}">${h}</div></div>`).join('');
+</script></body></html>

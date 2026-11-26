@@ -1,0 +1,65 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>/* 페이지 틀(시안 밖)은 Orca 테마 변수, 폰 안(.ph)은 DESIGN.md 토큰만 쓴다 */
+body{margin:0;padding:16px;font-family:var(--font-sans,system-ui);background:var(--background,#fff);color:var(--foreground,#171717);font-size:14px;line-height:1.5}
+.note{font-size:13px;color:var(--muted-foreground,#666);margin:4px 0 12px}
+.cap-h{font-size:14px;font-weight:700;margin:0 0 6px}
+.row{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;margin-bottom:20px}
+.ph{width:375px;flex:none;box-sizing:border-box;background:var(--o-background);color:var(--o-text);font-family:'Pretendard',system-ui,sans-serif;border-radius:28px;overflow:hidden;position:relative;border:1px solid var(--border,#ddd);font-size:17px;line-height:25.5px;letter-spacing:0}
+.ph *{box-sizing:border-box}
+.ph .sb{height:20px}
+/* 타이포 토큰 */
+.ph .hero{font-size:32px;line-height:42px;font-weight:700;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
+.ph .t1{font-size:26px;line-height:35px;font-weight:700}
+.ph .t2{font-size:22px;line-height:31px;font-weight:700}
+.ph .t3{font-size:20px;line-height:29px;font-weight:600}
+.ph .bd{font-size:17px;line-height:25.5px;font-weight:400}
+.ph .amt{font-size:17px;line-height:25.5px;font-weight:600;font-variant-numeric:tabular-nums}
+.ph .bs{font-size:15px;line-height:22.5px;font-weight:400}
+.ph .fn{font-size:13px;line-height:19.5px;font-weight:400}
+.ph .amts{font-size:13px;line-height:19.5px;font-weight:600;font-variant-numeric:tabular-nums}
+.ph .cp{font-size:11px;line-height:16.5px;font-weight:400}
+.ph .sub{color:var(--o-text-sub)}
+.ph .inc{color:var(--o-amount-income)}
+.ph .up{color:var(--o-amount-up)}
+.ph .dn{color:var(--o-amount-down)}
+.ph .pine{color:var(--o-primary-text)}
+.ph .sb6{font-weight:600}
+.ph .fx{display:flex;justify-content:space-between;align-items:center;gap:8px}
+ .ph{--o-primary:#14573f;--o-on-primary:#ffffff;--o-primary-pressed:#0e4431;--o-primary-text:#14573f;--o-primary-soft:#e6f0eb;--o-background:#f4f5f3;--o-surface:#ffffff;--o-surface-alt:#efecea;--o-text:#191f28;--o-text-sub:#5b6470;--o-text-disabled:#b0b8c1;--o-divider:#e5e8e6;--o-border-strong:#868e8a;--o-danger:#c81e2d;--o-warning:#a85400;--o-warning-soft:#fff3e0;--o-scrim:#00000033;--o-pressed:#191f280d;--o-amount-income:#1b64da;--o-amount-up:#c81e2d;--o-amount-up-display:#f04452;--o-amount-down:#1b64da;--o-amount-down-display:#3182f6;--o-ledger-private:#8e3b7e;--o-ledger-private-soft:#f7e8f3;--o-chart-group-cash:#edb345;--o-chart-group-saving:#7a59c3;--o-chart-group-invest:#008b96;--o-chart-group-point:#ecb7df;--o-chart-group-lent:#b66b31;--o-chart-group-debt:#8e9592;--o-chart-dim:#e5e8e6;--o-chart-neutral:#868e8a;--o-chart-line:#191f28;--o-chart-reference:#5b6470;--o-chart-axis:#868e8a} .ph.dark{--o-primary:#1f7a55;--o-on-primary:#ffffff;--o-primary-pressed:#186446;--o-primary-text:#5cc59a;--o-primary-soft:#1a2e25;--o-background:#121413;--o-surface:#1c1f1e;--o-surface-alt:#242826;--o-text:#e8eae9;--o-text-sub:#8e9592;--o-text-disabled:#565c59;--o-divider:#2c302e;--o-border-strong:#767d7a;--o-danger:#ff6b6b;--o-warning:#ffa861;--o-warning-soft:#3d2500;--o-scrim:#0000008f;--o-pressed:#e8eae91c;--o-amount-income:#4795ff;--o-amount-up:#ff6b6b;--o-amount-up-display:#ff6b6b;--o-amount-down:#4795ff;--o-amount-down-display:#4795ff;--o-ledger-private:#e7a3d8;--o-ledger-private-soft:#3a2335;--o-chart-group-cash:#f7c15f;--o-chart-group-saving:#886acf;--o-chart-group-invest:#3fbfcc;--o-chart-group-point:#f8d0ee;--o-chart-group-lent:#d78951;--o-chart-group-debt:#6e7572;--o-chart-dim:#2c302e;--o-chart-neutral:#767d7a;--o-chart-line:#e8eae9;--o-chart-reference:#8e9592;--o-chart-axis:#767d7a}
+.ph{height:667px}
+.ph .card{background:var(--o-surface);border-radius:20px;padding:20px 16px;margin:0 8px 12px}
+.ph .hd{height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 24px}
+.ph .top{padding:8px 24px 24px}
+.ph .rw{display:flex;justify-content:space-between;align-items:center;padding:12px 0}
+.ph .more{display:flex;justify-content:space-between;padding-top:8px}
+.ph .tabbar{position:absolute;left:0;right:0;bottom:0;height:83px;background:var(--o-surface);border-top:1px solid var(--o-divider);display:flex;justify-content:space-around;padding-top:8px;font-size:11px;color:var(--o-text-sub)}
+.ph .tabbar b{color:var(--o-primary-text);font-weight:600}
+.ph .fab{position:absolute;right:16px;bottom:99px;width:56px;height:56px;border-radius:28px;background:var(--o-primary);color:var(--o-on-primary);display:flex;align-items:center;justify-content:center;font-size:28px}
+.ph .fold{position:absolute;left:0;right:0;top:584px;border-top:2px dashed #E5484D;opacity:.5}
+</style></head><body>
+<p class="note">SE 2세대 화면 높이(667pt)예요. 빨간 점선 아래는 탭 바에 가려요. 확인할 것·받을 돈이 둘 다 있는 바쁜 날을 그렸어요.</p>
+<div class="row" id="r"></div>
+<script>
+const heroCore=`<div class="fn sub">이번 달 쓴 돈</div><div class="hero">1,284,500원</div>
+<div class="bs">평소 이맘때보다 12만 원 덜</div><div class="fn sub">공용 98만 원 · 내 30만 원</div>`;
+const incRows=`<div class="rw" style="padding-bottom:0"><span class="bs sub">수입</span><span class="amt inc">+3,800,000원</span></div>
+<div class="rw" style="padding-bottom:0"><span class="bs sub">남은 돈</span><span class="amt">2,515,500원</span></div>`;
+const check=`<div class="card"><div class="t3">확인할 것 2</div>
+<div class="rw"><div><div class="bd">월세 예정</div><div class="fn sub">오늘 · 생활비 통장</div></div><span class="bs pine sb6">확정</span></div>
+<div class="more"><span class="bs sub">1건 더 보기</span><span class="sub">›</span></div></div>`;
+const notice=`<div class="card"><div class="t3">눈에 띄는 것</div><div class="bs" style="padding-top:8px">외식을 평소 이맘때보다 9만 원 더 썼어요</div></div>`;
+const soon=`<div class="card"><div class="t3">곧 나갈 돈</div><div class="fn sub">3건 · 약 1,120,000원</div>
+<div class="rw"><div><div class="bd">관리비</div><div class="fn sub">11월 28일</div></div><span class="amt">−240,000원</span></div>
+<div class="rw"><div><div class="bd">가족카드 대금</div><div class="fn sub">12월 1일</div></div><span class="amt">−820,000원</span></div></div>`;
+const recv=`<div class="card"><div class="t3">받을 돈</div><div class="rw"><div><div class="bd">지수</div><div class="fn sub">12일째</div></div><span class="amt">45,000원</span></div></div>`;
+const chrome=`<div class="fold"></div><div class="fab">+</div><div class="tabbar"><b>홈</b><span>기록</span><span>분석</span><span>자산</span></div>`;
+const hd=`<div class="sb"></div><div class="hd"><span class="t2">11월</span><span class="sub">◯</span></div>`;
+const A=hd+`<div class="card">${heroCore}${incRows}</div>`+check+notice+soon+recv;
+const B=hd+`<div class="top">${heroCore}<div class="bs" style="margin-top:8px">🔎 외식을 평소 이맘때보다 9만 원 더 썼어요 ›</div>${incRows}</div>`+check+soon+recv;
+const C=hd+`<div class="top">${heroCore}<div class="bs" style="margin-top:8px">🔎 외식을 평소 이맘때보다 9만 원 더 썼어요 ›</div>${incRows}</div>`+
+`<div class="card"><div class="t3">확인할 것 2</div><div class="rw"><div><div class="bd">월세 예정</div><div class="fn sub">오늘 · 생활비 통장</div></div><span class="bs pine sb6">확정</span></div>
+<div class="t3" style="margin-top:16px">곧 나갈 돈</div><div class="fn sub">3건 · 약 1,120,000원</div><div class="rw"><div><div class="bd">관리비</div><div class="fn sub">11월 28일</div></div><span class="amt">−240,000원</span></div></div>`;
+const S=[['A · 지금 기본값 (카드 5장)',A],['B · 숫자는 카드 밖 + 눈에 띄는 것은 숫자 밑 한 줄 (추천)',B],['C · B + 나머지를 카드 한 장에 섹션으로',C]];
+document.getElementById('r').innerHTML=S.map(([n,h])=>`<div><p class="cap-h">${n}</p><div class="ph">${h}${chrome}</div></div>`).join('');
+</script></body></html>

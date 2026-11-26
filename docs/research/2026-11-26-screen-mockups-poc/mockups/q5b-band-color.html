@@ -1,0 +1,60 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>/* 페이지 틀(시안 밖)은 Orca 테마 변수, 폰 안(.ph)은 DESIGN.md 토큰만 쓴다 */
+body{margin:0;padding:16px;font-family:var(--font-sans,system-ui);background:var(--background,#fff);color:var(--foreground,#171717);font-size:14px;line-height:1.5}
+.note{font-size:13px;color:var(--muted-foreground,#666);margin:4px 0 12px}
+.cap-h{font-size:14px;font-weight:700;margin:0 0 6px}
+.row{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;margin-bottom:20px}
+.ph{width:375px;flex:none;box-sizing:border-box;background:var(--o-background);color:var(--o-text);font-family:'Pretendard',system-ui,sans-serif;border-radius:28px;overflow:hidden;position:relative;border:1px solid var(--border,#ddd);font-size:17px;line-height:25.5px;letter-spacing:0}
+.ph *{box-sizing:border-box}
+.ph .sb{height:20px}
+/* 타이포 토큰 */
+.ph .hero{font-size:32px;line-height:42px;font-weight:700;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
+.ph .t1{font-size:26px;line-height:35px;font-weight:700}
+.ph .t2{font-size:22px;line-height:31px;font-weight:700}
+.ph .t3{font-size:20px;line-height:29px;font-weight:600}
+.ph .bd{font-size:17px;line-height:25.5px;font-weight:400}
+.ph .amt{font-size:17px;line-height:25.5px;font-weight:600;font-variant-numeric:tabular-nums}
+.ph .bs{font-size:15px;line-height:22.5px;font-weight:400}
+.ph .fn{font-size:13px;line-height:19.5px;font-weight:400}
+.ph .amts{font-size:13px;line-height:19.5px;font-weight:600;font-variant-numeric:tabular-nums}
+.ph .cp{font-size:11px;line-height:16.5px;font-weight:400}
+.ph .sub{color:var(--o-text-sub)}
+.ph .inc{color:var(--o-amount-income)}
+.ph .up{color:var(--o-amount-up)}
+.ph .dn{color:var(--o-amount-down)}
+.ph .pine{color:var(--o-primary-text)}
+.ph .sb6{font-weight:600}
+.ph .fx{display:flex;justify-content:space-between;align-items:center;gap:8px}
+ .ph{--o-primary:#14573f;--o-on-primary:#ffffff;--o-primary-pressed:#0e4431;--o-primary-text:#14573f;--o-primary-soft:#e6f0eb;--o-background:#f4f5f3;--o-surface:#ffffff;--o-surface-alt:#efecea;--o-text:#191f28;--o-text-sub:#5b6470;--o-text-disabled:#b0b8c1;--o-divider:#e5e8e6;--o-border-strong:#868e8a;--o-danger:#c81e2d;--o-warning:#a85400;--o-warning-soft:#fff3e0;--o-scrim:#00000033;--o-pressed:#191f280d;--o-amount-income:#1b64da;--o-amount-up:#c81e2d;--o-amount-up-display:#f04452;--o-amount-down:#1b64da;--o-amount-down-display:#3182f6;--o-ledger-private:#8e3b7e;--o-ledger-private-soft:#f7e8f3;--o-chart-group-cash:#edb345;--o-chart-group-saving:#7a59c3;--o-chart-group-invest:#008b96;--o-chart-group-point:#ecb7df;--o-chart-group-lent:#b66b31;--o-chart-group-debt:#8e9592;--o-chart-dim:#e5e8e6;--o-chart-neutral:#868e8a;--o-chart-line:#191f28;--o-chart-reference:#5b6470;--o-chart-axis:#868e8a} .ph.dark{--o-primary:#1f7a55;--o-on-primary:#ffffff;--o-primary-pressed:#186446;--o-primary-text:#5cc59a;--o-primary-soft:#1a2e25;--o-background:#121413;--o-surface:#1c1f1e;--o-surface-alt:#242826;--o-text:#e8eae9;--o-text-sub:#8e9592;--o-text-disabled:#565c59;--o-divider:#2c302e;--o-border-strong:#767d7a;--o-danger:#ff6b6b;--o-warning:#ffa861;--o-warning-soft:#3d2500;--o-scrim:#0000008f;--o-pressed:#e8eae91c;--o-amount-income:#4795ff;--o-amount-up:#ff6b6b;--o-amount-up-display:#ff6b6b;--o-amount-down:#4795ff;--o-amount-down-display:#4795ff;--o-ledger-private:#e7a3d8;--o-ledger-private-soft:#3a2335;--o-chart-group-cash:#f7c15f;--o-chart-group-saving:#886acf;--o-chart-group-invest:#3fbfcc;--o-chart-group-point:#f8d0ee;--o-chart-group-lent:#d78951;--o-chart-group-debt:#6e7572;--o-chart-dim:#2c302e;--o-chart-neutral:#767d7a;--o-chart-line:#e8eae9;--o-chart-reference:#8e9592;--o-chart-axis:#767d7a}
+.ph{background:var(--o-surface);height:667px}
+.ph .hd{height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 24px}
+.ph .pad{padding:0 24px}
+.ph .band{height:16px;background:var(--o-background)}
+.ph .kv{display:flex;justify-content:space-between;padding:12px 0}
+.ph .sh{padding:20px 24px 4px}
+.ph .tb{color:var(--o-primary-text);font-size:17px;font-weight:600}
+.ph .dg{color:var(--o-danger);font-size:17px;font-weight:600}
+.ph .act{display:flex;justify-content:space-between;padding:14px 0}
+.ph .rwS{display:flex;align-items:stretch;margin:0 -24px}
+.ph .rwS .in{flex:1;display:flex;justify-content:space-between;padding:12px 24px;background:var(--o-surface);transform:translateX(-80px)}
+.ph .rwS .del{width:80px;background:var(--o-danger);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;margin-left:-80px}
+.ph .x{position:relative}.ph .x:after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(135deg,transparent 0 10px,rgba(229,72,77,.08) 10px 12px)}
+</style></head><body>
+<p class="note">같은 기록 상세를 띠 색만 바꿔 그렸어요. 마지막은 띠 없이 흰 면 + 제목·여백이에요.</p>
+<div class="row" id="r"></div>
+<script>
+const D=`<div class="sb"></div><div class="hd"><span class="bd">‹</span><span class="bd sb6">기록</span><span style="width:12px"></span></div>
+<div class="pad" style="padding-bottom:24px"><div class="fn sub">이마트 · 공용 장부</div><div class="hero">−84,300원</div><div class="fn sub">11월 25일 화요일 18:42</div></div>
+<div class="band"></div><div class="pad" style="padding-top:8px">
+<div class="kv"><span class="bs sub">카테고리</span><span class="bd">장보기 <span class="sub">›</span></span></div>
+<div class="kv"><span class="bs sub">낸 곳</span><span class="bd">민호 · 가족카드 <span class="sub">›</span></span></div>
+<div class="kv"><span class="bs sub">쓴 사람</span><span class="bd">함께 <span class="sub">›</span></span></div></div>
+<div class="band"></div><div class="pad" style="padding-top:4px">
+<div class="act"><span class="bd">돌려받은 돈 기록</span><span class="sub">›</span></div>
+<div class="act"><span class="bd">다시 기록</span><span class="sub">›</span></div>
+<div class="act"><span class="dg">기록 삭제</span></div></div>`;
+const N=D.replace(/<div class="band"><\/div>/g,'<div style="height:24px"></div>');
+const V=[['A · 지금 #F4F5F3 (색상각 128°, 노란 초록 쪽)','#F4F5F3',D],['B · TDS #F2F4F6 (248°, 푸른 회색)','#F2F4F6',D],['C · 띠 없음, 흰 면 + 여백','#F4F5F3',N]];
+document.getElementById('r').innerHTML=V.map(([n,bg,h])=>`<div><p class="cap-h">${n}</p><div class="ph" style="--o-background:${bg}">${h}</div></div>`).join('');
+</script></body></html>

@@ -1,0 +1,1140 @@
+{
+  "$schema": "https://www.designtokens.org/schemas/2025.10/format.json",
+  "$description": "가족 가계부·자산 앱 oat의 디자인 토큰. 라이트·다크 쌍, 숫자가 주인공, Pine은 행동에만.",
+  "color": {
+    "$type": "color",
+    "primary": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.078,
+          0.341,
+          0.247
+        ],
+        "hex": "#14573f"
+      }
+    },
+    "light.primary": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.078,
+          0.341,
+          0.247
+        ],
+        "hex": "#14573f"
+      }
+    },
+    "light.on-primary": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          1,
+          1,
+          1
+        ],
+        "hex": "#ffffff"
+      }
+    },
+    "light.primary-pressed": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.055,
+          0.267,
+          0.192
+        ],
+        "hex": "#0e4431"
+      }
+    },
+    "light.primary-text": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.078,
+          0.341,
+          0.247
+        ],
+        "hex": "#14573f"
+      }
+    },
+    "light.primary-soft": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.902,
+          0.941,
+          0.922
+        ],
+        "hex": "#e6f0eb"
+      }
+    },
+    "light.background": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.957,
+          0.961,
+          0.953
+        ],
+        "hex": "#f4f5f3"
+      }
+    },
+    "light.surface": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          1,
+          1,
+          1
+        ],
+        "hex": "#ffffff"
+      }
+    },
+    "light.surface-alt": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.937,
+          0.925,
+          0.918
+        ],
+        "hex": "#efecea"
+      }
+    },
+    "light.text": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.098,
+          0.122,
+          0.157
+        ],
+        "hex": "#191f28"
+      }
+    },
+    "light.text-sub": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.357,
+          0.392,
+          0.439
+        ],
+        "hex": "#5b6470"
+      }
+    },
+    "light.text-disabled": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.69,
+          0.722,
+          0.757
+        ],
+        "hex": "#b0b8c1"
+      }
+    },
+    "light.divider": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.898,
+          0.91,
+          0.902
+        ],
+        "hex": "#e5e8e6"
+      }
+    },
+    "light.border-strong": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.525,
+          0.557,
+          0.541
+        ],
+        "hex": "#868e8a"
+      }
+    },
+    "light.danger": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.784,
+          0.118,
+          0.176
+        ],
+        "hex": "#c81e2d"
+      }
+    },
+    "light.warning": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.659,
+          0.329,
+          0
+        ],
+        "hex": "#a85400"
+      }
+    },
+    "light.warning-soft": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          1,
+          0.953,
+          0.878
+        ],
+        "hex": "#fff3e0"
+      }
+    },
+    "light.scrim": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0,
+          0,
+          0
+        ],
+        "hex": "#00000033"
+      }
+    },
+    "light.pressed": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.098,
+          0.122,
+          0.157
+        ],
+        "hex": "#191f280d"
+      }
+    },
+    "light.amount-income": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.106,
+          0.392,
+          0.855
+        ],
+        "hex": "#1b64da"
+      }
+    },
+    "light.amount-up": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.784,
+          0.118,
+          0.176
+        ],
+        "hex": "#c81e2d"
+      }
+    },
+    "light.amount-up-display": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.941,
+          0.267,
+          0.322
+        ],
+        "hex": "#f04452"
+      }
+    },
+    "light.amount-down": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.106,
+          0.392,
+          0.855
+        ],
+        "hex": "#1b64da"
+      }
+    },
+    "light.amount-down-display": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.192,
+          0.51,
+          0.965
+        ],
+        "hex": "#3182f6"
+      }
+    },
+    "light.ledger-private": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.557,
+          0.231,
+          0.494
+        ],
+        "hex": "#8e3b7e"
+      }
+    },
+    "light.ledger-private-soft": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.969,
+          0.91,
+          0.953
+        ],
+        "hex": "#f7e8f3"
+      }
+    },
+    "light.chart-group-cash": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.929,
+          0.702,
+          0.271
+        ],
+        "hex": "#edb345"
+      }
+    },
+    "light.chart-group-saving": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.478,
+          0.349,
+          0.765
+        ],
+        "hex": "#7a59c3"
+      }
+    },
+    "light.chart-group-invest": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0,
+          0.545,
+          0.588
+        ],
+        "hex": "#008b96"
+      }
+    },
+    "light.chart-group-point": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.925,
+          0.718,
+          0.875
+        ],
+        "hex": "#ecb7df"
+      }
+    },
+    "light.chart-group-lent": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.714,
+          0.42,
+          0.192
+        ],
+        "hex": "#b66b31"
+      }
+    },
+    "light.chart-group-debt": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.557,
+          0.584,
+          0.573
+        ],
+        "hex": "#8e9592"
+      }
+    },
+    "light.chart-dim": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.898,
+          0.91,
+          0.902
+        ],
+        "hex": "#e5e8e6"
+      }
+    },
+    "light.chart-neutral": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.525,
+          0.557,
+          0.541
+        ],
+        "hex": "#868e8a"
+      }
+    },
+    "light.chart-line": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.098,
+          0.122,
+          0.157
+        ],
+        "hex": "#191f28"
+      }
+    },
+    "light.chart-reference": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.357,
+          0.392,
+          0.439
+        ],
+        "hex": "#5b6470"
+      }
+    },
+    "light.chart-axis": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.525,
+          0.557,
+          0.541
+        ],
+        "hex": "#868e8a"
+      }
+    },
+    "dark.primary": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.122,
+          0.478,
+          0.333
+        ],
+        "hex": "#1f7a55"
+      }
+    },
+    "dark.on-primary": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          1,
+          1,
+          1
+        ],
+        "hex": "#ffffff"
+      }
+    },
+    "dark.primary-pressed": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.094,
+          0.392,
+          0.275
+        ],
+        "hex": "#186446"
+      }
+    },
+    "dark.primary-text": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.361,
+          0.773,
+          0.604
+        ],
+        "hex": "#5cc59a"
+      }
+    },
+    "dark.primary-soft": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.102,
+          0.18,
+          0.145
+        ],
+        "hex": "#1a2e25"
+      }
+    },
+    "dark.background": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.071,
+          0.078,
+          0.075
+        ],
+        "hex": "#121413"
+      }
+    },
+    "dark.surface": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.11,
+          0.122,
+          0.118
+        ],
+        "hex": "#1c1f1e"
+      }
+    },
+    "dark.surface-alt": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.141,
+          0.157,
+          0.149
+        ],
+        "hex": "#242826"
+      }
+    },
+    "dark.text": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.91,
+          0.918,
+          0.914
+        ],
+        "hex": "#e8eae9"
+      }
+    },
+    "dark.text-sub": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.557,
+          0.584,
+          0.573
+        ],
+        "hex": "#8e9592"
+      }
+    },
+    "dark.text-disabled": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.337,
+          0.361,
+          0.349
+        ],
+        "hex": "#565c59"
+      }
+    },
+    "dark.divider": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.173,
+          0.188,
+          0.18
+        ],
+        "hex": "#2c302e"
+      }
+    },
+    "dark.border-strong": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.463,
+          0.49,
+          0.478
+        ],
+        "hex": "#767d7a"
+      }
+    },
+    "dark.danger": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          1,
+          0.42,
+          0.42
+        ],
+        "hex": "#ff6b6b"
+      }
+    },
+    "dark.warning": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          1,
+          0.659,
+          0.38
+        ],
+        "hex": "#ffa861"
+      }
+    },
+    "dark.warning-soft": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.239,
+          0.145,
+          0
+        ],
+        "hex": "#3d2500"
+      }
+    },
+    "dark.scrim": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0,
+          0,
+          0
+        ],
+        "hex": "#0000008f"
+      }
+    },
+    "dark.pressed": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.91,
+          0.918,
+          0.914
+        ],
+        "hex": "#e8eae91c"
+      }
+    },
+    "dark.amount-income": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.278,
+          0.584,
+          1
+        ],
+        "hex": "#4795ff"
+      }
+    },
+    "dark.amount-up": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          1,
+          0.42,
+          0.42
+        ],
+        "hex": "#ff6b6b"
+      }
+    },
+    "dark.amount-up-display": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          1,
+          0.42,
+          0.42
+        ],
+        "hex": "#ff6b6b"
+      }
+    },
+    "dark.amount-down": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.278,
+          0.584,
+          1
+        ],
+        "hex": "#4795ff"
+      }
+    },
+    "dark.amount-down-display": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.278,
+          0.584,
+          1
+        ],
+        "hex": "#4795ff"
+      }
+    },
+    "dark.ledger-private": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.906,
+          0.639,
+          0.847
+        ],
+        "hex": "#e7a3d8"
+      }
+    },
+    "dark.ledger-private-soft": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.227,
+          0.137,
+          0.208
+        ],
+        "hex": "#3a2335"
+      }
+    },
+    "dark.chart-group-cash": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.969,
+          0.757,
+          0.373
+        ],
+        "hex": "#f7c15f"
+      }
+    },
+    "dark.chart-group-saving": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.533,
+          0.416,
+          0.812
+        ],
+        "hex": "#886acf"
+      }
+    },
+    "dark.chart-group-invest": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.247,
+          0.749,
+          0.8
+        ],
+        "hex": "#3fbfcc"
+      }
+    },
+    "dark.chart-group-point": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.973,
+          0.816,
+          0.933
+        ],
+        "hex": "#f8d0ee"
+      }
+    },
+    "dark.chart-group-lent": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.843,
+          0.537,
+          0.318
+        ],
+        "hex": "#d78951"
+      }
+    },
+    "dark.chart-group-debt": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.431,
+          0.459,
+          0.447
+        ],
+        "hex": "#6e7572"
+      }
+    },
+    "dark.chart-dim": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.173,
+          0.188,
+          0.18
+        ],
+        "hex": "#2c302e"
+      }
+    },
+    "dark.chart-neutral": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.463,
+          0.49,
+          0.478
+        ],
+        "hex": "#767d7a"
+      }
+    },
+    "dark.chart-line": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.91,
+          0.918,
+          0.914
+        ],
+        "hex": "#e8eae9"
+      }
+    },
+    "dark.chart-reference": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.557,
+          0.584,
+          0.573
+        ],
+        "hex": "#8e9592"
+      }
+    },
+    "dark.chart-axis": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.463,
+          0.49,
+          0.478
+        ],
+        "hex": "#767d7a"
+      }
+    }
+  },
+  "spacing": {
+    "$type": "dimension",
+    "xs": {
+      "$value": {
+        "value": 4,
+        "unit": "px"
+      }
+    },
+    "sm": {
+      "$value": {
+        "value": 8,
+        "unit": "px"
+      }
+    },
+    "md": {
+      "$value": {
+        "value": 12,
+        "unit": "px"
+      }
+    },
+    "lg": {
+      "$value": {
+        "value": 16,
+        "unit": "px"
+      }
+    },
+    "xl": {
+      "$value": {
+        "value": 20,
+        "unit": "px"
+      }
+    },
+    "2xl": {
+      "$value": {
+        "value": 24,
+        "unit": "px"
+      }
+    },
+    "3xl": {
+      "$value": {
+        "value": 32,
+        "unit": "px"
+      }
+    },
+    "4xl": {
+      "$value": {
+        "value": 40,
+        "unit": "px"
+      }
+    },
+    "gutter": {
+      "$value": {
+        "value": 24,
+        "unit": "px"
+      }
+    },
+    "card-margin": {
+      "$value": {
+        "value": 12,
+        "unit": "px"
+      }
+    },
+    "card-padding": {
+      "$value": {
+        "value": 20,
+        "unit": "px"
+      }
+    },
+    "card-gap": {
+      "$value": {
+        "value": 12,
+        "unit": "px"
+      }
+    },
+    "band": {
+      "$value": {
+        "value": 16,
+        "unit": "px"
+      }
+    },
+    "section-top": {
+      "$value": {
+        "value": 24,
+        "unit": "px"
+      }
+    },
+    "section-bottom": {
+      "$value": {
+        "value": 8,
+        "unit": "px"
+      }
+    },
+    "row-min": {
+      "$value": {
+        "value": 56,
+        "unit": "px"
+      }
+    },
+    "touch-min": {
+      "$value": {
+        "value": 44,
+        "unit": "px"
+      }
+    }
+  },
+  "rounded": {
+    "$type": "dimension",
+    "badge": {
+      "$value": {
+        "value": 6,
+        "unit": "px"
+      }
+    },
+    "input": {
+      "$value": {
+        "value": 12,
+        "unit": "px"
+      }
+    },
+    "button": {
+      "$value": {
+        "value": 16,
+        "unit": "px"
+      }
+    },
+    "card": {
+      "$value": {
+        "value": 20,
+        "unit": "px"
+      }
+    },
+    "sheet": {
+      "$value": {
+        "value": 20,
+        "unit": "px"
+      }
+    },
+    "full": {
+      "$value": {
+        "value": 9999,
+        "unit": "px"
+      }
+    }
+  },
+  "typography": {
+    "amount-hero": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "Pretendard",
+        "fontSize": {
+          "value": 32,
+          "unit": "px"
+        },
+        "fontWeight": 700,
+        "letterSpacing": {
+          "value": -0.5,
+          "unit": "px"
+        },
+        "lineHeight": 42
+      }
+    },
+    "title-1": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "Pretendard",
+        "fontSize": {
+          "value": 26,
+          "unit": "px"
+        },
+        "fontWeight": 700,
+        "lineHeight": 35
+      }
+    },
+    "title-2": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "Pretendard",
+        "fontSize": {
+          "value": 22,
+          "unit": "px"
+        },
+        "fontWeight": 700,
+        "lineHeight": 31
+      }
+    },
+    "title-3": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "Pretendard",
+        "fontSize": {
+          "value": 20,
+          "unit": "px"
+        },
+        "fontWeight": 600,
+        "lineHeight": 29
+      }
+    },
+    "body": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "Pretendard",
+        "fontSize": {
+          "value": 17,
+          "unit": "px"
+        },
+        "fontWeight": 400,
+        "lineHeight": 25.5
+      }
+    },
+    "amount": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "Pretendard",
+        "fontSize": {
+          "value": 17,
+          "unit": "px"
+        },
+        "fontWeight": 600,
+        "lineHeight": 25.5
+      }
+    },
+    "body-sm": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "Pretendard",
+        "fontSize": {
+          "value": 15,
+          "unit": "px"
+        },
+        "fontWeight": 400,
+        "lineHeight": 22.5
+      }
+    },
+    "footnote": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "Pretendard",
+        "fontSize": {
+          "value": 13,
+          "unit": "px"
+        },
+        "fontWeight": 400,
+        "lineHeight": 19.5
+      }
+    },
+    "amount-sm": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "Pretendard",
+        "fontSize": {
+          "value": 13,
+          "unit": "px"
+        },
+        "fontWeight": 600,
+        "lineHeight": 19.5
+      }
+    },
+    "caption": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "Pretendard",
+        "fontSize": {
+          "value": 11,
+          "unit": "px"
+        },
+        "fontWeight": 400,
+        "lineHeight": 16.5
+      }
+    },
+    "label-lg": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "Pretendard",
+        "fontSize": {
+          "value": 17,
+          "unit": "px"
+        },
+        "fontWeight": 600,
+        "lineHeight": 25.5
+      }
+    },
+    "label-md": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "Pretendard",
+        "fontSize": {
+          "value": 15,
+          "unit": "px"
+        },
+        "fontWeight": 600,
+        "lineHeight": 22.5
+      }
+    },
+    "label-sm": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "Pretendard",
+        "fontSize": {
+          "value": 13,
+          "unit": "px"
+        },
+        "fontWeight": 600,
+        "lineHeight": 18
+      }
+    },
+    "label-tab": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "Pretendard",
+        "fontSize": {
+          "value": 11,
+          "unit": "px"
+        },
+        "fontWeight": 600,
+        "lineHeight": 16.5
+      }
+    },
+    "keypad": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "Pretendard",
+        "fontSize": {
+          "value": 28,
+          "unit": "px"
+        },
+        "fontWeight": 600,
+        "lineHeight": 34
+      }
+    }
+  }
+}

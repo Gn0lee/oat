@@ -1,0 +1,53 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>/*BASE*/ /*TOKENS*/
+.ph{padding-bottom:16px}
+.ph.flatpage{background:var(--o-surface)}
+/* 시작선 24: 평면 좌우 24, 카드 바깥 8 + 안 16 */
+.ph .card{background:var(--o-surface);border-radius:20px;padding:20px 16px;margin:0 8px 12px}
+.ph .band{height:16px;background:var(--o-background)}
+.ph .hd{height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 24px}
+.ph .pad{padding:0 24px}
+.ph .sh{padding:24px 24px 8px}
+.ph .rw{display:flex;justify-content:space-between;align-items:center;padding:12px 0}
+.ph .more{display:flex;justify-content:space-between;padding:12px 0 0;margin-top:4px}
+.ph .kv{display:flex;justify-content:space-between;padding:12px 0}
+.ph .guide{position:absolute;top:0;bottom:0;left:24px;border-left:1px dashed #E5484D;opacity:.45;pointer-events:none}
+.ph .chev{color:var(--o-text-sub)}
+</style></head><body>
+<p class="note">규칙 초안을 적용한 네 화면이에요. 빨간 점선은 글자 시작선(24)이에요. 카드 화면과 평면 화면의 시작선이 같아요.</p>
+<div id="r"></div>
+<script>
+const top=(t,back)=>`<div class="sb"></div><div class="hd"><span class="${back?'bd':'t2'}">${back?'‹ '+t:t}</span><span class="sub">${back?'':'◯'}</span></div>`;
+const home=()=>top('11월')+`
+<div class="card"><div class="fn sub">이번 달 쓴 돈</div><div class="hero">1,284,500원</div>
+<div class="bs">평소 이맘때보다 12만 원 덜</div><div class="fn sub">공용 98만 원 · 내 30만 원</div>
+<div class="rw" style="padding-bottom:0"><span class="bs sub">수입</span><span class="amt inc">+3,800,000원</span></div>
+<div class="rw" style="padding-bottom:0"><span class="bs sub">남은 돈</span><span class="amt">2,515,500원</span></div></div>
+<div class="card"><div class="t3">확인할 것</div>
+<div class="rw" style="padding-bottom:0"><div><div class="bd">월세 예정</div><div class="fn sub">오늘 · 생활비 통장</div></div><span class="bs pine sb6">확정</span></div></div>
+<div class="card"><div class="t3">곧 나갈 돈</div><div class="fn sub">3건 · 약 1,120,000원</div>
+<div class="rw"><div><div class="bd">관리비</div><div class="fn sub">11월 28일</div></div><span class="amt">−240,000원</span></div>
+<div class="rw"><div><div class="bd">가족카드 대금</div><div class="fn sub">12월 1일</div></div><span class="amt">−820,000원</span></div>
+<div class="more"><span class="bs sub">1건 더 보기</span><span class="chev">›</span></div></div>`;
+const rowH=(a,b,c,k)=>`<div class="rw"><div><div class="bd">${a}</div><div class="fn sub">${b}</div></div><span class="amt ${k||''}">${c}</span></div>`;
+const list=()=>top('기록')+`<div class="sh fn sub" style="padding-top:8px">11월 26일 수요일</div><div class="pad">
+${rowH('점심','식비 · 지수 · 가족카드','−12,000원')}${rowH('월급','급여 · 민호 · 급여 통장','+3,800,000원','inc')}</div>
+<div class="sh fn sub">11월 25일 화요일</div><div class="pad">
+${rowH('생활비 보탬','민호에게서 · 생활비 통장','+300,000원')}${rowH('이마트','장보기 · 민호','−84,300원')}${rowH('쿠팡 환불','장보기 · 지수 · 가족카드','+12,900원')}</div>`;
+const detail=()=>top('기록',1)+`<div class="pad" style="padding-bottom:24px"><div class="fn sub">이마트 · 공용 장부</div><div class="hero">−84,300원</div><div class="fn sub">11월 25일 화요일 18:42</div></div>
+<div class="band"></div><div class="sh t3" style="padding-top:20px">결제</div><div class="pad">
+<div class="kv"><span class="bs sub">낸 곳</span><span class="bd">민호 · 생활비 통장</span></div>
+<div class="kv"><span class="bs sub">카테고리</span><span class="bd">장보기</span></div>
+<div class="kv"><span class="bs sub">쓴 사람</span><span class="bd">함께</span></div></div>
+<div class="band"></div><div class="sh t3" style="padding-top:20px">통계</div><div class="pad">
+<div class="kv"><span class="bs sub">고정비</span><span class="bd">아니요</span></div>
+<div class="kv"><span class="bs sub">통계에서 빼기</span><span class="bd">아니요</span></div></div>`;
+const settings=()=>top('설정',1)+`<div class="sh fn sub" style="padding-top:8px">가구</div><div class="pad">
+${['가구원','장부','카테고리','정기 규칙'].map(x=>`<div class="kv"><span class="bd">${x}</span><span class="chev">›</span></div>`).join('')}</div>
+<div class="band" style="margin-top:12px"></div><div class="sh fn sub">연결</div><div class="pad">
+${['AI 연결','알림'].map(x=>`<div class="kv"><span class="bd">${x}</span><span class="chev">›</span></div>`).join('')}</div>`;
+const S=[['홈 · 카드(미리보기)',home,0],['기록 목록 · 평면',list,1],['기록 상세 · 평면 + 띠',detail,1],['설정 · 평면 + 띠',settings,1]];
+const row=(d)=>`<div class="row">${S.map(([n,f,flat])=>`<div><p class="cap-h">${n}${d?' (다크)':''}</p><div class="ph${flat?' flatpage':''}${d?' dark':''}">${f()}<div class="guide"></div></div></div>`).join('')}</div>`;
+document.getElementById('r').innerHTML=row(0)+row(1);
+</script></body></html>

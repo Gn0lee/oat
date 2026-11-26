@@ -1,0 +1,35 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>/*BASE*/ /*TOKENS*/
+.ph{height:667px}
+.ph .hd{height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 24px}
+.ph .w{background:var(--o-surface)}
+.ph .pad{padding:0 24px}
+.ph .band{height:16px}
+.ph .kv{display:flex;justify-content:space-between;padding:14px 0}
+.ph .sh{padding:24px 24px 4px}
+.ph .dg{color:var(--o-danger);font-size:17px;font-weight:600}
+.ph .act{display:flex;justify-content:space-between;padding:14px 0}
+.ph .hl{height:1px;background:var(--o-divider);margin:0 24px}
+</style></head><body>
+<p class="note">구조는 같고(회색 상단 바·띠 2개·섹션 제목) 바탕·띠 색만 바꿨어요. 위는 라이트, 아래는 다크예요.</p>
+<div id="r"></div>
+<script>
+const D=`<div class="sb"></div><div class="hd"><span class="bd">‹</span><span class="bd sb6">이마트</span><span style="width:12px"></span></div>
+<div class="w"><div class="pad" style="padding-top:24px;padding-bottom:24px"><div class="fn sub">공용 장부 · 지출</div><div class="hero">−84,300원</div><div class="fn sub">11월 25일 화요일 18:42</div></div>
+<div class="hl"></div><div class="pad" style="padding-top:8px;padding-bottom:12px">
+<div class="kv"><span class="bs sub">카테고리</span><span class="bd">장보기 <span class="sub">›</span></span></div>
+<div class="kv"><span class="bs sub">낸 곳</span><span class="bd">민호 · 가족카드 <span class="sub">›</span></span></div>
+<div class="kv"><span class="bs sub">메모</span><span class="bd sub">없음 <span class="sub">›</span></span></div></div></div>
+<div class="band"></div>
+<div class="w"><div class="sh fn sub">통계</div><div class="pad" style="padding-bottom:12px">
+<div class="kv"><span class="bs sub">쓴 사람</span><span class="bd">함께 <span class="sub">›</span></span></div>
+<div class="kv"><span class="bs sub">고정비</span><span class="bd">아니요 <span class="sub">›</span></span></div></div></div>
+<div class="band"></div>
+<div class="w" style="padding-bottom:200px"><div class="pad" style="padding-top:8px">
+<div class="act"><span class="bd">돌려받은 돈 기록</span><span class="sub">›</span></div>
+<div class="act"><span class="bd">다시 기록</span><span class="sub">›</span></div>
+<div class="act"><span class="dg">기록 삭제</span></div></div></div>`;
+const V=[['① 귀리 (지금 토큰) #F4F5F3 · 128°','#F4F5F3','#121413'],['② Pine 회색 #F0F5F3 · 170°','#F0F5F3','#111412'],['③ Linen #EFECEA · 56°','#EFECEA','#151210'],['④ 참고: 토스 #F2F4F6 · 248°','#F2F4F6','#101013']];
+document.getElementById('r').innerHTML=['','dark'].map(m=>`<div class="row">${V.map(([n,l,dk])=>`<div><p class="cap-h">${n}${m?' 다크 '+dk:''}</p><div class="ph ${m}" style="--o-background:${m?dk:l}">${D}</div></div>`).join('')}</div>`).join('');
+</script></body></html>

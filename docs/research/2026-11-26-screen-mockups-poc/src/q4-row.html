@@ -1,0 +1,41 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>/*BASE*/ /*TOKENS*/
+.ph{background:var(--o-surface);padding-bottom:16px}
+.ph .hd{height:52px;display:flex;align-items:center;padding:0 24px}
+.ph .dh{padding:20px 24px 4px}
+.ph .rw{display:flex;justify-content:space-between;align-items:flex-start;padding:12px 24px;gap:12px}
+.ph .L{min-width:0;flex:1}
+.ph .L .bd{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ph .R{text-align:right;white-space:nowrap}
+.ph .badge{display:inline-block;font-size:13px;line-height:18px;font-weight:600;padding:0 6px;border-radius:6px;background:var(--o-surface-alt);color:var(--o-text-sub);margin-right:4px}
+.ph .lk{color:var(--o-ledger-private);font-weight:600}
+.ph .band{height:16px;background:var(--o-background)}
+.ph .tag{font-size:11px;color:#E5484D;font-weight:600;padding:0 24px}
+.ph.ax .bd{font-size:28px;line-height:36px}.ph.ax .fn{font-size:19px;line-height:26px}.ph.ax .amt{font-size:28px;line-height:36px}
+.ph.ax .rw{display:block}.ph.ax .R{text-align:left;margin-top:2px}
+</style></head><body>
+<p class="note">기록 탭 목록이에요. 빨간 작은 글자는 그 줄이 보여주는 경우예요. 본인은 민호, 가구원은 지수예요.</p>
+<div class="row" id="r"></div>
+<script>
+const R=(t,s,a,k,sub2,tag)=>`${tag?`<div class="tag" style="margin-top:6px">${tag}</div>`:''}<div class="rw"><div class="L"><div class="bd">${t}</div><div class="fn sub">${s}</div></div><div class="R"><div class="amt ${k||''}">${a}</div>${sub2?`<div class="fn sub">${sub2}</div>`:''}</div></div>`;
+const L=`<div class="sb"></div><div class="hd"><span class="t2">기록</span></div>
+<div class="dh fn sub">11월 26일 수요일</div>
+${R('점심','식비 · 지수 · 가족카드','−12,000원','','','지출: 색 없이 −')}
+${R('월급','급여 · 민호 · 급여 통장','+3,800,000원','inc','','수입: 파랑 +')}
+${R('쿠팡 환불','장보기 · 지수 · 가족카드','+12,900원','','','환불: 색 없이 +')}
+${R('생활비 보탬','민호 · 급여 통장 → 지수 · 생활비 통장','300,000원','','','이체: 부호 없이, 보조 줄에 →')}
+${R('스타벅스 아주 긴 가맹점 이름 강남역점','<span class="lk">🔒 내 장부</span> · 카페 · 민호 · 비상금 카드','−6,500원','','','내 개인 장부: 자두색 🔒 장부 이름이 보조 줄 맨 앞, 긴 이름은 …')}
+<div class="dh fn sub">11월 25일 화요일</div>
+${R('Uniqlo','<span class="badge">추정</span>의류 · 민호 · 생활비 체크카드','−52,340원','','$37.80','해외 결제: 배지는 보조 줄 앞, 외화는 금액 아래')}
+${R('이마트','<span class="badge">보내는 중</span>장보기 · 민호 · 가족카드','−84,300원','','','대기열: 흐리게 하지 않음')}
+${R('저녁','외식 · 민호','−80,000원','','','(지수 화면) 숨긴 지갑: 주인 이름만')}
+`;
+const W=`<div class="sb"></div><div class="hd"><span class="bd">‹ 생활비 통장</span></div>
+<div class="dh fn sub">11월</div>
+${R('관리비','주거 · 지수','−240,000원','','잔액 1,760,000원','지갑 내역: 금액 아래 거래 후 잔액')}
+${R('생활비 보탬','민호에게서','+300,000원','','잔액 2,000,000원','지갑 내역의 이체: 그 지갑 기준 부호')}
+${R('민호의 개인 기록','11월 합계','−45,000원','','','(지수 화면) 다른 가구원 개인 기록: 합계 한 줄, 색·자물쇠 없음, › 없음')}`;
+const AX=`<div class="sb"></div><div class="hd"><span class="t2">기록</span></div>${R('월급','급여 · 민호 · 급여 통장','+3,800,000원','inc','','접근성 큰 글자: 금액이 이름 아래로')}${R('점심','식비 · 지수 · 가족카드','−12,000원')}`;
+document.getElementById('r').innerHTML=[['기록 탭',L,''],['지갑 내역',W,''],['기록 탭 (다크)',L,' dark'],['더 큰 텍스트(AX)',AX,' ax']].map(([n,h,c])=>`<div><p class="cap-h">${n}</p><div class="ph${c}">${h}</div></div>`).join('');
+</script></body></html>

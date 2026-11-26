@@ -168,6 +168,50 @@
         "hex": "#c81e2d"
       }
     },
+    "light.warning": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.659,
+          0.329,
+          0
+        ],
+        "hex": "#a85400"
+      }
+    },
+    "light.warning-soft": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          1,
+          0.953,
+          0.878
+        ],
+        "hex": "#fff3e0"
+      }
+    },
+    "light.scrim": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0,
+          0,
+          0
+        ],
+        "hex": "#00000033"
+      }
+    },
+    "light.pressed": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.098,
+          0.122,
+          0.157
+        ],
+        "hex": "#191f280d"
+      }
+    },
     "light.amount-income": {
       "$value": {
         "colorSpace": "srgb",
@@ -520,6 +564,50 @@
         "hex": "#ff6b6b"
       }
     },
+    "dark.warning": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          1,
+          0.659,
+          0.38
+        ],
+        "hex": "#ffa861"
+      }
+    },
+    "dark.warning-soft": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.239,
+          0.145,
+          0
+        ],
+        "hex": "#3d2500"
+      }
+    },
+    "dark.scrim": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0,
+          0,
+          0
+        ],
+        "hex": "#0000008f"
+      }
+    },
+    "dark.pressed": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.91,
+          0.918,
+          0.914
+        ],
+        "hex": "#e8eae91c"
+      }
+    },
     "dark.amount-income": {
       "$value": {
         "colorSpace": "srgb",
@@ -719,6 +807,150 @@
       }
     }
   },
+  "spacing": {
+    "$type": "dimension",
+    "xs": {
+      "$value": {
+        "value": 4,
+        "unit": "px"
+      }
+    },
+    "sm": {
+      "$value": {
+        "value": 8,
+        "unit": "px"
+      }
+    },
+    "md": {
+      "$value": {
+        "value": 12,
+        "unit": "px"
+      }
+    },
+    "lg": {
+      "$value": {
+        "value": 16,
+        "unit": "px"
+      }
+    },
+    "xl": {
+      "$value": {
+        "value": 20,
+        "unit": "px"
+      }
+    },
+    "2xl": {
+      "$value": {
+        "value": 24,
+        "unit": "px"
+      }
+    },
+    "3xl": {
+      "$value": {
+        "value": 32,
+        "unit": "px"
+      }
+    },
+    "4xl": {
+      "$value": {
+        "value": 40,
+        "unit": "px"
+      }
+    },
+    "gutter": {
+      "$value": {
+        "value": 24,
+        "unit": "px"
+      }
+    },
+    "card-margin": {
+      "$value": {
+        "value": 12,
+        "unit": "px"
+      }
+    },
+    "card-padding": {
+      "$value": {
+        "value": 20,
+        "unit": "px"
+      }
+    },
+    "card-gap": {
+      "$value": {
+        "value": 12,
+        "unit": "px"
+      }
+    },
+    "band": {
+      "$value": {
+        "value": 16,
+        "unit": "px"
+      }
+    },
+    "section-top": {
+      "$value": {
+        "value": 24,
+        "unit": "px"
+      }
+    },
+    "section-bottom": {
+      "$value": {
+        "value": 8,
+        "unit": "px"
+      }
+    },
+    "row-min": {
+      "$value": {
+        "value": 56,
+        "unit": "px"
+      }
+    },
+    "touch-min": {
+      "$value": {
+        "value": 44,
+        "unit": "px"
+      }
+    }
+  },
+  "rounded": {
+    "$type": "dimension",
+    "badge": {
+      "$value": {
+        "value": 6,
+        "unit": "px"
+      }
+    },
+    "input": {
+      "$value": {
+        "value": 12,
+        "unit": "px"
+      }
+    },
+    "button": {
+      "$value": {
+        "value": 16,
+        "unit": "px"
+      }
+    },
+    "card": {
+      "$value": {
+        "value": 20,
+        "unit": "px"
+      }
+    },
+    "sheet": {
+      "$value": {
+        "value": 20,
+        "unit": "px"
+      }
+    },
+    "full": {
+      "$value": {
+        "value": 9999,
+        "unit": "px"
+      }
+    }
+  },
   "typography": {
     "amount-hero": {
       "$type": "typography",
@@ -842,6 +1074,66 @@
         },
         "fontWeight": 400,
         "lineHeight": 16.5
+      }
+    },
+    "label-lg": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "Pretendard",
+        "fontSize": {
+          "value": 17,
+          "unit": "px"
+        },
+        "fontWeight": 600,
+        "lineHeight": 25.5
+      }
+    },
+    "label-md": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "Pretendard",
+        "fontSize": {
+          "value": 15,
+          "unit": "px"
+        },
+        "fontWeight": 600,
+        "lineHeight": 22.5
+      }
+    },
+    "label-sm": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "Pretendard",
+        "fontSize": {
+          "value": 13,
+          "unit": "px"
+        },
+        "fontWeight": 600,
+        "lineHeight": 18
+      }
+    },
+    "label-tab": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "Pretendard",
+        "fontSize": {
+          "value": 11,
+          "unit": "px"
+        },
+        "fontWeight": 600,
+        "lineHeight": 16.5
+      }
+    },
+    "keypad": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "Pretendard",
+        "fontSize": {
+          "value": 28,
+          "unit": "px"
+        },
+        "fontWeight": 600,
+        "lineHeight": 34
       }
     }
   }

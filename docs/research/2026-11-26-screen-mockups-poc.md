@@ -1,0 +1,48 @@
+# 화면 문법 PoC: 면·뼈대·부품·목록 줄·상태·말투 시안과 토큰 계산
+
+- 날짜: 2026-11-26
+- 티켓: [주요 화면 시안: 홈·분석·자산·투자·입력 퍼널·나만 보기](https://github.com/Gn0lee/oat/issues/538)
+- 결과 문서: [화면 문법](../design/screen-grammar.md), [DESIGN.md](../design/DESIGN.md), ADR 0035·0036
+- 조사: [화면 문법 사례·원칙 조사](2026-11-26-screen-grammar-cases.md)
+- 코드: `2026-11-26-screen-mockups-poc/` (Node, 의존성 없음)
+
+## 무엇을 직접 해 보고 무엇을 조사로 대신했나
+
+| 항목 | 방식 | 결과 |
+|---|---|---|
+| 면 방향(카드·평면) | 시안 `q1-surface`·`q1b-surface-rules`, 조사(TDS 소스, Material, NN/g, 카드 남용 비판) | 요약 화면만 카드, 나머지 평면 + 띠 |
+| 홈 카드 수와 위계 | 시안 `q2b`·`q2c`·`q2d`(버린 안), `q2e-home-hierarchy`(택함), 사용자 캡처 3장 | 카드 OK + 위계 규칙 |
+| 바탕·띠 색 | 시안 `q5b-band-color`·`q5c-detail-toss-style`·`q5d-brand-bg`, `bg-candidates.mjs`·`brand-bg.mjs`(OKLCH 색상각·대비) | 귀리 `#F4F5F3` 유지, 어색함은 구조 탓 |
+| 뼈대·부품·목록 줄·행동·상태·말투 | 시안 `q2-skeletons`·`q3-components`·`q4-row`·`q5-actions`·`q6-states`·`q7-copy` | 화면 문법 3~8절 |
+| 주의색 | `warning.mjs`, 최종 `../2026-11-25-design-tokens-poc/check-tokens.mjs` | `#A85400`/`#FFA861`, 모든 면 4.54 이상 |
+| 숫자 초안 | 시안 `q8-draft-tokens`, 조사(TDS 소스·색 패키지) | DESIGN.md Layout·Shapes·Components |
+| 실기기 손맛·SE 확인 화면 실제 배치·애니메이션 | 구현으로 넘김 | |
+
+## 실행
+
+- 시안 빌드: `node build.mjs [복사할 폴더]` — `src/*.html`의 `/*TOKENS*/` 자리에 `tokens.dtcg.json`(DESIGN.md에서 뽑음)의 라이트·다크 색을 CSS 변수로 넣어 `mockups/`에 쓴다. 시안 안 폰 화면은 이 토큰만 쓴다.
+- 대비: `node ../2026-11-25-design-tokens-poc/check-tokens.mjs` — 2026-11-26 실행에서 라이트·다크 36쌍 모두 통과(`warning` 추가).
+- DESIGN.md 린터: `npx @google/design.md@0.4.0 lint docs/design/DESIGN.md` — 오류 0, 경고 55(컴포넌트가 라이트 묶음만 가리켜서 생기는 "참조 안 됨" 54, 비활성 버튼 대비 1. 둘 다 의도).
+
+## 바탕 색 계산 (`bg-candidates.mjs`, `brand-bg.mjs`)
+
+| 후보 | 라이트 | OKLCH 색상각 | 채도 | `text-sub` | `amount-income` | `border-strong` |
+|---|---|---|---|---|---|---|
+| 귀리(유지) | `#F4F5F3` | 128° | 0.0028 | 5.48 | 4.95 | 3.07 |
+| Pine 회색 | `#F0F5F3` | 170° | 0.0059 | 5.44 | 4.91 | 3.05 |
+| Linen | `#EFECEA` | 56° | 0.0042 | 5.10 | 4.60 | 2.86 |
+| 토스 | `#F2F4F6` | 248° | 0.0034 | 5.44 | 4.91 | 3.05 |
+
+채도는 모두 거의 같고 방향만 다르다. 처음 시안에서 띠가 "연초록"으로 어색해 보인 것은 색보다 구조(흰 상단 바, 줄 2~3개마다 띠, 제목 없는 띠) 탓이었다. 구조를 토스 통장 화면처럼 고친 뒤 네 색을 나란히 보고 지금 토큰(귀리)을 유지했다.
+
+## 주의색 (`warning.mjs`)
+
+- 라이트 `#A85400`: `warning-soft` `#FFF3E0` 위 4.87, `surface` 5.34, `background` 4.88, `surface-alt` 4.54.
+- 다크 `#FFA861`: `#3D2500` 위 7.54, 나머지 7.84 이상.
+- 더 진한 `#9A4D00`은 대비가 더 높지만 갈색으로 읽혀 택하지 않았다.
+
+## 진행 중 바뀐 것
+
+- 처음에는 화면별 최종 시안과 여백 값을 묻다가, 사용자 요청으로 **통일성 규칙**을 정하는 것으로 범위를 바꿨다.
+- 면 규칙은 "카드는 미리보기" → "카드는 화면당 하나, 주인공에만"(흰 바탕 안, 근거 없어 버림) → "요약 화면은 카드 + 위계"로 갔다. 캡처로 국내 앱이 모두 카드를 연달아 쓴다는 것을 확인했다.
+- 글자 시작선을 어디서나 24로 맞추는 안(카드 바깥 8 + 안 16)은 토스 홈 실측(12 + 20)과 달라 버렸다.

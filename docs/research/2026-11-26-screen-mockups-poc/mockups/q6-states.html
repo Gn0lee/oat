@@ -1,0 +1,74 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>/* 페이지 틀(시안 밖)은 Orca 테마 변수, 폰 안(.ph)은 DESIGN.md 토큰만 쓴다 */
+body{margin:0;padding:16px;font-family:var(--font-sans,system-ui);background:var(--background,#fff);color:var(--foreground,#171717);font-size:14px;line-height:1.5}
+.note{font-size:13px;color:var(--muted-foreground,#666);margin:4px 0 12px}
+.cap-h{font-size:14px;font-weight:700;margin:0 0 6px}
+.row{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;margin-bottom:20px}
+.ph{width:375px;flex:none;box-sizing:border-box;background:var(--o-background);color:var(--o-text);font-family:'Pretendard',system-ui,sans-serif;border-radius:28px;overflow:hidden;position:relative;border:1px solid var(--border,#ddd);font-size:17px;line-height:25.5px;letter-spacing:0}
+.ph *{box-sizing:border-box}
+.ph .sb{height:20px}
+/* 타이포 토큰 */
+.ph .hero{font-size:32px;line-height:42px;font-weight:700;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
+.ph .t1{font-size:26px;line-height:35px;font-weight:700}
+.ph .t2{font-size:22px;line-height:31px;font-weight:700}
+.ph .t3{font-size:20px;line-height:29px;font-weight:600}
+.ph .bd{font-size:17px;line-height:25.5px;font-weight:400}
+.ph .amt{font-size:17px;line-height:25.5px;font-weight:600;font-variant-numeric:tabular-nums}
+.ph .bs{font-size:15px;line-height:22.5px;font-weight:400}
+.ph .fn{font-size:13px;line-height:19.5px;font-weight:400}
+.ph .amts{font-size:13px;line-height:19.5px;font-weight:600;font-variant-numeric:tabular-nums}
+.ph .cp{font-size:11px;line-height:16.5px;font-weight:400}
+.ph .sub{color:var(--o-text-sub)}
+.ph .inc{color:var(--o-amount-income)}
+.ph .up{color:var(--o-amount-up)}
+.ph .dn{color:var(--o-amount-down)}
+.ph .pine{color:var(--o-primary-text)}
+.ph .sb6{font-weight:600}
+.ph .fx{display:flex;justify-content:space-between;align-items:center;gap:8px}
+ .ph{--o-primary:#14573f;--o-on-primary:#ffffff;--o-primary-pressed:#0e4431;--o-primary-text:#14573f;--o-primary-soft:#e6f0eb;--o-background:#f4f5f3;--o-surface:#ffffff;--o-surface-alt:#efecea;--o-text:#191f28;--o-text-sub:#5b6470;--o-text-disabled:#b0b8c1;--o-divider:#e5e8e6;--o-border-strong:#868e8a;--o-danger:#c81e2d;--o-warning:#a85400;--o-warning-soft:#fff3e0;--o-scrim:#00000033;--o-pressed:#191f280d;--o-amount-income:#1b64da;--o-amount-up:#c81e2d;--o-amount-up-display:#f04452;--o-amount-down:#1b64da;--o-amount-down-display:#3182f6;--o-ledger-private:#8e3b7e;--o-ledger-private-soft:#f7e8f3;--o-chart-group-cash:#edb345;--o-chart-group-saving:#7a59c3;--o-chart-group-invest:#008b96;--o-chart-group-point:#ecb7df;--o-chart-group-lent:#b66b31;--o-chart-group-debt:#8e9592;--o-chart-dim:#e5e8e6;--o-chart-neutral:#868e8a;--o-chart-line:#191f28;--o-chart-reference:#5b6470;--o-chart-axis:#868e8a} .ph.dark{--o-primary:#1f7a55;--o-on-primary:#ffffff;--o-primary-pressed:#186446;--o-primary-text:#5cc59a;--o-primary-soft:#1a2e25;--o-background:#121413;--o-surface:#1c1f1e;--o-surface-alt:#242826;--o-text:#e8eae9;--o-text-sub:#8e9592;--o-text-disabled:#565c59;--o-divider:#2c302e;--o-border-strong:#767d7a;--o-danger:#ff6b6b;--o-warning:#ffa861;--o-warning-soft:#3d2500;--o-scrim:#0000008f;--o-pressed:#e8eae91c;--o-amount-income:#4795ff;--o-amount-up:#ff6b6b;--o-amount-up-display:#ff6b6b;--o-amount-down:#4795ff;--o-amount-down-display:#4795ff;--o-ledger-private:#e7a3d8;--o-ledger-private-soft:#3a2335;--o-chart-group-cash:#f7c15f;--o-chart-group-saving:#886acf;--o-chart-group-invest:#3fbfcc;--o-chart-group-point:#f8d0ee;--o-chart-group-lent:#d78951;--o-chart-group-debt:#6e7572;--o-chart-dim:#2c302e;--o-chart-neutral:#767d7a;--o-chart-line:#e8eae9;--o-chart-reference:#8e9592;--o-chart-axis:#767d7a}
+.ph{--o-warning:#A85400;--o-warning-soft:#FFF3E0;height:600px}
+.ph.dark{--o-warning:#FFA861;--o-warning-soft:#3D2500}
+.ph .hd{height:52px;display:flex;align-items:center;padding:0 24px}
+.ph .w{background:var(--o-surface)}
+.ph .pad{padding:0 24px}
+.ph .rw{display:flex;justify-content:space-between;align-items:center;padding:12px 0;gap:8px}
+.ph .sh{padding:24px 24px 4px}
+.ph .badge{display:inline-block;font-size:13px;line-height:18px;font-weight:600;padding:0 6px;border-radius:6px;margin-right:4px}
+.ph .bN{background:var(--o-surface-alt);color:var(--o-text-sub)}
+.ph .bW{background:var(--o-warning-soft);color:var(--o-warning)}
+.ph .bD{background:transparent;color:var(--o-danger);padding:0;margin-right:6px}
+.ph .sk{background:var(--o-surface-alt);border-radius:8px}
+.ph .tb{color:var(--o-primary-text);font-size:17px;font-weight:600}
+.ph .pill{font-size:15px;font-weight:600;line-height:20px;padding:8px 14px;border-radius:999px;background:var(--o-surface-alt);color:var(--o-text)}
+.ph .card{background:var(--o-surface);border-radius:20px;padding:20px;margin:0 12px 12px}
+.ph .empty{padding:48px 24px;text-align:center}
+.ph .strip{padding:10px 24px;display:flex;justify-content:space-between}
+</style></head><body>
+<p class="note">상태 표시 규칙의 예시예요. 배지는 세 갈래(중립 회색·주의 주황·실패 빨강)예요.</p>
+<div id="r"></div>
+<script>
+const A=`<div class="sb"></div><div class="hd"><span class="t2">기록</span></div>
+<div class="w strip"><span class="bs">보내는 중 2건</span><span class="sub">›</span></div>
+<div class="w strip" style="margin-top:1px"><span class="bs"><span class="bD">⚠ 보내지 못한 기록 1건</span></span><span class="sub">›</span></div>
+<div class="w" style="margin-top:16px"><div class="sh fn sub" style="padding-top:16px">11월 26일</div><div class="pad">
+<div class="rw"><div><div class="bd">이마트</div><div class="fn sub"><span class="badge bN">보내는 중</span>장보기 · 민호</div></div><span class="amt">−84,300원</span></div>
+<div class="rw"><div><div class="bd">Uniqlo</div><div class="fn sub"><span class="badge bN">추정</span>의류 · 민호</div></div><span class="amt">−52,340원</span></div></div></div>
+<div style="height:16px"></div>
+<div class="w"><div class="sh fn sub">종목</div><div class="pad">
+<div class="rw"><div><div class="bd">삼성전자</div><div class="fn sub"><span class="badge bW">지연</span>11/25 종가 · 10주</div></div><div style="text-align:right"><div class="amt">712,000원</div><div class="amts up">+3.2%</div></div></div>
+<div class="rw"><div><div class="bd">어떤 ETF</div><div class="fn sub">시세 없음 · 평가에서 빠짐</div></div><span class="amt sub">−</span></div></div></div>`;
+const B=`<div class="sb"></div><div class="hd"><span class="t2">11월</span></div>
+<div class="card"><div class="t3" style="font-size:17px">확인할 것</div>
+<div class="rw"><div><div class="bd">지수에게 빌려준 돈</div><div class="fn sub"><span class="badge bW">갚기로 한 날 지남</span>11월 10일</div></div><span class="pill">보기</span></div>
+<div class="rw" style="padding-bottom:0"><div><div class="bd">가족카드 청구서</div><div class="fn sub">확정됐어요</div></div><span class="pill">보기</span></div></div>
+<div class="card"><div class="fn sub">이번 달 받은 돈</div><div class="t3" style="font-size:17px">아직 기록이 없어요</div><div class="pad" style="padding:8px 0 0"><span class="tb">기록 추가</span></div></div>
+<p class="cap" style="padding:0 24px;font-size:11px;color:#E5484D">↑ 빈 상태: 그림 없이 한 줄 + 행동 하나</p>
+<div class="card"><div class="sk" style="height:14px;width:40%"></div><div class="sk" style="height:30px;width:70%;margin-top:10px"></div><div class="sk" style="height:14px;width:55%;margin-top:10px"></div></div>
+<p class="cap" style="padding:0 24px;font-size:11px;color:#E5484D">↑ 처음 열 때(폰에 저장된 값이 없을 때)만 자리표시</p>`;
+const C=`<div class="sb"></div><div class="hd"><span class="bd">‹ 투자</span></div>
+<div class="empty"><div class="t3">불러오지 못했어요</div><div class="bs sub" style="margin-top:8px">연결을 확인하고 다시 시도해 주세요</div><div style="margin-top:20px"><span class="pill">다시 시도</span></div></div>
+<p style="padding:0 24px;font-size:11px;color:#E5484D">↑ 저장된 값도 없는 화면 전체 오류만 이 모양. 저장된 값이 있으면 그대로 보여주고 위에 한 줄:</p>
+<div class="w strip" style="margin-top:12px"><span class="fn sub">11/26 09:12에 받은 내용이에요 · 다시 시도</span></div>`;
+document.getElementById('r').innerHTML=['','dark'].map(m=>`<div class="row">${[['목록의 상태 배지',A],['홈: 주의·빈 상태·자리표시',B],['오류',C]].map(([n,h])=>`<div><p class="cap-h">${n}${m?' (다크)':''}</p><div class="ph ${m}">${h}</div></div>`).join('')}</div>`).join('');
+</script></body></html>

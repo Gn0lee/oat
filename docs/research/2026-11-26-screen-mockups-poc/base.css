@@ -1,0 +1,26 @@
+/* 페이지 틀(시안 밖)은 Orca 테마 변수, 폰 안(.ph)은 DESIGN.md 토큰만 쓴다 */
+body{margin:0;padding:16px;font-family:var(--font-sans,system-ui);background:var(--background,#fff);color:var(--foreground,#171717);font-size:14px;line-height:1.5}
+.note{font-size:13px;color:var(--muted-foreground,#666);margin:4px 0 12px}
+.cap-h{font-size:14px;font-weight:700;margin:0 0 6px}
+.row{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;margin-bottom:20px}
+.ph{width:375px;flex:none;box-sizing:border-box;background:var(--o-background);color:var(--o-text);font-family:'Pretendard',system-ui,sans-serif;border-radius:28px;overflow:hidden;position:relative;border:1px solid var(--border,#ddd);font-size:17px;line-height:25.5px;letter-spacing:0}
+.ph *{box-sizing:border-box}
+.ph .sb{height:20px}
+/* 타이포 토큰 */
+.ph .hero{font-size:32px;line-height:42px;font-weight:700;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
+.ph .t1{font-size:26px;line-height:35px;font-weight:700}
+.ph .t2{font-size:22px;line-height:31px;font-weight:700}
+.ph .t3{font-size:20px;line-height:29px;font-weight:600}
+.ph .bd{font-size:17px;line-height:25.5px;font-weight:400}
+.ph .amt{font-size:17px;line-height:25.5px;font-weight:600;font-variant-numeric:tabular-nums}
+.ph .bs{font-size:15px;line-height:22.5px;font-weight:400}
+.ph .fn{font-size:13px;line-height:19.5px;font-weight:400}
+.ph .amts{font-size:13px;line-height:19.5px;font-weight:600;font-variant-numeric:tabular-nums}
+.ph .cp{font-size:11px;line-height:16.5px;font-weight:400}
+.ph .sub{color:var(--o-text-sub)}
+.ph .inc{color:var(--o-amount-income)}
+.ph .up{color:var(--o-amount-up)}
+.ph .dn{color:var(--o-amount-down)}
+.ph .pine{color:var(--o-primary-text)}
+.ph .sb6{font-weight:600}
+.ph .fx{display:flex;justify-content:space-between;align-items:center;gap:8px}

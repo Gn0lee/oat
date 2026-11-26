@@ -1,0 +1,36 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>/*BASE*/ /*TOKENS*/
+.ph{background:var(--o-surface);height:667px}
+.ph .hd{height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 24px}
+.ph .pad{padding:0 24px}
+.ph .band{height:16px;background:var(--o-background)}
+.ph .kv{display:flex;justify-content:space-between;padding:12px 0}
+.ph .sh{padding:20px 24px 4px}
+.ph .tb{color:var(--o-primary-text);font-size:17px;font-weight:600}
+.ph .dg{color:var(--o-danger);font-size:17px;font-weight:600}
+.ph .act{display:flex;justify-content:space-between;padding:14px 0}
+.ph .rwS{display:flex;align-items:stretch;margin:0 -24px}
+.ph .rwS .in{flex:1;display:flex;justify-content:space-between;padding:12px 24px;background:var(--o-surface);transform:translateX(-80px)}
+.ph .rwS .del{width:80px;background:var(--o-danger);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;margin-left:-80px}
+.ph .x{position:relative}.ph .x:after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(135deg,transparent 0 10px,rgba(229,72,77,.08) 10px 12px)}
+</style></head><body>
+<p class="note">왼쪽은 추천안(행동이 화면에 보임), 오른쪽은 쓰지 않을 숨은 행동(밀어서 삭제)이에요.</p>
+<div class="row" id="r"></div>
+<script>
+const D=`<div class="sb"></div><div class="hd"><span class="bd">‹</span><span class="bd sb6">기록</span><span style="width:12px"></span></div>
+<div class="pad" style="padding-bottom:24px"><div class="fn sub">이마트 · 공용 장부</div><div class="hero">−84,300원</div><div class="fn sub">11월 25일 화요일 18:42</div></div>
+<div class="band"></div><div class="pad" style="padding-top:8px">
+<div class="kv"><span class="bs sub">카테고리</span><span class="bd">장보기 <span class="sub">›</span></span></div>
+<div class="kv"><span class="bs sub">낸 곳</span><span class="bd">민호 · 가족카드 <span class="sub">›</span></span></div>
+<div class="kv"><span class="bs sub">쓴 사람</span><span class="bd">함께 <span class="sub">›</span></span></div></div>
+<div class="band"></div><div class="pad" style="padding-top:4px">
+<div class="act"><span class="bd">돌려받은 돈 기록</span><span class="sub">›</span></div>
+<div class="act"><span class="bd">다시 기록</span><span class="sub">›</span></div>
+<div class="act"><span class="dg">기록 삭제</span></div></div>`;
+const S=`<div class="sb"></div><div class="hd"><span class="t2">기록</span></div><div class="sh fn sub">11월 25일 화요일</div><div class="pad">
+<div class="rwS"><div class="in"><div><div class="bd">이마트</div><div class="fn sub">장보기 · 민호 · 가족카드</div></div><span class="amt">−84,300원</span></div><div class="del">삭제</div></div>
+<div class="kv"><div><div class="bd">쿠팡 환불</div><div class="fn sub">장보기 · 지수 · 가족카드</div></div><span class="amt">+12,900원</span></div></div>
+<div class="pad fn sub" style="padding-top:20px">✕ 줄을 밀어야 보이는 삭제는 쓰지 않아요</div>`;
+document.getElementById('r').innerHTML=[['기록 상세 (추천)',D,''],['쓰지 않음: 밀어서 삭제',S,' x'],['기록 상세 (다크)',D,' dark']].map(([n,h,c])=>`<div><p class="cap-h">${n}</p><div class="ph${c}">${h}</div></div>`).join('');
+</script></body></html>

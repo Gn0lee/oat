@@ -1,0 +1,55 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>/*BASE*/ /*TOKENS*/
+.ph{width:250px;height:470px;font-size:13px;line-height:18px}
+.ph.flatpage{background:var(--o-surface)}
+.ph .sb{height:14px}
+.ph .hdL{height:40px;display:flex;align-items:center;padding:0 16px;font-size:18px;font-weight:700}
+.ph .hdB{height:40px;display:flex;align-items:center;justify-content:center;position:relative;font-size:14px;font-weight:600}
+.ph .hdB:before{content:'‹';position:absolute;left:16px;font-size:20px;color:var(--o-text)}
+.ph .hdX:before{content:'✕';font-size:14px}
+.ph .card{background:var(--o-surface);border-radius:14px;padding:12px;margin:0 6px 8px}
+.ph .band{height:10px;background:var(--o-background)}
+.ph .pad{padding:0 16px}
+.ph .blk{background:var(--o-surface-alt);border-radius:6px;height:12px;margin:6px 0}
+.ph .hero{font-size:22px;line-height:28px}
+.ph .q{font-size:18px;line-height:25px;font-weight:700;padding:12px 16px 16px}
+.ph .lbl{font-size:11px;color:var(--o-text-sub)}
+.ph .tag{display:inline-block;font-size:10px;line-height:14px;border:1px dashed #E5484D;color:#C81E2D;border-radius:4px;padding:0 4px;margin-bottom:4px;background:var(--o-surface)}
+.ph .cta{position:absolute;left:12px;right:12px;bottom:28px;height:40px;border-radius:12px;background:var(--o-primary);color:var(--o-on-primary);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:14px}
+.ph .tabbar{position:absolute;left:0;right:0;bottom:0;height:40px;background:var(--o-surface);border-top:1px solid var(--o-divider);display:flex;justify-content:space-around;align-items:center;font-size:10px;color:var(--o-text-sub)}
+.ph .tabbar b{color:var(--o-primary-text);font-weight:600}
+.ph .fab{position:absolute;right:14px;bottom:52px;width:40px;height:40px;border-radius:20px;background:var(--o-primary);color:var(--o-on-primary);display:flex;align-items:center;justify-content:center;font-size:22px}
+.ph .kp{position:absolute;left:0;right:0;bottom:76px;display:grid;grid-template-columns:repeat(3,1fr);gap:2px;padding:0 12px}
+.ph .kp span{height:30px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600}
+.ph .opt{border-radius:10px;background:var(--o-surface-alt);height:36px;margin:0 16px 8px}
+.ph .scrim{position:absolute;inset:0;background:rgba(0,0,0,.4)}
+.ph .sheet{position:absolute;left:0;right:0;bottom:0;height:250px;background:var(--o-surface);border-radius:16px 16px 0 0;padding:12px 0}
+.ph .grab{width:36px;height:4px;border-radius:2px;background:var(--o-divider);margin:0 auto 10px}
+</style></head><body>
+<p class="note">화면 뼈대 6종이에요. 빨간 점선 꼬리표가 그 화면의 <b>주인공 하나</b>예요. 회색 막대는 내용 자리예요.</p>
+<div class="row" id="r"></div>
+<script>
+const tab=(i)=>`<div class="tabbar">${['홈','기록','분석','자산'].map((t,k)=>k===i?`<b>${t}</b>`:`<span>${t}</span>`).join('')}</div>`;
+const bl=(n,w)=>Array.from({length:n},(_,i)=>`<div class="blk" style="width:${w?w[i%w.length]:100}%"></div>`).join('');
+const S=[
+['① 요약 (홈·자산)','',`<div class="sb"></div><div class="hdL">11월</div>
+<div class="card"><span class="tag">주인공: 맨 위 숫자</span><div class="lbl">이번 달 쓴 돈</div><div class="hero" style="font-weight:700">1,284,500원</div>${bl(2,[70,50])}</div>
+<div class="card"><b>확인할 것</b>${bl(2,[90,60])}</div><div class="card"><b>곧 나갈 돈</b>${bl(3,[90,80,60])}</div><div class="fab">+</div>${tab(0)}`],
+['② 목록 (기록·지갑 내역)','flatpage',`<div class="sb"></div><div class="hdL">기록</div>
+<div class="pad"><span class="tag">주인공: 날짜 묶음 목록</span><div class="lbl">11월 26일</div>${bl(4,[90,70])}<div class="lbl" style="margin-top:10px">11월 25일</div>${bl(6,[90,70])}</div><div class="fab">+</div>${tab(1)}`],
+['③ 리포트·상세 (분석·투자·기록 상세)','flatpage',`<div class="sb"></div><div class="hdB">투자</div>
+<div class="pad" style="padding-bottom:12px"><span class="tag">주인공: 맨 위 숫자</span><div class="lbl">평가액</div><div class="hero" style="font-weight:700">24,180,000원</div>${bl(1,[50])}</div>
+<div class="band"></div><div class="pad" style="padding-top:10px"><b>종목</b>${bl(4,[90,70])}</div><div class="band" style="margin-top:8px"></div><div class="pad" style="padding-top:10px"><b>배당</b>${bl(2,[90,70])}</div>`],
+['④ 퍼널 질문 (입력 한 단계)','flatpage',`<div class="sb"></div><div class="hdB hdX" style="justify-content:flex-start;padding-left:16px"></div>
+<div class="lbl" style="padding:0 16px">공용 지출</div><div class="q"><span class="tag">주인공: 질문 하나</span><br>얼마 썼어요?</div>
+<div class="hero" style="font-weight:700;padding:0 16px">12,800원</div><div class="lbl" style="padding:2px 16px">1만 2천 8백 원</div>
+<div class="kp">${['1','2','3','4','5','6','7','8','9','00','0','⌫'].map(k=>`<span>${k}</span>`).join('')}</div><div class="cta">다음</div>`],
+['⑤ 확인 (입력 마지막·고치기)','flatpage',`<div class="sb"></div><div class="hdB">기록 확인</div>
+<div class="pad" style="padding-bottom:12px"><span class="tag">주인공: 금액</span><div class="lbl">🔒 내 장부 · 지출</div><div class="hero" style="font-weight:700">−12,800원</div></div>
+<div class="band"></div><div class="pad" style="padding-top:6px">${['가맹점','카테고리','낸 곳','날짜','메모'].map(x=>`<div style="display:flex;justify-content:space-between;padding:7px 0"><span class="lbl" style="font-size:12px">${x}</span><span class="blk" style="width:40%;margin:0"></span></div>`).join('')}<div class="lbl" style="padding-top:4px">더 보기 ›</div></div><div class="cta">저장</div>`],
+['⑥ 시트 (한 칸 고르기)','flatpage',`<div class="sb"></div><div class="hdB">기록 확인</div><div class="pad">${bl(8,[90,60])}</div>
+<div class="scrim"></div><div class="sheet"><div class="grab"></div><div class="q" style="padding-top:0"><span class="tag">주인공: 고를 목록</span><br>어디서 냈어요?</div><div class="opt"></div><div class="opt"></div><div class="opt"></div></div>`],
+];
+document.getElementById('r').innerHTML=S.map(([n,c,h])=>`<div><p class="cap-h">${n}</p><div class="ph ${c}">${h}</div></div>`).join('');
+</script></body></html>

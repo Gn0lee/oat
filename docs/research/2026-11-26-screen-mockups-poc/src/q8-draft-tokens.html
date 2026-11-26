@@ -1,0 +1,51 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>/*BASE*/ /*TOKENS*/
+.ph{--o-warning:#A85400;--o-warning-soft:#FFF3E0;--o-scrim:rgba(0,0,0,.2);--o-pressed:rgba(25,31,40,.05);background:var(--o-surface);padding-bottom:24px}
+.ph.dark{--o-warning:#FFA861;--o-warning-soft:#3D2500;--o-scrim:rgba(0,0,0,.56);--o-pressed:rgba(232,234,233,.11)}
+.ph .g{padding:16px 24px 0}
+.ph .gl{font-size:11px;line-height:16px;color:#E5484D;font-weight:600;margin-bottom:8px}
+.ph .v{font-size:12px;color:var(--o-text-sub);font-family:ui-monospace,monospace}
+.ph .btn{height:56px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:17px;line-height:25.5px;font-weight:600;margin-bottom:8px}
+.ph .b1{background:var(--o-primary);color:var(--o-on-primary)}
+.ph .b1p{background:var(--o-primary-pressed);color:var(--o-on-primary)}
+.ph .bdis{background:var(--o-surface-alt);color:var(--o-text-disabled)}
+.ph .b2{background:var(--o-surface-alt);color:var(--o-text)}
+.ph .pill{display:inline-flex;align-items:center;height:36px;font-size:15px;font-weight:600;padding:0 14px;border-radius:999px;background:var(--o-surface-alt);color:var(--o-text);margin-right:6px}
+.ph .chip{display:inline-flex;align-items:center;height:36px;font-size:15px;font-weight:600;padding:0 12px;border-radius:999px;border:1px solid var(--o-border-strong);margin-right:6px}
+.ph .badge{display:inline-block;font-size:13px;line-height:18px;font-weight:600;padding:0 6px;border-radius:6px;margin-right:4px}
+.ph .row2{display:flex;justify-content:space-between;align-items:center;padding:12px 24px;min-height:56px;margin:0 -24px}
+.ph .press{background:var(--o-pressed)}
+.ph .inp{height:48px;border-radius:12px;border:1px solid var(--o-border-strong);display:flex;align-items:center;padding:0 14px;color:var(--o-text-sub);font-size:17px}
+.ph .tabbar{height:49px;border-top:1px solid var(--o-divider);display:flex;justify-content:space-around;align-items:center;font-size:11px;line-height:16.5px;font-weight:600;color:var(--o-text-sub);margin:0 -24px}
+.ph .tabbar b{color:var(--o-primary-text);font-weight:600}
+.ph .kp{display:grid;grid-template-columns:repeat(3,1fr);margin:0 -24px}
+.ph .kp span{height:56px;display:flex;align-items:center;justify-content:center;font-size:28px;line-height:34px;font-weight:600;font-variant-numeric:tabular-nums}
+.ph .scrimbox{position:relative;height:120px;margin:0 -24px;background:var(--o-background)}
+.ph .scrimbox .s{position:absolute;inset:0;background:var(--o-scrim)}
+.ph .scrimbox .sh{position:absolute;left:0;right:0;bottom:0;height:60px;background:var(--o-surface);border-radius:20px 20px 0 0;padding:16px 24px}
+.ph .toast{background:var(--o-text);color:var(--o-surface);border-radius:14px;padding:12px 16px;display:flex;justify-content:space-between;font-size:15px}
+.ph .sp{display:flex;align-items:flex-end;gap:6px}.ph .sp i{display:block;background:var(--o-primary-soft);border:1px solid var(--o-primary-text)}
+</style></head><body>
+<p class="note">질문 없이 채우는 초안 값이에요. 회색 고정폭 글자가 토큰 값이에요. 눈에 걸리는 것만 말해 주세요.</p>
+<div class="row" id="r"></div>
+<script>
+const S=`
+<div class="g"><div class="gl">간격 (4 단위)</div><div class="sp">${[4,8,12,16,20,24,32,40].map(n=>`<div style="text-align:center"><i style="width:${n}px;height:${n}px"></i><div class="v">${n}</div></div>`).join('')}</div>
+<div class="v" style="margin-top:8px">평면 좌우 24 · 카드 바깥 12 / 안 20 · 카드 사이 12 · 띠 16 · 섹션 제목 위 24 아래 8</div></div>
+<div class="g"><div class="gl">모서리</div><div class="v">배지 6 · 입력칸 12 · 버튼 16 · 카드·시트 20 · 칩·알약·＋ 완전 둥글게</div></div>
+<div class="g"><div class="gl">주 버튼 · 누름 · 비활성 · 보조 (높이 56, 글자 17 세미볼드)</div>
+<div class="btn b1">저장</div><div class="btn b1p">저장 (누름: primary-pressed)</div><div class="btn bdis">다음 (비활성: surface-alt + text-disabled)</div><div class="btn b2">저장하고 하나 더</div></div>
+<div class="g"><div class="gl">알약·칩 (높이 36, 15 세미볼드) · 배지 (13 세미볼드)</div>
+<span class="pill">보기</span><span class="pill" style="background:var(--o-primary-soft);color:var(--o-primary-text)">확정</span><span class="chip">전체 장부 ▾</span>
+<div style="margin-top:8px"><span class="badge" style="background:var(--o-surface-alt);color:var(--o-text-sub)">추정</span><span class="badge" style="background:var(--o-warning-soft);color:var(--o-warning)">지연</span><span class="v">warning #A85400 / 다크 #FFA861</span></div></div>
+<div class="g"><div class="gl">목록 줄 최소 높이 56 · 줄 누름</div>
+<div class="row2"><span class="bd">관리비</span><span class="amt">−240,000원</span></div>
+<div class="row2 press"><span class="bd">이마트 (누름)</span><span class="amt">−84,300원</span></div><div class="v">pressed: text 5% / 다크 11% 덮개</div></div>
+<div class="g"><div class="gl">입력칸 (높이 48)</div><div class="inp">가맹점 검색</div></div>
+<div class="g"><div class="gl">탭 바 (높이 49 + 홈 표시줄, 라벨 11 세미볼드)</div><div class="tabbar"><b>홈</b><span>기록</span><span>분석</span><span>자산</span></div></div>
+<div class="g"><div class="gl">키패드 (키 높이 56, 숫자 28 세미볼드·폭 고정)</div><div class="kp">${['1','2','3','4','5','6','7','8','9','00','0','⌫'].map(k=>`<span>${k}</span>`).join('')}</div></div>
+<div class="g"><div class="gl">시트 가림막</div><div class="scrimbox"><div class="v" style="padding:8px 24px">뒤 화면</div><div class="s"></div><div class="sh"><span class="bd">시트</span></div></div><div class="v">scrim: 검정 20% / 다크 56% (TDS 값)</div></div>
+<div class="g"><div class="gl">토스트 (반전 면: text 위 surface 글자)</div><div class="toast"><span>저장했어요</span><b style="text-decoration:underline">되돌리기</b></div></div>`;
+document.getElementById('r').innerHTML=[['라이트',''],['다크',' dark']].map(([n,c])=>`<div><p class="cap-h">${n}</p><div class="ph${c}">${S}</div></div>`).join('');
+</script></body></html>

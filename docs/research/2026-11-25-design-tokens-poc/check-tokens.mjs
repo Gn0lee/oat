@@ -4,7 +4,7 @@
 import { readFileSync } from 'node:fs';
 import { ratio } from './lib.mjs';
 const t = JSON.parse(readFileSync(new URL('./tokens.dtcg.json', import.meta.url)));
-const hex = (v) => '#' + v.$value.components.map((c) => Math.round(c * 255).toString(16).padStart(2, '0')).join('');
+const hex = (v) => '#' + v.$value.components.slice(0, 3).map((c) => Math.round(c * 255).toString(16).padStart(2, '0')).join('');
 const need = [
   // [글자/표시 토큰, 면 토큰들, 기준]
   ['text', ['background', 'surface', 'surface-alt'], 4.5],
@@ -17,6 +17,7 @@ const need = [
   ['amount-up-display', ['background', 'surface', 'surface-alt'], 3],
   ['amount-down-display', ['background', 'surface', 'surface-alt'], 3],
   ['danger', ['background', 'surface', 'surface-alt'], 4.5],
+  ['warning', ['background', 'surface', 'surface-alt', 'warning-soft'], 4.5],
   ['ledger-private', ['background', 'surface', 'ledger-private-soft'], 4.5],
   ['border-strong', ['background', 'surface'], 3],
   ['primary', ['surface'], 3],
@@ -24,6 +25,7 @@ const need = [
   ['chart-axis', ['surface'], 3],
   ['chart-neutral', ['surface'], 3],
   ['chart-reference', ['surface'], 3],
+  // scrim·pressed는 덮개(투명도)라 대비 대상이 아니다. button-primary-disabled(text-disabled on surface-alt)는 WCAG 비활성 예외.
   // chart-group-*는 3:1 예외(DESIGN.md 차트 절). 누르면 나오는 금액과 A1 목록으로 보완.
 ];
 let fail = 0;

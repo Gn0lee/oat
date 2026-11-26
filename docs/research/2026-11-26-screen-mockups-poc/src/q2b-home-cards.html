@@ -1,0 +1,39 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>/*BASE*/ /*TOKENS*/
+.ph{height:667px}
+.ph .card{background:var(--o-surface);border-radius:20px;padding:20px 16px;margin:0 8px 12px}
+.ph .hd{height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 24px}
+.ph .top{padding:8px 24px 24px}
+.ph .rw{display:flex;justify-content:space-between;align-items:center;padding:12px 0}
+.ph .more{display:flex;justify-content:space-between;padding-top:8px}
+.ph .tabbar{position:absolute;left:0;right:0;bottom:0;height:83px;background:var(--o-surface);border-top:1px solid var(--o-divider);display:flex;justify-content:space-around;padding-top:8px;font-size:11px;color:var(--o-text-sub)}
+.ph .tabbar b{color:var(--o-primary-text);font-weight:600}
+.ph .fab{position:absolute;right:16px;bottom:99px;width:56px;height:56px;border-radius:28px;background:var(--o-primary);color:var(--o-on-primary);display:flex;align-items:center;justify-content:center;font-size:28px}
+.ph .fold{position:absolute;left:0;right:0;top:584px;border-top:2px dashed #E5484D;opacity:.5}
+</style></head><body>
+<p class="note">SE 2세대 화면 높이(667pt)예요. 빨간 점선 아래는 탭 바에 가려요. 확인할 것·받을 돈이 둘 다 있는 바쁜 날을 그렸어요.</p>
+<div class="row" id="r"></div>
+<script>
+const heroCore=`<div class="fn sub">이번 달 쓴 돈</div><div class="hero">1,284,500원</div>
+<div class="bs">평소 이맘때보다 12만 원 덜</div><div class="fn sub">공용 98만 원 · 내 30만 원</div>`;
+const incRows=`<div class="rw" style="padding-bottom:0"><span class="bs sub">수입</span><span class="amt inc">+3,800,000원</span></div>
+<div class="rw" style="padding-bottom:0"><span class="bs sub">남은 돈</span><span class="amt">2,515,500원</span></div>`;
+const check=`<div class="card"><div class="t3">확인할 것 2</div>
+<div class="rw"><div><div class="bd">월세 예정</div><div class="fn sub">오늘 · 생활비 통장</div></div><span class="bs pine sb6">확정</span></div>
+<div class="more"><span class="bs sub">1건 더 보기</span><span class="sub">›</span></div></div>`;
+const notice=`<div class="card"><div class="t3">눈에 띄는 것</div><div class="bs" style="padding-top:8px">외식을 평소 이맘때보다 9만 원 더 썼어요</div></div>`;
+const soon=`<div class="card"><div class="t3">곧 나갈 돈</div><div class="fn sub">3건 · 약 1,120,000원</div>
+<div class="rw"><div><div class="bd">관리비</div><div class="fn sub">11월 28일</div></div><span class="amt">−240,000원</span></div>
+<div class="rw"><div><div class="bd">가족카드 대금</div><div class="fn sub">12월 1일</div></div><span class="amt">−820,000원</span></div></div>`;
+const recv=`<div class="card"><div class="t3">받을 돈</div><div class="rw"><div><div class="bd">지수</div><div class="fn sub">12일째</div></div><span class="amt">45,000원</span></div></div>`;
+const chrome=`<div class="fold"></div><div class="fab">+</div><div class="tabbar"><b>홈</b><span>기록</span><span>분석</span><span>자산</span></div>`;
+const hd=`<div class="sb"></div><div class="hd"><span class="t2">11월</span><span class="sub">◯</span></div>`;
+const A=hd+`<div class="card">${heroCore}${incRows}</div>`+check+notice+soon+recv;
+const B=hd+`<div class="top">${heroCore}<div class="bs" style="margin-top:8px">🔎 외식을 평소 이맘때보다 9만 원 더 썼어요 ›</div>${incRows}</div>`+check+soon+recv;
+const C=hd+`<div class="top">${heroCore}<div class="bs" style="margin-top:8px">🔎 외식을 평소 이맘때보다 9만 원 더 썼어요 ›</div>${incRows}</div>`+
+`<div class="card"><div class="t3">확인할 것 2</div><div class="rw"><div><div class="bd">월세 예정</div><div class="fn sub">오늘 · 생활비 통장</div></div><span class="bs pine sb6">확정</span></div>
+<div class="t3" style="margin-top:16px">곧 나갈 돈</div><div class="fn sub">3건 · 약 1,120,000원</div><div class="rw"><div><div class="bd">관리비</div><div class="fn sub">11월 28일</div></div><span class="amt">−240,000원</span></div></div>`;
+const S=[['A · 지금 기본값 (카드 5장)',A],['B · 숫자는 카드 밖 + 눈에 띄는 것은 숫자 밑 한 줄 (추천)',B],['C · B + 나머지를 카드 한 장에 섹션으로',C]];
+document.getElementById('r').innerHTML=S.map(([n,h])=>`<div><p class="cap-h">${n}</p><div class="ph">${h}${chrome}</div></div>`).join('');
+</script></body></html>
