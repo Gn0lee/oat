@@ -158,7 +158,7 @@
 
 ## 7. 정식 출시용 시세 공급원
 
-앞 조사([시세·환율 공급원 조사](2026-11-18-market-data-providers.md))에서 KIS·data.go.kr·KRX Open API는 제3자 제공 금지, EODHD·Massive 표시 권리는 월 $2,499임을 확인했다. 여기서는 작은 앱이 정식으로 쓸 수 있는 경로를 찾았다.
+앞 조사([시세·환율 공급원 조사](2026-11-18-market-data-providers.md))에서 KIS·KRX Open API는 제3자 제공 금지, data.go.kr 주식시세는 공공누리 4유형(출처표시·비상업·변경금지), EODHD·Massive 표시 권리는 월 $2,499임을 확인했다. 여기서는 작은 앱이 정식으로 쓸 수 있는 경로를 찾았다.
 
 ### 7.1 국내
 
