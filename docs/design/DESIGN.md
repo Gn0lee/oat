@@ -492,7 +492,7 @@ oat는 가족이 함께 쓰는 가계부·자산 앱이다. iOS 앱이 먼저이
 
 ### 큰 숫자 넘침
 
-**초안이다.** 실기기(200% 글자, AX 크기)와 App Store "더 큰 텍스트" 라벨 기준을 확인한 뒤 확정한다. 확인은 정식 출시 조건 목록에 넣는다.
+**초안이다.** 실기기(200% 글자, AX 크기)와 App Store "더 큰 텍스트" 라벨 기준을 확인한 뒤 확정한다. 확인은 정식 출시 조건 목록에 넣는다. → [정식 출시 조건 목록](launch-conditions.md) 6절 1번.
 
 - `amount-hero`는 **최대 44pt**까지 커진다(`maxFontSizeMultiplier` ≈ 1.375, TDS 큰 제목 상한 140%와 비슷).
 - 넘치면 **0.7배까지** 폭에 맞게 줄인다(`adjustsFontSizeToFit`, `minimumFontScale: 0.7`).
