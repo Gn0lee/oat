@@ -59,7 +59,7 @@ colors:
     warning: "#FFA861"
     warning-soft: "#3D2500"
     scrim: "#0000008F"
-    pressed: "#E8EAE91C"
+    pressed: "#E8EAE90F"
     amount-income: "#4795FF"
     amount-up: "#FF6B6B"
     amount-up-display: "#FF6B6B"
@@ -291,6 +291,25 @@ components:
     height: 49px
   tab-bar-selected:
     textColor: "{colors.light.primary-text}"
+  toast-action:
+    textColor: "{colors.light.surface}"
+    typography: "{typography.label-md}"
+  top-bar:
+    backgroundColor: "{colors.light.background}"
+    textColor: "{colors.light.text}"
+    typography: "{typography.label-lg}"
+  notice-line:
+    textColor: "{colors.light.text-sub}"
+    typography: "{typography.footnote}"
+  failure-text:
+    textColor: "{colors.light.danger}"
+    typography: "{typography.label-md}"
+  segmented:
+    backgroundColor: "{colors.light.surface-alt}"
+    textColor: "{colors.light.text}"
+    typography: "{typography.label-md}"
+    rounded: "{rounded.input}"
+    height: 36px
   keypad-key:
     textColor: "{colors.light.text}"
     typography: "{typography.keypad}"
@@ -402,7 +421,7 @@ oat는 가족이 함께 쓰는 가계부·자산 앱이다. iOS 앱이 먼저이
 | 토큰 | 라이트 | 다크 | 규칙 |
 |---|---|---|---|
 | `scrim` | `#00000033`(검정 20%) | `#0000008F`(검정 56%) | 시트·확인 시트 뒤 가림막. TDS `lightThemeBackgroundDimmed`·`darkThemeBackgroundDimmed` 값 |
-| `pressed` | `#191F280D`(`text` 5%) | `#E8EAE91C`(`text` 11%) | 목록 줄·칸 줄을 누르는 동안 덮는 색. 버튼은 `primary-pressed` |
+| `pressed` | `#191F280D`(`text` 5%) | `#E8EAE90F`(`text` 6%) | 목록 줄·칸 줄을 누르는 동안 덮는 색. 버튼은 `primary-pressed`. 덮인 면 위 `text-sub`·금액 색도 4.5 이상(다크 `text-sub` 4.67, 수입 4.77). TDS 다크 11%는 4.05라 낮췄다 |
 
 - 덮개는 투명도가 있는 색이라 대비 검사 대상이 아니다.
 
@@ -450,14 +469,14 @@ oat는 가족이 함께 쓰는 가계부·자산 앱이다. iOS 앱이 먼저이
 
 | 토큰 | 크기/줄 | 굵기 | iOS 글자 스타일(`dynamicTypeRamp`) | 쓰는 곳 |
 |---|---|---|---|---|
-| `amount-hero` | 32/42 | Bold, 숫자 폭 고정, 자간 −0.5 | `largeTitle` | 홈 맨 위 숫자, 입력 금액, 자산 탭 묶음 금액 |
+| `amount-hero` | 32/42 | Bold, 숫자 폭 고정, 자간 −0.5 | `largeTitle` | 화면당 하나: 홈 맨 위 숫자, 리포트·상세 맨 위 숫자(묶음 상세 포함), 입력 금액. 자산 탭 묶음 금액은 `amount` |
 | `title-1` | 26/35 | Bold | `title1` | 퍼널 질문("얼마 썼어요?") |
 | `title-2` | 22/31 | Bold | `title2` | 화면 제목 |
-| `title-3` | 20/29 | SemiBold | `title3` | 카드·섹션 제목 |
+| `title-3` | 20/29 | SemiBold | `title3` | 시트·확인 시트 제목, 화면 전체 빈·오류 문장, 달 넘기기. 홈 카드 제목·띠 아래 섹션 제목에는 쓰지 않는다 |
 | `body` | 17/25.5 | Regular | `body` | 목록 이름, 본문 |
 | `amount` | 17/25.5 | SemiBold, 숫자 폭 고정 | `body` | 목록 금액 |
-| `body-sm` | 15/22.5 | Regular | `subheadline` | 보조 줄 |
-| `footnote` | 13/19.5 | Regular | `footnote` | 설명 |
+| `body-sm` | 15/22.5 | Regular | `subheadline` | 칸 줄 라벨, 설명 문장, 홈 한 줄 정보 |
+| `footnote` | 13/19.5 | Regular | `footnote` | 목록 줄 보조 줄, 띠 아래 섹션 제목(`text-sub`), 안내 줄 |
 | `amount-sm` | 13/19.5 | SemiBold, 숫자 폭 고정 | `footnote` | 작은 금액. 색이 든 금액의 하한 |
 | `caption` | 11/16.5 | Regular | `caption2` | 날짜·차트 축만. 금액에 쓰지 않는다 |
 | `label-lg` | 17/25.5 | SemiBold | `body` | 주 버튼·보조 버튼, 위험 글자 버튼 |
@@ -489,6 +508,7 @@ oat는 가족이 함께 쓰는 가계부·자산 앱이다. iOS 앱이 먼저이
 
 - 간격은 4 단위: `xs` 4 · `sm` 8 · `md` 12 · `lg` 16 · `xl` 20 · `2xl` 24 · `3xl` 32 · `4xl` 40.
 - `gutter` 24: 평면 화면의 좌우 여백, 상단 바·섹션 제목·목록 줄의 글자 시작선(TDS ListRow·ListHeader·Top과 같음).
+- 높이 값(버튼·알약·칩·입력칸·목록 줄)은 모두 **최소 높이**다. 더 큰 텍스트에서 글자와 함께 커진다. 키패드 키만 고정이다.
 - `card-margin` 12 · `card-padding` 20 · `card-gap` 12: 요약 화면(홈·자산 탭) 카드(토스 홈 실측과 같음). 카드 화면의 글자 시작선은 32라서 평면 화면(24)과 맞추지 않는다.
 - `band` 16: 평면 화면에서 주제가 크게 바뀔 때 넣는 회색 띠(TDS `Border height16`). 색은 `background`.
 - `section-top` 24 · `section-bottom` 8: 띠 아래 섹션 제목의 위·아래.
@@ -507,22 +527,26 @@ YAML `components`는 라이트 묶음을 가리킨다. 다크는 같은 이름�
 
 | 컴포넌트 | 모양 | 쓰는 곳 |
 |---|---|---|
-| `button-primary` | Pine 면, 흰 `label-lg`, 높이 56, 모서리 16 | 화면당 하나, 아래 고정(`저장`·`다음`). 누름 `primary-pressed` |
+| `button-primary` | Pine 면, 흰 `label-lg`, 최소 높이 56, 모서리 16 | 화면당 하나, 아래 고정(`저장`·`다음`). 누름 `primary-pressed` |
 | `button-primary-disabled` | `surface-alt` 면 + `text-disabled` | 누를 수 없는 주 버튼. Pine을 흐리게 하지 않는다 |
-| `button-secondary` | `surface-alt` 면, `text` | 주 버튼 위·옆(`저장하고 하나 더`, 확인 시트 `취소`) |
-| `pill` / `pill-accent` | 높이 36, 완전 둥글게, `label-md` | 줄·카드 안 작은 행동(`보기`·`확정`). 대표 행동 하나만 accent |
-| `text-button` | `primary-text` 글자 | `더 보기`·`건너뛰기` |
+| `button-secondary` | `surface-alt` 면, `text` | 주 버튼 바로 위(`저장하고 하나 더`, 확인 시트 `취소`) |
+| `pill` / `pill-accent` | 최소 높이 36(누름 영역 위아래 4씩 넓혀 44), 완전 둥글게, `label-md` | 줄·카드 안 작은 행동(`보기`·`확정`). 대표 행동 하나만 accent |
+| `text-button` | `primary-text` 글자 + 늘 `›` | `더 보기 ›`·`건너뛰기 ›`. Pine 글자는 본문과 대비 1.94라 색만으로 구분되지 않는다 |
 | `danger-text-button` | `danger` 글자 | `기록 삭제`. 빨강 면 버튼은 쓰지 않고 확인 시트를 한 번 거친다 |
-| `chip` / `chip-selected` / `chip-ledger-private` | 높이 36, 완전 둥글게, `border-strong` 테두리 | 누를 수 있는 거르개·통화·범례·장부 칩 |
+| `chip` / `chip-selected` / `chip-ledger-private` | 최소 높이 36(누름 영역 44), 완전 둥글게. 기본 칩만 `border-strong` 테두리, 선택 칩은 테두리 없이 연한 Pine + 앞에 ✓, 개인 장부 칩은 테두리 없이 자두 + 🔒 | 누를 수 있는 거르개·통화·범례·장부 칩 |
 | `badge` / `badge-warning` | 모서리 6, 테두리 없음, `label-sm` | 표시만 하는 상태(추정·보내는 중·지난번과 같음 / 지연·갚기로 한 날 지남) |
-| `input` | 높이 48, 모서리 12, `border-strong` 테두리 | 검색·메모. `surface-alt` 위에는 두지 않는다 |
+| `input` | 최소 높이 48, 모서리 12, `border-strong` 테두리 | 검색·메모. `surface-alt` 위에는 두지 않는다 |
 | `list-row` | 최소 56, 좌우 24, 누름 `pressed` | 목록 줄·칸 줄 |
 | `card` | `surface`, 모서리 20, 안 20 | 요약 화면(홈·자산 탭)에만 |
 | `band` | `background`, 높이 16 | 평면 화면의 주제 경계 |
 | `sheet` + `scrim` | 위 모서리 20, 가림막 | 한 칸 고르기·고치기, 확인 시트 |
-| `toast` | `text` 면에 `surface` 글자(반전) | "저장했어요 · 되돌리기" |
+| `toast` | `text` 면에 `surface` 글자(반전), 모서리 12 | "저장했어요 · 되돌리기". 행동 글자(`toast-action`)는 `surface` 색 SemiBold + 밑줄, 누름 영역 44. 반전 면 위 Pine은 1.94라 쓰지 않는다 |
 | `fab` | Pine 원 56 | 홈·기록 탭의 떠 있는 `+` |
-| `tab-bar` | 높이 49(+홈 표시줄), `label-tab`, 선택 `primary-text` | 하단 탭 4개 |
+| `tab-bar` | 높이 49(+홈 표시줄), `label-tab`, 선택 `primary-text` + 채운 아이콘 | 하단 탭 4개. 라벨은 더 큰 텍스트에서 키우지 않고 큰 콘텐츠 보기로 |
+| `top-bar` | 회색 바탕(내비게이션 평면 화면) 또는 흰 면(입력 모달), 제목 `title-2`(탭 첫 화면)·`label-lg`(들어간 화면) | 상단 바 |
+| `notice-line` | `footnote` `text-sub`, 앞에 ⓘ 또는 끝에 `›` | 안내 줄(`보내는 중 2건 ›`, `11/26 09:12 기준 · 다시 시도`, 주인 쪽 나만 보기 안내) |
+| `failure-text` | 바탕 없이 `danger` 글자 + ⚠, `label-md` | 보내지 못한 기록, 입력칸 아래 오류 문장 |
+| `segmented` | `surface-alt` 바탕 위 선택 칸 `surface` + `label-md`, 최소 높이 36 | 2~3개 중 하나 고르기 |
 | `keypad-key` | 높이 56, `keypad` 글자 | 금액 키패드 |
 
 ## Do's and Don'ts
@@ -533,7 +557,7 @@ YAML `components`는 라이트 묶음을 가리킨다. 다크는 같은 이름�
 - Don't: Pine을 금액·차트·큰 면적 배경에 쓰지 않는다.
 - Don't: 정보가 담긴 글자에 `text-disabled`를 쓰거나 숫자를 흐리게 하지 않는다.
 - Don't: `-display` 숫자 색을 24pt 미만(굵게 19pt 미만)에 쓰지 않는다.
-- Don't: 묶음 색을 자산 추이 밖(목록 점, 배지 등)에 쓰지 않는다(주요 화면 시안에서 확인).
+- Don't: 묶음 색을 자산 추이 밖(목록 점, 배지 등)에 쓰지 않는다.
 - Don't: 기한 지남·지연에 빨강을 쓰지 않는다. `warning` 배지를 쓴다.
 - Don't: 화면에서 새 부품을 바로 만들지 않는다. 이 파일의 `components`에 먼저 더한다(ADR 0036).
 - Don't: 빗금으로 계열을 나누지 않는다.

@@ -1,0 +1,27 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>/*BASE*/ /*TOKENS*/
+.ph{height:667px}
+.ph .hd{height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 24px}
+.ph .card{background:var(--o-surface);border-radius:20px;padding:20px;margin:0 12px 12px}
+.ph .rw{display:flex;justify-content:space-between;align-items:center;padding:10px 0}
+.ph .dot{display:none}
+.ph .bars{display:flex;align-items:flex-end;gap:10px;height:110px;margin-top:12px;border-bottom:1px solid var(--o-chart-axis)}
+.ph .bars div{flex:1;display:flex;flex-direction:column-reverse;gap:1.2px}
+.ph .tabbar{position:absolute;left:0;right:0;bottom:0;height:83px;background:var(--o-surface);border-top:1px solid var(--o-divider);display:flex;justify-content:space-around;padding-top:8px;font-size:11px;font-weight:600;color:var(--o-text-sub)}
+.ph .tabbar b{color:var(--o-primary-text);font-weight:600}
+</style></head><body>
+<p class="note">자산 탭 = 요약 화면. 묶음 목록 카드 1장(금액 17, 3줄 제한 예외) + 월별 자산 추이 카드 1장. 큰 숫자가 없어요(순자산 합계 줄 없음).</p>
+<div class="row" id="r"></div>
+<script>
+const G=[['쓸 수 있는 돈','8,420,000원'],['모으는 돈','32,000,000원'],['투자','24,180,000원','11/26 15:30 기준'],['포인트·상품권','184,300원'],['빌려준 돈','500,000원'],['갚아야 할 돈','−1,820,000원']];
+const C=['cash','saving','invest','point'];
+const bars=[[30,40,20,3],[31,42,22,3],[29,44,25,3],[32,45,24,4],[33,47,26,4],[34,48,27,4]];
+const H=`<div class="sb"></div><div class="hd"><span class="t2">자산</span><span class="pine bs sb6">지갑 추가</span></div>
+<div class="card">${G.map(([n,a,s])=>`<div class="rw"><div><div class="bd">${n}</div>${s?`<div class="fn sub">${s}</div>`:''}</div><span class="amt">${a} <span class="sub">›</span></span></div>`).join('')}</div>
+<div class="card"><div class="fx"><span class="bd sb6">월별 자산 추이</span><span class="sub">›</span></div>
+<div class="bars">${bars.map(b=>`<div>${b.map((v,i)=>`<i style="display:block;height:${v*0.9}px;background:var(--o-chart-group-${C[i]})"></i>`).join('')}</div>`).join('')}</div>
+<div class="cp sub fx" style="margin-top:4px"><span>6월</span><span>7월</span><span>8월</span><span>9월</span><span>10월</span><span>11월</span></div></div>
+<div class="tabbar"><span>홈</span><span>기록</span><span>분석</span><b>자산</b></div>`;
+document.getElementById('r').innerHTML=[['라이트',''],['다크',' dark']].map(([n,c])=>`<div><p class="cap-h">${n}</p><div class="ph${c}">${H}</div></div>`).join('');
+</script></body></html>
